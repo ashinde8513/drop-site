@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drop — Never miss the drop. EDM events in Denver &amp; Boulder.</title>
+  <meta name="description" content="Drop is an iOS app for discovering EDM concerts, festivals, and club nights across Denver and Boulder — with one-tap official ticket links. Launching July 2026." />
+  <meta name="theme-color" content="#0A0510" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Drop — Never miss the drop." />
+  <meta property="og:description" content="Every EDM concert, festival, and club night in Denver &amp; Boulder, in one app. Launching July 2026." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a>
+      <div class="head-meta">Launching <b>July 2026</b> · Denver / Boulder</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap">
+        <span class="eyebrow"><span class="dot"></span>Coming July 2026 — Denver &amp; Boulder, CO</span>
+        <h1>Never miss<br /><span class="grad">the drop.</span></h1>
+        <p class="sub"><b>Every</b> EDM concert, festival, and club night across the Front Range — discovered, tracked, and one tap from tickets.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#notify">Get launch access →</a>
+          <span class="note">iOS · Free at launch</span>
+        </div>
+      </div>
+
+      <!-- Signature: frequency spectrum -->
+      <div class="spectrum" id="spectrum" aria-hidden="true"></div>
+      <hr class="spectrum-line" />
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track" id="marquee">
+        <span>Cervantes'</span><span>Mission Ballroom</span><span>Red Rocks</span><span>Larimer Lounge</span><span>The Black Box</span><span>Temple</span><span>Meow Wolf</span><span>Ophelia's</span><span>Bass</span><span>House</span><span>Techno</span><span>Dubstep</span><span>Drum &amp; Bass</span><span>Melodic</span>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span>What Drop does</span>
+          <h2>Built by someone who actually goes out.</h2>
+        </div>
+
+        <div class="features">
+          <article class="feature">
+            <span class="glyph">01</span>
+            <span class="tag">Discover</span>
+            <h3>One feed for every show</h3>
+            <p>Concerts, festivals, warehouse sets, and late-night club nights across Denver and Boulder — pulled into a single feed you can actually keep up with.</p>
+          </article>
+
+          <article class="feature">
+            <span class="glyph">02</span>
+            <span class="tag">Connect</span>
+            <h3>Find your crew at the venue</h3>
+            <p>Link up with friends inside the show instead of losing each other in the crowd. No more typing "where are you?" over the bass.</p>
+          </article>
+
+          <article class="feature">
+            <span class="glyph">03</span>
+            <span class="tag">Go</span>
+            <h3>One tap to official tickets</h3>
+            <p>Tap straight through to the official Etix ticket page for each event. Real tickets, real prices — no reseller markup games.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section" id="notify" style="padding-top:0;">
+      <div class="wrap">
+        <div class="cta-band">
+          <h2>Be there for the<br />first drop.</h2>
+          <p>We're launching in Denver &amp; Boulder this July. Get on the list and you'll be among the first into the app.</p>
+          <a class="btn btn-primary" href="mailto:trydropapp@gmail.com?subject=Notify%20me%20at%20launch&body=Hey%20Drop%20team%20%E2%80%94%20add%20me%20to%20the%20launch%20list.">Get launch access →</a>
+          <!-- To collect emails automatically later, swap this button for a form
+               posting to Formspree, Mailchimp, or a Supabase function. -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-foot">
+    <div class="wrap">
+      <div class="foot-grid">
+        <div class="foot-brand">
+          <a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a>
+          <p>An EDM event-discovery app. Built in Colorado.</p>
+        </div>
+        <div class="foot-links">
+          <div class="foot-col">
+            <h4>App</h4>
+            <a href="#features">Features</a>
+            <a href="#notify">Get access</a>
+          </div>
+          <div class="foot-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+          </div>
+          <div class="foot-col">
+            <h4>Contact</h4>
+            <a href="mailto:trydropapp@gmail.com">trydropapp@gmail.com</a>
+          </div>
+        </div>
+      </div>
+      <div class="foot-legal">
+        <span>© 2026 Resonance Ventures LLC</span>
+        <span>Drop is an event-discovery service, not a ticket seller.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Signature spectrum — deterministic waveform shape + lively EQ motion.
+    (function () {
+      var host = document.getElementById('spectrum');
+      if (!host) return;
+      var BARS = 64;
+      var frag = document.createDocumentFragment();
+      for (var i = 0; i < BARS; i++) {
+        // Layered sine waves give an organic waveform with a central "drop" peak.
+        var t = i / BARS;
+        var wave = 0.5 + 0.5 * Math.sin(t * Math.PI * 3.0 - 1.2);
+        var swell = Math.sin(t * Math.PI);           // taller toward the middle
+        var h = 0.16 + (0.55 * wave + 0.40 * swell) * 0.62;
+        if (h > 1) h = 1;
+        var bar = document.createElement('span');
+        bar.className = 'bar';
+        bar.style.setProperty('--h', h.toFixed(3));
+        bar.style.setProperty('--dur', (0.9 + (i % 7) * 0.16).toFixed(2) + 's');
+        bar.style.setProperty('--delay', ((i % 11) * 0.07).toFixed(2) + 's');
+        frag.appendChild(bar);
+      }
+      host.appendChild(frag);
+
+      // Duplicate marquee content so the loop is seamless.
+      var track = document.getElementById('marquee');
+      if (track) track.innerHTML += track.innerHTML;
+    })();
+  </script>
+</body>
+</html>
