@@ -53,7 +53,7 @@
              No-JS fallback points to the launch list. -->
         <a class="lh-link primary" id="getApp" href="index.html#notify">Get launch access →</a>
 
-        <a class="lh-link" href="index.html#notify">
+        <a class="lh-link" id="joinList" href="index.html#notify">
           <span>Join the launch list</span>
         </a>
         <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener">
@@ -97,6 +97,11 @@
 
       // Capture the traffic source (?src=ig_bio / tiktok_bio / …) for attribution.
       var src = new URLSearchParams(window.location.search).get('src') || '';
+
+      // Carry ?src= into the secondary "Join the launch list" link too.
+      var jl = document.getElementById('joinList');
+      if (jl && src) jl.setAttribute('href', 'index.html?src=' + encodeURIComponent(src) + '#notify');
+
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
 

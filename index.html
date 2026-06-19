@@ -90,9 +90,23 @@
         <div class="cta-band">
           <h2>Be there for the<br />first drop.</h2>
           <p>We're launching in Denver &amp; Boulder this July. Get on the list and you'll be among the first into the app.</p>
-          <a class="btn btn-primary" href="mailto:trydropapp@gmail.com?subject=Notify%20me%20at%20launch&body=Hey%20Drop%20team%20%E2%80%94%20add%20me%20to%20the%20launch%20list.">Get launch access →</a>
-          <!-- To collect emails automatically later, swap this button for a form
-               posting to Formspree, Mailchimp, or a Supabase function. -->
+
+          <!-- Waitlist → Kit (ConvertKit). Paste your Form ID into KIT_FORM_ID in the
+               script at the bottom of this file. Until then it falls back to email,
+               so the live form is never broken. -->
+          <form class="wl-form" id="waitlist"
+                action="https://app.convertkit.com/forms/REPLACE_WITH_KIT_FORM_ID/subscriptions"
+                method="post" novalidate>
+            <div class="wl-row">
+              <input class="wl-input" type="email" name="email_address"
+                     inputmode="email" autocomplete="email" required
+                     placeholder="you@email.com" aria-label="Email address" />
+              <button class="btn btn-primary wl-submit" type="submit">Get launch access →</button>
+            </div>
+            <input type="hidden" name="fields[source]" value="" />
+            <p class="wl-consent">No spam — just one email when Drop launches in Denver &amp; Boulder. Unsubscribe anytime.</p>
+            <p class="wl-msg" role="status" aria-live="polite"></p>
+          </form>
         </div>
       </div>
     </section>
@@ -157,6 +171,60 @@
       // Duplicate marquee content so the loop is seamless.
       var track = document.getElementById('marquee');
       if (track) track.innerHTML += track.innerHTML;
+    })();
+  </script>
+
+  <script>
+    // Waitlist capture → Kit (ConvertKit), keyless client-side.
+    // ── SET THIS: paste your Kit Form ID (the number in the form's edit URL).
+    (function () {
+      var KIT_FORM_ID = "REPLACE_WITH_KIT_FORM_ID";
+
+      var form = document.getElementById('waitlist');
+      if (!form) return;
+      var input = form.querySelector('.wl-input');
+      var msg   = form.querySelector('.wl-msg');
+      var srcEl = form.querySelector('input[name="fields[source]"]');
+      var MAILTO = 'mailto:trydropapp@gmail.com?subject=Notify%20me%20at%20launch'
+                 + '&body=Add%20me%20to%20the%20Drop%20launch%20list.';
+
+      // Carry the ?src= (ig_bio / tiktok_bio) through for attribution.
+      var src = new URLSearchParams(window.location.search).get('src') || '';
+      if (srcEl) srcEl.value = src;
+
+      var configured = KIT_FORM_ID.indexOf('REPLACE_') === -1;
+      if (configured) {
+        form.setAttribute('action', 'https://app.convertkit.com/forms/' + KIT_FORM_ID + '/subscriptions');
+      } else {
+        // Not wired to Kit yet — keep a working fallback so the form is never broken.
+        form.setAttribute('action', MAILTO);
+        form.setAttribute('method', 'get');
+      }
+
+      function show(t, ok) { msg.textContent = t; msg.className = 'wl-msg ' + (ok ? 'ok' : 'err'); }
+
+      form.addEventListener('submit', function (e) {
+        var email = (input.value || '').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          e.preventDefault(); show('Enter a valid email address.', false); input.focus(); return;
+        }
+        if (!configured) return;          // let the mailto fallback proceed natively
+        e.preventDefault();               // configured: submit in-place, stay on the page
+        show('Adding you…', true);
+        var body = new URLSearchParams();
+        body.set('email_address', email);
+        if (src) body.set('fields[source]', src);
+        fetch(form.getAttribute('action'), {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString()
+        }).then(function () {
+          form.reset();
+          show("You're on the list 🎛️ Check your email to confirm.", true);
+        }).catch(function () {
+          show("That didn't go through — tap again, or email trydropapp@gmail.com.", false);
+        });
+      });
     })();
   </script>
 </body>
