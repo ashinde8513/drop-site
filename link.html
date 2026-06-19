@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drop — Get the app & links</title>
+  <meta name="description" content="Get Drop, join the launch list, and follow @trydropapp. EDM events, festivals & set times across Denver and Boulder." />
+  <meta name="theme-color" content="#0A0510" />
+  <meta name="robots" content="noindex" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Drop — Get the app" />
+  <meta property="og:description" content="EDM events, festivals & set times. Launching July 2026 — get on the list." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <main class="linkhub">
+    <div class="wrap">
+
+      <!-- Brand mark: the frequency-spectrum signature, condensed -->
+      <div class="lh-badge" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="46" height="46" role="img" aria-label="Drop">
+          <defs>
+            <linearGradient id="lhg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#FF2E9A" />
+              <stop offset="52%" stop-color="#8A5CFF" />
+              <stop offset="100%" stop-color="#25E6C8" />
+            </linearGradient>
+          </defs>
+          <g fill="url(#lhg)">
+            <rect x="6"  y="22" width="4" height="10" rx="2" />
+            <rect x="13" y="16" width="4" height="22" rx="2" />
+            <rect x="20" y="8"  width="4" height="34" rx="2" />
+            <rect x="27" y="14" width="4" height="24" rx="2" />
+            <rect x="34" y="20" width="4" height="14" rx="2" />
+          </g>
+        </svg>
+      </div>
+
+      <h1 class="lh-name">Drop<span class="caret">▾</span></h1>
+      <p class="lh-tag">EDM events, festivals &amp; set times — Denver &amp; Boulder</p>
+      <p class="lh-meta">Launching July 2026 · iOS · Free at launch</p>
+
+      <nav class="lh-links">
+        <!-- PRIMARY: smart routes iOS → App Store at launch, otherwise → launch list.
+             Text + destination are set by the script below from the LAUNCHED flag.
+             No-JS fallback points to the launch list. -->
+        <a class="lh-link primary" id="getApp" href="index.html#notify">Get launch access →</a>
+
+        <a class="lh-link" href="index.html#notify">
+          <span>Join the launch list</span>
+        </a>
+        <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener">
+          <span>Instagram — @trydropapp</span>
+        </a>
+        <a class="lh-link" href="https://tiktok.com/@trydropapp" target="_blank" rel="noopener">
+          <span>TikTok — @trydropapp</span>
+        </a>
+        <a class="lh-link" href="index.html">
+          <span>About Drop · trydropapp.com</span>
+        </a>
+      </nav>
+
+      <p class="lh-disc">
+        Some ticket links in Drop are affiliate links — we may earn a commission,
+        at no extra cost to you.
+      </p>
+      <p class="lh-legal">
+        <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
+        · © 2026 Resonance Ventures LLC
+      </p>
+
+    </div>
+  </main>
+
+  <script>
+    // Link-in-bio smart routing.
+    // ── At launch: set LAUNCHED = true and paste the App Store URL below.
+    //    Then iPhone/iPad visitors who tap the primary button go straight to the
+    //    App Store; everyone else (Android/desktop) still gets the launch list.
+    // ── The ?src= query param (e.g. /link?src=ig_bio) is preserved so you can tell
+    //    Instagram from TikTok traffic — it is appended to the App Store campaign
+    //    token (ct) and carried into the launch-list link.
+    (function () {
+      var LAUNCHED = false;                 // ← flip to true on launch day
+      var APP_STORE_URL = "";               // ← e.g. "https://apps.apple.com/us/app/drop/id000000000"
+      var WAITLIST_URL = "index.html#notify";
+
+      var btn = document.getElementById('getApp');
+      if (!btn) return;
+
+      // Capture the traffic source (?src=ig_bio / tiktok_bio / …) for attribution.
+      var src = new URLSearchParams(window.location.search).get('src') || '';
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+
+      if (LAUNCHED && APP_STORE_URL && isIOS) {
+        var url = APP_STORE_URL;
+        if (src) {
+          // Apple Campaign tokens for free App Analytics attribution.
+          url += (url.indexOf('?') === -1 ? '?' : '&') + 'ct=' + encodeURIComponent(src) + '&pt=0&mt=8';
+        }
+        btn.setAttribute('href', url);
+        btn.textContent = 'Download on the App Store →';
+      } else if (LAUNCHED && APP_STORE_URL) {
+        // Launched, but not on iOS yet (Drop is iOS-first) — keep them on the list.
+        btn.setAttribute('href', WAITLIST_URL);
+        btn.textContent = 'Get notified on Android →';
+      } else {
+        // Pre-launch: everyone joins the list. Insert ?src= BEFORE the #fragment
+        // so the anchor still resolves and the param stays readable on the target.
+        var wl = WAITLIST_URL;
+        if (src) {
+          var hash = '', hi = wl.indexOf('#');
+          if (hi !== -1) { hash = wl.slice(hi); wl = wl.slice(0, hi); }
+          wl += (wl.indexOf('?') === -1 ? '?' : '&') + 'src=' + encodeURIComponent(src) + hash;
+        }
+        btn.setAttribute('href', wl);
+        btn.textContent = 'Get launch access →';
+      }
+    })();
+  </script>
+</body>
+</html>
