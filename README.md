@@ -4,7 +4,8 @@ Static marketing site for **Drop** (EDM event-discovery app, operated by Resonan
 Plain HTML/CSS, zero build step, zero dependencies. Deploys anywhere that serves static files.
 
 ```
-index.html      Landing page (hero, features, launch CTA)
+index.html      Landing page (hero, features, launch CTA → Kit waitlist)
+link.html       Link-in-bio hub for the Instagram/TikTok bios
 privacy.html    Privacy Policy  ← also your Apple "Privacy Policy URL"
 terms.html      Terms of Service / EULA  ← also your Apple "EULA URL"
 styles.css      All styling
@@ -12,7 +13,7 @@ styles.css      All styling
 
 ## What this unblocks
 
-- **Partnerize / Etix EDN application** — a real website URL to enter on the form.
+- **Partner / affiliate program applications** — a real website URL to enter on partner forms.
 - **Apple App Store** — hosted Privacy Policy + Terms/EULA URLs (a submission requirement).
 - **App Store marketing URL** — point it at the deployed home page.
 
@@ -38,5 +39,5 @@ Drag the folder onto <https://app.netlify.com/drop> — instant deploy, free Sta
 Grab something like `trydrop.app` or `trydropapp.com` (~$12/yr). On `.app`, HTTPS is mandatory and provided automatically by all three hosts above. Point the domain at your host per their docs.
 
 ## Before you publish
-- The Privacy Policy and Terms are **working drafts** — confirm every data practice matches the shipped app and consider a legal review. Each page carries a visible "Draft for review" flag; remove it once finalized.
-- Swap the launch-CTA `mailto:` button for a real form (Formspree / Mailchimp / a Supabase function) if you want to collect emails automatically. See the comment in `index.html`.
+- The Privacy Policy and Terms were prepared as working templates — confirm every data practice matches the shipped app and consider a legal review before relying on them.
+- The launch CTA is wired to **Kit (ConvertKit)** — paste your Form ID into `KIT_FORM_ID` in `index.html` to activate it, and enable double opt-in in Kit. `link.html` is the link-in-bio hub for the social bios.
