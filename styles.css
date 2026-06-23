@@ -117,8 +117,6 @@ a { color: inherit; }
   box-shadow: 0 6px 30px rgba(226, 77, 255, 0.30);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 38px rgba(77, 226, 255, 0.40); }
-.btn-ghost { color: var(--ink); border-color: var(--line-2); }
-.btn-ghost:hover { border-color: var(--ink); transform: translateY(-2px); }
 
 /* ---- Hero ---- */
 .hero { position: relative; padding: clamp(56px, 11vw, 128px) 0 0; }
