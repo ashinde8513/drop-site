@@ -265,6 +265,13 @@ a { color: inherit; }
 }
 .wl-input::placeholder { color: var(--muted); }
 .wl-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(77, 226, 200, 0.18); }
+/* Visible invalid state — driven by JS-set aria-invalid (and native :user-invalid
+   for keyboard/native submit) so the field signals an error beyond color alone. */
+.wl-input[aria-invalid="true"],
+.wl-input:user-invalid {
+  border-color: var(--magenta);
+  box-shadow: 0 0 0 3px rgba(226, 77, 255, 0.22);
+}
 .wl-submit { flex: 0 0 auto; white-space: nowrap; cursor: pointer; }
 .wl-consent {
   font-family: var(--mono); font-size: 11.5px; line-height: 1.6; font-weight: 500;
@@ -405,7 +412,14 @@ a { color: inherit; }
 }
 
 /* ---- A11y ---- */
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+/* Non-color focus affordance on every interactive element. The outline follows
+   each element's own shape (no forced border-radius that would square off pills). */
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+/* Secondary links lean on color-only hover; add an underline so the hover/focus
+   affordance isn't color-dependent. */
+.foot-col a:hover, .foot-col a:focus-visible,
+.lh-legal a:hover, .lh-legal a:focus-visible,
+.doc .back:hover, .doc .back:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

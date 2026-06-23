@@ -203,12 +203,22 @@
       }
 
       function show(t, ok) { msg.textContent = t; msg.className = 'wl-msg ' + (ok ? 'ok' : 'err'); }
+      function setInvalid(on) {
+        if (on) { input.setAttribute('aria-invalid', 'true'); }
+        else { input.removeAttribute('aria-invalid'); }
+      }
+
+      // Clear the error state as soon as the user starts correcting it.
+      input.addEventListener('input', function () {
+        if (input.getAttribute('aria-invalid') === 'true') { setInvalid(false); show('', true); }
+      });
 
       form.addEventListener('submit', function (e) {
         var email = (input.value || '').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          e.preventDefault(); show('Enter a valid email address.', false); input.focus(); return;
+          e.preventDefault(); setInvalid(true); show('Enter a valid email address.', false); input.focus(); return;
         }
+        setInvalid(false);
         if (!configured) return;          // let the mailto fallback proceed natively
         e.preventDefault();               // configured: submit in-place, stay on the page
         show('Adding you…', true);
