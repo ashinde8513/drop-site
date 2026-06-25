@@ -23,7 +23,7 @@ export default defineConfig({
     { name: 'mobile-safari', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
-    command: `python3 -m http.server ${PORT}`,
+    command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
