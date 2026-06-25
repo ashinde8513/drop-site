@@ -8,3 +8,6 @@ Before any UI work, read `PRODUCT.md` (strategy/voice) and `DESIGN.md` (visual t
 - **Principles:** one Prism everywhere · motion is music · social proof ("who's going") is the hook · funnel clarity over cleverness · premium through restraint.
 - **Anti-references:** generic SaaS/template, corporate navy fintech, crypto/web3 hype, Linktree-default blandness.
 - **Accessibility:** target WCAG 2.2 AA; provide `prefers-reduced-motion` fallbacks for the spectrum and marquee.
+
+## Testing (run before pushing UI/content changes)
+Playwright smoke tests live in `tests/`. After any change to the HTML/CSS, run `npm test` — it loads every page (desktop + mobile Safari), checks titles, core content, legal links, and **fails on any JS console error or broken asset**. If you add a new page, add it to the `PAGES` list in `tests/smoke.spec.ts`. `npm run test:ui` for the interactive runner. (Pattern doc: `~/TESTING.md`.)
