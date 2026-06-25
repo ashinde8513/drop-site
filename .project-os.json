@@ -1,0 +1,12 @@
+{
+  "project": "drop-landing",
+  "doc_files": {
+    "state": "PROJECT_STATE.md",
+    "claude": "CLAUDE.md",
+    "history_dir": "history"
+  },
+  "history": {
+    "keep_inline_sessions": 3
+  },
+  "modules": []
+}

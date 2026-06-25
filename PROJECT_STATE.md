@@ -25,3 +25,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Tested: N/A
 - Remaining: Fill in session history as work resumes
 - Next: Resume landing site work per backlog
+
+## Recent Sessions
+<!-- SESSIONS:newest-first -->
