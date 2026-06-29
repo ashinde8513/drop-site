@@ -6,20 +6,38 @@
   <title>Terms of Service — Drop</title>
   <meta name="description" content="The terms that govern your use of the Drop app." />
   <meta name="theme-color" content="#0B0D12" />
+
+  <!-- Canonical + social -->
+  <link rel="canonical" href="https://trydropapp.com/terms" />
+  <meta property="og:title" content="Terms of Service — Drop" />
+  <meta property="og:description" content="The terms that govern your use of the Drop app." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://trydropapp.com/terms" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@trydropapp" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
   <header class="site-head">
     <div class="wrap">
-      <a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a>
+      <nav aria-label="Site"><a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a></nav>
       <div class="head-meta">Terms of Service</div>
     </div>
   </header>
 
-  <main class="doc">
+  <main class="doc" id="main-content">
     <div class="wrap">
       <div class="doc-inner">
         <a class="back" href="index.html">← Back to Drop</a>
@@ -83,10 +101,12 @@
 
   <footer class="site-foot">
     <div class="wrap">
-      <div class="foot-legal" style="border-top:none; margin-top:0; padding-top:0;">
-        <span>© 2026 Resonance Ventures LLC</span>
-        <span><a href="privacy.html" style="color:var(--muted); text-decoration:none;">Privacy Policy →</a></span>
-      </div>
+      <nav aria-label="Legal pages">
+        <div class="foot-legal foot-legal--flush">
+          <span>© 2026 Resonance Ventures LLC</span>
+          <span><a href="privacy.html">Privacy Policy →</a></span>
+        </div>
+      </nav>
     </div>
   </footer>
 </body>
