@@ -8,10 +8,27 @@
   <meta name="theme-color" content="#0B0D12" />
   <meta name="robots" content="noindex" />
 
+  <!-- Canonical + social -->
+  <link rel="canonical" href="https://trydropapp.com/link" />
+
   <!-- Open Graph -->
   <meta property="og:title" content="Drop — Get the app" />
   <meta property="og:description" content="EDM events, festivals & set times. Releasing soon — get on the list." />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://trydropapp.com/link" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.svg" />
+  <meta property="og:image:alt" content="Drop — Never miss the drop. The iridescent EDM event discovery app." />
+
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+  <meta name="twitter:title" content="Drop — Get the app" />
+  <meta name="twitter:description" content="EDM events, festivals &amp; set times. Releasing soon — get on the list." />
+  <meta name="twitter:image" content="https://trydropapp.com/og-image.svg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,7 +37,9 @@
 </head>
 <body>
 
-  <main class="linkhub">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <main class="linkhub" id="main-content">
     <div class="wrap">
 
       <!-- Brand mark: the frequency-spectrum signature, condensed -->
@@ -47,7 +66,7 @@
       <p class="lh-tag">EDM events, festivals &amp; set times — in one app</p>
       <p class="lh-meta">Releasing soon · iOS · Free at launch</p>
 
-      <nav class="lh-links">
+      <nav class="lh-links" aria-label="Links">
         <!-- PRIMARY: smart routes iOS → App Store at launch, otherwise → launch list.
              Text + destination are set by the script below from the LAUNCHED flag.
              No-JS fallback points to the launch list. -->
@@ -56,10 +75,10 @@
         <a class="lh-link" id="joinList" href="index.html#notify">
           <span>Join the launch list</span>
         </a>
-        <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener">
+        <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener noreferrer">
           <span>Instagram — @trydropapp</span>
         </a>
-        <a class="lh-link" href="https://tiktok.com/@trydropapp" target="_blank" rel="noopener">
+        <a class="lh-link" href="https://tiktok.com/@trydropapp" target="_blank" rel="noopener noreferrer">
           <span>TikTok — @trydropapp</span>
         </a>
         <a class="lh-link" href="index.html">
