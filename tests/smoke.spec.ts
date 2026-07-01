@@ -27,6 +27,9 @@ const PAGES = [
   { path: '/link.html', title: /Drop — Get the app/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
+  // Public event preview. With no ?id it renders the "unavailable" fallback
+  // (no network), so the title stays the static default — perfect for smoke.
+  { path: '/event.html', title: /Drop — Event/ },
 ];
 
 test.describe('landing site smoke', () => {
