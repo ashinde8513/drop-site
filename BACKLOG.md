@@ -4,8 +4,11 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Now
 
+- [x] Add link-hub-specific `og-image-link.png` for `/link` (link.html) — done 2026-07-02 (commit 006699c), verified 1200x630.
+
+## Blocked / waiting
+
 - [ ] Submit sitemap.xml to Google Search Console and Bing Webmaster Tools (needs site verification — founder action).
-- [ ] Add `og-image.png` alt/social preview check for `/link` (link.html) — currently reuses homepage OG image; consider a link-hub-specific one.
 
 ## Next
 

@@ -15,9 +15,9 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
-- 
+- Sitemap submission to Google Search Console/Bing Webmaster Tools — needs founder site-verification.
 ### Exact next step
-- BACKLOG.md "Now": add a link-hub-specific `og-image.png` for `/link` (link.html) — it currently reuses the homepage OG image (sitemap submission to Search Console/Bing is also "Now" but needs founder site-verification first).
+- BACKLOG.md "Next": add `FAQPage` JSON-LD schema once an on-site FAQ section exists (or build the FAQ section first — see BACKLOG.md Next).
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
 ### 2026-07-01 — Claude — Event preview page added then removed; AI-SEO basics shipped
