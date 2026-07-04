@@ -10,7 +10,8 @@ Before any UI work, read `PRODUCT.md` (strategy/voice) and `DESIGN.md` (visual t
 - **Accessibility:** target WCAG 2.2 AA; provide `prefers-reduced-motion` fallbacks for the spectrum and marquee.
 
 ## Default skills
-- **UI:** `impeccable` to shape/review, `refactoring-ui` for spacing/hierarchy, `design-auditor` for the a11y + rules pass before pushing; motion → `gsap-scrolltrigger`/`motion-framer`.
+- **UI:** `impeccable` to shape/review (covers spacing/hierarchy), `design-auditor` for the a11y + rules pass before pushing; motion → `motion-framer`.
+- Skill named here missing from the available list → use the nearest available or none; never stall hunting.
 - **Copy:** `copywriting` (+ `marketing-psychology`, `offers`) → `humanizer`; pressure-test with `cro`.
 - **Funnel/visibility:** run `seo-audit` + `ai-seo` before any launch push.
 
