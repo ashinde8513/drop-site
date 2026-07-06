@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.app.drop.mobile"],
+        "components": [
+          { "/": "/event/*", "comment": "Event detail deep link / share target" },
+          { "/": "/plan/*", "comment": "Plan detail deep link / share target" },
+          { "/": "/", "comment": "Generic invite/signup link (root)" }
+        ]
+      }
+    ]
+  }
+}

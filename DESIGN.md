@@ -41,31 +41,26 @@ Link-hub badge gradient (`link.html`): `#FF2E9A` → `#8A5CFF` → `#25E6C8`.
 
 Scale (responsive `clamp()`):
 
-- Hero H1: `clamp(54px, 13vw, 150px)`, weight 700, lh 0.92, tracking -0.03em
-- Section H2: `clamp(30px, 5vw, 50px)`, weight 700, lh 1.04, tracking -0.02em
-- Feature H3: 23px / 700 / lh 1.12
-- Eyebrow: 12px / 600 / tracking 0.22em / uppercase
-- Button: 15px / 600
-
-> Hero ceiling (150px) exceeds the impeccable display ceiling (~96px). Acceptable as a deliberate brand statement, but test the headline copy at every breakpoint for overflow.
+- Hero H1: `clamp(40px, 5.5vw, 76px)` — search-first hero, discovery site (the 150px poster H1 retired with the 2026-07-06 rebuild)
+- Section H2: `clamp(26px, 3.4vw, 40px)`
+- Card title: 17px / 600 · Eyebrow: 12px / 600 / 0.18em uppercase · Body 16–17px / 1.6
 
 ## Layout
 
-- Container max-width `--wrap: 1120px`.
-- Single shared stylesheet `styles.css`. Plain static HTML, zero build, zero dependencies.
-- Pages: `index.html` (landing), `link.html` (link-in-bio hub), `privacy.html`, `terms.html`.
+- Container max-width `--wrap: 1240px` (`--wrap-narrow: 760px` for prose).
+- Shared stylesheet `site.css` (Prism token block copied verbatim from `drop-design/foundations/tokens.css`) + `data.js` (live Supabase public-catalog fetch layer, `window.Drop.*`) + `site.js` (nav/rails/cards/spectrum). Plain static HTML, zero build. Legacy `styles.css` remains ONLY for `link.html`.
+- Pages (12 + hub): `index`, `events` (filterable listing), `event`/`venue`/`artist` (param-driven detail templates), `venues`, `artists`, `promoters`, `about`, `download` (waitlist), `privacy`, `terms`, plus `link.html`.
+- Hero is search-first (`clamp(40px, 5.5vw, 76px)`), not the old 150px poster headline.
 
-## Components
+## Components (site.css)
 
-- `.site-head` — sticky header, backdrop blur, border
-- `.hero` — full-viewport hero, gradient text, CTA
-- `.spectrum` — 64-bar animated frequency visualization (sine-shaped, EQ motion) — the signature
-- `.features` — 3-column grid (collapses to 1 on mobile)
-- `.cta-band` — rounded container, radial gradients, centered waitlist form
-- `.wl-form` — email capture (input + submit + consent)
-- `.marquee` — infinite-scroll event-type loop
-- `.linkhub` — centered link-in-bio hub (`link.html`)
-- `.doc` — long-form legal layout (max-width 760px, magenta section numerals)
+- `.site-nav` — sticky glass header: wordmark, location popover, search, page links, CTA; mobile drawer (no app tab bars)
+- `.ecard` — event card (16:10 art, genre pill + date chip on scrim, title/venue/price); `.art-prism` genre-tinted fallback when no image
+- `.rail` — scroll-snap card rail with arrow buttons + right-edge fade mask; `.grid-events` auto-fill grid
+- `.chip` / `.chip-social` — filter pills (aria-pressed) / cyan social-glass "N friends going" (product-preview sections ONLY — never faked on real events)
+- `.spectrum` — 64-bar frequency visualization (the signature; one per page max)
+- `.state-empty` / `.state-error` / `.skeleton` — required states for every live-data surface
+- `.cta-band`, `.wl-form` (waitlist, Kit + mailto fallback), `.doc` (legal prose, 760px, magenta numerals), `.site-foot` (4-col footer + FTC/LLC lines)
 
 ## Motion
 
@@ -73,4 +68,4 @@ Spectrum animation and marquee scroll are the primary motion. Add `prefers-reduc
 
 ## Brand Assets
 
-Wordmark "DROP▾" — chrome-gradient "DROP" + magenta caret, Space Grotesk. Link-hub uses an inline SVG frequency-spectrum badge. No favicon committed yet — add one (the spectrum mark). Domain `trydropapp.com`.
+Wordmark "DROP▾" — chrome-gradient "DROP" + magenta caret, Space Grotesk. Link-hub uses an inline SVG frequency-spectrum badge. Favicon: `favicon.svg` (spectrum mark). Domain `trydropapp.com` (site) · `app.trydropapp.com` (Expo web app, post-cutover).
