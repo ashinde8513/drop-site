@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artists — Drop</title>
+  <meta name="description" content="Browse artists with upcoming shows by city on Drop — the social way to discover live music." />
+  <meta name="theme-color" content="#0B0D12" />
+
+  <link rel="canonical" href="https://trydropapp.com/artists.html" />
+
+  <meta property="og:title" content="Artists — Drop" />
+  <meta property="og:description" content="Browse artists with upcoming shows by city on Drop." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://trydropapp.com/artists.html" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Drop — social live-events discovery." />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+  <meta name="twitter:title" content="Artists — Drop" />
+  <meta name="twitter:description" content="Browse artists with upcoming shows by city on Drop." />
+  <meta name="twitter:image" content="https://trydropapp.com/og-image.png" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+
+  <script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "CollectionPage", "name": "Artists — Drop", "url": "https://trydropapp.com/artists.html" }
+  </script>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+
+      <div class="loc-wrap">
+        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+      </div>
+
+      <form class="nav-search" role="search" aria-label="Search events">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+        </div>
+      </form>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html" aria-current="page">Artists</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="about.html">About</a>
+      </nav>
+      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+
+      <span class="nav-spacer"></span>
+      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
+      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+    </div>
+
+    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
+      <a href="events.html">Events</a>
+      <a href="venues.html">Venues</a>
+      <a href="artists.html" aria-current="page">Artists</a>
+      <a href="promoters.html">For Promoters</a>
+      <a href="about.html">About</a>
+      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="section section--tight">
+      <div class="wrap">
+        <div class="section-head section-head--row">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>Artists</span>
+            <h1 id="a-h1" class="sec-h2">Artists playing Denver</h1>
+          </div>
+          <div class="sp-field" style="max-width:220px;">
+            <label for="a-city">City</label>
+            <div class="field-box">
+              <select id="a-city"></select>
+            </div>
+          </div>
+        </div>
+        <div class="grid-artists" id="grid-artists"></div>
+        <div style="display:flex; justify-content:center; margin-top:32px;">
+          <button type="button" class="btn-ghost" id="a-more" hidden>Show more</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
+        <div class="foot-social">
+          <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
+          <a href="https://tiktok.com/@trydropapp" aria-label="TikTok" rel="noopener">TT</a>
+          <a href="https://twitter.com/trydropapp" aria-label="X" rel="noopener">X</a>
+        </div>
+      </div>
+      <nav class="foot-col" aria-label="Discover">
+        <h4>Discover</h4>
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="download.html">Download</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="mailto:trydropapp@gmail.com">Contact</a>
+      </nav>
+      <nav class="foot-col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+    </div>
+    <div class="foot-fine">
+      <p class="foot-disc">Some ticket links on Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · Drop is an event-discovery service, not a ticket seller.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="site.js"></script>
+  <script>
+    (function () {
+      var D = window.Drop;
+      var city = D.city();
+      document.title = 'Artists playing ' + city + ' — Drop';
+      document.getElementById('a-h1').textContent = 'Artists playing ' + city;
+
+      var citySel = document.getElementById('a-city');
+      var all = D.CITIES.concat([D.ALL_CITIES]);
+      all.forEach(function (c) {
+        var o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        if (c === city) o.selected = true;
+        citySel.appendChild(o);
+      });
+      citySel.addEventListener('change', function () {
+        D.setCity(citySel.value);
+        location.reload();
+      });
+
+      var host = document.getElementById('grid-artists');
+      var moreBtn = document.getElementById('a-more');
+
+      function load() {
+        moreBtn.hidden = true;
+        D.skeletonGrid(host, 6);
+        D.fetchEvents({ city: city, limit: 200 }).then(function (evs) {
+          var map = {};
+          evs.forEach(function (ev) {
+            (ev.event_artists || []).forEach(function (ea) {
+              var art = ea.artists;
+              if (!art) return;
+              if (!map[art.id]) map[art.id] = { artist: art, count: 0, nextDate: ev.date };
+              map[art.id].count++;
+              if (ev.date < map[art.id].nextDate) map[art.id].nextDate = ev.date;
+            });
+          });
+          var list = Object.keys(map).map(function (k) { return map[k]; })
+            .filter(function (item) { return item.artist && (item.artist.name || '').trim(); })
+            .sort(function (a, b) { return b.count - a.count; });
+
+          host.classList.remove('is-loading');
+          host.innerHTML = '';
+          if (!list.length) {
+            D.stateEmpty(host, 'No artists with upcoming shows in ' + city + ' yet.', 'Browse all events', 'events.html');
+            moreBtn.hidden = true;
+            return;
+          }
+          // Cap the initial paint (mobile was painting ~49,000px) and reveal the
+          // rest in PAGE-sized chunks on demand.
+          var PAGE = 48, shown = 0;
+          function renderChunk() {
+            list.slice(shown, shown + PAGE).forEach(function (item) {
+              var genre = (item.artist.genres && item.artist.genres[0]) || 'Live music';
+              host.appendChild(D.acard(item.artist, { genre: genre, meta: D.fmtDate(item.nextDate) }));
+            });
+            shown = Math.min(shown + PAGE, list.length);
+            moreBtn.hidden = shown >= list.length;
+          }
+          moreBtn.onclick = renderChunk;
+          renderChunk();
+        }).catch(function () { moreBtn.hidden = true; D.stateError(host, load); });
+      }
+      load();
+    })();
+  </script>
+</body>
+</html>

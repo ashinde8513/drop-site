@@ -3,42 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Drop — Never miss the drop. Every EDM event in one app.</title>
-  <meta name="description" content="Drop is an iOS app for discovering EDM concerts, festivals, and club nights — with one-tap official ticket links. Releasing soon." />
+  <title>Drop — Find the shows your friends are going to</title>
+  <meta name="description" content="Drop is the social way to discover concerts, raves, festivals, and club nights near you. See who's going, build your crew, and turn every night out into your live music history." />
   <meta name="theme-color" content="#0B0D12" />
 
-  <!-- Canonical + social -->
   <link rel="canonical" href="https://trydropapp.com/" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Drop — Never miss the drop." />
-  <meta property="og:description" content="Every EDM concert, festival, and club night, in one app. Releasing soon." />
+  <meta property="og:title" content="Drop — Find the shows your friends are going to" />
+  <meta property="og:description" content="Discover concerts, raves, festivals, and club nights near you. See who's going and build your crew." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://trydropapp.com/" />
   <meta property="og:image" content="https://trydropapp.com/og-image.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Drop — Never miss the drop. The iridescent EDM event discovery app." />
+  <meta property="og:image:alt" content="Drop — social live-events discovery." />
 
   <!-- Twitter card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@trydropapp" />
-  <meta name="twitter:title" content="Drop — Never miss the drop." />
-  <meta name="twitter:description" content="Every EDM concert, festival, and club night, in one app. Releasing soon." />
+  <meta name="twitter:title" content="Drop — Find the shows your friends are going to" />
+  <meta name="twitter:description" content="Discover concerts, raves, festivals, and club nights near you. See who's going." />
   <meta name="twitter:image" content="https://trydropapp.com/og-image.png" />
 
-  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://app.convertkit.com" crossorigin />
+  <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="site.css" />
 
-  <!-- Structured data (AI-SEO / rich results) -->
+  <!-- Structured data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -52,255 +50,445 @@
       "https://tiktok.com/@trydropapp",
       "https://twitter.com/trydropapp"
     ],
-    "parentOrganization": {
-      "@type": "Organization",
-      "name": "Resonance Ventures LLC"
-    }
+    "parentOrganization": { "@type": "Organization", "name": "Resonance Ventures LLC" }
   }
   </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
+    "@type": "WebSite",
     "name": "Drop",
     "url": "https://trydropapp.com/",
-    "description": "Drop is an iOS app for discovering EDM concerts, festivals, and club nights — with one-tap official ticket links and price comparison.",
-    "applicationCategory": "Entertainment",
-    "applicationSubCategory": "Music",
-    "operatingSystem": "iOS",
-    "image": "https://trydropapp.com/og-image.png",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Resonance Ventures LLC"
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": { "@type": "EntryPoint", "urlTemplate": "https://trydropapp.com/events.html?q={query}" },
+      "query-input": "required name=query"
     }
   }
   </script>
-  <!-- TODO: add SoftwareApplication "offers" (price/currency) and App Store "url" once Drop ships and has a listing -->
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to content</a>
 
-  <a href="#main-content" class="skip-link">Skip to content</a>
+  <!-- ============================ HEADER ============================ -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
 
-  <header class="site-head">
-    <div class="wrap">
-      <nav aria-label="Site"><a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a></nav>
-      <div class="head-meta">Releasing <b>soon</b> · iOS</div>
+      <div class="loc-wrap">
+        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+      </div>
+
+      <form class="nav-search" role="search" aria-label="Search events">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+        </div>
+      </form>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="about.html">About</a>
+      </nav>
+      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+
+      <span class="nav-spacer"></span>
+      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
+      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
     </div>
+
+    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
+      <a href="events.html">Events</a>
+      <a href="venues.html">Venues</a>
+      <a href="artists.html">Artists</a>
+      <a href="promoters.html">For Promoters</a>
+      <a href="about.html">About</a>
+      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+    </nav>
   </header>
 
-  <main id="main-content">
-    <!-- HERO -->
+  <main id="main">
+    <!-- ============================ HERO ============================ -->
     <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
       <div class="wrap">
-        <span class="eyebrow"><span class="dot"></span>Releasing soon — iOS app</span>
-        <h1>Never miss<br /><span class="grad">the drop.</span></h1>
-        <p class="sub"><b>Every</b> EDM concert, festival, and club night — discovered, tracked, and one tap from tickets.</p>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="#notify">Get launch access →</a>
-          <span class="note">iOS · Free at launch</span>
+        <span class="eyebrow"><span class="dot"></span>Social live-events discovery</span>
+        <h1>Find the shows your <span class="grad-word">friends</span> are going to.</h1>
+        <p class="hero-sub">Drop helps you discover concerts, raves, venues, and plans around your city, then turns every night out into your live music history.</p>
+
+        <!-- Search panel -->
+        <form class="search-panel" id="hero-search" role="search" aria-label="Find events">
+          <div class="sp-row">
+            <div class="sp-field">
+              <label for="hs-q">Search</label>
+              <div class="field-box">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input id="hs-q" name="q" type="search" placeholder="Artists, venues, shows…" autocomplete="off" />
+              </div>
+            </div>
+            <div class="sp-field">
+              <label for="hs-city">City</label>
+              <div class="field-box">
+                <select id="hs-city" name="city"></select>
+              </div>
+            </div>
+            <div class="sp-field">
+              <label for="hs-when">Date</label>
+              <div class="field-box">
+                <select id="hs-when" name="when">
+                  <option value="">Any date</option>
+                  <option value="tonight">Tonight</option>
+                  <option value="weekend">This weekend</option>
+                  <option value="month">This month</option>
+                </select>
+              </div>
+            </div>
+            <div class="sp-submit">
+              <button class="btn-primary" type="submit">Find events</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Category chips -->
+        <div class="chip-row" aria-label="Browse by genre">
+          <a class="chip" href="events.html?genre=Festivals">Festivals</a>
+          <a class="chip" href="events.html?genre=House">House</a>
+          <a class="chip" href="events.html?genre=Techno">Techno</a>
+          <a class="chip" href="events.html?genre=Techno&amp;q=dubstep">Dubstep</a>
+          <a class="chip" href="events.html?genre=Drum%20%26%20Bass">DnB</a>
+          <a class="chip" href="events.html?genre=Hip-Hop">Hip-Hop</a>
+          <a class="chip" href="events.html?genre=Indie">Indie</a>
+          <a class="chip" href="events.html?q=club">Clubs</a>
         </div>
       </div>
 
-      <!-- Signature: frequency spectrum -->
-      <div class="spectrum" id="spectrum" aria-hidden="true"></div>
-      <hr class="spectrum-line" />
+      <!-- Signature spectrum as hero base -->
+      <div class="wrap" style="margin-top: clamp(36px, 6vw, 72px);">
+        <div class="spectrum" id="hero-spectrum" aria-hidden="true"></div>
+      </div>
     </section>
 
-    <!-- MARQUEE -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track" id="marquee">
-        <span>Festivals</span><span>Warehouse sets</span><span>Club nights</span><span>Day parties</span><span>Afterhours</span><span>Arena shows</span><span>Raves</span><span>Bass</span><span>House</span><span>Techno</span><span>Dubstep</span><span>Drum &amp; Bass</span><span>Melodic</span><span>Trance</span>
+    <!-- ==================== HAPPENING THIS WEEK ==================== -->
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="section-head section-head--row">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
+            <h2 class="sec-h2">Happening this week</h2>
+          </div>
+          <a class="link-more" href="events.html">See all events →</a>
+        </div>
+        <div class="rail-wrap" data-rail>
+          <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
+          <div class="rail" id="rail-week" aria-label="Happening this week"></div>
+          <button class="rail-btn next" type="button" aria-label="Scroll right" hidden>›</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- FEATURES -->
-    <section class="section" id="features">
+    <!-- ==================== CATEGORY TILES ==================== -->
+    <section class="section section--tight">
       <div class="wrap">
         <div class="section-head">
-          <span class="eyebrow"><span class="dot"></span>What Drop does</span>
-          <h2>Built by someone who actually goes out.</h2>
+          <span class="eyebrow"><span class="dot"></span>Browse by scene</span>
+          <h2 class="sec-h2">Pick your night.</h2>
         </div>
+        <div class="grid-tiles">
+          <a class="tile g-fest" href="events.html?genre=Festivals"><span>Festivals</span></a>
+          <a class="tile g-house" href="events.html?genre=House"><span>House</span></a>
+          <a class="tile g-techno" href="events.html?genre=Techno"><span>Techno</span></a>
+          <a class="tile g-techno" href="events.html?genre=Techno&amp;q=dubstep"><span>Dubstep</span></a>
+          <a class="tile g-dnb" href="events.html?genre=Drum%20%26%20Bass"><span>Drum &amp; Bass</span></a>
+          <a class="tile g-hiphop" href="events.html?genre=Hip-Hop"><span>Hip-Hop</span></a>
+          <a class="tile g-indie" href="events.html?genre=Indie"><span>Indie</span></a>
+          <a class="tile g-other" href="events.html?q=club"><span>Clubs</span></a>
+        </div>
+      </div>
+    </section>
 
-        <div class="features">
-          <article class="feature">
-            <span class="glyph">01</span>
-            <span class="tag">Discover</span>
-            <h3>One feed for every show</h3>
-            <p>Concerts, festivals, warehouse sets, and late-night club nights — pulled into a single feed you can actually keep up with.</p>
+    <!-- ==================== JUST DROPPED ==================== -->
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="section-head section-head--row">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>Newest listings</span>
+            <h2 class="sec-h2">Just dropped</h2>
+          </div>
+          <a class="link-more" href="events.html?sort=new">See all →</a>
+        </div>
+        <div class="rail-wrap" data-rail>
+          <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
+          <div class="rail" id="rail-new" aria-label="Just dropped"></div>
+          <button class="rail-btn next" type="button" aria-label="Scroll right" hidden>›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== POPULAR NEAR YOU (venues) ==================== -->
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="section-head section-head--row">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>Venues</span>
+            <h2 class="sec-h2">Popular near you</h2>
+          </div>
+          <a class="link-more" href="venues.html">All venues →</a>
+        </div>
+        <div class="grid-venues" id="grid-venues"></div>
+      </div>
+    </section>
+
+    <!-- ==================== SOCIAL PROOF (product preview) ==================== -->
+    <section class="section">
+      <div class="wrap">
+        <div class="preview-split">
+          <div>
+            <span class="preview-tag">In the app</span>
+            <h2 class="sec-h2" style="margin-top:14px;">Concert plans are better when everyone's in.</h2>
+            <p class="section-head" style="max-width:48ch;">See who's going, build your crew, and stop planning shows in six different group chats.</p>
+            <a class="btn-ghost" href="download.html" style="margin-top:8px;">See how it works</a>
+          </div>
+          <!-- Sample plan card — clearly-labeled product preview, NOT real event data -->
+          <div class="plan-card" aria-label="Product preview: a plan with friends">
+            <div class="pc-head">
+              <div>
+                <div class="pc-title">Warehouse: Denver</div>
+                <div class="pc-meta">Sat · 10:00 PM · The Black Box</div>
+              </div>
+              <span class="genre-pill" style="position:static;">Techno</span>
+            </div>
+            <span class="chip-social">
+              <span class="avastack">
+                <span class="ava a0">M</span><span class="ava a1">J</span><span class="ava a2">R</span>
+              </span>
+              <span class="chip-social-txt">6 friends going</span>
+            </span>
+            <div class="pc-crew">
+              <span class="avastack">
+                <span class="ava a1">A</span><span class="ava a2">S</span><span class="ava a0">K</span>
+              </span>
+              <span class="pc-meta">Maya, Jordan, Rae and 3 others are in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FEATURE GRID ==================== -->
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span>Why Drop</span>
+          <h2 class="sec-h2">What you get with Drop.</h2>
+        </div>
+        <div class="grid-features">
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">👥</span>
+            <h3>See where friends are going</h3>
+            <p>Your feed shows the shows your people already have on their radar.</p>
           </article>
-
-          <article class="feature">
-            <span class="glyph">02</span>
-            <span class="tag">Connect</span>
-            <h3>Find your crew at the venue</h3>
-            <p>Link up with friends inside the show instead of losing each other in the crowd. No more typing "where are you?" over the bass.</p>
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">🤝</span>
+            <h3>Build crews</h3>
+            <p>Make a plan, invite your group, and keep everyone on the same page for the night.</p>
           </article>
-
-          <article class="feature">
-            <span class="glyph">03</span>
-            <span class="tag">Go</span>
-            <h3>One tap to official tickets</h3>
-            <p>Tap straight through to the official ticket page for each event. Real tickets, real prices — no reseller markup games.</p>
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">🎟️</span>
+            <h3>Track every show you've been to</h3>
+            <p>Every night out is logged automatically into your personal live music history.</p>
+          </article>
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">📊</span>
+            <h3>Get Drop Wrapped</h3>
+            <p>See your year in shows: top genres, most-seen artists, the nights you'd repeat.</p>
+          </article>
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">📍</span>
+            <h3>Find venues that match your vibe</h3>
+            <p>Discover the rooms that consistently book the sound you actually go out for.</p>
+          </article>
+          <article class="feature-card">
+            <span class="fc-icon" aria-hidden="true">✨</span>
+            <h3>Log the nights you'll want to remember</h3>
+            <p>Save who played, who you were with, and how it felt, so the good nights don't blur together.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="section section--no-top" id="notify">
+    <!-- ==================== APP CTA BAND ==================== -->
+    <section class="section section--flush-top">
       <div class="wrap">
         <div class="cta-band">
-          <h2>Be there for the<br />first drop.</h2>
-          <p>We're launching soon. Get on the list and you'll be among the first into the app.</p>
+          <h2>Your live music history starts tonight.</h2>
+          <p>Drop is releasing soon on iOS. Get on the list and be first in.</p>
+          <div class="cta-actions">
+            <a class="btn-primary" href="download.html">Join the waitlist</a>
+            <a class="btn-ghost" href="events.html">Browse events</a>
+          </div>
+          <p class="cta-note">iOS · Free at launch</p>
+        </div>
+      </div>
+    </section>
 
-          <!-- Waitlist → Kit (ConvertKit). Paste your Form ID into KIT_FORM_ID in the
-               script at the bottom of this file. Until then it falls back to email,
-               so the live form is never broken. -->
-          <!-- Waitlist → Kit (ConvertKit). The JS below upgrades the action when
-               KIT_FORM_ID is set. No-JS fallback: mailto so the form is never dead. -->
-          <form class="wl-form" id="waitlist"
-                action="mailto:trydropapp@gmail.com?subject=Get%20launch%20access"
-                method="get" novalidate>
-            <div class="wl-row">
-              <label for="wl-email" class="sr-only">Email address</label>
-              <input class="wl-input" type="email" name="email_address" id="wl-email"
-                     inputmode="email" autocomplete="email" required
-                     placeholder="you@email.com" aria-label="Email address" />
-              <button class="btn btn-primary wl-submit" type="submit">Get launch access →</button>
-            </div>
-            <input type="hidden" name="fields[source]" value="" />
-            <p class="wl-consent">No spam — just one email when Drop launches. Unsubscribe anytime.</p>
-            <p class="wl-msg" role="status" aria-live="polite"></p>
-          </form>
+    <!-- ==================== PROMOTER BAND ==================== -->
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="promo-band">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>For promoters</span>
+            <h2>Put your event in front of the right crowd.</h2>
+            <p>List your shows free and reach fans who actually go out in your city.</p>
+          </div>
+          <a class="btn-primary" href="promoters.html">Submit an event</a>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- FOOTER -->
+  <!-- ============================ FOOTER ============================ -->
   <footer class="site-foot">
-    <div class="wrap">
-      <div class="foot-grid">
-        <div class="foot-brand">
-          <a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a>
-          <p>An EDM event-discovery app. Built in Colorado.</p>
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
+        <div class="foot-social">
+          <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
+          <a href="https://tiktok.com/@trydropapp" aria-label="TikTok" rel="noopener">TT</a>
+          <a href="https://twitter.com/trydropapp" aria-label="X" rel="noopener">X</a>
         </div>
-        <nav class="foot-links" aria-label="Footer">
-          <div class="foot-col">
-            <h4>App</h4>
-            <a href="#features">Features</a>
-            <a href="#notify">Get access</a>
-          </div>
-          <div class="foot-col">
-            <h4>Legal</h4>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Service</a>
-          </div>
-          <div class="foot-col">
-            <h4>Contact</h4>
-            <a href="mailto:trydropapp@gmail.com">trydropapp@gmail.com</a>
-          </div>
-        </nav>
       </div>
-      <p class="foot-disc">Some ticket links in Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
-      <div class="foot-legal">
-        <span>© 2026 Resonance Ventures LLC</span>
-        <span>Drop is an event-discovery service, not a ticket seller.</span>
-      </div>
+      <nav class="foot-col" aria-label="Discover">
+        <h4>Discover</h4>
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="download.html">Download</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="mailto:trydropapp@gmail.com">Contact</a>
+      </nav>
+      <nav class="foot-col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+    </div>
+    <div class="foot-fine">
+      <p class="foot-disc">Some ticket links on Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · Drop is an event-discovery service, not a ticket seller.</p>
     </div>
   </footer>
 
+  <script src="data.js"></script>
+  <script src="site.js"></script>
   <script>
-    // Signature spectrum — deterministic waveform shape + lively EQ motion.
+    // Home page — wire live rails + venue derivation.
     (function () {
-      var host = document.getElementById('spectrum');
-      if (!host) return;
-      var BARS = 64;
-      var frag = document.createDocumentFragment();
-      for (var i = 0; i < BARS; i++) {
-        // Layered sine waves give an organic waveform with a central "drop" peak.
-        var t = i / BARS;
-        var wave = 0.5 + 0.5 * Math.sin(t * Math.PI * 3.0 - 1.2);
-        var swell = Math.sin(t * Math.PI);           // taller toward the middle
-        var h = 0.16 + (0.55 * wave + 0.40 * swell) * 0.62;
-        if (h > 1) h = 1;
-        var bar = document.createElement('span');
-        bar.className = 'bar';
-        bar.style.setProperty('--h', h.toFixed(3));
-        bar.style.setProperty('--dur', (0.9 + (i % 7) * 0.16).toFixed(2) + 's');
-        bar.style.setProperty('--delay', ((i % 11) * 0.07).toFixed(2) + 's');
-        frag.appendChild(bar);
-      }
-      host.appendChild(frag);
+      var D = window.Drop;
+      D.spectrum('hero-spectrum');
 
-      // Duplicate marquee content so the loop is seamless.
-      var track = document.getElementById('marquee');
-      if (track) track.innerHTML += track.innerHTML;
-    })();
-  </script>
-
-  <script>
-    // Waitlist capture → Kit (ConvertKit), keyless client-side.
-    // ── SET THIS: paste your Kit Form ID (the number in the form's edit URL).
-    (function () {
-      var KIT_FORM_ID = "REPLACE_WITH_KIT_FORM_ID";
-
-      var form = document.getElementById('waitlist');
-      if (!form) return;
-      var input = form.querySelector('.wl-input');
-      var msg   = form.querySelector('.wl-msg');
-      var srcEl = form.querySelector('input[name="fields[source]"]');
-      var MAILTO = 'mailto:trydropapp@gmail.com?subject=Notify%20me%20at%20launch'
-                 + '&body=Add%20me%20to%20the%20Drop%20launch%20list.';
-
-      // Carry the ?src= (ig_bio / tiktok_bio) through for attribution.
-      var src = new URLSearchParams(window.location.search).get('src') || '';
-      if (srcEl) srcEl.value = src;
-
-      var configured = KIT_FORM_ID.indexOf('REPLACE_') === -1;
-      if (configured) {
-        form.setAttribute('action', 'https://app.convertkit.com/forms/' + KIT_FORM_ID + '/subscriptions');
-        form.setAttribute('method', 'post'); // HTML defaults to get for no-JS mailto fallback
-      } else {
-        // Not wired to Kit yet — keep a working fallback so the form is never broken.
-        form.setAttribute('action', MAILTO);
-        form.setAttribute('method', 'get');
-      }
-
-      function show(t, ok) { msg.textContent = t; msg.className = 'wl-msg ' + (ok ? 'ok' : 'err'); }
-      function setInvalid(on) {
-        if (on) { input.setAttribute('aria-invalid', 'true'); }
-        else { input.removeAttribute('aria-invalid'); }
-      }
-
-      // Clear the error state as soon as the user starts correcting it.
-      input.addEventListener('input', function () {
-        if (input.getAttribute('aria-invalid') === 'true') { setInvalid(false); show('', true); }
-      });
-
-      form.addEventListener('submit', function (e) {
-        var email = (input.value || '').trim();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          e.preventDefault(); setInvalid(true); show('Enter a valid email address.', false); input.focus(); return;
+      // City <select> in the hero search panel.
+      var citySel = document.getElementById('hs-city');
+      if (citySel) {
+        var all = D.CITIES.concat([D.ALL_CITIES]);
+        for (var i = 0; i < all.length; i++) {
+          var o = document.createElement('option');
+          o.value = all[i]; o.textContent = all[i];
+          if (all[i] === D.city()) o.selected = true;
+          citySel.appendChild(o);
         }
-        setInvalid(false);
-        if (!configured) return;          // let the mailto fallback proceed natively
-        e.preventDefault();               // configured: submit in-place, stay on the page
-        show('Adding you…', true);
-        var body = new URLSearchParams();
-        body.set('email_address', email);
-        if (src) body.set('fields[source]', src);
-        fetch(form.getAttribute('action'), {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString()
-        }).then(function () {
-          form.reset();
-          show("You're on the list 🎛️ Check your email to confirm.", true);
-        }).catch(function () {
-          show("That didn't go through — tap again, or email trydropapp@gmail.com.", false);
-        });
+      }
+
+      // Hero search → events.html with params.
+      var hs = document.getElementById('hero-search');
+      hs.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var qv = document.getElementById('hs-q').value.trim();
+        var cv = citySel ? citySel.value : D.city();
+        var wv = document.getElementById('hs-when').value;
+        if (cv) D.setCity(cv);
+        var url = 'events.html?city=' + encodeURIComponent(cv);
+        if (qv) url += '&q=' + encodeURIComponent(qv);
+        if (wv) url += '&when=' + encodeURIComponent(wv);
+        location.href = url;
       });
+
+      var city = D.city();
+
+      // Rail: Happening this week (city-scoped, ≤12, next 7 days).
+      function loadWeek() {
+        var host = document.getElementById('rail-week');
+        D.skeletonGrid(host, 6);
+        var wkEnd = new Date(); wkEnd.setDate(wkEnd.getDate() + 8); wkEnd.setHours(23, 59, 59, 0);
+        D.fetchEvents({ city: city, to: wkEnd.toISOString(), limit: 12 })
+          .then(function (evs) {
+            // Prefer cards with real artwork up front (stable sort, no extra fetch).
+            evs.sort(function (a, b) { return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0); });
+            D.renderEvents(host, evs, {
+              limit: 12,
+              emptyMsg: 'No shows in ' + city + ' this week yet. Try browsing all events.',
+              emptyAction: 'Browse all events', emptyHref: 'events.html'
+            });
+            D.initRails();
+          })
+          .catch(function () { D.stateError(host, loadWeek); });
+      }
+
+      // Rail: Just dropped (newest by created_at).
+      function loadNew() {
+        var host = document.getElementById('rail-new');
+        D.skeletonGrid(host, 6);
+        D.fetchEvents({ city: city, sort: 'new', limit: 12 })
+          .then(function (evs) {
+            evs.sort(function (a, b) { return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0); });
+            D.renderEvents(host, evs, {
+              limit: 12,
+              emptyMsg: 'Nothing new in ' + city + ' right now.',
+              emptyAction: 'Browse all events', emptyHref: 'events.html'
+            });
+            D.initRails();
+          })
+          .catch(function () { D.stateError(host, loadNew); });
+      }
+
+      // Venues: derive top venues by upcoming count from a broad city fetch.
+      function loadVenues() {
+        var host = document.getElementById('grid-venues');
+        D.skeletonGrid(host, 4);
+        D.fetchEvents({ city: city, limit: 100 })
+          .then(function (evs) {
+            var map = {};
+            evs.forEach(function (ev) {
+              if (!ev.venue_name) return;
+              var key = ev.venue_name + '||' + (ev.city || '');
+              if (!map[key]) map[key] = { name: ev.venue_name, city: ev.city, state: ev.state, count: 0, cls: D.genreClass(ev) };
+              map[key].count++;
+            });
+            var list = Object.keys(map).map(function (k) { return map[k]; })
+              .sort(function (a, b) { return b.count - a.count; }).slice(0, 4);
+            host.classList.remove('is-loading');
+            host.innerHTML = '';
+            if (!list.length) {
+              D.stateEmpty(host, 'No venues in ' + city + ' yet.', 'Browse all events', 'events.html');
+              return;
+            }
+            list.forEach(function (v) { host.appendChild(D.venueCard(v)); });
+          })
+          .catch(function () { D.stateError(host, loadVenues); });
+      }
+
+      loadWeek(); loadNew(); loadVenues();
     })();
   </script>
 </body>

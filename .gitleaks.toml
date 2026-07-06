@@ -1,0 +1,7 @@
+# Gitleaks config — extends defaults.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Supabase publishable (anon) keys are public by design — same key ships in the live web bundle. Real secrets (service_role, sb_secret_*) stay blocked by the default rules."
+regexes = ['''sb_publishable_[A-Za-z0-9_-]+''']

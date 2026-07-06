@@ -27,20 +27,56 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="site.css" />
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to content</a>
 
-  <a href="#main-content" class="skip-link">Skip to content</a>
+  <!-- ============================ HEADER ============================ -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
 
-  <header class="site-head">
-    <div class="wrap">
-      <nav aria-label="Site"><a class="wordmark" href="index.html">DROP<span class="caret">▾</span></a></nav>
-      <div class="head-meta">Privacy Policy</div>
+      <div class="loc-wrap">
+        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+      </div>
+
+      <form class="nav-search" role="search" aria-label="Search events">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+        </div>
+      </form>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="about.html">About</a>
+      </nav>
+      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+
+      <span class="nav-spacer"></span>
+      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
+      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
     </div>
+
+    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
+      <a href="events.html">Events</a>
+      <a href="venues.html">Venues</a>
+      <a href="artists.html">Artists</a>
+      <a href="promoters.html">For Promoters</a>
+      <a href="about.html">About</a>
+      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+    </nav>
   </header>
 
-  <main class="doc" id="main-content">
+  <main class="doc" id="main">
     <div class="wrap">
       <div class="doc-inner">
         <a class="back" href="index.html">← Back to Drop</a>
@@ -105,15 +141,44 @@
     </div>
   </main>
 
+  <!-- ============================ FOOTER ============================ -->
   <footer class="site-foot">
-    <div class="wrap">
-      <nav aria-label="Legal pages">
-        <div class="foot-legal foot-legal--flush">
-          <span>© 2026 Resonance Ventures LLC</span>
-          <span><a href="terms.html">Terms of Service →</a></span>
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
+        <div class="foot-social">
+          <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
+          <a href="https://tiktok.com/@trydropapp" aria-label="TikTok" rel="noopener">TT</a>
+          <a href="https://twitter.com/trydropapp" aria-label="X" rel="noopener">X</a>
         </div>
+      </div>
+      <nav class="foot-col" aria-label="Discover">
+        <h4>Discover</h4>
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="download.html">Download</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="mailto:trydropapp@gmail.com">Contact</a>
+      </nav>
+      <nav class="foot-col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
       </nav>
     </div>
+    <div class="foot-fine">
+      <p class="foot-disc">Some ticket links on Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · Drop is an event-discovery service, not a ticket seller.</p>
+    </div>
   </footer>
+
+  <script src="data.js"></script>
+  <script src="site.js"></script>
 </body>
 </html>

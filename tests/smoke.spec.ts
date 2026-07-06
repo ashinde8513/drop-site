@@ -17,16 +17,31 @@ function trackPageErrors(page: Page): string[] {
   page.on('requestfailed', (req) => {
     // Ignore third-party (fonts, ConvertKit) flakiness; only flag same-origin assets.
     const url = req.url();
-    if (url.includes('localhost')) errors.push(`requestfailed: ${url}`);
+    if (url.includes('localhost') || url.includes('127.0.0.1')) errors.push(`requestfailed: ${url}`);
   });
   return errors;
 }
 
 const PAGES = [
-  { path: '/index.html', title: /Drop — Never miss the drop/ },
-  { path: '/link.html', title: /Drop — Get the app/ },
+  { path: '/index.html', title: /Find the shows your friends are going to/ },
+  { path: '/events.html', title: /Shows near you/ },
+  { path: '/venues.html', title: /Venues/ },
+  { path: '/artists.html', title: /Artists/ },
+  { path: '/promoters.html', title: /For Promoters/ },
+  { path: '/about.html', title: /About/ },
+  { path: '/download.html', title: /Get Drop/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
+  { path: '/link.html', title: /Drop — Get the app/ },
+];
+
+// event/venue/artist are param-driven detail templates (?id=, ?name=&city=).
+// Hit them with no params and expect the client-side "not found" empty
+// state to render — no id means no Supabase fetch is even attempted.
+const DETAIL_PAGES = [
+  { path: '/event.html', backHref: 'events.html' },
+  { path: '/venue.html', backHref: 'venues.html' },
+  { path: '/artist.html', backHref: 'artists.html' },
 ];
 
 test.describe('landing site smoke', () => {
@@ -42,12 +57,22 @@ test.describe('landing site smoke', () => {
     });
   }
 
-  test('homepage shows the core value prop and CTAs', async ({ page }) => {
+  for (const { path, backHref } of DETAIL_PAGES) {
+    test(`${path} with no params renders not-found state cleanly`, async ({ page }) => {
+      const errors = trackPageErrors(page);
+      const res = await page.goto(path);
+      expect(res?.status(), `${path} should return 2xx`).toBeLessThan(400);
+      await expect(page.locator('.state-error')).toBeVisible();
+      await expect(page.locator('.state-error .state-msg')).not.toBeEmpty();
+      await expect(page.locator(`.state-error a[href="${backHref}"]`)).toHaveCount(1);
+      expect(errors, `unexpected errors on ${path}`).toEqual([]);
+    });
+  }
+
+  test('homepage shows the core value prop and hero search', async ({ page }) => {
     await page.goto('/index.html');
-    await expect(page.getByText('Built by someone who actually goes out.')).toBeVisible();
-    // The notify/signup anchor target must exist on the page.
-    await expect(page.locator('#notify')).toHaveCount(1);
-    await expect(page.locator('#features')).toHaveCount(1);
+    await expect(page.locator('h1')).toContainText('friends');
+    await expect(page.locator('#hero-search')).toHaveCount(1);
   });
 
   test('legal links from homepage resolve', async ({ page }) => {

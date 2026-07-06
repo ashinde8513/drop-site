@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="doc-title">Event · Drop</title>
+  <meta name="description" id="meta-desc" content="See details, lineup, and tickets for this show on Drop." />
+  <meta name="theme-color" content="#0B0D12" />
+
+  <link rel="canonical" href="https://trydropapp.com/event.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" id="og-title" content="Event · Drop" />
+  <meta property="og:description" id="og-desc" content="See details, lineup, and tickets for this show on Drop." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://trydropapp.com/event.html" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+  <meta name="twitter:title" id="tw-title" content="Event · Drop" />
+  <meta name="twitter:description" id="tw-desc" content="See details, lineup, and tickets for this show on Drop." />
+  <meta name="twitter:image" content="https://trydropapp.com/og-image.png" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+
+      <div class="loc-wrap">
+        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+      </div>
+
+      <form class="nav-search" role="search" aria-label="Search events">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+        </div>
+      </form>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="events.html" aria-current="page">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="about.html">About</a>
+      </nav>
+      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+
+      <span class="nav-spacer"></span>
+      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
+      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+    </div>
+
+    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
+      <a href="events.html" aria-current="page">Events</a>
+      <a href="venues.html">Venues</a>
+      <a href="artists.html">Artists</a>
+      <a href="promoters.html">For Promoters</a>
+      <a href="about.html">About</a>
+      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="events.html">Events</a><span class="sep" aria-hidden="true">/</span><span id="bc-current">Loading…</span>
+      </nav>
+    </div>
+
+    <!-- Content injected by JS once the event resolves (skeleton below is the loading state). -->
+    <section class="section section--tight" id="event-root">
+      <div class="wrap">
+        <div class="event-hero">
+          <div class="skeleton skel-media" style="aspect-ratio:4/3; border-radius: var(--r-xl);"></div>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="skeleton skel-line" style="width:40%;"></div>
+            <div class="skeleton skel-line" style="height:40px; width:90%;"></div>
+            <div class="skeleton skel-line short"></div>
+            <div class="skeleton skel-line short"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile sticky Get-tickets bar (thumb zone) — populated once event loads. -->
+  <div class="sticky-cta" id="sticky-cta" hidden></div>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="site-foot">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
+        <div class="foot-social">
+          <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
+          <a href="https://tiktok.com/@trydropapp" aria-label="TikTok" rel="noopener">TT</a>
+          <a href="https://twitter.com/trydropapp" aria-label="X" rel="noopener">X</a>
+        </div>
+      </div>
+      <nav class="foot-col" aria-label="Discover">
+        <h4>Discover</h4>
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="download.html">Download</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="mailto:trydropapp@gmail.com">Contact</a>
+      </nav>
+      <nav class="foot-col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+    </div>
+    <div class="foot-fine">
+      <p class="foot-disc">Some ticket links on Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · Drop is an event-discovery service, not a ticket seller.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="site.js"></script>
+  <script>
+    // Event detail page — fetch by ?id=, render hero + lineup + rails, inject JSON-LD.
+    (function () {
+      var D = window.Drop;
+      var el = D.el;
+      var id = new URLSearchParams(location.search).get('id');
+      var root = document.getElementById('event-root');
+      var bcCurrent = document.getElementById('bc-current');
+      var stickyBar = document.getElementById('sticky-cta');
+
+      function showError(msg) {
+        root.innerHTML = '';
+        var wrap = el('div', 'wrap');
+        var box = el('div', 'state-error');
+        box.appendChild(el('span', 'state-icon', '⚠'));
+        box.appendChild(el('p', 'state-msg', msg));
+        var back = el('a', 'btn-ghost', 'Back to events');
+        back.href = 'events.html';
+        box.appendChild(back);
+        wrap.appendChild(box);
+        root.innerHTML = '';
+        root.appendChild(wrap);
+        bcCurrent.textContent = 'Not found';
+      }
+
+      if (!id) { showError('This event link is missing an ID.'); return; }
+
+      function setMeta(ev) {
+        var title = ev.title + ' · Drop';
+        var desc = (ev.description || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.')).slice(0, 155);
+        document.title = title;
+        document.getElementById('doc-title').textContent = title;
+        document.getElementById('meta-desc').setAttribute('content', desc);
+        document.getElementById('og-title').setAttribute('content', title);
+        document.getElementById('og-desc').setAttribute('content', desc);
+        document.getElementById('tw-title').setAttribute('content', title);
+        document.getElementById('tw-desc').setAttribute('content', desc);
+      }
+
+      function injectLd(ev) {
+        var ld = {
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          name: ev.title,
+          startDate: ev.date,
+          eventStatus: 'https://schema.org/EventScheduled',
+          location: {
+            '@type': 'Place',
+            name: ev.venue_name,
+            address: { '@type': 'PostalAddress', addressLocality: ev.city, addressRegion: ev.state }
+          },
+          image: ev.image_url ? [ev.image_url] : undefined,
+          description: ev.description || undefined,
+          offers: ev.ticket_url ? {
+            '@type': 'Offer', url: ev.ticket_url,
+            price: ev.price_min != null ? ev.price_min : undefined,
+            priceCurrency: ev.currency || 'USD',
+            availability: 'https://schema.org/InStock'
+          } : undefined
+        };
+        var s = document.createElement('script');
+        s.type = 'application/ld+json';
+        s.id = 'ldjson';
+        s.textContent = JSON.stringify(ld);
+        document.head.appendChild(s);
+      }
+
+      function renderHero(ev) {
+        var hero = el('div', 'event-hero');
+
+        var media = el('div', 'event-hero-media');
+        if (ev.image_url) {
+          var img = el('img');
+          img.src = ev.image_url; img.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
+          img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
+          img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(D.prismArt(ev), img); };
+          media.appendChild(img);
+        } else {
+          media.appendChild(D.prismArt(ev));
+        }
+        hero.appendChild(media);
+
+        var info = el('div', 'event-hero-info');
+        var genrePill = el('span', 'genre-pill genre-pill--static', D.genreOf(ev));
+        info.appendChild(genrePill);
+
+        info.appendChild(el('h1', null, ev.title));
+
+        var meta = el('div', 'event-meta-row');
+        meta.appendChild(el('span', null, D.fmtDate(ev.date, ev.time_tbd)));
+        var venueLine = el('span');
+        var venueLink = el('a', null, ev.venue_name || 'Venue TBA');
+        venueLink.href = 'venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
+        venueLine.appendChild(venueLink);
+        venueLine.appendChild(document.createTextNode(' · ' + [ev.city, ev.state].filter(Boolean).join(', ')));
+        meta.appendChild(venueLine);
+        info.appendChild(meta);
+
+        info.appendChild(el('div', 'event-price', D.fmtPrice(ev.price_min, ev.price_max)));
+
+        // Description with 4-line clamp + read-more toggle.
+        if (ev.description) {
+          var desc = el('p', 'event-desc clamped', ev.description);
+          info.appendChild(desc);
+          // Only show the toggle if the text actually overflows the clamp. Run
+          // once now and again after webfonts load, since font swap changes the
+          // measured height (and would otherwise mis-decide before fonts land).
+          var added = false;
+          function checkOverflow() {
+            if (added) return;
+            if (desc.scrollHeight > desc.clientHeight + 2) {
+              added = true;
+              var toggle = el('button', 'read-more-btn', 'Read more');
+              toggle.type = 'button';
+              toggle.addEventListener('click', function () {
+                var expanded = desc.classList.toggle('clamped') === false;
+                toggle.textContent = expanded ? 'Show less' : 'Read more';
+              });
+              info.appendChild(toggle);
+            }
+          }
+          requestAnimationFrame(checkOverflow);
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(checkOverflow);
+        }
+
+        var ctaRow = el('div', 'event-cta-row');
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (ticketUrl) {
+          var buy = el('a', 'btn-primary', 'Get tickets');
+          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+          ctaRow.appendChild(buy);
+        }
+        var plan = el('a', 'btn-ghost', 'Plan it with your crew');
+        plan.href = 'download.html';
+        ctaRow.appendChild(plan);
+
+        var shareBtn = el('button', 'share-btn', 'Share');
+        shareBtn.type = 'button';
+        ctaRow.appendChild(shareBtn);
+        info.appendChild(ctaRow);
+
+        var shareStatus = el('p', 'share-status');
+        shareStatus.setAttribute('aria-live', 'polite');
+        info.appendChild(shareStatus);
+
+        shareBtn.addEventListener('click', function () {
+          var shareData = { title: ev.title, text: ev.title + ' at ' + (ev.venue_name || ''), url: location.href };
+          if (navigator.share) {
+            navigator.share(shareData).catch(function () {});
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(location.href).then(function () {
+              shareStatus.textContent = 'Link copied';
+            }).catch(function () { shareStatus.textContent = location.href; });
+          } else {
+            shareStatus.textContent = location.href;
+          }
+        });
+
+        hero.appendChild(info);
+        return hero;
+      }
+
+      function renderLineup(ev) {
+        var arts = (ev.event_artists || []).map(function (ea) { return ea.artists; }).filter(Boolean);
+        if (!arts.length) return null;
+        var section = el('section', 'section section--tight');
+        var wrap = el('div', 'wrap');
+        var head = el('div', 'section-head');
+        head.appendChild(el('h2', 'sec-h2', 'Lineup'));
+        wrap.appendChild(head);
+        var list = el('div', 'pill-list');
+        arts.forEach(function (a) {
+          var pill = el('a', 'pill', a.name);
+          pill.href = 'artist.html?id=' + encodeURIComponent(a.id);
+          list.appendChild(pill);
+        });
+        wrap.appendChild(list);
+        section.appendChild(wrap);
+        return section;
+      }
+
+      function renderSocialPreview() {
+        var section = el('section', 'section section--tight');
+        var wrap = el('div', 'wrap');
+        var split = el('div', 'preview-split');
+        var left = el('div');
+        left.appendChild(el('span', 'preview-tag', 'In the app'));
+        var h2 = el('h2', 'sec-h2', "See who's going.");
+        h2.style.marginTop = '14px';
+        left.appendChild(h2);
+        left.appendChild(el('p', 'section-head', 'Sample preview — friend activity requires the Drop app.'));
+        split.appendChild(left);
+        // Sample plan card reusing the same social-chip component as the homepage preview.
+        var card = el('div', 'plan-card');
+        card.setAttribute('aria-label', 'Product preview: friends going to this show');
+        card.appendChild(D.socialChip(6, ['Maya', 'Jordan', 'Rae']));
+        split.appendChild(card);
+        wrap.appendChild(split);
+        section.appendChild(wrap);
+        return section;
+      }
+
+      function renderRail(title, events, excludeId) {
+        var evs = (events || []).filter(function (e) { return String(e.id) !== String(excludeId); });
+        if (!evs.length) return null;
+        var section = el('section', 'section section--tight');
+        var wrap = el('div', 'wrap');
+        var head = el('div', 'section-head');
+        head.appendChild(el('h2', 'sec-h2', title));
+        wrap.appendChild(head);
+        var railWrap = el('div', 'rail-wrap');
+        railWrap.setAttribute('data-rail', '');
+        var prev = el('button', 'rail-btn prev', '‹'); prev.type = 'button'; prev.setAttribute('aria-label', 'Scroll left'); prev.hidden = true;
+        var next = el('button', 'rail-btn next', '›'); next.type = 'button'; next.setAttribute('aria-label', 'Scroll right'); next.hidden = true;
+        var rail = el('div', 'rail');
+        evs.slice(0, 8).forEach(function (e) { rail.appendChild(D.ecard(e)); });
+        railWrap.appendChild(prev); railWrap.appendChild(rail); railWrap.appendChild(next);
+        wrap.appendChild(railWrap);
+        section.appendChild(wrap);
+        return section;
+      }
+
+      function renderStickyBar(ev) {
+        stickyBar.innerHTML = '';
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (ticketUrl) {
+          var a = el('a', 'btn-primary', 'Get tickets');
+          a.href = ticketUrl; a.target = '_blank'; a.rel = 'noopener nofollow sponsored';
+          stickyBar.appendChild(a);
+          stickyBar.hidden = false;
+          document.body.classList.add('has-sticky-cta');
+        }
+      }
+
+      function render(ev) {
+        setMeta(ev);
+        injectLd(ev);
+        bcCurrent.textContent = ev.title;
+
+        root.innerHTML = '';
+        var wrap = el('div', 'wrap');
+        wrap.appendChild(renderHero(ev));
+        root.appendChild(wrap);
+
+        var lineup = renderLineup(ev);
+        if (lineup) root.parentNode.insertBefore(lineup, root.nextSibling);
+
+        var social = renderSocialPreview();
+        root.parentNode.insertBefore(social, (lineup || root).nextSibling);
+
+        renderStickyBar(ev);
+
+        // Extra rails: more at this venue, more of this genre in this city.
+        // Appended to <main> in arrival order — both are best-effort, silently
+        // skipped on fetch failure since the page is already complete without them.
+        var main = document.getElementById('main');
+        if (ev.venue_name) {
+          D.fetchVenue(ev.venue_name, ev.city).then(function (v) {
+            var rail = renderRail('More at ' + ev.venue_name, v.events, ev.id);
+            if (rail) main.appendChild(rail);
+          }).catch(function () {});
+        }
+        var genre = D.genreOf(ev);
+        D.fetchEvents({ city: ev.city, genre: genre, limit: 24 }).then(function (evs) {
+          var rail = renderRail('More ' + genre + ' in ' + ev.city, evs, ev.id);
+          if (rail) main.appendChild(rail);
+        }).catch(function () {});
+      }
+
+      D.fetchEvent(id).then(render).catch(function () {
+        showError("We couldn't find that event. It may have been removed.");
+      });
+    })();
+  </script>
+</body>
+</html>

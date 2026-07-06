@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shows near you · Drop</title>
+  <meta name="description" content="Browse concerts, raves, festivals, and club nights near you. Filter by date, genre, venue, and city — find your next night out." />
+  <meta name="theme-color" content="#0B0D12" />
+
+  <link rel="canonical" href="https://trydropapp.com/events.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Shows near you · Drop" />
+  <meta property="og:description" content="Browse concerts, raves, festivals, and club nights near you. Filter by date, genre, venue, and city." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://trydropapp.com/events.html" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+  <meta name="twitter:title" content="Shows near you · Drop" />
+  <meta name="twitter:description" content="Browse concerts, raves, festivals, and club nights near you." />
+  <meta name="twitter:image" content="https://trydropapp.com/og-image.png" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Shows near you",
+    "description": "Browse concerts, raves, festivals, and club nights near you.",
+    "url": "https://trydropapp.com/events.html"
+  }
+  </script>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+
+      <div class="loc-wrap">
+        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+      </div>
+
+      <form class="nav-search" role="search" aria-label="Search events">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+        </div>
+      </form>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="events.html" aria-current="page">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="about.html">About</a>
+      </nav>
+      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+
+      <span class="nav-spacer"></span>
+      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
+      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+    </div>
+
+    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
+      <a href="events.html" aria-current="page">Events</a>
+      <a href="venues.html">Venues</a>
+      <a href="artists.html">Artists</a>
+      <a href="promoters.html">For Promoters</a>
+      <a href="about.html">About</a>
+      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="section section--tight section--flush-top">
+      <div class="wrap">
+        <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
+        <h1 class="sec-h2" style="margin-top:10px;">Shows near you</h1>
+        <p class="section-head" id="result-count" style="margin-top:10px;" aria-live="polite">Loading shows…</p>
+      </div>
+    </section>
+
+    <!-- ============================ FILTER BAR ============================ -->
+    <div class="filter-bar">
+      <div class="fb-inner">
+        <div class="chip-row" id="fb-when" aria-label="Filter by date" style="margin:0;">
+          <button type="button" class="chip" data-when="" aria-pressed="true">Any</button>
+          <button type="button" class="chip" data-when="tonight" aria-pressed="false">Tonight</button>
+          <button type="button" class="chip" data-when="weekend" aria-pressed="false">This weekend</button>
+          <button type="button" class="chip" data-when="month" aria-pressed="false">This month</button>
+        </div>
+        <div class="chip-row" id="fb-genre" aria-label="Filter by genre" style="margin:0;">
+          <button type="button" class="chip" data-genre="" aria-pressed="true">All genres</button>
+          <button type="button" class="chip" data-genre="Festivals" aria-pressed="false">Festivals</button>
+          <button type="button" class="chip" data-genre="House" aria-pressed="false">House</button>
+          <button type="button" class="chip" data-genre="Techno" aria-pressed="false">Techno</button>
+          <button type="button" class="chip" data-genre="Drum &amp; Bass" aria-pressed="false">DnB</button>
+          <button type="button" class="chip" data-genre="Hip-Hop" aria-pressed="false">Hip-Hop</button>
+          <button type="button" class="chip" data-genre="Indie" aria-pressed="false">Indie</button>
+        </div>
+        <label class="sr-only" for="fb-venue">Venue</label>
+        <select class="fb-select" id="fb-venue"><option value="">All venues</option></select>
+        <label class="sr-only" for="fb-city">City</label>
+        <select class="fb-select" id="fb-city"></select>
+        <label class="sr-only" for="fb-sort">Sort</label>
+        <select class="fb-select" id="fb-sort">
+          <option value="date">Date</option>
+          <option value="new">Just dropped</option>
+        </select>
+        <button type="button" class="fb-clear" id="fb-clear">Clear all</button>
+      </div>
+    </div>
+
+    <section class="section section--flush-top">
+      <div class="wrap">
+        <div class="grid-events" id="grid"></div>
+        <div style="display:flex; justify-content:center; margin-top:32px;">
+          <button type="button" class="btn-ghost" id="load-more" hidden>Load more</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="site-foot">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
+        <div class="foot-social">
+          <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
+          <a href="https://tiktok.com/@trydropapp" aria-label="TikTok" rel="noopener">TT</a>
+          <a href="https://twitter.com/trydropapp" aria-label="X" rel="noopener">X</a>
+        </div>
+      </div>
+      <nav class="foot-col" aria-label="Discover">
+        <h4>Discover</h4>
+        <a href="events.html">Events</a>
+        <a href="venues.html">Venues</a>
+        <a href="artists.html">Artists</a>
+        <a href="download.html">Download</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="promoters.html">For Promoters</a>
+        <a href="mailto:trydropapp@gmail.com">Contact</a>
+      </nav>
+      <nav class="foot-col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+    </div>
+    <div class="foot-fine">
+      <p class="foot-disc">Some ticket links on Drop may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.</p>
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · Drop is an event-discovery service, not a ticket seller.</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="site.js"></script>
+  <script>
+    // Events listing page — filters ⇄ URL params, paginated grid.
+    (function () {
+      var D = window.Drop;
+      var qs = new URLSearchParams(location.search);
+
+      var state = {
+        q: qs.get('q') || '',
+        city: qs.get('city') || D.city(),
+        genre: qs.get('genre') || '',
+        when: qs.get('when') || '',
+        venue: qs.get('venue') || '',
+        festival: qs.get('festival') === '1',
+        sort: qs.get('sort') === 'new' ? 'new' : 'date'
+      };
+
+      var PAGE = 24;
+      var offset = 0;
+      var loaded = []; // accumulated across "Load more" — feeds the venue select
+
+      var gridEl = document.getElementById('grid');
+      var countEl = document.getElementById('result-count');
+      var loadMoreBtn = document.getElementById('load-more');
+
+      // ---- Filter bar wiring --------------------------------------------
+      var citySel = document.getElementById('fb-city');
+      D.CITIES.concat([D.ALL_CITIES]).forEach(function (c) {
+        var o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        if (c === state.city) o.selected = true;
+        citySel.appendChild(o);
+      });
+      citySel.addEventListener('change', function () {
+        state.city = citySel.value;
+        D.setCity(state.city);
+        applyFilterChange();
+      });
+
+      var sortSel = document.getElementById('fb-sort');
+      sortSel.value = state.sort;
+      sortSel.addEventListener('change', function () { state.sort = sortSel.value; applyFilterChange(); });
+
+      var venueSel = document.getElementById('fb-venue');
+      venueSel.addEventListener('change', function () { state.venue = venueSel.value; applyFilterChange(); });
+
+      function wireChips(hostId, key) {
+        var host = document.getElementById(hostId);
+        var chips = host.querySelectorAll('.chip');
+        for (var i = 0; i < chips.length; i++) {
+          chips[i].addEventListener('click', function () {
+            var val = this.getAttribute('data-' + key) || '';
+            state[key] = val;
+            for (var j = 0; j < chips.length; j++) chips[j].setAttribute('aria-pressed', chips[j] === this ? 'true' : 'false');
+            applyFilterChange();
+          });
+        }
+      }
+      wireChips('fb-when', 'when');
+      wireChips('fb-genre', 'genre');
+
+      document.getElementById('fb-clear').addEventListener('click', function () {
+        state.q = ''; state.genre = ''; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
+        sortSel.value = 'date';
+        venueSel.value = '';
+        setPressed('fb-when', 'when', '');
+        setPressed('fb-genre', 'genre', '');
+        applyFilterChange();
+      });
+
+      function setPressed(hostId, key, val) {
+        var chips = document.getElementById(hostId).querySelectorAll('.chip');
+        for (var i = 0; i < chips.length; i++) {
+          chips[i].setAttribute('aria-pressed', (chips[i].getAttribute('data-' + key) || '') === val ? 'true' : 'false');
+        }
+      }
+      // Reflect incoming URL state into the chip UI on first load.
+      setPressed('fb-when', 'when', state.when);
+      setPressed('fb-genre', 'genre', state.genre);
+
+      // ---- Date-window helper --------------------------------------------
+      function whenRange(when) {
+        var now = new Date();
+        if (when === 'tonight') {
+          var f = new Date(now); f.setHours(0, 0, 0, 0);
+          var t = new Date(now); t.setHours(23, 59, 59, 0);
+          return { from: f.toISOString(), to: t.toISOString() };
+        }
+        if (when === 'weekend') {
+          var day = now.getDay();
+          var fri = new Date(now); fri.setHours(0, 0, 0, 0);
+          if (day === 6) fri.setDate(fri.getDate() - 1);
+          else if (day === 0) fri.setDate(fri.getDate() - 2);
+          else fri.setDate(fri.getDate() + ((5 - day + 7) % 7));
+          var sun = new Date(fri); sun.setDate(fri.getDate() + 2); sun.setHours(23, 59, 59, 0);
+          return { from: fri.toISOString(), to: sun.toISOString() };
+        }
+        if (when === 'month') {
+          var end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+          return { to: end.toISOString() };
+        }
+        return {};
+      }
+
+      function buildOpts(off) {
+        var range = whenRange(state.when);
+        return {
+          city: state.city, q: state.q || undefined, genre: state.genre || undefined,
+          venue: state.venue || undefined,
+          // Festivals genre → server-side is_festival filter so festivals are never
+          // paginated out of the client-side genre match.
+          festival: (state.festival || state.genre === 'Festivals') || undefined,
+          sort: state.sort === 'new' ? 'new' : undefined,
+          from: range.from, to: range.to, limit: PAGE, offset: off
+        };
+      }
+
+      function syncUrl() {
+        var p = new URLSearchParams();
+        if (state.q) p.set('q', state.q);
+        if (state.city) p.set('city', state.city);
+        if (state.genre) p.set('genre', state.genre);
+        if (state.when) p.set('when', state.when);
+        if (state.venue) p.set('venue', state.venue);
+        if (state.festival) p.set('festival', '1');
+        if (state.sort === 'new') p.set('sort', 'new');
+        var str = p.toString();
+        history.replaceState(null, '', 'events.html' + (str ? '?' + str : ''));
+      }
+
+      function refreshVenueOptions() {
+        var cur = venueSel.value;
+        var seen = {};
+        var names = [];
+        loaded.forEach(function (ev) {
+          if (ev.venue_name && !seen[ev.venue_name]) { seen[ev.venue_name] = true; names.push(ev.venue_name); }
+        });
+        names.sort();
+        venueSel.innerHTML = '<option value="">All venues</option>';
+        names.forEach(function (n) {
+          var o = document.createElement('option');
+          o.value = n; o.textContent = n;
+          venueSel.appendChild(o);
+        });
+        venueSel.value = names.indexOf(cur) !== -1 ? cur : (state.venue && names.indexOf(state.venue) !== -1 ? state.venue : '');
+      }
+
+      function renderEmpty() {
+        gridEl.classList.remove('is-loading');
+        gridEl.innerHTML = '';
+        var box = D.el('div', 'state-empty');
+        box.appendChild(D.el('span', 'state-icon', '◇'));
+        box.appendChild(D.el('p', 'state-msg', 'No shows match — clear a filter or switch city.'));
+        var btn = D.el('button', 'btn-ghost', 'Clear all filters');
+        btn.type = 'button';
+        btn.addEventListener('click', function () { document.getElementById('fb-clear').click(); });
+        box.appendChild(btn);
+        gridEl.appendChild(box);
+      }
+
+      function load(reset) {
+        if (reset) { offset = 0; loaded = []; syncUrl(); }
+        if (reset) D.skeletonGrid(gridEl, 8);
+        loadMoreBtn.disabled = true;
+        D.fetchEvents(buildOpts(offset)).then(function (evs) {
+          if (reset) { gridEl.classList.remove('is-loading'); gridEl.innerHTML = ''; }
+          loaded = loaded.concat(evs);
+          refreshVenueOptions();
+          if (!loaded.length) {
+            renderEmpty();
+          } else {
+            evs.forEach(function (ev) { gridEl.appendChild(D.ecard(ev)); });
+          }
+          // ponytail: result count reflects shows loaded so far, not a separate
+          // total-count query — "N shown" is accurate and cheap (one request).
+          countEl.textContent = loaded.length + (loaded.length === 1 ? ' show' : ' shows') + ' shown';
+          loadMoreBtn.hidden = evs.length < PAGE;
+          loadMoreBtn.disabled = false;
+        }).catch(function () {
+          if (reset) D.stateError(gridEl, function () { load(true); });
+          loadMoreBtn.disabled = false;
+        });
+      }
+
+      function applyFilterChange() { load(true); }
+
+      loadMoreBtn.addEventListener('click', function () { offset += PAGE; load(false); });
+
+      load(true);
+    })();
+  </script>
+</body>
+</html>
