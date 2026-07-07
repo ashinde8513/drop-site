@@ -21,35 +21,13 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
-- GSC/Bing sitemap submission (founder site-verification).
+- Founder approval: prod deploy of GSC verification snapshot (classifier-denied autonomous wrangler deploy; command in Next steps of today's session entry).
+- 2 in-flight subagent tracks (page-align in this checkout; Drop-App cross-links PR).
 ### Exact next step
-1. **AXS-style homepage rebuild DEPLOYED + LIVE (2026-07-06 eve, commit 6b2bab0).** trydropapp.com/ is
-   now browse-first (no marketing hero): H1 "Discover live shows near you" → search+city+date bar →
-   genre chips → "Happening" with Today/This Weekend/Next 30 Days time-tabs → genre tiles → Just
-   dropped → venues; wordmark → `◦ drop` across all 12 pages. VERIFIED live: title/droplet/time-tabs
-   present, marketing hero gone, root 200, real-browser render 0 console errors, 12 Happening cards,
-   tab-switch (Today→This Weekend) works. **Founder: eyeball trydropapp.com (hard-refresh).** Deferred:
-   social-wedge (friends-going/crew) on site cards — needs an auth/anon-going signal on the site.
-2. **SINGLE-URL CUTOVER DONE + LIVE (2026-07-06 eve).** trydropapp.com = one URL: static
-   discovery/SEO/login at root + the Expo app at **/app** (CF worker `drop-app-path` proxies to
-   Pages `drop-web`, baseUrl='/app'); **app.trydropapp.com now 301s → trydropapp.com/app**. PR #134
-   merged; worker deployed (routes trydropapp.com/app*, app.trydropapp.com/*); site deployed
-   (login→/app). Supabase redirect allowlist has trydropapp.com/app + /app/**. VERIFIED live:
-   /app shell boots 0 console errors, JS loads through worker, 301s fire both roots, root site 200,
-   SSRF path-host-swap guard holds, login bad-creds graceful. **Login now owned by the app:** the bespoke /login.html card (email-only, plain
-   layout) is RETIRED — nav "Log in" → /app/login (the app's real login: email/username + Google +
-   Facebook + web split layout), and /login + /login.html 301 → /app/login. Verified live. **Founder
-   QA: log in from trydropapp.com (nav → app login) happy path + one Google round-trip.**
-   Follow-ups: after QA remove app.trydropapp.com from Supabase allowlist (none present — skip);
-   web-push re-enable on /app (7 test users, trivial); optionally drop app.trydropapp.com DNS after
-   a deprecation window (301 worker keeps old links alive meanwhile).
-2. **Founder: QA the two 2026-07-06 evening deploys on the live site** — (a) log in once from
-   https://trydropapp.com/login (@handle + password → should land signed-in on app.trydropapp.com
-   via the fragment handoff), (b) eyeball the shell restyle (events grid = uniform 300x340 cards,
-   glass price pill, cyan date kicker). Both DEPLOYED to CF Pages `drop-site`. Code: login commit
-   93ec9dd + restyle commit e283474; Playwright 36/36 + DOM audit passed pre-deploy.
-2. Update Drop-App cross-links for the split surface: web-deploy.yml comment ("deploys to app.trydropapp.com" not root), and point the Expo web `welcome.tsx` marketing surface at the website (or slim it — the website owns marketing now). Note: app deep links (`https://trydropapp.com/event/<id>`) intentionally still target the ROOT domain — the website serves them (/event/* rewrite) and AASA/assetlinks stay at root, so Universal Links keep working. Do NOT change deepLinks.ts hosts.
-3. Submit https://trydropapp.com/sitemap.xml to GSC/Bing (founder verification).
+1. **Founder: approve GSC-verification prod deploy** — `npx wrangler pages deploy <session-scratchpad>/dist-snapshot --project-name=drop-site --branch=main` (live dist + `google75d252b1adf86e07.html` only; classifier denied autonomous run). Alternatively skip and fold token file into step 2's integration deploy.
+2. Integrate 2026-07-06 parallel tracks: in this repo merge the page-align commit (subagent, main checkout) + branch `feat/anon-going-count` (worktree ../drop-web-app-socialwedge, commit bb48627); add `google75d252b1adf86e07.html` at root; fix 2 pre-existing smoke failures (h1 copy expectation in tests/smoke.spec.ts); `npm test` green → rebuild dist → deploy drop-site → GSC Verify → submit /sitemap.xml → Bing import-from-GSC. Then `git worktree remove ../drop-web-app-socialwedge`.
+3. Merge the Drop-App cross-links PR (branch chore/split-surface-crosslinks) once agent-ci green. (Deep links intentionally stay on root domain — do NOT change deepLinks.ts hosts.)
+4. Founder QA (standing): hard-refresh trydropapp.com eyeball + one Google login round-trip nav → /app/login; then web-push re-enable on /app; optional app.trydropapp.com DNS retirement after deprecation window.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -82,3 +60,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-06 — Claude (Fable) — 4-track parallel: AXS page-align + anon going-count + GSC + Drop-App cross-links
+- **Changed:** (this repo, IN FLIGHT — subagent still editing events/artists/venues/event.html + site.css in main checkout, unverified until its npm test + commit lands). LANDED: worktree branch `feat/anon-going-count` commit bb48627 (data.js `Drop.fetchGoingCounts` batched RPC, site.js "N going" pill via `Drop.renderEvents` choke point, shown only when ≥2; site.css `.wsc__going`); drop-backend commit 488ac7c migration `migrations/0004_event_going_counts.sql` — `event_going_counts(uuid[])` aggregate RPC, APPLIED to prod Supabase, anon-safety live-verified (RPC returns counts only; raw attendance blocked for anon). GSC: URL-prefix property https://trydropapp.com created, token `google75d252b1adf86e07.html`, deploy snapshot staged in session scratchpad. Drop-App cross-links PR in flight (branch chore/split-surface-crosslinks).
+- **Tested:** wedge branch npm test 32 pass + 2 PRE-EXISTING failures (h1 copy mismatch, fails identically on unmodified branch — needs fix); anon REST verification ran live. Page-align + cross-links tracks: unverified (agents running).
+- **Remaining:** merge page-align commit + `feat/anon-going-count` into main, fix the 2 pre-existing smoke failures, assemble dist (+ commit google75d252b1adf86e07.html at root), npm test, deploy `drop-site`; GSC Verify click + sitemap.xml submit + Bing import after deploy; merge Drop-App cross-links PR when CI green; remove worktree drop-web-app-socialwedge after merge.
+- **Next steps (ranked):**
+  1. **Founder-blocked:** approve prod deploy `npx wrangler pages deploy <scratchpad>/dist-snapshot --project-name=drop-site --branch=main` (live dist + GSC token file only) — classifier denied autonomous run; OR fold token file into the integration deploy below.
+  2. Integrate: in /Users/aryashinde/Developer/Drop/drop-web-app merge agent page-align commit + branch `feat/anon-going-count` (worktree at ../drop-web-app-socialwedge, commit bb48627), add google75d252b1adf86e07.html at root, fix 2 pre-existing smoke failures (h1 copy expectation in tests/smoke.spec.ts), npm test green, rebuild dist, deploy drop-site.
+  3. Post-deploy: GSC Verify → submit https://trydropapp.com/sitemap.xml → Bing webmaster import-from-GSC; merge Drop-App PR chore/split-surface-crosslinks once agent-ci green.
+
