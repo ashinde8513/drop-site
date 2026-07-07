@@ -1,6 +1,6 @@
 # drop-web-app — Agent Rules
 
-Drop's **web app** (the website at trydropapp.com): public event/artist discovery pages,
+Drop's **website** (trydropapp.com): public event/artist discovery pages,
 link-in-bio hub, and affiliate/legal pages. This is one of Drop's two front-end surfaces;
 the other is the **mobile app** (`../drop-mobile-app`). Both render the same content because
 both read the same backend (Supabase `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`) —
