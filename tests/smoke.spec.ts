@@ -93,25 +93,13 @@ test.describe('landing site smoke', () => {
     );
   });
 
-  test('login page renders with working form + app handoff links', async ({ page }) => {
-    const errors = trackPageErrors(page);
-    await page.goto('/login.html');
-    await expect(page.locator('#li-id')).toBeVisible();
-    await expect(page.locator('#li-pw')).toBeVisible();
-    await expect(page.locator('#login-submit')).toBeEnabled();
-    // client-side empty-submit validation (no network)
-    await page.locator('#login-submit').click();
-    await expect(page.locator('#login-msg')).toHaveText(/email or username/i);
-    // handoff links point at the app
-    await expect(page.locator('a[href="/app/signup"]')).toHaveCount(1);
-    await expect(page.locator('a[href="/app/forgot-password"]')).toHaveCount(1);
-    expect(errors, errors.join('\n')).toEqual([]);
-  });
-
-  test('every page nav offers Log in', async ({ page }) => {
+  test('login is owned by the app (nav → /app/login)', async ({ page }) => {
+    // Every page nav points Log in at the real app login (email/username + social).
+    // The /login and /login.html → /app/login 301s live in _redirects (Cloudflare
+    // Pages only — the local static server can't process them; verified live on deploy).
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
-      await expect(page.locator('a[href="/login.html"]').first()).toHaveCount(1);
+      await expect(page.locator('a[href="/app/login"]').first()).toHaveCount(1);
     }
   });
 

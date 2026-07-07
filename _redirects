@@ -7,3 +7,7 @@
 /event/*  /event  200
 /plan/:id   /download      302
 /onboarding /download      302
+
+# Bespoke site login retired 2026-07-06 → the app owns login (social + shell layout)
+/login      /app/login   301
+/login.html /app/login   301
