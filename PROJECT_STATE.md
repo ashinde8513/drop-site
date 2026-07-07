@@ -41,7 +41,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
    via the fragment handoff), (b) eyeball the shell restyle (events grid = uniform 300x340 cards,
    glass price pill, cyan date kicker). Both DEPLOYED to CF Pages `drop-site`. Code: login commit
    93ec9dd + restyle commit e283474; Playwright 36/36 + DOM audit passed pre-deploy.
-2. **Founder: rotate the Cloudflare DNS token** — the `drop-dns-agent` token (Zone:DNS:Edit, trydropapp.com) was pasted into a Claude chat 2026-07-06 (burned; transcript-synced). Dashboard → My Profile → API Tokens → roll/delete it; replacement lives in macOS Keychain as `cloudflare-dns-trydropapp` (update via `security add-generic-password -U -s cloudflare-dns-trydropapp -a arya -w <new>`).
 2. Update Drop-App cross-links for the split surface: web-deploy.yml comment ("deploys to app.trydropapp.com" not root), and point the Expo web `welcome.tsx` marketing surface at the website (or slim it — the website owns marketing now). Note: app deep links (`https://trydropapp.com/event/<id>`) intentionally still target the ROOT domain — the website serves them (/event/* rewrite) and AASA/assetlinks stay at root, so Universal Links keep working. Do NOT change deepLinks.ts hosts.
 3. Submit https://trydropapp.com/sitemap.xml to GSC/Bing (founder verification).
 
