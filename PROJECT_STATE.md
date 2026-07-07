@@ -23,13 +23,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - GSC/Bing sitemap submission (founder site-verification).
 ### Exact next step
-1. **DEPLOY the AXS-style homepage rebuild** (built + committed 6b2bab0, NOT deployed — needs founder
-   go): `npx wrangler pages deploy dist --project-name=drop-site --branch=main`. index.html is now a
-   browse-first discovery home (search+city+date bar → genre chips → Happening with Today/This
-   Weekend/Next 30 Days time-tabs → genre tiles → Just dropped → venues); marketing hero/waitlist/
-   feature-grid removed; wordmark → `◦ drop` (droplet + lowercase) across all 12 pages. Tested:
-   npm test 32/32, 0 console errors, visual QA PASS (no blockers). After deploy: founder eyeball +
-   optional social-wedge on cards (friends-going/crew — deferred; needs auth signal on the site).
+1. **AXS-style homepage rebuild DEPLOYED + LIVE (2026-07-06 eve, commit 6b2bab0).** trydropapp.com/ is
+   now browse-first (no marketing hero): H1 "Discover live shows near you" → search+city+date bar →
+   genre chips → "Happening" with Today/This Weekend/Next 30 Days time-tabs → genre tiles → Just
+   dropped → venues; wordmark → `◦ drop` across all 12 pages. VERIFIED live: title/droplet/time-tabs
+   present, marketing hero gone, root 200, real-browser render 0 console errors, 12 Happening cards,
+   tab-switch (Today→This Weekend) works. **Founder: eyeball trydropapp.com (hard-refresh).** Deferred:
+   social-wedge (friends-going/crew) on site cards — needs an auth/anon-going signal on the site.
 2. **SINGLE-URL CUTOVER DONE + LIVE (2026-07-06 eve).** trydropapp.com = one URL: static
    discovery/SEO/login at root + the Expo app at **/app** (CF worker `drop-app-path` proxies to
    Pages `drop-web`, baseUrl='/app'); **app.trydropapp.com now 301s → trydropapp.com/app**. PR #134
