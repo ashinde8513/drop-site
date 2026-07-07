@@ -186,8 +186,10 @@
         var hwrap = D.el('div', 'wrap');
         var split = D.el('div', 'artist-hero');
 
-        var mediaWrap = D.el('div', 'ecard-media', null);
+        var mediaWrap = D.el('div', 'artist-hero-media', null);
         mediaWrap.style.borderRadius = 'var(--r-lg)';
+        mediaWrap.style.position = 'relative';
+        mediaWrap.style.overflow = 'hidden';
         mediaWrap.style.aspectRatio = '1 / 1';
         mediaWrap.style.border = '1px solid var(--border)';
         function fallbackArt() {

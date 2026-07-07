@@ -86,7 +86,7 @@
 
 /* ===== Site-layer tokens (additions allowed by spec) ===== */
 :root {
-  --wrap: 1240px;          /* wider than old landing — discovery grids need it */
+  --wrap: 1440px;          /* canonical web-shell content cap (mirrors app.trydropapp.com) */
   --wrap-narrow: 760px;    /* legal/about prose */
   --nav-h: 68px;
 
@@ -222,7 +222,7 @@ button { font: inherit; cursor: pointer; }
   position: sticky; top: 0; z-index: 100;
   backdrop-filter: blur(14px);
   background: var(--glass-dark);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong); /* shell --border-hi */
 }
 .nav-inner {
   max-width: var(--wrap); margin: 0 auto; padding: 0 24px;
@@ -441,51 +441,57 @@ button { font: inherit; cursor: pointer; }
   radial-gradient(120% 90% at 50% 120%, rgba(182,255,106,0.18), transparent 60%), var(--surface); }
 
 /* ========================================================================
-   Event card (.ecard) — the workhorse
+   Event card (.wsc-card) — the shell show card, the workhorse
    ======================================================================== */
 .grid-events {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  /* shell grid: cards flow from the LEFT so a sparse feed never orphans one card */
+  display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 16px;
 }
-.ecard {
-  display: flex; flex-direction: column;
+/* Shell show card — uniform 300x340 image-forward unit (mirrors the app's WebShowCard) */
+.wsc-card {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+  width: 300px; max-width: 100%; height: 340px; flex: 0 0 auto;
   border: 1px solid var(--border); border-radius: var(--r-lg);
   background: var(--surface); overflow: hidden;
   transition: transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease),
               box-shadow var(--dur-base) var(--ease);
 }
-.ecard:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-card); }
-.ecard:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
-.ecard-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
-.ecard-media::after {
-  content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none;
-}
-.ecard-img { width: 100%; height: 100%; object-fit: cover; }
+.wsc-card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-card); }
+.wsc-card:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
+.wsc__img, .wsc-card .art-prism { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.wsc__scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; background: var(--scrim); pointer-events: none; }
 .genre-pill {
-  position: absolute; top: 10px; left: 10px; z-index: 2;
+  position: absolute; top: 12px; left: 12px; z-index: 2;
   font-family: var(--font-display); font-size: 11px; font-weight: 600;
   letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 5px 10px; border-radius: var(--r-pill);
+  padding: 5px 12px; border-radius: var(--r-pill);
   background: var(--glass-dark); color: var(--text); border: 1px solid var(--glass-border);
   backdrop-filter: blur(6px);
 }
-.date-chip {
-  position: absolute; top: 10px; right: 10px; z-index: 2;
-  font-family: var(--font-display); font-size: 11.5px; font-weight: 600;
-  padding: 5px 10px; border-radius: var(--r-pill);
+.wsc__price {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  padding: 5px 12px; border-radius: var(--r-pill);
   background: var(--glass-dark); color: var(--text); border: 1px solid var(--glass-border);
   backdrop-filter: blur(6px);
+  font-family: var(--font-body); font-size: 12px; font-weight: 700;
 }
-.ecard-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; }
-.ecard-title {
-  font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.25;
+.wsc__text { position: relative; z-index: 1; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.wsc__date {
+  color: var(--brand-cyan); font-family: var(--font-body);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.wsc__title {
+  color: var(--text); font-family: var(--font-display); font-weight: 800;
+  font-size: 18px; letter-spacing: -0.02em; line-height: 24px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.ecard-loc { color: var(--text-secondary); font-size: 14px; }
-.ecard-foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.price { font-family: var(--font-display); font-weight: 600; font-size: 14.5px; color: var(--text); }
+.wsc__venue {
+  color: var(--text-secondary); font-family: var(--font-body); font-size: 14px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.wsc__skeleton { width: 300px; height: 340px; flex: 0 0 auto; border-radius: var(--r-lg); }
 
-/* Social chip (PREVIEW-ONLY) */
+/* Social chip (PREVIEW-ONLY — static index marketing block) */
 .chip-social {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 5px 10px 5px 6px; border-radius: var(--r-pill);
@@ -516,7 +522,7 @@ button { font: inherit; cursor: pointer; }
 }
 .rail::-webkit-scrollbar { display: none; }
 .rail > * { scroll-snap-align: start; flex: 0 0 300px; }
-.rail > .ecard { width: 300px; }
+.rail > .wsc-card { flex: 0 0 300px; }
 .rail-btn {
   position: absolute; top: 40%; z-index: 5;
   width: 44px; height: 44px; border-radius: 50%;
@@ -544,11 +550,7 @@ button { font: inherit; cursor: pointer; }
   transform: translateX(-100%); animation: shimmer 1.4s infinite;
 }
 @keyframes shimmer { to { transform: translateX(100%); } }
-.ecard-skel { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 0 0 16px; overflow: hidden; }
-.rail .ecard-skel { flex: 0 0 300px; width: 300px; }
-.skel-media { aspect-ratio: 16/10; border-radius: 0; }
-.skel-line { height: 14px; margin: 14px 16px 0; }
-.skel-line.short { width: 55%; }
+.rail .wsc__skeleton { flex: 0 0 300px; }
 
 .state-empty, .state-error {
   grid-column: 1 / -1; width: 100%;
@@ -879,7 +881,7 @@ button { font: inherit; cursor: pointer; }
   html { scroll-behavior: auto; }
   .spectrum .bar { animation: none; transform: scaleY(var(--h, 0.3)); }
   .skeleton::after { animation: none; }
-  .ecard:hover, .vcard:hover, .acard:hover, .tile:hover, .feature-card:hover,
+  .wsc-card:hover, .vcard:hover, .acard:hover, .tile:hover, .feature-card:hover,
   .btn-primary:hover, .btn-ghost:hover, .artist-row:hover { transform: none; }
   .rail { scroll-behavior: auto; }
 }
@@ -972,7 +974,7 @@ button { font: inherit; cursor: pointer; }
 .artist-hero > div:last-child { display: flex; flex-direction: column; }
 @media (max-width: 720px) {
   .artist-hero { grid-template-columns: 1fr; gap: 20px; }
-  .artist-hero .ecard-media { max-width: 240px; }
+  .artist-hero .artist-hero-media { max-width: 240px; }
 }
 
 /* B1: keep ≥2 compact artist columns on small phones (was 1 column at 390px). */

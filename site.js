@@ -45,64 +45,41 @@
   };
 
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event, {social:true}) → <a> stretched-link card. Reused everywhere.
-  Drop.ecard = function (event, opts) {
-    opts = opts || {};
-    var a = el('a', 'ecard');
+  // Drop.ecard(event) -> <a> shell show card (canonical web look: uniform
+  // 300x340 image-forward unit mirroring the app's WebShowCard). Reused everywhere.
+  Drop.ecard = function (event) {
+    var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
-    var media = el('div', 'ecard-media');
     if (event.image_url) {
-      var img = el('img', 'ecard-img');
+      var img = el('img', 'wsc__img');
       img.src = event.image_url;
-      img.alt = esc(event.title) + ' at ' + esc(event.venue_name || 'venue');
+      img.alt = '';
       img.loading = 'lazy';
       img.referrerPolicy = 'no-referrer';
       img.onerror = function () {
         // Swap the broken image for the CSS prism-art block.
         if (img.parentNode) { img.parentNode.replaceChild(Drop.prismArt(event), img); }
       };
-      media.appendChild(img);
+      a.appendChild(img);
     } else {
-      media.appendChild(Drop.prismArt(event));
+      a.appendChild(Drop.prismArt(event));
     }
-    var genre = el('span', 'genre-pill', Drop.genreOf(event));
-    var dchip = el('span', 'date-chip', Drop.fmtDate(event.date, event.time_tbd).split(' · ')[0]);
-    media.appendChild(genre);
-    media.appendChild(dchip);
-    a.appendChild(media);
+    a.appendChild(el('div', 'wsc__scrim'));
 
-    var body = el('div', 'ecard-body');
-    body.appendChild(el('h3', 'ecard-title', event.title));
-    var loc = el('p', 'ecard-loc');
-    loc.textContent = [event.venue_name, event.city].filter(Boolean).join(' · ');
-    body.appendChild(loc);
+    a.appendChild(el('span', 'genre-pill', Drop.genreOf(event)));
+    var price = Drop.fmtPrice(event.price_min, event.price_max);
+    if (price) a.appendChild(el('span', 'wsc__price', price));
 
-    var foot = el('div', 'ecard-foot');
-    foot.appendChild(el('span', 'price', Drop.fmtPrice(event.price_min, event.price_max)));
-    if (opts.social) {
-      // PREVIEW-ONLY social proof — never on real event data unless flagged by caller.
-      foot.appendChild(Drop.socialChip(opts.socialCount || 0, opts.socialNames));
-    }
-    body.appendChild(foot);
-    a.appendChild(body);
+    var text = el('div', 'wsc__text');
+    text.appendChild(el('div', 'wsc__date', Drop.fmtDate(event.date, event.time_tbd)));
+    text.appendChild(el('h3', 'wsc__title', event.title));
+    var venue = el('p', 'wsc__venue');
+    venue.textContent = [event.venue_name, event.city].filter(Boolean).join(' \u00b7 ');
+    text.appendChild(venue);
+    a.appendChild(text);
     return a;
-  };
-
-  // Social chip — preview only (sample avatars/names). "N friends going".
-  Drop.socialChip = function (count, names) {
-    var chip = el('span', 'chip-social');
-    var stack = el('span', 'avastack');
-    var n = Math.min(3, (names && names.length) || count || 3);
-    for (var i = 0; i < n; i++) {
-      var av = el('span', 'ava a' + (i % 3));
-      if (names && names[i]) av.textContent = names[i].charAt(0).toUpperCase();
-      stack.appendChild(av);
-    }
-    chip.appendChild(stack);
-    chip.appendChild(el('span', 'chip-social-txt', (count || n) + ' friends going'));
-    return chip;
   };
 
   // Venue card (derived from grouped events).
@@ -165,11 +142,7 @@
     host.innerHTML = '';
     host.classList.add('is-loading');
     for (var i = 0; i < (n || 6); i++) {
-      var s = el('div', 'ecard-skel');
-      s.appendChild(el('div', 'skeleton skel-media'));
-      s.appendChild(el('div', 'skeleton skel-line'));
-      s.appendChild(el('div', 'skeleton skel-line short'));
-      host.appendChild(s);
+      host.appendChild(el('div', 'skeleton wsc__skeleton'));
     }
   };
 
