@@ -105,6 +105,16 @@
       });
   };
 
+  // Name-prefix + substring artist lookup for the search typeahead.
+  Drop.searchArtists = function (query, limit) {
+    return get('artists?' + q({
+      select: 'id,name,image_url',
+      name: 'ilike.*' + query + '*',
+      order: 'name.asc',
+      limit: limit || 4
+    }));
+  };
+
   Drop.fetchArtist = function (id) {
     var artistP = get('artists?' + q({ select: 'id,name,genres,image_url', id: 'eq.' + id, limit: 1 }));
     // Events for this artist, upcoming.
@@ -181,14 +191,47 @@
     { cls: 'g-indie', label: 'Indie', keys: ['indie', 'rock', 'pop', 'alternative', 'folk'] }
   ];
 
-  // Map a raw genre string to a bucket, or null.
-  function bucketFor(raw) {
+  // Genre strings too vague to bucket on their own — only match these when no
+  // artist genre matched a specific key (they'd otherwise drag everything
+  // electronic into "House").
+  var GENERIC_KEYS = ['edm', 'electronic', 'dance', 'pop'];
+  function isGeneric(g) {
+    for (var i = 0; i < GENERIC_KEYS.length; i++) {
+      if (g === GENERIC_KEYS[i]) return true;
+    }
+    return false;
+  }
+
+  // Map a raw genre string to a bucket, or null. skipGeneric: ignore
+  // catch-all genres like "edm"/"electronic" (used for the first pass).
+  function bucketFor(raw, skipGeneric) {
     if (!raw) return null;
     var g = String(raw).toLowerCase();
+    if (skipGeneric && isGeneric(g)) return null;
     for (var i = 0; i < GENRE_MAP.length; i++) {
       var keys = GENRE_MAP[i].keys;
       for (var j = 0; j < keys.length; j++) {
+        if (skipGeneric && isGeneric(keys[j])) continue;
         if (g.indexOf(keys[j]) !== -1) return GENRE_MAP[i];
+      }
+    }
+    return null;
+  }
+
+  // Best bucket for an event: scan EVERY genre of EVERY artist, preferring a
+  // specific match (e.g. "tech house", "dubstep") over a generic one ("edm").
+  // The old genres[0]-of-first-artist read misclassified most events.
+  function bestBucket(ev) {
+    var arts = (ev && ev.event_artists) || [];
+    var pass, i, j, a, b;
+    for (pass = 0; pass < 2; pass++) {
+      for (i = 0; i < arts.length; i++) {
+        a = arts[i].artists;
+        if (!a || !a.genres) continue;
+        for (j = 0; j < a.genres.length; j++) {
+          b = bucketFor(a.genres[j], pass === 0);
+          if (b) return b;
+        }
       }
     }
     return null;
@@ -198,17 +241,8 @@
     // Festivals bucket first — a festival is always "Festivals" regardless of its
     // artists' genres, so events.html?genre=Festivals never misses them.
     if (ev && ev.is_festival) return 'Festivals';
-    var arts = ev && ev.event_artists;
-    if (arts && arts.length) {
-      for (var i = 0; i < arts.length; i++) {
-        var a = arts[i].artists;
-        if (a && a.genres && a.genres.length) {
-          var b = bucketFor(a.genres[0]);
-          if (b) return b.label;
-        }
-      }
-    }
-    return 'Live music';
+    var b = bestBucket(ev);
+    return b ? b.label : 'Live music';
   };
 
   // Prism-art tint class for a raw genre string (used by artist cards, which have
@@ -227,17 +261,8 @@
   // CSS class for prism-art tint, keyed off the display genre.
   Drop.genreClass = function (ev) {
     if (ev && ev.is_festival) return 'g-fest';
-    var arts = ev && ev.event_artists;
-    if (arts && arts.length) {
-      for (var i = 0; i < arts.length; i++) {
-        var a = arts[i].artists;
-        if (a && a.genres && a.genres.length) {
-          var b = bucketFor(a.genres[0]);
-          if (b) return b.cls;
-        }
-      }
-    }
-    return 'g-other';
+    var b = bestBucket(ev);
+    return b ? b.cls : 'g-other';
   };
 
   var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

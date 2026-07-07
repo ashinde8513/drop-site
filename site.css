@@ -293,6 +293,22 @@ button { font: inherit; cursor: pointer; }
 .loc-opt:hover { background: var(--glass); }
 .loc-opt.sel { color: var(--brand-cyan); font-weight: 600; }
 
+/* Search typeahead (shares the .loc-pop overlay look) */
+.ta-pop {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 120;
+  max-height: 360px; overflow-y: auto;
+  background: var(--surface-alt); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); padding: 6px; box-shadow: var(--overlay-shadow);
+}
+.ta-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px; border-radius: var(--r-sm);
+  text-decoration: none; color: var(--text);
+}
+.ta-row:hover, .ta-row.is-active { background: var(--glass); }
+.ta-primary { font-size: 14.5px; font-weight: 500; }
+.ta-secondary { font-size: 12.5px; color: var(--text-secondary); }
+
 /* Search form */
 .nav-search { flex: 1 1 auto; min-width: 0; max-width: 420px; }
 .nav-search .search-box {

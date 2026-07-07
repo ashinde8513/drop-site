@@ -95,7 +95,6 @@
         <a href="/venues.html">Venues</a>
         <a href="/artists.html">Artists</a>
         <a href="/promoters.html">For Promoters</a>
-        <a href="/about.html">About</a>
         <a href="/app/login">Log in</a>
       </nav>
       <a class="btn-primary nav-cta" href="/download.html">Get the app</a>
@@ -110,7 +109,6 @@
       <a href="/venues.html">Venues</a>
       <a href="/artists.html">Artists</a>
       <a href="/promoters.html">For Promoters</a>
-      <a href="/about.html">About</a>
       <a href="/app/login">Log in</a>
       <a class="btn-primary btn-block" href="/download.html">Get the app</a>
     </nav>
@@ -133,12 +131,6 @@
               </div>
             </div>
             <div class="sp-field">
-              <label for="hs-city">City</label>
-              <div class="field-box">
-                <select id="hs-city" name="city"></select>
-              </div>
-            </div>
-            <div class="sp-field">
               <label for="hs-when">Date</label>
               <div class="field-box">
                 <select id="hs-when" name="when">
@@ -155,17 +147,6 @@
           </div>
         </form>
 
-        <!-- Category chips -->
-        <div class="chip-row" aria-label="Browse by genre">
-          <a class="chip" href="/events.html?genre=Festivals">Festivals</a>
-          <a class="chip" href="/events.html?genre=House">House</a>
-          <a class="chip" href="/events.html?genre=Techno">Techno</a>
-          <a class="chip" href="/events.html?genre=Techno&amp;q=dubstep">Dubstep</a>
-          <a class="chip" href="/events.html?genre=Drum%20%26%20Bass">DnB</a>
-          <a class="chip" href="/events.html?genre=Hip-Hop">Hip-Hop</a>
-          <a class="chip" href="/events.html?genre=Indie">Indie</a>
-          <a class="chip" href="/events.html?q=club">Clubs</a>
-        </div>
       </div>
     </section>
 
@@ -303,27 +284,14 @@
     (function () {
       var D = window.Drop;
 
-      // City <select> in the hero search panel.
-      var citySel = document.getElementById('hs-city');
-      if (citySel) {
-        var all = D.CITIES.concat([D.ALL_CITIES]);
-        for (var i = 0; i < all.length; i++) {
-          var o = document.createElement('option');
-          o.value = all[i]; o.textContent = all[i];
-          if (all[i] === D.city()) o.selected = true;
-          citySel.appendChild(o);
-        }
-      }
-
-      // Hero search → events.html with params.
+      // Hero search → events.html with params. City comes from the one
+      // location control (the nav pill / Drop.city()).
       var hs = document.getElementById('hero-search');
       hs.addEventListener('submit', function (e) {
         e.preventDefault();
         var qv = document.getElementById('hs-q').value.trim();
-        var cv = citySel ? citySel.value : D.city();
         var wv = document.getElementById('hs-when').value;
-        if (cv) D.setCity(cv);
-        var url = '/events.html?city=' + encodeURIComponent(cv);
+        var url = '/events.html?city=' + encodeURIComponent(D.city());
         if (qv) url += '&q=' + encodeURIComponent(qv);
         if (wv) url += '&when=' + encodeURIComponent(wv);
         location.href = url;
@@ -360,7 +328,7 @@
         D.fetchEvents({ city: city, from: win.from, to: win.to, limit: 12 })
           .then(function (evs) {
             // Prefer cards with real artwork up front (stable sort, no extra fetch).
-            evs.sort(function (a, b) { return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0); });
+            evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
             D.renderEvents(host, evs, {
               limit: 12,
               emptyMsg: 'No shows in ' + city + ' for that window yet. Try browsing all events.',
@@ -377,7 +345,7 @@
         D.skeletonGrid(host, 6);
         D.fetchEvents({ city: city, sort: 'new', limit: 12 })
           .then(function (evs) {
-            evs.sort(function (a, b) { return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0); });
+            evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
             D.renderEvents(host, evs, {
               limit: 12,
               emptyMsg: 'Nothing new in ' + city + ' right now.',

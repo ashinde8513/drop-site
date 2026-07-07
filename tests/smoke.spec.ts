@@ -95,6 +95,34 @@ test.describe('landing site smoke', () => {
     );
   });
 
+  test('search typeahead opens a suggestions dropdown while typing', async ({ page }) => {
+    await page.goto('/index.html');
+    // Hero input — visible on desktop AND mobile (nav search hides behind a toggle).
+    await page.locator('#hs-q').fill('house');
+    // Always at least the "Search “house”" row, even with zero live matches.
+    await expect(page.locator('#hero-search .ta-pop')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#hero-search .ta-row').first()).toBeVisible();
+  });
+
+  test('city label follows the selected location everywhere on the page', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.evaluate(() => localStorage.setItem('drop.city', 'Seattle'));
+    await page.reload();
+    // Nav pill AND the in-page "Near <city>" eyebrow both reflect the choice.
+    for (const label of await page.locator('.loc-city').all()) {
+      await expect(label).toHaveText('Seattle');
+    }
+  });
+
+  test('About lives in the footer, not the header; genres listed once', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('header a[href="/about.html"]')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/about.html"]')).toHaveCount(1);
+    // The chip row duplicated the "Pick your night" genre tiles — it's gone.
+    await expect(page.locator('.chip-row')).toHaveCount(0);
+    await expect(page.locator('.grid-tiles')).toHaveCount(1);
+  });
+
   test('login is owned by the app (nav → /app/login)', async ({ page }) => {
     // Every page nav points Log in at the real app login (email/username + social).
     // The /login and /login.html → /app/login 301s live in _redirects (Cloudflare
