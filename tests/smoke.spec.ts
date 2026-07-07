@@ -103,8 +103,8 @@ test.describe('landing site smoke', () => {
     await page.locator('#login-submit').click();
     await expect(page.locator('#login-msg')).toHaveText(/email or username/i);
     // handoff links point at the app
-    await expect(page.locator('a[href="https://app.trydropapp.com/signup"]')).toHaveCount(1);
-    await expect(page.locator('a[href="https://app.trydropapp.com/forgot-password"]')).toHaveCount(1);
+    await expect(page.locator('a[href="/app/signup"]')).toHaveCount(1);
+    await expect(page.locator('a[href="/app/forgot-password"]')).toHaveCount(1);
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
