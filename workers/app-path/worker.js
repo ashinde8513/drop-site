@@ -14,16 +14,25 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
+    // SECURITY: never feed the request path to `new URL(path, base)` — a path like
+    // `//evil.com/x` is protocol-relative and would swap the host (open redirect /
+    // open proxy). Hosts are fixed constants; paths get leading slashes collapsed
+    // and are assigned via url.pathname, which cannot change the origin.
+    const safePath = url.pathname.replace(/\/{2,}/g, '/');
+
     if (url.hostname === 'app.trydropapp.com') {
-      const to = new URL(url.pathname + url.search, 'https://trydropapp.com/app/');
-      to.pathname = '/app' + (url.pathname === '/' ? '/' : url.pathname);
-      return Response.redirect(to.toString(), 301);
+      return Response.redirect(
+        'https://trydropapp.com/app' + (safePath === '/' ? '/' : safePath) + url.search,
+        301,
+      );
     }
 
     // trydropapp.com/app[/...]
-    let rest = url.pathname.slice('/app'.length);
+    const rest = safePath.slice('/app'.length);
     if (rest === '') return Response.redirect(url.origin + '/app/', 301);
-    const upstream = new URL(rest + url.search, PAGES_ORIGIN);
+    const upstream = new URL(PAGES_ORIGIN);
+    upstream.pathname = rest;
+    upstream.search = url.search;
     return fetch(new Request(upstream.toString(), request));
   },
 };
