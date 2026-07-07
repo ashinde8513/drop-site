@@ -35,6 +35,12 @@
     host.appendChild(frag);
   };
 
+  // Ticketmaster "category" art (/dam/c/) is a generic grayscale stock photo,
+  // not real event artwork — prism art looks designed, the stock photo doesn't.
+  Drop.hasRealArt = function (event) {
+    return !!(event.image_url && !/s1\.ticketm\.net\/dam\/c\//i.test(event.image_url));
+  };
+
   // ---- Prism art fallback -------------------------------------------------
   Drop.prismArt = function (event) {
     var art = el('div', 'art-prism ' + Drop.genreClass(event));
@@ -53,7 +59,7 @@
     a.dataset.eventId = event.id;
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
-    if (event.image_url) {
+    if (Drop.hasRealArt(event)) {
       var img = el('img', 'wsc__img');
       img.src = event.image_url;
       img.alt = '';
@@ -204,9 +210,10 @@
     var nav = doc.querySelector('.site-nav');
     if (!nav) return;
 
-    // Reflect current city into every location button label.
+    // Reflect current city into every location label — nav pill AND in-page
+    // eyebrows ("Near <city>"), which live in <main>, not the nav.
     var city = Drop.city();
-    var locLabels = nav.querySelectorAll('.loc-city');
+    var locLabels = doc.querySelectorAll('.loc-city');
     for (var i = 0; i < locLabels.length; i++) locLabels[i].textContent = city;
 
     // Hamburger → drawer.
@@ -256,6 +263,10 @@
       });
     }
 
+    // Typeahead on every search input (header + hero search panel).
+    var searchInputs = doc.querySelectorAll('input[type="search"]');
+    for (var t = 0; t < searchInputs.length; t++) Drop.typeahead(searchInputs[t]);
+
     // Mobile search toggle (icon reveals full-width row).
     var searchToggle = nav.querySelector('.search-toggle');
     if (searchToggle) {
@@ -283,6 +294,85 @@
       ul.appendChild(li);
     }
   }
+
+  // ---- Search typeahead ----------------------------------------------------
+  // Attach a suggestions dropdown to a search <input>. Queries live events +
+  // artists (debounced), renders links, supports ↑/↓/Enter/Escape. The input's
+  // parent box becomes the positioning context.
+  Drop.typeahead = function (input) {
+    if (!input || input._ta) return;
+    input._ta = true;
+    var box = input.parentNode;
+    box.style.position = 'relative';
+    var pop = el('div', 'ta-pop');
+    pop.setAttribute('role', 'listbox');
+    pop.hidden = true;
+    box.appendChild(pop);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-expanded', 'false');
+    var timer = null, seq = 0, active = -1;
+
+    function close() {
+      pop.hidden = true; active = -1;
+      input.setAttribute('aria-expanded', 'false');
+    }
+    function rows() { return pop.querySelectorAll('.ta-row'); }
+    function highlight(i) {
+      var r = rows();
+      if (!r.length) return;
+      active = (i + r.length) % r.length;
+      for (var k = 0; k < r.length; k++) r[k].classList.toggle('is-active', k === active);
+    }
+    function render(q, events, artists) {
+      pop.innerHTML = '';
+      function row(href, primary, secondary) {
+        var a = el('a', 'ta-row');
+        a.href = href;
+        a.appendChild(el('span', 'ta-primary', primary));
+        if (secondary) a.appendChild(el('span', 'ta-secondary', secondary));
+        // mousedown beats the input's blur, so the click still navigates.
+        a.addEventListener('mousedown', function (e) { e.preventDefault(); location.href = href; });
+        pop.appendChild(a);
+      }
+      (events || []).slice(0, 5).forEach(function (ev) {
+        row('/event.html?id=' + encodeURIComponent(ev.id), ev.title,
+          [Drop.fmtDate(ev.date, ev.time_tbd), ev.venue_name].filter(Boolean).join(' · '));
+      });
+      (artists || []).slice(0, 4).forEach(function (a) {
+        row('/artist.html?id=' + encodeURIComponent(a.id), a.name, 'Artist');
+      });
+      row('/events.html?city=' + encodeURIComponent(Drop.city()) + '&q=' + encodeURIComponent(q),
+        'Search “' + q + '”', 'All events');
+      pop.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      active = -1;
+    }
+    function lookup() {
+      var q = input.value.trim();
+      if (q.length < 2) { close(); return; }
+      var mySeq = ++seq;
+      Promise.all([
+        Drop.fetchEvents({ city: Drop.city(), q: q, limit: 5 }),
+        Drop.searchArtists(q, 4)
+      ]).then(function (r) {
+        if (mySeq !== seq || input.value.trim() !== q) return; // stale response
+        render(q, r[0], r[1]);
+      }).catch(function () { close(); });
+    }
+
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(lookup, 250);
+    });
+    input.addEventListener('keydown', function (e) {
+      if (pop.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlight(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active - 1); }
+      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); location.href = rows()[active].href; }
+      else if (e.key === 'Escape') { close(); }
+    });
+    input.addEventListener('blur', function () { setTimeout(close, 120); });
+  };
 
   // ---- Rails: prev/next arrows -------------------------------------------
   function initRails() {

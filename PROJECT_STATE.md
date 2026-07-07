@@ -23,9 +23,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
-2. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
-3. Founder QA (standing): hard-refresh trydropapp.com (new: "N going" pills on cards where ≥2, event-page Get Directions) + one Google login round-trip nav → /app/login; then web-push re-enable on /app; optional app.trydropapp.com DNS retirement after deprecation window.
+1. **Founder: merge the UI-parity PR (drop-site #8), then deploy** — in this repo: `gh pr merge 8 --squash --delete-branch && git checkout main && git pull && npx wrangler pages deploy dist --project-name=drop-site --branch=main`. Smoke 40/40 green on the branch; classifier denied autonomous merge+deploy. PR fixes the 2026-07-06 founder-reported UI issues: search typeahead dropdown, stale "Near Denver" eyebrow, duplicate location control, duplicate genre rows, genre misclassification, gray TM stock card art, About → footer-only.
+2. **Founder: merge the post-login welcome-redirect PR (Drop-App #137)** — agent-ci + web-smoke green; signed-in users on /welcome now redirect to the Discover feed (fixes login landing on the marketing hero).
+3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
+4. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
+5. Founder QA (standing): hard-refresh trydropapp.com (new: "N going" pills on cards where ≥2, event-page Get Directions) + one Google login round-trip nav → /app/login; then web-push re-enable on /app; optional app.trydropapp.com DNS retirement after deprecation window.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -34,6 +36,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301, app.trydropapp.com 200. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-07 — Claude (Fable) — Founder UI-issue fix pass (PR #8, awaiting merge)
+- Changed (branch `fix/ui-parity-typeahead`): site.js (typeahead module + doc-wide .loc-city update + `hasRealArt` TM /dam/c/ stock-photo filter), data.js (`searchArtists`, genre bucketing scans all artists' genres w/ specific-before-generic keys), site.css (.ta-pop), index.html (hero City select + chip row removed; sorts use hasRealArt), all 12 pages (About out of header/drawer, footer keeps it), tests/smoke.spec.ts (+3 tests), dist rebuilt (includes google75d252b1adf86e07.html → deploy closes GSC item).
+- Tested: npm test 40/40 (desktop + mobile-safari); typeahead exercised headless (8 suggestion rows for "house").
+- Companion: Drop-App PR #137 (signed-in /welcome redirect — post-login no longer lands on marketing hero), CI green, awaiting merge.
+- Next: see Exact next step above.
 ### 2026-07-06 — Claude (Fable) — 19-rule UI audit + Prism polish, deployed
 - Changed: commit 7308468 (site.css, site.js, events/event/venues/artists.html) — full audit vs `~/.claude/design/ui-best-practices/UI-BEST-PRACTICES.md` (27 screenshots desktop+mobile, 3 vision reviewers + code sweep). 14 rules already passing, 3 N/A; 8 findings fixed (see What works). Founder-approved Prism adjustment: primary-button gradient desaturated for dark-mode (rule 9), brand full-sat kept for waveform/text/glow.
 - Tested: npm test 32/32 both before and after; WCAG AA contrast on new fill; deployed via wrangler + live-verified (new CSS + sort chips confirmed on trydropapp.com, pages 200).
