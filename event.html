@@ -250,6 +250,16 @@
         meta.appendChild(venueLine);
         info.appendChild(meta);
 
+        // AXS pattern: venue address + Get Directions (no street address in the
+        // data model, so — like venue.html — link a Maps search on name+city+state).
+        if (ev.venue_name) {
+          var directions = el('a', 'link-more', 'Get directions →');
+          directions.href = D.mapsUrl(ev.venue_name, ev.city, ev.state);
+          directions.target = '_blank';
+          directions.rel = 'noopener';
+          info.appendChild(directions);
+        }
+
         info.appendChild(el('div', 'event-price', D.fmtPrice(ev.price_min, ev.price_max)));
 
         // Description with 4-line clamp + read-more toggle.
@@ -333,26 +343,11 @@
         return section;
       }
 
-      function renderSocialPreview() {
-        var section = el('section', 'section section--tight');
-        var wrap = el('div', 'wrap');
-        var split = el('div', 'preview-split');
-        var left = el('div');
-        left.appendChild(el('span', 'preview-tag', 'In the app'));
-        var h2 = el('h2', 'sec-h2', "See who's going.");
-        h2.style.marginTop = '14px';
-        left.appendChild(h2);
-        left.appendChild(el('p', 'section-head', 'Sample preview — friend activity requires the Drop app.'));
-        split.appendChild(left);
-        // Sample plan card reusing the same social-chip component as the homepage preview.
-        var card = el('div', 'plan-card');
-        card.setAttribute('aria-label', 'Product preview: friends going to this show');
-        card.appendChild(D.socialChip(6, ['Maya', 'Jordan', 'Rae']));
-        split.appendChild(card);
-        wrap.appendChild(split);
-        section.appendChild(wrap);
-        return section;
-      }
+      // ponytail: dropped renderSocialPreview() — called a D.socialChip() that
+      // was never defined (threw on every real event load) and hard-coded fake
+      // friend names, which DESIGN.md explicitly bans outside product-preview
+      // sections ("never faked on real events"). Real "who's going" needs the
+      // app's auth'd social graph — add when that data is exposed to the site.
 
       function renderRail(title, events, excludeId) {
         var evs = (events || []).filter(function (e) { return String(e.id) !== String(excludeId); });
@@ -398,9 +393,6 @@
 
         var lineup = renderLineup(ev);
         if (lineup) root.parentNode.insertBefore(lineup, root.nextSibling);
-
-        var social = renderSocialPreview();
-        root.parentNode.insertBefore(social, (lineup || root).nextSibling);
 
         renderStickyBar(ev);
 

@@ -70,8 +70,10 @@ test.describe('landing site smoke', () => {
   }
 
   test('homepage shows the core value prop and hero search', async ({ page }) => {
+    // ponytail: was asserting 'friends' from the retired marketing hero copy —
+    // stale since the 2026-07-06 AXS browse-first rebuild (h1 is now discover-first).
     await page.goto('/index.html');
-    await expect(page.locator('h1')).toContainText('friends');
+    await expect(page.locator('h1')).toContainText('Discover live shows');
     await expect(page.locator('#hero-search')).toHaveCount(1);
   });
 

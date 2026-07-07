@@ -577,6 +577,9 @@ button { font: inherit; cursor: pointer; }
 }
 @keyframes shimmer { to { transform: translateX(100%); } }
 .rail .wsc__skeleton { flex: 0 0 300px; }
+/* ponytail: event.html skeleton lines had no height rule — 0px tall, invisible. */
+.skel-line { height: 16px; }
+.skel-line.short { width: 50%; }
 
 .state-empty, .state-error {
   grid-column: 1 / -1; width: 100%;
