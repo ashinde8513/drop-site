@@ -92,4 +92,27 @@ test.describe('landing site smoke', () => {
       /mailto:.+@.+/,
     );
   });
+
+  test('login page renders with working form + app handoff links', async ({ page }) => {
+    const errors = trackPageErrors(page);
+    await page.goto('/login.html');
+    await expect(page.locator('#li-id')).toBeVisible();
+    await expect(page.locator('#li-pw')).toBeVisible();
+    await expect(page.locator('#login-submit')).toBeEnabled();
+    // client-side empty-submit validation (no network)
+    await page.locator('#login-submit').click();
+    await expect(page.locator('#login-msg')).toHaveText(/email or username/i);
+    // handoff links point at the app
+    await expect(page.locator('a[href="https://app.trydropapp.com/signup"]')).toHaveCount(1);
+    await expect(page.locator('a[href="https://app.trydropapp.com/forgot-password"]')).toHaveCount(1);
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('every page nav offers Log in', async ({ page }) => {
+    for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
+      await page.goto(path);
+      await expect(page.locator('a[href="/login.html"]').first()).toHaveCount(1);
+    }
+  });
+
 });
