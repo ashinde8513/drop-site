@@ -23,7 +23,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - GSC/Bing sitemap submission (founder site-verification).
 ### Exact next step
-1. **Founder: rotate the Cloudflare DNS token** — the `drop-dns-agent` token (Zone:DNS:Edit, trydropapp.com) was pasted into a Claude chat 2026-07-06 (burned; transcript-synced). Dashboard → My Profile → API Tokens → roll/delete it; replacement lives in macOS Keychain as `cloudflare-dns-trydropapp` (update via `security add-generic-password -U -s cloudflare-dns-trydropapp -a arya -w <new>`).
+1. **Deploy the new site login (built 2026-07-06, committed, NOT yet deployed — deploy needs founder go):**
+   `npx wrangler pages deploy dist --project-name=drop-site --branch=main`. Ships `/login.html`
+   (email → Supabase password grant; username → login-with-username edge fn; tokens hand off to
+   app.trydropapp.com via URL fragment → existing createSessionFromUrl) + Log in nav link on all
+   pages. Playwright 36/36 green. After deploy: founder logs in once from trydropapp.com/login.html
+   and confirms landing signed-in in the app shell. THEN: restyle this site to the canonical web
+   shell (drop-design SPEC.md "web app shell" section — founder direction: one look, one URL goal).
+2. **Founder: rotate the Cloudflare DNS token** — the `drop-dns-agent` token (Zone:DNS:Edit, trydropapp.com) was pasted into a Claude chat 2026-07-06 (burned; transcript-synced). Dashboard → My Profile → API Tokens → roll/delete it; replacement lives in macOS Keychain as `cloudflare-dns-trydropapp` (update via `security add-generic-password -U -s cloudflare-dns-trydropapp -a arya -w <new>`).
 2. Update Drop-App cross-links for the split surface: web-deploy.yml comment ("deploys to app.trydropapp.com" not root), and point the Expo web `welcome.tsx` marketing surface at the website (or slim it — the website owns marketing now). Note: app deep links (`https://trydropapp.com/event/<id>`) intentionally still target the ROOT domain — the website serves them (/event/* rewrite) and AASA/assetlinks stay at root, so Universal Links keep working. Do NOT change deepLinks.ts hosts.
 3. Submit https://trydropapp.com/sitemap.xml to GSC/Bing (founder verification).
 
