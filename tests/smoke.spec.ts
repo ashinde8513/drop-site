@@ -133,4 +133,14 @@ test.describe('landing site smoke', () => {
     }
   });
 
+  test('nav parity: browse links + corner, no For Promoters in header', async ({ page }) => {
+    await page.goto('/index.html');
+    for (const href of ['/events.html', '/venues.html', '/artists.html']) {
+      await expect(page.locator(`header .nav-links a[href="${href}"]`)).toHaveCount(1);
+    }
+    await expect(page.locator('header a[href="/promoters.html"]')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
+    await expect(page.locator('header a[href="/app/login"]').first()).toHaveCount(1);
+  });
+
 });
