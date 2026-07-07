@@ -1,4 +1,9 @@
-# PROJECT STATE — drop-landing (read me first)
+# PROJECT STATE — drop-web-app (read me first)
+
+> Repo renamed 2026-07-06: `drop-landing` → `drop-web-app`. This is Drop's **web app**
+> (trydropapp.com) — one of two front-end surfaces over the shared backend; the other is
+> the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
+> entries below may still say "drop-landing".
 
 Last updated: 2026-07-06
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md

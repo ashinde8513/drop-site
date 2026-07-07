@@ -1,6 +1,10 @@
-# drop-landing — Agent Rules
+# drop-web-app — Agent Rules
 
-Drop App landing site at trydropapp.com: marketing pages, link-in-bio hub, and affiliate/legal pages.
+Drop's **web app** (the website at trydropapp.com): public event/artist discovery pages,
+link-in-bio hub, and affiliate/legal pages. This is one of Drop's two front-end surfaces;
+the other is the **mobile app** (`../drop-mobile-app`). Both render the same content because
+both read the same backend (Supabase `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`) —
+only the access method differs (website vs. native app). (This repo was formerly `drop-landing`.)
 
 ## Read first
 

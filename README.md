@@ -1,7 +1,13 @@
-# Drop — landing site
+# Drop — web app (trydropapp.com)
 
-Static marketing site for **Drop** (EDM event-discovery app, operated by Resonance Ventures LLC).
-Plain HTML/CSS, zero build step, zero dependencies. Deploys anywhere that serves static files.
+The **web app** for **Drop** (EDM event-discovery product, operated by Resonance Ventures LLC):
+the public website at trydropapp.com. It is one of Drop's two front-end surfaces — the other is
+the **mobile app** (`../drop-mobile-app`) — and both show the same content because both read the
+same backend (Supabase project `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`). The only
+difference is how users access it: native app vs. website.
+
+Public event/artist discovery pages, link-in-bio hub, and the privacy/terms pages.
+Plain HTML/CSS/JS, zero build step, zero dependencies. Deploys anywhere that serves static files.
 
 ```
 index.html      Landing page (hero, features, launch CTA → Kit waitlist)
