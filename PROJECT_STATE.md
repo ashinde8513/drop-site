@@ -29,8 +29,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
    merged; worker deployed (routes trydropapp.com/app*, app.trydropapp.com/*); site deployed
    (login→/app). Supabase redirect allowlist has trydropapp.com/app + /app/**. VERIFIED live:
    /app shell boots 0 console errors, JS loads through worker, 301s fire both roots, root site 200,
-   SSRF path-host-swap guard holds, login bad-creds graceful. **Founder QA: log in from
-   trydropapp.com/login (happy path) + one Google login round-trip (redirect now /app).**
+   SSRF path-host-swap guard holds, login bad-creds graceful. **Login now owned by the app:** the bespoke /login.html card (email-only, plain
+   layout) is RETIRED — nav "Log in" → /app/login (the app's real login: email/username + Google +
+   Facebook + web split layout), and /login + /login.html 301 → /app/login. Verified live. **Founder
+   QA: log in from trydropapp.com (nav → app login) happy path + one Google round-trip.**
    Follow-ups: after QA remove app.trydropapp.com from Supabase allowlist (none present — skip);
    web-push re-enable on /app (7 test users, trivial); optionally drop app.trydropapp.com DNS after
    a deprecation window (301 worker keeps old links alive meanwhile).
