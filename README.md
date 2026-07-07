@@ -1,6 +1,6 @@
-# Drop — web app (trydropapp.com)
+# Drop — website (trydropapp.com)
 
-The **web app** for **Drop** (EDM event-discovery product, operated by Resonance Ventures LLC):
+**Drop's website** (EDM event-discovery product, operated by Resonance Ventures LLC):
 the public website at trydropapp.com. It is one of Drop's two front-end surfaces — the other is
 the **mobile app** (`../drop-mobile-app`) — and both show the same content because both read the
 same backend (Supabase project `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`). The only

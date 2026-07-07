@@ -1,6 +1,6 @@
 # PROJECT STATE — drop-web-app (read me first)
 
-> Repo renamed 2026-07-06: `drop-landing` → `drop-web-app`. This is Drop's **web app**
+> Repo renamed 2026-07-06: `drop-landing` → `drop-web-app`. This is **the Drop website**
 > (trydropapp.com) — one of two front-end surfaces over the shared backend; the other is
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
@@ -25,7 +25,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Exact next step
 1. **Founder QA: parity drop is LIVE** (all 3 PRs merged + both surfaces deployed 2026-07-07) — hard-refresh trydropapp.com (header = Events·Venues·Artists, pill styles) + login → /app Discover shows H1 + hero search + Happening tabs + genre tiles + venues + footer; eyeball card parity at 390/768/1440. Minor follow-ups if QA wants them: hero date-select vs time-tabs, tiles/Happening order, friends-pill shows at 1, WebFooter not byte-identical to site footer.
 3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
-2. Founder QA: one real login round-trip on the web app → confirm it lands on the Discover feed, not the marketing hero (Drop-App PR #137 merged + deployed 2026-07-07; redirect is code-verified but not exercised with a live account).
+2. Founder QA: one real login round-trip on the website → confirm it lands on the Discover feed, not the marketing hero (Drop-App PR #137 merged + deployed 2026-07-07; redirect is code-verified but not exercised with a live account).
 3. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
 4. Founder QA (standing): hard-refresh trydropapp.com (new: "N going" pills on cards where ≥2, event-page Get Directions) + one Google login round-trip nav → /app/login; then web-push re-enable on /app; optional app.trydropapp.com DNS retirement after deprecation window.
 
