@@ -193,21 +193,31 @@
             moreBtn.hidden = true;
             return;
           }
+          function renderCard(v) {
+            var card = D.venueCard(v);
+            var topGenre = Object.keys(v.genreTally).sort(function (a, b) { return v.genreTally[b] - v.genreTally[a]; })[0];
+            var body = card.querySelector('.vcard-body');
+            body.appendChild(D.el('p', 'ar-meta', D.fmtDate(v.nextDate) + ' · ' + topGenre));
+            return card;
+          }
           var PAGE = 36, shown = 0;
           function renderChunk() {
-            list.slice(shown, shown + PAGE).forEach(function (v) {
-              var card = D.venueCard(v);
-              var topGenre = Object.keys(v.genreTally).sort(function (a, b) { return v.genreTally[b] - v.genreTally[a]; })[0];
-              var body = card.querySelector('.vcard-body');
-              var meta = D.el('p', 'ar-meta', D.fmtDate(v.nextDate) + ' · ' + topGenre);
-              body.appendChild(meta);
-              host.appendChild(card);
-            });
+            list.slice(shown, shown + PAGE).forEach(function (v) { host.appendChild(renderCard(v)); });
             shown = Math.min(shown + PAGE, list.length);
             moreBtn.hidden = shown >= list.length;
           }
           moreBtn.onclick = renderChunk;
           renderChunk();
+
+          // ponytail: live type-to-filter on the header search; reuses the fetched list.
+          document.getElementById('nav-q').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            host.innerHTML = '';
+            if (!q) { shown = 0; renderChunk(); return; }
+            moreBtn.hidden = true;
+            list.filter(function (v) { return v.name.toLowerCase().indexOf(q) !== -1; })
+              .forEach(function (v) { host.appendChild(renderCard(v)); });
+          });
         }).catch(function () { moreBtn.hidden = true; D.stateError(host, load); });
       }
       load();

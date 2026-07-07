@@ -123,11 +123,10 @@
         <select class="fb-select" id="fb-venue"><option value="">All venues</option></select>
         <label class="sr-only" for="fb-city">City</label>
         <select class="fb-select" id="fb-city"></select>
-        <label class="sr-only" for="fb-sort">Sort</label>
-        <select class="fb-select" id="fb-sort">
-          <option value="date">Date</option>
-          <option value="new">Just dropped</option>
-        </select>
+        <div class="chip-row" id="fb-sort" aria-label="Sort by" style="margin:0;">
+          <button type="button" class="chip" data-sort="date" aria-pressed="true">Date</button>
+          <button type="button" class="chip" data-sort="new" aria-pressed="false">Just dropped</button>
+        </div>
         <button type="button" class="fb-clear" id="fb-clear">Clear all</button>
       </div>
     </div>
@@ -219,10 +218,6 @@
         applyFilterChange();
       });
 
-      var sortSel = document.getElementById('fb-sort');
-      sortSel.value = state.sort;
-      sortSel.addEventListener('change', function () { state.sort = sortSel.value; applyFilterChange(); });
-
       var venueSel = document.getElementById('fb-venue');
       venueSel.addEventListener('change', function () { state.venue = venueSel.value; applyFilterChange(); });
 
@@ -240,13 +235,14 @@
       }
       wireChips('fb-when', 'when');
       wireChips('fb-genre', 'genre');
+      wireChips('fb-sort', 'sort');
 
       document.getElementById('fb-clear').addEventListener('click', function () {
         state.q = ''; state.genre = ''; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
-        sortSel.value = 'date';
         venueSel.value = '';
         setPressed('fb-when', 'when', '');
         setPressed('fb-genre', 'genre', '');
+        setPressed('fb-sort', 'sort', 'date');
         applyFilterChange();
       });
 
@@ -259,6 +255,7 @@
       // Reflect incoming URL state into the chip UI on first load.
       setPressed('fb-when', 'when', state.when);
       setPressed('fb-genre', 'genre', state.genre);
+      setPressed('fb-sort', 'sort', state.sort);
 
       // ---- Date-window helper --------------------------------------------
       function whenRange(when) {

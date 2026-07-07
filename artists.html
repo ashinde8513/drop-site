@@ -195,17 +195,28 @@
           }
           // Cap the initial paint (mobile was painting ~49,000px) and reveal the
           // rest in PAGE-sized chunks on demand.
+          function renderCard(item) {
+            var genre = (item.artist.genres && item.artist.genres[0]) || 'Live music';
+            return D.acard(item.artist, { genre: genre, meta: D.fmtDate(item.nextDate) });
+          }
           var PAGE = 48, shown = 0;
           function renderChunk() {
-            list.slice(shown, shown + PAGE).forEach(function (item) {
-              var genre = (item.artist.genres && item.artist.genres[0]) || 'Live music';
-              host.appendChild(D.acard(item.artist, { genre: genre, meta: D.fmtDate(item.nextDate) }));
-            });
+            list.slice(shown, shown + PAGE).forEach(function (item) { host.appendChild(renderCard(item)); });
             shown = Math.min(shown + PAGE, list.length);
             moreBtn.hidden = shown >= list.length;
           }
           moreBtn.onclick = renderChunk;
           renderChunk();
+
+          // ponytail: live type-to-filter on the header search; reuses the fetched list.
+          document.getElementById('nav-q').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            host.innerHTML = '';
+            if (!q) { shown = 0; renderChunk(); return; }
+            moreBtn.hidden = true;
+            list.filter(function (item) { return (item.artist.name || '').toLowerCase().indexOf(q) !== -1; })
+              .forEach(function (item) { host.appendChild(renderCard(item)); });
+          });
         }).catch(function () { moreBtn.hidden = true; D.stateError(host, load); });
       }
       load();

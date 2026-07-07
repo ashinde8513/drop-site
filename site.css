@@ -89,6 +89,12 @@
   --wrap: 1240px;          /* wider than old landing — discovery grids need it */
   --wrap-narrow: 760px;    /* legal/about prose */
   --nav-h: 68px;
+
+  /* Dark-mode-safe large-fill variant of --grad-glow (Prism Rule 9): the full-sat
+     neon rainbow vibrates as a big fill on near-black. Same hues, ~18% desaturated
+     + ~6% darkened — still reads bright + primary, ink label keeps AA (magenta 5.06:1).
+     Full-sat --grad-glow stays for text (.grad-word), the waveform, and glow accents. */
+  --grad-glow-fill: linear-gradient(120deg, #5DCFE6 0%, #C350D9 52%, #B3EB78 100%);
 }
 
 /* ========================================================================
@@ -186,7 +192,7 @@ button { font: inherit; cursor: pointer; }
               border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
 }
 .btn-primary {
-  background: var(--grad-glow); color: var(--text-on-brand);
+  background: var(--grad-glow-fill); color: var(--text-on-brand);
   box-shadow: 0 6px 24px rgba(226,77,255,0.28);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 34px rgba(77,226,255,0.40); }
@@ -201,6 +207,13 @@ button { font: inherit; cursor: pointer; }
   opacity: 0.5; cursor: not-allowed; pointer-events: none;
 }
 .btn-block { width: 100%; }
+
+/* event.html: hero "Get tickets" is the sole primary CTA; demote nav's. */
+.event-page .nav-cta {
+  background: var(--glass); color: var(--text); border-color: var(--glass-border);
+  box-shadow: none; backdrop-filter: blur(6px);
+}
+.event-page .nav-cta:hover { border-color: var(--text); box-shadow: none; }
 
 /* ========================================================================
    Header / nav
@@ -609,7 +622,7 @@ button { font: inherit; cursor: pointer; }
   transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
 }
 .chip:hover { border-color: var(--border-strong); background: var(--surface-hi); }
-.chip[aria-pressed="true"] { background: var(--grad-glow); color: var(--text-on-brand); border-color: transparent; }
+.chip[aria-pressed="true"] { background: rgba(77,226,255,0.16); color: var(--brand-cyan); border-color: var(--brand-cyan); }
 
 /* ========================================================================
    Category tiles (home)
@@ -653,8 +666,8 @@ button { font: inherit; cursor: pointer; }
   .vcard-body { flex: 1 1 auto; justify-content: center; padding: 12px 14px; }
 }
 .vcard-title { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
-.vcard-loc { color: var(--text-secondary); font-size: 14px; }
-.vcard-count { color: var(--brand-cyan); font-size: 13px; font-weight: 600; margin-top: 4px; }
+.vcard-loc { color: var(--text-secondary); font-size: 12px; }
+.vcard-count { color: var(--brand-cyan); font-size: 15px; font-weight: 700; margin-top: 4px; }
 
 /* ========================================================================
    Social-proof / product-preview section
@@ -793,7 +806,7 @@ button { font: inherit; cursor: pointer; }
 }
 .doc .meta { color: var(--text-secondary); font-family: var(--font-display); font-size: 13px; margin: 16px 0 8px; }
 .doc h2 { font-family: var(--font-display); font-weight: 700; font-size: 24px; margin: 44px 0 14px; letter-spacing: -0.01em; }
-.doc h2 .num { color: var(--brand-magenta); font-family: var(--font-display); font-size: 15px; margin-right: 12px; }
+.doc h2 .num { color: var(--brand-cyan); font-family: var(--font-display); font-size: 15px; margin-right: 12px; }
 .doc p, .doc li { color: var(--text-secondary); font-size: 16px; }
 .doc p { margin: 0 0 16px; }
 .doc ul { margin: 0 0 16px; padding-left: 22px; }
@@ -859,7 +872,7 @@ button { font: inherit; cursor: pointer; }
 .acard-img { width: 100%; height: 100%; object-fit: cover; }
 .acard-body { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 6px; }
 .acard-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
-.acard-meta { color: var(--text-secondary); font-size: 13px; }
+.acard-meta { color: var(--brand-cyan); font-size: 14px; font-weight: 700; }
 
 /* Reduced motion: kill spectrum EQ, smooth scroll, card lifts. */
 @media (prefers-reduced-motion: reduce) {
@@ -876,7 +889,7 @@ button { font: inherit; cursor: pointer; }
    ======================================================================== */
 .faq-list { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
 .faq-item {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 4px 20px;
 }
 .faq-item summary {
