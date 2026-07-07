@@ -16,11 +16,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
-- CUTOVER = waiting on founder go-ahead (auto-mode classifier blocked prod deploy 2026-07-06; denial final for that session). Also still waiting: GSC/Bing sitemap submission (founder site-verification).
+- GSC/Bing sitemap submission (founder site-verification).
 ### Exact next step
-1. **Founder-approved cutover** (~15 min once approved): `cd ~/Developer/Drop/drop-landing && rm -rf dist && mkdir dist && cp <site files per 2026-07-06 session note> dist/ && CLOUDFLARE_ACCOUNT_ID=ba8c4fedf96b95e46b4d8b87789ccb69 npx wrangler pages project create drop-site --production-branch=main && npx wrangler pages deploy dist --project-name=drop-site --branch=main` → verify drop-site.pages.dev → add custom domain `app.trydropapp.com` to `drop-web`, verify → move `trydropapp.com` + `www` custom domains drop-web→drop-site (dashboard: Workers & Pages → project → Custom domains) → live-verify all 12 pages + /link + /event/:id redirect + AASA.
-2. Update Drop-App web-deploy.yml comment + welcome.tsx cross-links (website ⇄ app.trydropapp.com) after cutover.
-3. Submit sitemap to GSC/Bing (founder verification).
+1. **Founder: rotate the Cloudflare DNS token** — the `drop-dns-agent` token (Zone:DNS:Edit, trydropapp.com) was pasted into a Claude chat 2026-07-06 (burned; transcript-synced). Dashboard → My Profile → API Tokens → roll/delete it; replacement lives in macOS Keychain as `cloudflare-dns-trydropapp` (update via `security add-generic-password -U -s cloudflare-dns-trydropapp -a arya -w <new>`).
+2. Update Drop-App cross-links for the split surface: web-deploy.yml comment ("deploys to app.trydropapp.com" not root), and point the Expo web `welcome.tsx` marketing surface at the website (or slim it — the website owns marketing now). Note: app deep links (`https://trydropapp.com/event/<id>`) intentionally still target the ROOT domain — the website serves them (/event/* rewrite) and AASA/assetlinks stay at root, so Universal Links keep working. Do NOT change deepLinks.ts hosts.
+3. Submit https://trydropapp.com/sitemap.xml to GSC/Bing (founder verification).
+
+## CUTOVER RECORD (2026-07-06 — LIVE)
+- trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
+- app.trydropapp.com → CF Pages project **drop-web** (Expo web app; Drop-App web-deploy.yml keeps auto-deploying it on Drop-App main pushes — unchanged).
+- DNS (zone 5ac5024f…): apex+www CNAME → drop-site.pages.dev; app CNAME → drop-web-2lo.pages.dev (all proxied).
+- Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301, app.trydropapp.com 200. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
 ### 2026-07-06 — Claude (Fable) — Full website rebuild (AXS-style discovery site)
