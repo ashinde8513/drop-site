@@ -50,6 +50,7 @@
   Drop.ecard = function (event) {
     var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);
+    a.dataset.eventId = event.id;
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
     if (event.image_url) {
@@ -183,9 +184,19 @@
       return;
     }
     var lim = opts.limit || events.length;
+    var ids = [];
     for (var i = 0; i < events.length && i < lim; i++) {
       host.appendChild(Drop.ecard(events[i], opts));
+      ids.push(events[i].id);
     }
+    // Going pill: fetched after cards land so a slow/failed count never blocks render.
+    Drop.fetchGoingCounts(ids).then(function (counts) {
+      for (var id in counts) {
+        if (counts[id] < 2) continue; // ponytail: hide low counts — an empty room isn't social proof
+        var card = host.querySelector('[data-event-id="' + id + '"]');
+        if (card) card.appendChild(el('span', 'wsc__going', counts[id] + ' going'));
+      }
+    });
   };
 
   // ---- Nav: drawer, location popover, search ------------------------------

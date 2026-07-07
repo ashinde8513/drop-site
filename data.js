@@ -130,6 +130,29 @@
     });
   };
 
+  // Anon-safe aggregate "going" counts — one batched RPC call for a list of event
+  // ids. Server returns event_id+count only (no per-user rows); see
+  // drop-backend/migrations/0004_event_going_counts.sql.
+  Drop.fetchGoingCounts = function (ids) {
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return Promise.resolve({});
+    return fetch(REST + 'rpc/event_going_counts', {
+      method: 'POST',
+      headers: {
+        apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json'
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify({ event_ids: ids })
+    }).then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        var map = {};
+        (rows || []).forEach(function (row) { map[row.event_id] = row.going_count; });
+        return map;
+      })
+      .catch(function () { return {}; }); // ponytail: social proof is decorative, never block the card
+  };
+
   Drop.fetchVenue = function (name, city) {
     var params = {
       select: EVENT_SELECT,
