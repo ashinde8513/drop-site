@@ -23,7 +23,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - GSC/Bing sitemap submission (founder site-verification).
 ### Exact next step
-1. **Founder: QA the two 2026-07-06 evening deploys on the live site** — (a) log in once from
+1. **SINGLE-URL CUTOVER (everything built + committed, awaiting founder):** pre-flight = add
+   `https://trydropapp.com/app` to Supabase Auth → URL Configuration → Redirect URLs; then run
+   `workers/app-path/CUTOVER.md` in order: merge mobile PR #134 ("Single-URL consolidation") →
+   `cd workers/app-path && npx wrangler deploy` → site `wrangler pages deploy dist`. Verify per
+   runbook. Brief app.trydropapp.com breakage between steps 1–2; root site unaffected.
+2. **Founder: QA the two 2026-07-06 evening deploys on the live site** — (a) log in once from
    https://trydropapp.com/login (@handle + password → should land signed-in on app.trydropapp.com
    via the fragment handoff), (b) eyeball the shell restyle (events grid = uniform 300x340 cards,
    glass price pill, cyan date kicker). Both DEPLOYED to CF Pages `drop-site`. Code: login commit
