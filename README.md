@@ -6,22 +6,26 @@ the **mobile app** (`../drop-mobile-app`) — and both show the same content bec
 same backend (Supabase project `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`). The only
 difference is how users access it: native app vs. website.
 
-Public event/artist discovery pages, link-in-bio hub, and the privacy/terms pages.
-Plain HTML/CSS/JS, zero build step, zero dependencies. Deploys anywhere that serves static files.
+The **pre-login browse-first discovery site** (modeled on axs.com — see `AXS_MODEL.md`), NOT a
+marketing landing: a unified search+dates+location bar over open discovery rails from the live
+Supabase catalog, plus event/artist/venue pages, the link-in-bio hub, and privacy/terms. The
+signed-in app is served at `/app` (worker-proxied). Plain HTML/CSS/JS, zero build step.
 
 ```
-index.html      Landing page (hero, features, launch CTA → Kit waitlist)
+index.html      Discovery home (search bar + featured + Happening + genre rails — AXS-style)
+events/artists/venues + event/artist/venue detail pages (open, no login)
+login.html      → 301 to /app/login (the app owns login)
 link.html       Link-in-bio hub for the Instagram/TikTok bios
 privacy.html    Privacy Policy  ← also your Apple "Privacy Policy URL"
 terms.html      Terms of Service / EULA  ← also your Apple "EULA URL"
-styles.css      All styling
+site.css        All styling (pulls drop-design shell tokens)
 ```
 
 ## What this unblocks
 
 - **Partner / affiliate program applications** — a real website URL to enter on partner forms.
 - **Apple App Store** — hosted Privacy Policy + Terms/EULA URLs (a submission requirement).
-- **App Store marketing URL** — point it at the deployed home page.
+- **App Store marketing URL** — point it at the deployed discovery home.
 
 ## Deploy — pick one (all genuinely free, commercial use OK)
 
