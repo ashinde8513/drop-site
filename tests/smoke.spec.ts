@@ -23,7 +23,7 @@ function trackPageErrors(page: Page): string[] {
 }
 
 const PAGES = [
-  { path: '/index.html', title: /Find the shows your friends are going to/ },
+  { path: '/index.html', title: /Discover live shows near you/ },
   { path: '/events.html', title: /Shows near you/ },
   { path: '/venues.html', title: /Venues/ },
   { path: '/artists.html', title: /Artists/ },

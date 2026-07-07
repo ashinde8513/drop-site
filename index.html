@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Drop — Find the shows your friends are going to</title>
-  <meta name="description" content="Drop is the social way to discover concerts, raves, festivals, and club nights near you. See who's going, build your crew, and turn every night out into your live music history." />
+  <title>Drop — Discover live shows near you</title>
+  <meta name="description" content="Browse concerts, raves, festivals, and club nights near you on Drop. Search by artist, venue, or date, see who's going, and get tickets — the social way to discover live music." />
   <meta name="theme-color" content="#0B0D12" />
 
   <link rel="canonical" href="https://trydropapp.com/" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Drop — Find the shows your friends are going to" />
+  <meta property="og:title" content="Drop — Discover live shows near you" />
   <meta property="og:description" content="Discover concerts, raves, festivals, and club nights near you. See who's going and build your crew." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://trydropapp.com/" />
@@ -23,7 +23,7 @@
   <!-- Twitter card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@trydropapp" />
-  <meta name="twitter:title" content="Drop — Find the shows your friends are going to" />
+  <meta name="twitter:title" content="Drop — Discover live shows near you" />
   <meta name="twitter:description" content="Discover concerts, raves, festivals, and club nights near you. See who's going." />
   <meta name="twitter:image" content="https://trydropapp.com/og-image.png" />
 
@@ -73,7 +73,7 @@
   <!-- ============================ HEADER ============================ -->
   <header class="site-nav">
     <div class="nav-inner">
-      <a class="wordmark" href="/index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+      <a class="wordmark" href="/index.html" aria-label="Drop home"><span class="droplet" aria-hidden="true"></span>drop</a>
 
       <div class="loc-wrap">
         <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
@@ -117,13 +117,10 @@
   </header>
 
   <main id="main">
-    <!-- ============================ HERO ============================ -->
-    <section class="hero">
-      <div class="hero-bg" aria-hidden="true"></div>
+    <!-- ==================== DISCOVER (search-first, AXS-style) ==================== -->
+    <section class="discover-head">
       <div class="wrap">
-        <span class="eyebrow"><span class="dot"></span>Social live-events discovery</span>
-        <h1>Find the shows your <span class="grad-word">friends</span> are going to.</h1>
-        <p class="hero-sub">Drop helps you discover concerts, raves, venues, and plans around your city, then turns every night out into your live music history.</p>
+        <h1 class="discover-h1">Discover live shows near you</h1>
 
         <!-- Search panel -->
         <form class="search-panel" id="hero-search" role="search" aria-label="Find events">
@@ -170,11 +167,6 @@
           <a class="chip" href="/events.html?q=club">Clubs</a>
         </div>
       </div>
-
-      <!-- Signature spectrum as hero base -->
-      <div class="wrap" style="margin-top: clamp(36px, 6vw, 72px);">
-        <div class="spectrum" id="hero-spectrum" aria-hidden="true"></div>
-      </div>
     </section>
 
     <!-- ==================== HAPPENING THIS WEEK ==================== -->
@@ -183,13 +175,18 @@
         <div class="section-head section-head--row">
           <div>
             <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
-            <h2 class="sec-h2">Happening this week</h2>
+            <h2 class="sec-h2">Happening</h2>
           </div>
           <a class="link-more" href="/events.html">See all events →</a>
         </div>
+        <div class="time-tabs" role="tablist" aria-label="When">
+          <button class="time-tab is-on" type="button" role="tab" aria-selected="true" data-when="today">Today</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-when="weekend">This Weekend</button>
+          <button class="time-tab" type="button" role="tab" aria-selected="false" data-when="month">Next 30 Days</button>
+        </div>
         <div class="rail-wrap" data-rail>
           <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
-          <div class="rail" id="rail-week" aria-label="Happening this week"></div>
+          <div class="rail" id="rail-week" aria-label="Happening"></div>
           <button class="rail-btn next" type="button" aria-label="Scroll right" hidden>›</button>
         </div>
       </div>
@@ -247,99 +244,6 @@
       </div>
     </section>
 
-    <!-- ==================== SOCIAL PROOF (product preview) ==================== -->
-    <section class="section">
-      <div class="wrap">
-        <div class="preview-split">
-          <div>
-            <span class="preview-tag">In the app</span>
-            <h2 class="sec-h2" style="margin-top:14px;">Concert plans are better when everyone's in.</h2>
-            <p class="section-head" style="max-width:48ch;">See who's going, build your crew, and stop planning shows in six different group chats.</p>
-            <a class="btn-ghost" href="/download.html" style="margin-top:8px;">See how it works</a>
-          </div>
-          <!-- Sample plan card — clearly-labeled product preview, NOT real event data -->
-          <div class="plan-card" aria-label="Product preview: a plan with friends">
-            <div class="pc-head">
-              <div>
-                <div class="pc-title">Warehouse: Denver</div>
-                <div class="pc-meta">Sat · 10:00 PM · The Black Box</div>
-              </div>
-              <span class="genre-pill" style="position:static;">Techno</span>
-            </div>
-            <span class="chip-social">
-              <span class="avastack">
-                <span class="ava a0">M</span><span class="ava a1">J</span><span class="ava a2">R</span>
-              </span>
-              <span class="chip-social-txt">6 friends going</span>
-            </span>
-            <div class="pc-crew">
-              <span class="avastack">
-                <span class="ava a1">A</span><span class="ava a2">S</span><span class="ava a0">K</span>
-              </span>
-              <span class="pc-meta">Maya, Jordan, Rae and 3 others are in</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== FEATURE GRID ==================== -->
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="section-head">
-          <span class="eyebrow"><span class="dot"></span>Why Drop</span>
-          <h2 class="sec-h2">What you get with Drop.</h2>
-        </div>
-        <div class="grid-features">
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">👥</span>
-            <h3>See where friends are going</h3>
-            <p>Your feed shows the shows your people already have on their radar.</p>
-          </article>
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">🤝</span>
-            <h3>Build crews</h3>
-            <p>Make a plan, invite your group, and keep everyone on the same page for the night.</p>
-          </article>
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">🎟️</span>
-            <h3>Track every show you've been to</h3>
-            <p>Every night out is logged automatically into your personal live music history.</p>
-          </article>
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">📊</span>
-            <h3>Get Drop Wrapped</h3>
-            <p>See your year in shows: top genres, most-seen artists, the nights you'd repeat.</p>
-          </article>
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">📍</span>
-            <h3>Find venues that match your vibe</h3>
-            <p>Discover the rooms that consistently book the sound you actually go out for.</p>
-          </article>
-          <article class="feature-card">
-            <span class="fc-icon" aria-hidden="true">✨</span>
-            <h3>Log the nights you'll want to remember</h3>
-            <p>Save who played, who you were with, and how it felt, so the good nights don't blur together.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== APP CTA BAND ==================== -->
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="cta-band">
-          <h2>Your live music history starts tonight.</h2>
-          <p>Drop is releasing soon on iOS. Get on the list and be first in.</p>
-          <div class="cta-actions">
-            <a class="btn-primary" href="/download.html">Join the waitlist</a>
-            <a class="btn-ghost" href="/events.html">Browse events</a>
-          </div>
-          <p class="cta-note">iOS · Free at launch</p>
-        </div>
-      </div>
-    </section>
-
     <!-- ==================== PROMOTER BAND ==================== -->
     <section class="section section--flush-top">
       <div class="wrap">
@@ -359,7 +263,7 @@
   <footer class="site-foot">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="wordmark" href="/index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <a class="wordmark" href="/index.html" aria-label="Drop home"><span class="droplet" aria-hidden="true"></span>drop</a>
         <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
         <div class="foot-social">
           <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
@@ -398,7 +302,6 @@
     // Home page — wire live rails + venue derivation.
     (function () {
       var D = window.Drop;
-      D.spectrum('hero-spectrum');
 
       // City <select> in the hero search panel.
       var citySel = document.getElementById('hs-city');
@@ -428,18 +331,39 @@
 
       var city = D.city();
 
-      // Rail: Happening this week (city-scoped, ≤12, next 7 days).
-      function loadWeek() {
+      // Rail: Happening — time-tabbed (Today / This Weekend / Next 30 Days), AXS-style.
+      // Computes an inclusive [from,to] window for the active tab and refetches.
+      function happeningWindow(when) {
+        var from = new Date(); from.setHours(0, 0, 0, 0);
+        var to = new Date(); to.setHours(23, 59, 59, 0);
+        if (when === 'today') {
+          // from = start of today, to = end of today
+        } else if (when === 'weekend') {
+          // upcoming Fri 00:00 → Sun 23:59 (if already the weekend, use the current one)
+          var day = from.getDay(); // 0 Sun .. 6 Sat
+          var toFri = (5 - day + 7) % 7; // days until Friday
+          if (day === 0) { from.setDate(from.getDate() - 2); } // Sun → back to Fri
+          else if (day === 6) { from.setDate(from.getDate() - 1); } // Sat → back to Fri
+          else { from.setDate(from.getDate() + toFri); }
+          to = new Date(from); to.setDate(from.getDate() + (from.getDay() === 5 ? 2 : 1)); to.setHours(23, 59, 59, 0);
+        } else { // month / next 30 days
+          to.setDate(to.getDate() + 30);
+        }
+        return { from: from.toISOString(), to: to.toISOString() };
+      }
+
+      function loadWeek(when) {
+        when = when || 'today';
         var host = document.getElementById('rail-week');
         D.skeletonGrid(host, 6);
-        var wkEnd = new Date(); wkEnd.setDate(wkEnd.getDate() + 8); wkEnd.setHours(23, 59, 59, 0);
-        D.fetchEvents({ city: city, to: wkEnd.toISOString(), limit: 12 })
+        var win = happeningWindow(when);
+        D.fetchEvents({ city: city, from: win.from, to: win.to, limit: 12 })
           .then(function (evs) {
             // Prefer cards with real artwork up front (stable sort, no extra fetch).
             evs.sort(function (a, b) { return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0); });
             D.renderEvents(host, evs, {
               limit: 12,
-              emptyMsg: 'No shows in ' + city + ' this week yet. Try browsing all events.',
+              emptyMsg: 'No shows in ' + city + ' for that window yet. Try browsing all events.',
               emptyAction: 'Browse all events', emptyHref: '/events.html'
             });
             D.initRails();
@@ -490,7 +414,17 @@
           .catch(function () { D.stateError(host, loadVenues); });
       }
 
-      loadWeek(); loadNew(); loadVenues();
+      // Time-tabs → refetch Happening for the chosen window.
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.time-tab'));
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () {
+          tabs.forEach(function (o) { o.classList.remove('is-on'); o.setAttribute('aria-selected', 'false'); });
+          t.classList.add('is-on'); t.setAttribute('aria-selected', 'true');
+          loadWeek(t.getAttribute('data-when'));
+        });
+      });
+
+      loadWeek('today'); loadNew(); loadVenues();
     })();
   </script>
 </body>
