@@ -23,11 +23,17 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - GSC/Bing sitemap submission (founder site-verification).
 ### Exact next step
-1. **SINGLE-URL CUTOVER (everything built + committed, awaiting founder):** pre-flight = add
-   `https://trydropapp.com/app` to Supabase Auth → URL Configuration → Redirect URLs; then run
-   `workers/app-path/CUTOVER.md` in order: merge mobile PR #134 ("Single-URL consolidation") →
-   `cd workers/app-path && npx wrangler deploy` → site `wrangler pages deploy dist`. Verify per
-   runbook. Brief app.trydropapp.com breakage between steps 1–2; root site unaffected.
+1. **SINGLE-URL CUTOVER DONE + LIVE (2026-07-06 eve).** trydropapp.com = one URL: static
+   discovery/SEO/login at root + the Expo app at **/app** (CF worker `drop-app-path` proxies to
+   Pages `drop-web`, baseUrl='/app'); **app.trydropapp.com now 301s → trydropapp.com/app**. PR #134
+   merged; worker deployed (routes trydropapp.com/app*, app.trydropapp.com/*); site deployed
+   (login→/app). Supabase redirect allowlist has trydropapp.com/app + /app/**. VERIFIED live:
+   /app shell boots 0 console errors, JS loads through worker, 301s fire both roots, root site 200,
+   SSRF path-host-swap guard holds, login bad-creds graceful. **Founder QA: log in from
+   trydropapp.com/login (happy path) + one Google login round-trip (redirect now /app).**
+   Follow-ups: after QA remove app.trydropapp.com from Supabase allowlist (none present — skip);
+   web-push re-enable on /app (7 test users, trivial); optionally drop app.trydropapp.com DNS after
+   a deprecation window (301 worker keeps old links alive meanwhile).
 2. **Founder: QA the two 2026-07-06 evening deploys on the live site** — (a) log in once from
    https://trydropapp.com/login (@handle + password → should land signed-in on app.trydropapp.com
    via the fragment handoff), (b) eyeball the shell restyle (events grid = uniform 300x340 cards,
