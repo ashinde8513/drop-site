@@ -4,6 +4,6 @@
 
 # App share/deep-link paths (deepLinks.ts contract). When the app is installed
 # the OS intercepts these via Universal/App Links; on the web they land here.
-/event/:id  /event?id=:id  302
+/event/*  /event  200
 /plan/:id   /download      302
 /onboarding /download      302

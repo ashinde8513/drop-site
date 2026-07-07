@@ -49,7 +49,7 @@
   Drop.ecard = function (event, opts) {
     opts = opts || {};
     var a = el('a', 'ecard');
-    a.href = 'event.html?id=' + encodeURIComponent(event.id);
+    a.href = '/event.html?id=' + encodeURIComponent(event.id);
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
     var media = el('div', 'ecard-media');
@@ -108,7 +108,7 @@
   // Venue card (derived from grouped events).
   Drop.venueCard = function (v) {
     var a = el('a', 'vcard');
-    a.href = 'venue.html?name=' + encodeURIComponent(v.name) + '&city=' + encodeURIComponent(v.city || '');
+    a.href = '/venue.html?name=' + encodeURIComponent(v.name) + '&city=' + encodeURIComponent(v.city || '');
     a.setAttribute('aria-label', esc(v.name) + ' — ' + v.count + ' upcoming shows');
     var art = el('div', 'vcard-art ' + (v.cls || 'g-other'));
     art.setAttribute('aria-hidden', 'true');
@@ -128,7 +128,7 @@
   Drop.acard = function (a, opts) {
     opts = opts || {};
     var link = el('a', 'acard');
-    link.href = 'artist.html?id=' + encodeURIComponent(a.id);
+    link.href = '/artist.html?id=' + encodeURIComponent(a.id);
     link.setAttribute('aria-label', esc(a.name));
     var media = el('div', 'acard-media');
     function fallback() {
@@ -181,7 +181,7 @@
     box.appendChild(el('p', 'state-msg', msg || 'No shows here yet.'));
     if (actionLabel) {
       var a = el('a', 'btn-ghost', actionLabel);
-      a.href = actionHref || 'events.html';
+      a.href = actionHref || '/events.html';
       box.appendChild(a);
     }
     host.appendChild(box);
@@ -266,7 +266,7 @@
         e.preventDefault();
         var input = this.querySelector('input[type="search"], input[name="q"]');
         var val = input ? input.value.trim() : '';
-        var url = 'events.html?city=' + encodeURIComponent(Drop.city());
+        var url = '/events.html?city=' + encodeURIComponent(Drop.city());
         if (val) url += '&q=' + encodeURIComponent(val);
         location.href = url;
       });

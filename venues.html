@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="site.css" />
+  <link rel="stylesheet" href="/site.css" />
 
   <script type="application/ld+json">
   { "@context": "https://schema.org", "@type": "CollectionPage", "name": "Venues — Drop", "url": "https://trydropapp.com/venues.html" }
@@ -43,7 +43,7 @@
 
   <header class="site-nav">
     <div class="nav-inner">
-      <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+      <a class="wordmark" href="/index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
 
       <div class="loc-wrap">
         <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
@@ -61,13 +61,13 @@
       </form>
 
       <nav class="nav-links" aria-label="Primary">
-        <a href="events.html">Events</a>
-        <a href="venues.html" aria-current="page">Venues</a>
-        <a href="artists.html">Artists</a>
-        <a href="promoters.html">For Promoters</a>
-        <a href="about.html">About</a>
+        <a href="/events.html">Events</a>
+        <a href="/venues.html" aria-current="page">Venues</a>
+        <a href="/artists.html">Artists</a>
+        <a href="/promoters.html">For Promoters</a>
+        <a href="/about.html">About</a>
       </nav>
-      <a class="btn-primary nav-cta" href="download.html">Get the app</a>
+      <a class="btn-primary nav-cta" href="/download.html">Get the app</a>
 
       <span class="nav-spacer"></span>
       <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
@@ -75,12 +75,12 @@
     </div>
 
     <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
-      <a href="events.html">Events</a>
-      <a href="venues.html" aria-current="page">Venues</a>
-      <a href="artists.html">Artists</a>
-      <a href="promoters.html">For Promoters</a>
-      <a href="about.html">About</a>
-      <a class="btn-primary btn-block" href="download.html">Get the app</a>
+      <a href="/events.html">Events</a>
+      <a href="/venues.html" aria-current="page">Venues</a>
+      <a href="/artists.html">Artists</a>
+      <a href="/promoters.html">For Promoters</a>
+      <a href="/about.html">About</a>
+      <a class="btn-primary btn-block" href="/download.html">Get the app</a>
     </nav>
   </header>
 
@@ -110,7 +110,7 @@
   <footer class="site-foot">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="wordmark" href="index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
+        <a class="wordmark" href="/index.html" aria-label="Drop home">DROP<span class="caret">▾</span></a>
         <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
         <div class="foot-social">
           <a href="https://instagram.com/trydropapp" aria-label="Instagram" rel="noopener">IG</a>
@@ -120,21 +120,21 @@
       </div>
       <nav class="foot-col" aria-label="Discover">
         <h4>Discover</h4>
-        <a href="events.html">Events</a>
-        <a href="venues.html">Venues</a>
-        <a href="artists.html">Artists</a>
-        <a href="download.html">Download</a>
+        <a href="/events.html">Events</a>
+        <a href="/venues.html">Venues</a>
+        <a href="/artists.html">Artists</a>
+        <a href="/download.html">Download</a>
       </nav>
       <nav class="foot-col" aria-label="Company">
         <h4>Company</h4>
-        <a href="about.html">About</a>
-        <a href="promoters.html">For Promoters</a>
+        <a href="/about.html">About</a>
+        <a href="/promoters.html">For Promoters</a>
         <a href="mailto:trydropapp@gmail.com">Contact</a>
       </nav>
       <nav class="foot-col" aria-label="Legal">
         <h4>Legal</h4>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
       </nav>
     </div>
     <div class="foot-fine">
@@ -143,8 +143,8 @@
     </div>
   </footer>
 
-  <script src="data.js"></script>
-  <script src="site.js"></script>
+  <script src="/data.js"></script>
+  <script src="/site.js"></script>
   <script>
     (function () {
       var D = window.Drop;
@@ -189,7 +189,7 @@
           host.classList.remove('is-loading');
           host.innerHTML = '';
           if (!list.length) {
-            D.stateEmpty(host, 'No venues in ' + city + ' yet.', 'Browse all events', 'events.html');
+            D.stateEmpty(host, 'No venues in ' + city + ' yet.', 'Browse all events', '/events.html');
             moreBtn.hidden = true;
             return;
           }

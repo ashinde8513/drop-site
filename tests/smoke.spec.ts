@@ -39,9 +39,9 @@ const PAGES = [
 // Hit them with no params and expect the client-side "not found" empty
 // state to render — no id means no Supabase fetch is even attempted.
 const DETAIL_PAGES = [
-  { path: '/event.html', backHref: 'events.html' },
-  { path: '/venue.html', backHref: 'venues.html' },
-  { path: '/artist.html', backHref: 'artists.html' },
+  { path: '/event.html', backHref: '/events.html' },
+  { path: '/venue.html', backHref: '/venues.html' },
+  { path: '/artist.html', backHref: '/artists.html' },
 ];
 
 test.describe('landing site smoke', () => {
@@ -77,7 +77,7 @@ test.describe('landing site smoke', () => {
 
   test('legal links from homepage resolve', async ({ page }) => {
     await page.goto('/index.html');
-    for (const href of ['privacy.html', 'terms.html']) {
+    for (const href of ['/privacy.html', '/terms.html']) {
       const link = page.locator(`a[href="${href}"]`).first();
       await expect(link, `${href} link present`).toHaveCount(1);
       const res = await page.request.get(href);
