@@ -30,6 +30,7 @@ export default {
     // trydropapp.com/app[/...]
     const rest = safePath.slice('/app'.length);
     if (rest === '') return Response.redirect(url.origin + '/app/', 301);
+    if (!rest.startsWith('/')) return new Response('Not found', { status: 404 }); // /appfoo is not /app/foo
     const upstream = new URL(PAGES_ORIGIN);
     upstream.pathname = rest;
     upstream.search = url.search;
