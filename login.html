@@ -98,9 +98,9 @@
           </form>
 
           <div class="login-links">
-            <a href="https://app.trydropapp.com/forgot-password">Forgot password?</a>
+            <a href="/app/forgot-password">Forgot password?</a>
             <span aria-hidden="true">·</span>
-            <a href="https://app.trydropapp.com/signup">New to Drop? Create an account</a>
+            <a href="/app/signup">New to Drop? Create an account</a>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@
   <script src="/data.js"></script>
   <script src="/site.js"></script>
   <script>
-    // Log in on trydropapp.com, continue signed-in on the app (app.trydropapp.com).
+    // Log in on trydropapp.com, continue signed-in on the app (served at /app).
     // Password grant runs against Supabase Auth directly (publishable key — public by
     // design; RLS + auth govern access). Usernames route through the
     // login-with-username edge function so account emails never reach the client.
@@ -125,7 +125,7 @@
     (function () {
       var SUPA_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
       var SUPA_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
-      var APP_URL = 'https://app.trydropapp.com/';
+      var APP_URL = '/app/';
 
       var form = document.getElementById('login-form');
       var idEl = document.getElementById('li-id');
