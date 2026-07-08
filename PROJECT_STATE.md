@@ -26,7 +26,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. (Agent-actionable) User reviews `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md`; on approval invoke `writing-plans`, then implement **A1** hero flip-words (new `flipwords.js` + hero HTML `<span data-flip>`) and **A2** hero aurora backdrop (`.aurora` CSS behind the waveform) in `site.css` — Prism-tokened, `prefers-reduced-motion` fallback — then `npm test` + wrangler deploy. Also create `prism-tokens/DESIGN_RESOURCES.md` + backlog pointers.
+1. **Deploy the hero effects** (built + smoke-verified, NOT yet live): from `/Users/aryashinde/Developer/Drop/drop-website` run `npm test` (expect 46/46), re-sync the 3 changed files into `dist/` (`cp index.html site.css flipwords.js dist/`), then `npx wrangler pages deploy dist --project-name=drop-site --branch=main`. Then live-verify on trydropapp.com: hero `.flip` word cycles (shows/sets/drops), `.aurora` glow renders, zero console errors. (A1 flip-words + A2 aurora committed 2b8dbc1.)
 2. **Founder QA:** hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, then sign into that page with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
 3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time. Then check GSC sitemap status flipped from "Couldn't fetch" to Success (GSC → Sitemaps); if still failing after ~24h, inspect content-type served by CF Pages.
 
@@ -95,15 +95,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
-### 2026-07-08 — Claude (Opus) — Native-effects design spec (brainstorming, approved; no code yet)
-- **Changed:** added `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md` (commit 29efed8). Design-only — no site code, no deploy.
-- **Context:** reviewed 3 UI-inspiration sites (refero.design, Aceternity UI, Componentry). Verdict: neither library imports into Drop (site = vanilla HTML/CSS, app = React Native). Plan = reimplement a small free-effect subset natively, Prism-tokened, reduce-motion guarded, zero new deps. UX-preserving subset chosen (user deferred to recommendation): **A1** hero flip-words headline (vanilla JS), **A2** hero aurora backdrop layered *behind* the existing waveform (CSS), **B1** post-show recap celebration burst in the app (RN Animated, no dep). Backlogged: site moving-cards (needs real logos). Cut: app always-on animated hero (battery/a11y).
-- **Tested:** N/A — spec only. Committed clean (gitleaks pass).
-- **Remaining:** user to review the spec; then writing-plans → implementation. `prism-tokens/DESIGN_RESOURCES.md` (the "where to look" reference) not yet created — it's part of the plan.
+### 2026-07-08 — Claude (Opus) — Native hero effects BUILT + spec (not yet deployed)
+- **Changed:** spec `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md` (29efed8); then implemented (commit 2b8dbc1): **A1** hero flip-words — new `flipwords.js` cycles the h1 word (shows/sets/drops), reserves widest-word width so copy doesn't reflow, static under reduced-motion; hero h1 in `index.html` wraps the word in `<span class="flip" data-flip>`; `.flip` iridescent gradient text in `site.css`. **A2** aurora — `.aurora` CSS glow (Prism cyan/magenta radial gradients, `aurora-drift` keyframes) behind `.discover-head`, `<div class="aurora">` added, static under reduced-motion. `playwright.config.ts` → `reducedMotion:'reduce'` for deterministic hero. `BACKLOG.md` points at `prism-tokens/DESIGN_RESOURCES.md`.
+- **Context:** reviewed 3 UI-inspiration sites (refero.design, Aceternity, Componentry) — neither imports (site = vanilla HTML, app = RN), so effects reimplemented natively + Prism-tokened + reduced-motion guarded, zero deps. Cross-repo (this session): `prism-tokens/DESIGN_RESOURCES.md` created (d4fbff2); resonance BACKLOG pointer (5a61a44); app `<RecapCelebration />` confetti component → Drop-App PR #146 (unwired, tsc-green). Backlogged: site moving-cards (needs real logos). Cut: app always-on animated hero.
+- **Tested:** `npm test` 46/46 (desktop + mobile-safari, zero console errors, h1 intact, flipwords.js loads). Visual live-check on a local server via browser: `.aurora` present full-width, `aurora-drift` animation active, gradient bg, opacity 0.45; `.flip` cycling (drops→sets), 100px width reserved, no reflow. NOT deployed to trydropapp.com yet.
+- **Remaining:** deploy (see Exact next step #1). App PR #146 needs wiring into the recap screen + device QA (separate follow-up).
 - **Next steps (ranked):**
-  1. User reviews `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md`; on approval invoke `writing-plans`, then implement A1 flip-words + A2 aurora in this repo (`site.css` + new `flipwords.js` + hero HTML), `npm test`, deploy.
-  2. Create `/Users/aryashinde/Developer/Drop/prism-tokens/DESIGN_RESOURCES.md` (refero/Aceternity/Componentry catalog) + one-line pointer in this repo's `BACKLOG.md`, DropApp, and resonance backlog.
-  3. App B1 (`<RecapCelebration />`) is a separate `drop-mobile-app` task — build after the web items land.
+  1. Deploy hero effects to trydropapp.com (Exact next step #1) + live-verify.
+  2. Drop-App PR #146: wire `<RecapCelebration>` into the recap screen root View, device-QA burst + reduce-motion skip, then merge.
 
 ### 2026-07-08 — Codex — Login route cleanup + auth redirect normalization
 - **Changed:** switched website auth links to `/account.html`; updated `workers/app-path/worker.js` so `/`, `/app*`, `/login`, and `/account.html` on `app.trydropapp.com` all serve the static account shell from `/account.html` with no-cache response handling.
