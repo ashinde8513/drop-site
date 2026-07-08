@@ -97,10 +97,10 @@
           <p>Drop is releasing soon on iOS. Get on the list and be first in.</p>
 
           <!-- Waitlist → Kit (ConvertKit). Paste your Form ID into KIT_FORM_ID in the
-               script at the bottom of this file. No-JS fallback: mailto so the form
-               is never dead. -->
+               script at the bottom of this file. Without Kit, JS opens a mailto
+               fallback on submit without putting mailto in the form action. -->
           <form class="wl-form center" id="waitlist"
-                action="mailto:trydropapp@gmail.com?subject=Get%20launch%20access"
+                action="/download.html"
                 method="get" novalidate>
             <div class="wl-row">
               <label for="wl-email" class="sr-only">Email address</label>
@@ -251,8 +251,9 @@
         form.setAttribute('action', 'https://app.convertkit.com/forms/' + KIT_FORM_ID + '/subscriptions');
         form.setAttribute('method', 'post'); // HTML defaults to get for no-JS mailto fallback
       } else {
-        // Not wired to Kit yet — keep a working fallback so the form is never broken.
-        form.setAttribute('action', MAILTO);
+        // Not wired to Kit yet — keep a JS fallback so the form is never broken,
+        // but do not use mailto as the form action because browsers warn on load.
+        form.setAttribute('action', '/download.html');
         form.setAttribute('method', 'get');
       }
 
