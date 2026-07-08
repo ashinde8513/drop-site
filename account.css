@@ -136,15 +136,15 @@
 
 .account-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: clamp(96px, 17vh, 156px) 32px 68px;
+  padding: 48px 32px;
   background: var(--bg);
 }
 
 .auth-panel,
 .dash-panel {
-  width: min(100%, 244px);
+  width: min(100%, 360px);
 }
 
 .dash-panel {
