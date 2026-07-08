@@ -248,10 +248,28 @@ button { font: inherit; cursor: pointer; }
 }
 
 /* Discovery header (search-first, AXS-style) — replaces the marketing hero */
-.discover-head { padding: clamp(20px, 3vw, 32px) 0 8px; }
+.discover-head { position: relative; isolation: isolate; padding: clamp(20px, 3vw, 32px) 0 8px; }
 .discover-h1 {
   font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.4vw, 34px);
   letter-spacing: -0.02em; margin: 0 0 clamp(16px, 2vw, 22px);
+}
+/* Iridescent flip-word (cycled by flipwords.js; static under reduced-motion) */
+.discover-h1 .flip {
+  background: var(--grad-glow); -webkit-background-clip: text; background-clip: text;
+  color: transparent; will-change: opacity;
+}
+/* Hero aurora — subtle Prism glow behind the discovery header. */
+.aurora {
+  position: absolute; inset: -40% -10% auto -10%; height: 260px; z-index: -1;
+  pointer-events: none; opacity: 0.45; filter: blur(64px);
+  background:
+    radial-gradient(42% 60% at 22% 32%, color-mix(in srgb, var(--brand-cyan) 60%, transparent), transparent 70%),
+    radial-gradient(46% 64% at 76% 22%, color-mix(in srgb, var(--brand-magenta) 48%, transparent), transparent 70%);
+  animation: aurora-drift 18s var(--ease) infinite alternate;
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(-4%, 0, 0) scale(1); }
+  to   { transform: translate3d(6%, 3%, 0) scale(1.12); }
 }
 
 /* Happening time-tabs (Today / This Weekend / Next 30 Days) */
@@ -957,6 +975,7 @@ button { font: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .spectrum .bar { animation: none; transform: scaleY(var(--h, 0.3)); }
+  .aurora { animation: none; }
   .skeleton::after { animation: none; }
   .wsc-card:hover, .vcard:hover, .acard:hover, .tile:hover, .feature-card:hover,
   .btn-primary:hover, .btn-ghost:hover, .artist-row:hover { transform: none; }
