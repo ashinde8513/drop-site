@@ -1,2 +1,11 @@
 /.well-known/apple-app-site-association
   Content-Type: application/json
+
+/account.html
+  Cache-Control: no-store, no-cache, max-age=0
+
+/account.css
+  Cache-Control: no-store, no-cache, max-age=0
+
+/account.js
+  Cache-Control: no-store, no-cache, max-age=0

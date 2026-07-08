@@ -26,11 +26,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. Supabase Auth redirect allowlist: with Supabase Management API write access, add exact Redirect URL `https://app.trydropapp.com/login` for project `ebccwnkmsnhbljxxxdej` (or set it in Dashboard → Authentication → URL Configuration). Current blocker: no local `SUPABASE_ACCESS_TOKEN`, CLI is logged out, and available Supabase MCP tools are read-only for this setting.
-2. Founder QA: open `https://app.trydropapp.com/login` and sign in with a real Drop account; confirm the dashboard shows your profile, shows, followed artists, and followed venues.
-3. Founder QA: hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `https://app.trydropapp.com/login`, and spot-check `/download.html`, `/events.html`, one artist detail, and one venue detail at 390/768/1440.
-4. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
-5. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
+1. Founder QA: hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `https://app.trydropapp.com/login`, then sign into `https://app.trydropapp.com/login` with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
+2. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
+3. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -97,6 +95,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-08 — Codex — Login page routing/cache hardening
+- **Changed:** `workers/app-path/worker.js` now serves `app.trydropapp.com` login/sign-up/account shell routes from `/account.html` (explicit, non-extensionless route) and stamps shell responses with `Cache-Control: no-store, no-cache, max-age=0` to avoid stale login UI from CDN/browser cache.
+- **Changed:** `/_headers` now enforces same no-cache headers for `/account.html`, `/account.css`, and `/account.js`.
+- **Tested:** local path-rewrite checks and project diff review; Playwright suite cannot run in this environment because local test server binding is blocked by sandbox networking policy.
 ### 2026-07-06 — Claude (Fable) — 4-track parallel: AXS page-align + anon going-count + GSC + Drop-App cross-links
 - **Changed:** (this repo, IN FLIGHT — subagent still editing events/artists/venues/event.html + site.css in main checkout, unverified until its npm test + commit lands). LANDED: worktree branch `feat/anon-going-count` commit bb48627 (data.js `Drop.fetchGoingCounts` batched RPC, site.js "N going" pill via `Drop.renderEvents` choke point, shown only when ≥2; site.css `.wsc__going`); drop-backend commit 488ac7c migration `migrations/0004_event_going_counts.sql` — `event_going_counts(uuid[])` aggregate RPC, APPLIED to prod Supabase, anon-safety live-verified (RPC returns counts only; raw attendance blocked for anon). GSC: URL-prefix property https://trydropapp.com created, token `google75d252b1adf86e07.html`, deploy snapshot staged in session scratchpad. Drop-App cross-links PR in flight (branch chore/split-surface-crosslinks).
 - **Tested:** post-merge npm test 34/34 (incl. fixed stale h1 expectation); anon REST safety verified live; dist parity-checked vs root sources; founder deployed (7d34def3.drop-site.pages.dev → live); GSC ownership VERIFIED (HTML file; CF pretty-URL 308 harmless) + /sitemap.xml SUBMITTED; live event page 0 console errors (agent Playwright drive). ALL FOUR TRACKS LANDED: page-align 180024d + wedge merge + GSC token 6006fec pushed; drop-backend 488ac7c pushed; Drop-App cross-links PR (#136) squash-merged after agent-ci + web-smoke green (welcome.tsx 1370→230 lines).
