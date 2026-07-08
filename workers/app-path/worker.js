@@ -2,6 +2,7 @@
 const SITE_ORIGIN = 'https://trydropapp.com';
 const ACCOUNT_HOST = 'app.trydropapp.com';
 const ACCOUNT_PATH = '/account.html';
+const WEBSITE_LOGIN_PATH = '/account.html';
 
 export default {
   async fetch(request) {
@@ -27,11 +28,13 @@ export default {
       return fetch(request);
     }
 
-    return Response.redirect('https://' + ACCOUNT_HOST + '/login', 302);
+    const redirectTarget = new URL(WEBSITE_LOGIN_PATH + url.search, SITE_ORIGIN).toString();
+    return Response.redirect(redirectTarget, 302);
   },
 };
 
 function isAccountRoute(pathname) {
+  if (pathname === ACCOUNT_PATH || pathname === '/login') return true;
   if (pathname === '/' || pathname === '') return true;
   if (pathname.indexOf('.') !== -1) return false;
   return true;

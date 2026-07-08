@@ -18,7 +18,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### What works
 - FULL 12-page public event-discovery website LIVE at trydropapp.com (cutover 2026-07-06, see CUTOVER RECORD): AXS-style IA, Prism tokens, live Supabase public catalog (anon key, 1.5K events), 32/32 Playwright smoke green.
 - Browser login/account shell is LIVE on `app.trydropapp.com` (2026-07-08, Codex): static non-Expo `account.html` screen matches the requested compact split-panel Prism login design, uses Supabase Auth against the same Drop project, supports email/password, username password login through `login-with-username`, sign-up, password reset, Google/Apple/Facebook OAuth triggers, and shows signed-in profile/attendance/followed-artist/followed-venue data through existing RLS. Latest Pages deploy `c3a6e0e4.drop-site.pages.dev`; Worker `drop-app-path` version `73d5a5c2-774f-4e18-a708-1754ed669d56`.
-- Expo web proxy is retired (2026-07-08, Codex): trydropapp.com remains the standalone public website; `/app` and `/app/...` no longer serve Expo web and now redirect to `https://app.trydropapp.com/login`.
+- Expo web proxy is retired (2026-07-08, Codex): trydropapp.com remains the standalone public website; `/app` and `/app/...` no longer serve Expo web and now redirect to `/account.html` on the public site.
 - 19-rule UI best-practices audit PASSED + fixes deployed (2026-07-06, commit 7308468, live-verified): undefined `--r-card` radius bug fixed, chip selected-state = solid cyan (gradient reserved for .btn-primary), events sort select → toggle chips, event-page nav CTA ghosted, legal numerals cyan, venue/artist card value-hierarchy, header search live-filters venues/artists grids, `.btn-primary` fill desaturated ~18% (`--grad-glow-fill`, AA contrast 5.06:1 worst stop; waveform/text/glow keep full sat).
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
@@ -26,15 +26,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. Founder QA: hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `https://app.trydropapp.com/login`, then sign into `https://app.trydropapp.com/login` with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
+1. Founder QA: hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, then sign into that page with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
 2. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
 3. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
-- `trydropapp.com/app*` and `app.trydropapp.com/*` → Worker **drop-app-path**. Apex `/app` and `/app/...` redirect to `https://app.trydropapp.com/login`; `app.trydropapp.com` serves the static browser account shell from this repo. No Expo web proxy is active on public routes.
+- `trydropapp.com/app*` and `app.trydropapp.com/*` → Worker **drop-app-path**. Apex `/app` and `/app/...` redirect to `/account.html`; `app.trydropapp.com` serves the static browser account shell from this repo. No Expo web proxy is active on public routes.
 - DNS (zone 5ac5024f…): apex+www CNAME → drop-site.pages.dev; app host remains proxied so the Worker route can catch legacy links.
-- Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `https://app.trydropapp.com/login`; `app.trydropapp.com/login` and `/signup` serve the static account shell; account assets serve 200.
+- Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
 ### 2026-07-08 — Codex — Browser login visual fidelity fix deployed
@@ -95,6 +95,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-08 — Codex — Login route cleanup + auth redirect normalization
+- **Changed:** switched website auth links to `/account.html`; updated `workers/app-path/worker.js` so `/`, `/app*`, `/login`, and `/account.html` on `app.trydropapp.com` all serve the static account shell from `/account.html` with no-cache response handling.
+- **Changed:** normalized `account.js` auth callbacks from `/login` to `/account.html` for `AUTH_REDIRECT`, including password-reset return paths.
+- **Tested:** `npm test` (46/46 pass, desktop + mobile-safari) in this environment.
+- **Remaining:** deploy with `CLOUDFLARE_API_TOKEN` and founder-level QA of live auth callback return flow.
+- **Next:** see Exact next step above.
+
 ### 2026-07-08 — Codex — Login page routing/cache hardening
 - **Changed:** `workers/app-path/worker.js` now serves `app.trydropapp.com` login/sign-up/account shell routes from `/account.html` (explicit, non-extensionless route) and stamps shell responses with `Cache-Control: no-store, no-cache, max-age=0` to avoid stale login UI from CDN/browser cache.
 - **Changed:** `/_headers` now enforces same no-cache headers for `/account.html`, `/account.css`, and `/account.js`.

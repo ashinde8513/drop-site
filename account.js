@@ -2,10 +2,11 @@
   var Drop = window.Drop || {};
   var SUPA_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
   var SUPA_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
+  var AUTH_PATH = '/account.html';
   var AUTH_ORIGIN = location.hostname === 'app.trydropapp.com'
     ? 'https://app.trydropapp.com'
     : location.origin;
-  var AUTH_REDIRECT = AUTH_ORIGIN + '/login';
+  var AUTH_REDIRECT = AUTH_ORIGIN + AUTH_PATH;
 
   var client = window.supabase && window.supabase.createClient
     ? window.supabase.createClient(SUPA_URL, SUPA_KEY, {
@@ -143,7 +144,7 @@
     var email = document.getElementById('auth-email').value.trim();
     if (!email) throw new Error('Enter your account email.');
     var out = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: AUTH_ORIGIN + '/login?mode=reset-password'
+      redirectTo: AUTH_ORIGIN + AUTH_PATH + '?mode=reset-password'
     });
     if (out.error) throw out.error;
     setMessage('Password reset link sent.', 'ok');

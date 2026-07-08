@@ -7,7 +7,8 @@
 /event/*  /event  200
 /plan/:id   /download.html  302
 /onboarding /download.html  302
+/app*       /account.html  302
 
 # Browser account shell lives on app.trydropapp.com; the public site stays browse-first.
-/login      https://app.trydropapp.com/login  302
-/login.html https://app.trydropapp.com/login  302
+/login      /account.html  302
+/login.html /account.html  302

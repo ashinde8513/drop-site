@@ -125,12 +125,11 @@ test.describe('landing site smoke', () => {
   });
 
   test('website header points login to the static browser account shell', async ({ page }) => {
-    // Browser login lives on app.trydropapp.com, but it is served from this
-    // static website repo through the Worker. It must never point to Expo /app.
+    // Browser login now points to the static account shell on this static domain.
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
       await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
-      await expect(page.locator('header a[href="https://app.trydropapp.com/login"]').first()).toHaveCount(1);
+      await expect(page.locator('header a[href="/account.html"]').first()).toHaveCount(1);
       await expect(page.locator('header a[href="/download.html"]').first()).toHaveCount(1);
     }
   });
@@ -152,7 +151,7 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('header a[href="/promoters.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
     await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
-    await expect(page.locator('header a[href="https://app.trydropapp.com/login"]').first()).toHaveCount(1);
+    await expect(page.locator('header a[href="/account.html"]').first()).toHaveCount(1);
   });
 
 });
