@@ -14,9 +14,12 @@ export default {
       upstream.pathname = isShellRoute ? ACCOUNT_PATH : url.pathname;
       upstream.search = url.search;
       const response = await fetch(new Request(upstream.toString(), request));
-      if (!isShellRoute) return response;
       const headers = new Headers(response.headers);
-      headers.set('Cache-Control', 'no-store, no-cache, max-age=0');
+      // trydropapp.com's zone Browser Cache TTL would otherwise stamp a 4h
+      // max-age on css/js, serving stale assets against fresh HTML (the
+      // cross-browser split). Force revalidation: no-store for the auth shell,
+      // no-cache (etag 304) for assets so deploys take effect immediately.
+      headers.set('Cache-Control', isShellRoute ? 'no-store, no-cache, max-age=0' : 'no-cache');
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
