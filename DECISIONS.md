@@ -1,7 +1,7 @@
 # Decisions
 
-## 2026-07-08 — Website stays separate from the app
+## 2026-07-08 — Website plus static browser account shell
 
-trydropapp.com is the public browse-first website. It does not host the Expo web app or a browser login shell.
+trydropapp.com is the public browse-first website. Browser login/account access lives on `app.trydropapp.com`, served from this static website repo through the Cloudflare Worker.
 
-Account-bound actions belong to the native app. Legacy browser-app URLs (`/app*`, `app.trydropapp.com/*`, `/login`, `/login.html`) redirect to `download.html` so old links do not 404.
+The browser account shell uses Supabase Auth against the same Drop project as the native app and reads the same RLS-protected account data. It must not serve the Expo web app.

@@ -62,5 +62,5 @@ crawlable pages), drop the "marketing landing" framing.
 - [ ] Event pages: AXS-style open detail (lineup, venue, offers, directions) — Drop already has
       `event.html`; align to the offer-list + app-promo pattern.
 - [ ] Nav: collapse the marketing nav (For Promoters/About stay in footer); lead with search,
-      browse links, and Get the app — no browser login.
+      browse links, Log in (`app.trydropapp.com`), and Get the app.
 - [ ] Social wedge on cards/rails (friends-going, crew) so it's Drop, not a plain AXS clone.

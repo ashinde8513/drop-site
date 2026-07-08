@@ -33,6 +33,7 @@ const PAGES = [
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
   { path: '/link.html', title: /Drop — Get the app/ },
+  { path: '/account.html', title: /Log In \| Drop/ },
 ];
 
 // event/venue/artist are param-driven detail templates (?id=, ?name=&city=).
@@ -123,14 +124,24 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('.grid-tiles')).toHaveCount(1);
   });
 
-  test('website header stays separate from the Expo web app', async ({ page }) => {
-    // The native app owns accounts. The public website must not link into the
-    // retired Expo web shell from its global nav.
+  test('website header points login to the static browser account shell', async ({ page }) => {
+    // Browser login lives on app.trydropapp.com, but it is served from this
+    // static website repo through the Worker. It must never point to Expo /app.
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
       await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
+      await expect(page.locator('header a[href="https://app.trydropapp.com/login"]').first()).toHaveCount(1);
       await expect(page.locator('header a[href="/download.html"]').first()).toHaveCount(1);
     }
+  });
+
+  test('account page renders the browser login screen', async ({ page }) => {
+    await page.goto('/account.html');
+    await expect(page.locator('h1')).toContainText("Who's going.");
+    await expect(page.locator('#auth-title')).toHaveText('Welcome back');
+    await expect(page.locator('#auth-login')).toBeVisible();
+    await expect(page.locator('#auth-password')).toBeVisible();
+    await expect(page.locator('#auth-submit')).toHaveText('Log in');
   });
 
   test('nav parity: browse links + corner, no For Promoters in header', async ({ page }) => {
@@ -141,6 +152,7 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('header a[href="/promoters.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
     await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
+    await expect(page.locator('header a[href="https://app.trydropapp.com/login"]').first()).toHaveCount(1);
   });
 
 });

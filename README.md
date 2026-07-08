@@ -8,18 +8,18 @@ difference is how users access it: native app vs. website.
 
 The **browse-first discovery website** (modeled on axs.com — see `AXS_MODEL.md`), NOT a
 marketing landing: a unified search+dates+location bar over open discovery rails from the live
-Supabase catalog, plus event/artist/venue pages, the link-in-bio hub, and privacy/terms. The
-native app is separate; stale `/app` browser URLs redirect to the download page. Plain
-HTML/CSS/JS, zero build step.
+Supabase catalog, plus event/artist/venue pages, the link-in-bio hub, privacy/terms, and a
+static browser account shell on `app.trydropapp.com`. Plain HTML/CSS/JS, zero build step.
 
 ```
 index.html      Discovery home (search bar + featured + Happening + genre rails — AXS-style)
 events/artists/venues + event/artist/venue detail pages (open, no login)
-login.html      retired; /login redirects to download.html
+account.html    Browser login/account shell (served at app.trydropapp.com/login by Worker)
 link.html       Link-in-bio hub for the Instagram/TikTok bios
 privacy.html    Privacy Policy  ← also your Apple "Privacy Policy URL"
 terms.html      Terms of Service / EULA  ← also your Apple "EULA URL"
-site.css        All styling (pulls drop-design shell tokens)
+site.css        Shared styling (pulls drop-design shell tokens)
+account.css/js  Browser auth/account flow (Supabase Auth + RLS-protected account data)
 ```
 
 ## What this unblocks
