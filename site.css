@@ -24,11 +24,12 @@
   --text-mute:   #7C8597;
 
   /* ===== Gradients (primitives.gradientStops) ===== */
-  --grad-glow:   linear-gradient(120deg, #4DE2FF 0%, #E24DFF 52%, #B6FF6A 100%); /* iridescent CTA */
-  --grad-brand:  linear-gradient(120deg, #E24DFF, #4DE2FF);
-  --grad-cool:   linear-gradient(120deg, #4DE2FF, #B6FF6A);
-  --grad-chrome: linear-gradient(120deg, #C9D2DF, #8A93A5, #EDF2F8);
-  --scrim:       linear-gradient(180deg, transparent, rgba(11,13,18,0.25) 40%, rgba(11,13,18,0.92));
+  --grad-glow:      linear-gradient(120deg, #4DE2FF 0%, #E24DFF 52%, #B6FF6A 100%); /* iridescent CTA — TEXT/glow accents */
+  --grad-glow-fill: linear-gradient(120deg, #5DCFE6 0%, #C350D9 52%, #B3EB78 100%); /* desat large-fill variant (buttons/CTA rows) */
+  --grad-brand:     linear-gradient(120deg, #E24DFF, #4DE2FF);
+  --grad-cool:      linear-gradient(120deg, #4DE2FF, #B6FF6A);
+  --grad-chrome:    linear-gradient(120deg, #C9D2DF, #8A93A5, #EDF2F8);
+  --scrim:          linear-gradient(180deg, transparent, rgba(11,13,18,0.25) 40%, rgba(11,13,18,0.92));
 
   /* ===== Semantic roles (semantic.ts — named by JOB) ===== */
   --bg:             var(--ink);
@@ -89,12 +90,7 @@
   --wrap: 1440px;          /* canonical web-shell content cap (mirrors app.trydropapp.com) */
   --wrap-narrow: 760px;    /* legal/about prose */
   --nav-h: 68px;
-
-  /* Dark-mode-safe large-fill variant of --grad-glow (Prism Rule 9): the full-sat
-     neon rainbow vibrates as a big fill on near-black. Same hues, ~18% desaturated
-     + ~6% darkened — still reads bright + primary, ink label keeps AA (magenta 5.06:1).
-     Full-sat --grad-glow stays for text (.grad-word), the waveform, and glow accents. */
-  --grad-glow-fill: linear-gradient(120deg, #5DCFE6 0%, #C350D9 52%, #B3EB78 100%);
+  /* --grad-glow-fill moved into the synced Prism token block above (from prism-tokens). */
 }
 
 /* ========================================================================
