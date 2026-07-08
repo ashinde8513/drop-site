@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-06
+Last updated: 2026-07-08
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -18,16 +18,16 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### What works
 - FULL 12-page public event-discovery website LIVE at trydropapp.com (cutover 2026-07-06, see CUTOVER RECORD): AXS-style IA, Prism tokens, live Supabase public catalog (anon key, 1.5K events), 32/32 Playwright smoke green.
 - 19-rule UI best-practices audit PASSED + fixes deployed (2026-07-06, commit 7308468, live-verified): undefined `--r-card` radius bug fixed, chip selected-state = solid cyan (gradient reserved for .btn-primary), events sort select → toggle chips, event-page nav CTA ghosted, legal numerals cyan, venue/artist card value-hierarchy, header search live-filters venues/artists grids, `.btn-primary` fill desaturated ~18% (`--grad-glow-fill`, AA contrast 5.06:1 worst stop; waveform/text/glow keep full sat).
+- UI consistency cleanup is implemented locally and synced to `dist/` (2026-07-08, Codex): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, and promoter section labels/wrap are cleaned up. Verified with `npm test` 42/42 + targeted Playwright screenshots in `/tmp/drop-site-fix-qa`.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder QA: parity drop is LIVE** (all 3 PRs merged + both surfaces deployed 2026-07-07) — hard-refresh trydropapp.com (header = Events·Venues·Artists, pill styles) + login → /app Discover shows H1 + hero search + Happening tabs + genre tiles + venues + footer; eyeball card parity at 390/768/1440. Minor follow-ups if QA wants them: hero date-select vs time-tabs, tiles/Happening order, friends-pill shows at 1, WebFooter not byte-identical to site footer.
+1. **Deploy the UI consistency cleanup** — run `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, then hard-refresh `https://trydropapp.com` and spot-check `/link`, `/download.html`, `/events.html`, one artist detail, and one venue detail at 390/768/1440.
+2. Founder QA: one real login round-trip on the website → confirm it lands on the Discover feed, not the marketing hero, then eyeball card/nav parity at 390/768/1440.
 3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
-2. Founder QA: one real login round-trip on the website → confirm it lands on the Discover feed, not the marketing hero (Drop-App PR #137 merged + deployed 2026-07-07; redirect is code-verified but not exercised with a live account).
-3. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
-4. Founder QA (standing): hard-refresh trydropapp.com (new: "N going" pills on cards where ≥2, event-page Get Directions) + one Google login round-trip nav → /app/login; then web-push re-enable on /app; optional app.trydropapp.com DNS retirement after deprecation window.
+4. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -36,6 +36,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301, app.trydropapp.com 200. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-08 — Codex — Prism UI consistency cleanup (local, dist synced)
+- Changed: fixed the drop-related website UI inconsistencies from the audit: unified selected states, moved `/link` off the saturated CTA treatment and onto `--grad-glow-fill`, replaced native emoji/symbol UI with Prism marks/labels, split Bass/Dubstep and Clubs into distinct tints, restored Space Grotesk on artist/venue detail headings, made artist CTA fit content on desktop, and replaced promoter numbering with semantic labels.
+- Tested: `npm test` 42/42 (desktop + mobile-safari); targeted Playwright render QA saved screenshots to `/tmp/drop-site-fix-qa` with zero console/page errors; `rsync -ani --checksum ... dist/` returned no output after syncing.
+- Remaining: deploy `dist/` to Cloudflare Pages and live-verify the changed pages.
+- Next: see Exact next step above.
 ### 2026-07-07 (later) — Claude (Fable) — Pre/post-login parity drop (PR #10 open) + login-loop fix
 - Login loop root-caused + fixed: /app→/app/ worker 301 dropped ?code= (PKCE) → worker keeps url.search, deployed live via wrangler (PR #9 open for the record); founder confirmed login works.
 - Parity build (founder-approved spec, subagent-driven): this repo PR #10 (For Promoters → footer only; card/nav CSS aligned to app WebShowCard/WebNav: genre-pill 12px/700/0.1em body-font, wordmark 24px, nav v-padding; smoke 42/42) + Drop-App PR #138 (WebNav Events/Venues/Artists + location pill + search, card genre pill + TM /dam/c/ stock filter, web Discover = site browse layout, WebFooter; all gates green incl. signed-in e2e).
@@ -81,4 +86,3 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   1. **Founder-blocked:** approve prod deploy `npx wrangler pages deploy <scratchpad>/dist-snapshot --project-name=drop-site --branch=main` (live dist + GSC token file only) — classifier denied autonomous run; OR fold token file into the integration deploy below.
   2. Integrate: in /Users/aryashinde/Developer/Drop/drop-web-app merge agent page-align commit + branch `feat/anon-going-count` (worktree at ../drop-web-app-socialwedge, commit bb48627), add google75d252b1adf86e07.html at root, fix 2 pre-existing smoke failures (h1 copy expectation in tests/smoke.spec.ts), npm test green, rebuild dist, deploy drop-site.
   3. Post-deploy: GSC Verify → submit https://trydropapp.com/sitemap.xml → Bing webmaster import-from-GSC; merge Drop-App PR chore/split-surface-crosslinks once agent-ci green.
-

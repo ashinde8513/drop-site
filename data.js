@@ -184,7 +184,8 @@
   // ---- Derived / formatting ----------------------------------------------
   // Genre bucket → used for label AND prism-art tint class.
   var GENRE_MAP = [
-    { cls: 'g-techno', label: 'Techno', keys: ['techno', 'bass', 'dubstep', 'riddim', 'trap', 'hardstyle', 'hard techno'] },
+    { cls: 'g-bass', label: 'Bass', keys: ['bass', 'dubstep', 'riddim', 'trap'] },
+    { cls: 'g-techno', label: 'Techno', keys: ['techno', 'hard techno', 'hardstyle'] },
     { cls: 'g-house', label: 'House', keys: ['house', 'melodic', 'tech house', 'deep house', 'progressive', 'trance', 'edm', 'electronic', 'dance'] },
     { cls: 'g-dnb', label: 'Drum & Bass', keys: ['drum and bass', 'drum & bass', 'dnb', 'd&b', 'jungle', 'breaks', 'breakbeat'] },
     { cls: 'g-hiphop', label: 'Hip-Hop', keys: ['hip hop', 'hip-hop', 'rap', 'r&b', 'rnb'] },

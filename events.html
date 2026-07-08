@@ -55,7 +55,7 @@
 
       <div class="loc-wrap">
         <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
-          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+          <span class="loc-pin" aria-hidden="true"></span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
         </button>
         <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
       </div>
@@ -112,6 +112,7 @@
           <button type="button" class="chip" data-genre="" aria-pressed="true">All genres</button>
           <button type="button" class="chip" data-genre="Festivals" aria-pressed="false">Festivals</button>
           <button type="button" class="chip" data-genre="House" aria-pressed="false">House</button>
+          <button type="button" class="chip" data-genre="Bass" aria-pressed="false">Bass</button>
           <button type="button" class="chip" data-genre="Techno" aria-pressed="false">Techno</button>
           <button type="button" class="chip" data-genre="Drum &amp; Bass" aria-pressed="false">DnB</button>
           <button type="button" class="chip" data-genre="Hip-Hop" aria-pressed="false">Hip-Hop</button>
@@ -326,7 +327,7 @@
         gridEl.classList.remove('is-loading');
         gridEl.innerHTML = '';
         var box = D.el('div', 'state-empty');
-        box.appendChild(D.el('span', 'state-icon', '◇'));
+        box.appendChild(D.el('span', 'state-icon', 'Drop'));
         box.appendChild(D.el('p', 'state-msg', 'No shows match — clear a filter or switch city.'));
         var btn = D.el('button', 'btn-ghost', 'Clear all filters');
         btn.type = 'button';

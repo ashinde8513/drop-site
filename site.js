@@ -157,7 +157,7 @@
     host.classList.remove('is-loading');
     host.innerHTML = '';
     var box = el('div', 'state-empty');
-    box.appendChild(el('span', 'state-icon', '◇'));
+    box.appendChild(el('span', 'state-icon', 'Drop'));
     box.appendChild(el('p', 'state-msg', msg || 'No shows here yet.'));
     if (actionLabel) {
       var a = el('a', 'btn-ghost', actionLabel);
@@ -171,7 +171,7 @@
     host.classList.remove('is-loading');
     host.innerHTML = '';
     var box = el('div', 'state-error');
-    box.appendChild(el('span', 'state-icon', '⚠'));
+    box.appendChild(el('span', 'state-icon', '!'));
     box.appendChild(el('p', 'state-msg', "We couldn't load shows just now. Check your connection and try again."));
     var btn = el('button', 'btn-ghost', 'Retry');
     btn.type = 'button';

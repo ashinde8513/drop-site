@@ -45,7 +45,7 @@
 
       <div class="loc-wrap">
         <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
-          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+          <span class="loc-pin" aria-hidden="true"></span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
         </button>
         <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
       </div>
@@ -162,7 +162,7 @@
         root.innerHTML = '';
         var wrap = el('div', 'wrap');
         var box = el('div', 'state-error');
-        box.appendChild(el('span', 'state-icon', '⚠'));
+        box.appendChild(el('span', 'state-icon', '!'));
         box.appendChild(el('p', 'state-msg', msg));
         var back = el('a', 'btn-ghost', 'Back to events');
         back.href = '/events.html';

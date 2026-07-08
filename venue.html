@@ -43,7 +43,7 @@
 
       <div class="loc-wrap">
         <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
-          <span class="loc-pin" aria-hidden="true">📍</span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
+          <span class="loc-pin" aria-hidden="true"></span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
         </button>
         <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
       </div>
@@ -146,7 +146,7 @@
         var sec = D.el('section', 'section section--tight');
         var wrap = D.el('div', 'wrap');
         var box = D.el('div', 'state-error');
-        box.appendChild(D.el('span', 'state-icon', '⚠'));
+        box.appendChild(D.el('span', 'state-icon', '!'));
         box.appendChild(D.el('p', 'state-msg', "We couldn't find that venue. It may have been removed or the link is out of date."));
         var back = D.el('a', 'btn-ghost', 'Browse venues');
         back.href = '/venues.html';
@@ -172,9 +172,9 @@
         host.innerHTML = '';
 
         var head = D.el('section', 'section section--tight');
-        var hwrap = D.el('div', 'wrap');
+        var hwrap = D.el('div', 'wrap venue-hero');
         hwrap.appendChild(D.el('h1', null, v.name));
-        var loc = D.el('p', 'section-head', [v.city, v.state].filter(Boolean).join(', '));
+        var loc = D.el('p', 'venue-hero-meta', [v.city, v.state].filter(Boolean).join(', '));
         hwrap.appendChild(loc);
         if (vibes.length) {
           var chipRow = D.el('div', 'pill-list');
