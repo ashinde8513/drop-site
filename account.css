@@ -2,8 +2,12 @@
   min-height: 100vh;
   margin: 0;
   background: var(--bg);
-  color: var(--ink);
+  color: var(--text);
   overflow-x: hidden;
+  --account-muted: var(--text-secondary);
+  --account-dim: var(--text-muted);
+  --account-line: var(--border);
+  --account-line-strong: var(--border-strong);
 }
 
 .account-body [hidden] {
@@ -13,7 +17,7 @@
 .account-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
   background: var(--bg);
 }
 
@@ -28,10 +32,10 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 64px clamp(36px, 6vw, 96px);
+  padding: 52px clamp(36px, 5vw, 88px);
   background:
-    radial-gradient(circle at 16% 18%, rgba(77, 226, 255, 0.18), transparent 28%),
-    radial-gradient(circle at 84% 82%, rgba(226, 77, 255, 0.18), transparent 32%),
+    radial-gradient(circle at 12% 8%, rgba(77, 226, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 62% 110%, rgba(226, 77, 255, 0.20), transparent 44%),
     linear-gradient(135deg, #111318 0%, #1A1B21 58%, #2E1A31 100%);
 }
 
@@ -61,6 +65,10 @@
   letter-spacing: -0.02em;
 }
 
+.account-wordmark {
+  display: none;
+}
+
 .account-mobile-mark {
   display: none;
 }
@@ -68,15 +76,16 @@
 .account-brand-copy {
   position: relative;
   z-index: 2;
-  max-width: 620px;
+  max-width: 480px;
+  transform: translateY(-24px);
 }
 
 .account-brand-copy h1 {
-  margin: 0 0 28px;
-  color: var(--ink);
+  margin: 0 0 24px;
+  color: var(--text);
   font-family: var(--font-display);
-  font-size: clamp(48px, 6vw, 76px);
-  line-height: 1.05;
+  font-size: clamp(36px, 4.8vw, 56px);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
@@ -88,17 +97,17 @@
 }
 
 .account-brand-copy p {
-  max-width: 440px;
+  max-width: 380px;
   margin: 0;
-  color: var(--muted);
-  font-size: 17px;
-  line-height: 1.65;
+  color: var(--account-muted);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .account-bars {
   position: absolute;
-  right: 52px;
-  bottom: 52px;
+  right: clamp(36px, 5vw, 64px);
+  bottom: 48px;
   z-index: 2;
   display: flex;
   align-items: end;
@@ -127,15 +136,15 @@
 
 .account-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 80px 32px 68px;
+  padding: clamp(96px, 17vh, 156px) 32px 68px;
   background: var(--bg);
 }
 
 .auth-panel,
 .dash-panel {
-  width: min(100%, 420px);
+  width: min(100%, 244px);
 }
 
 .dash-panel {
@@ -143,27 +152,33 @@
 }
 
 .auth-head {
-  margin-bottom: 34px;
+  margin-bottom: 24px;
+}
+
+.auth-panel .eyebrow {
+  display: none;
 }
 
 .auth-head h2,
 .dash-head h2 {
-  margin: 8px 0 8px;
+  margin: 0 0 4px;
   font-family: var(--font-display);
-  font-size: 34px;
-  line-height: 1.18;
+  font-size: 22px;
+  line-height: 1.15;
   letter-spacing: 0;
 }
 
 .auth-head p:not(.eyebrow),
 .dash-head p:not(.eyebrow) {
   margin: 0;
-  color: var(--muted);
+  color: var(--account-muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .auth-form {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .auth-field {
@@ -172,8 +187,8 @@
 }
 
 .auth-field label {
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--account-dim);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -181,13 +196,13 @@
 
 .auth-field input {
   width: 100%;
-  height: 56px;
-  border: 1px solid var(--line-2);
-  border-radius: 12px;
+  height: 34px;
+  border: 1px solid var(--account-line-strong);
+  border-radius: 8px;
   background: var(--bg);
-  color: var(--ink);
-  padding: 0 18px;
-  font: 500 16px/1 var(--font-body);
+  color: var(--text);
+  padding: 0 12px;
+  font: 500 12px/1 var(--font-body);
   outline: none;
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
@@ -206,7 +221,7 @@
   display: flex;
   justify-content: flex-end;
   min-height: 18px;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 
 .auth-link {
@@ -219,20 +234,20 @@
 }
 
 .auth-link:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .auth-link-strong {
-  font-size: 16px;
+  font-size: 12px;
 }
 
 .auth-submit {
-  height: 56px;
+  height: 34px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--grad-glow-fill);
-  color: var(--bg);
-  font: 800 17px/1 var(--font-display);
+  color: var(--text-on-brand);
+  font: 800 13px/1 var(--font-display);
   cursor: pointer;
   box-shadow: var(--shadow-glow);
   transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
@@ -252,10 +267,14 @@
 }
 
 .auth-message {
-  min-height: 22px;
+  min-height: 18px;
   margin: 0;
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--account-muted);
+  font-size: 12px;
+}
+
+.auth-message:empty {
+  display: none;
 }
 
 .auth-message.is-error {
@@ -269,18 +288,18 @@
 .auth-divider {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin: 18px 0;
+  gap: 14px;
+  margin: 32px 0 28px;
 }
 
 .auth-divider span {
   height: 1px;
   flex: 1;
-  background: var(--line);
+  background: var(--account-line);
 }
 
 .auth-divider em {
-  color: var(--text-muted);
+  color: var(--account-dim);
   font: normal 700 12px/1 var(--font-body);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -289,15 +308,15 @@
 .social-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 10px;
 }
 
 .social-btn {
-  height: 52px;
-  border: 1px solid var(--line-2);
-  border-radius: 12px;
+  height: 32px;
+  border: 1px solid var(--account-line-strong);
+  border-radius: 8px;
   background: var(--bg);
-  color: var(--ink);
+  color: var(--text);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -314,8 +333,8 @@
 }
 
 .social-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 .auth-foot {
@@ -325,20 +344,21 @@
 
 .auth-foot p {
   margin: 0;
-  color: var(--muted);
+  color: var(--account-muted);
+  font-size: 12px;
 }
 
 .account-links {
   position: absolute;
-  bottom: 28px;
+  bottom: 20px;
   display: flex;
   gap: 24px;
 }
 
 .account-links a,
 .account-section-head a {
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--account-dim);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -346,7 +366,7 @@
 
 .account-links a:hover,
 .account-section-head a:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .dash-head {
@@ -360,7 +380,7 @@
 .profile-card,
 .stat-grid > div,
 .account-list {
-  border: 1px solid var(--line);
+  border: 1px solid var(--account-line);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
 }
@@ -398,7 +418,7 @@
 
 .profile-card p {
   margin: 0;
-  color: var(--muted);
+  color: var(--account-muted);
   font-size: 14px;
 }
 
@@ -420,7 +440,7 @@
 }
 
 .stat-grid span {
-  color: var(--muted);
+  color: var(--account-muted);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -461,7 +481,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--account-line);
 }
 
 .account-item:last-child {
@@ -470,14 +490,14 @@
 
 .account-item strong {
   display: block;
-  color: var(--ink);
+  color: var(--text);
   font-size: 15px;
 }
 
 .account-item span,
 .account-item small {
   display: block;
-  color: var(--muted);
+  color: var(--account-muted);
   font-size: 13px;
 }
 
@@ -495,7 +515,7 @@
 
 .account-empty {
   padding: 18px;
-  color: var(--muted);
+  color: var(--account-muted);
   font-size: 14px;
 }
 
@@ -505,7 +525,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .account-shell {
     display: block;
   }
@@ -521,6 +541,10 @@
   .account-main {
     min-height: 100vh;
     padding: 104px 22px 78px;
+  }
+
+  .auth-panel {
+    width: min(100%, 304px);
   }
 
   .dash-head,
