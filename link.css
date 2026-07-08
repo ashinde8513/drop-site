@@ -1,0 +1,66 @@
+/* Drop — link-in-bio hub (link.html) page-specific layout.
+   Loads AFTER /site.css, so it inherits the canonical synced Prism tokens
+   (from prism-tokens/palette.json). Colors/fonts here reference site.css vars —
+   never hardcode a hex, or link.html drifts from the app scheme again. */
+
+.linkhub {
+  min-height: 100svh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(44px, 10vw, 84px) 0 56px;
+  background:
+    radial-gradient(680px 420px at 50% -6%, rgba(77, 226, 255, 0.18), transparent 62%),
+    radial-gradient(520px 360px at 50% 108%, rgba(226, 77, 255, 0.14), transparent 60%);
+}
+.linkhub .wrap { max-width: 460px; text-align: center; }
+.lh-badge {
+  width: 88px; height: 88px; margin: 0 auto;
+  border-radius: 24px; display: grid; place-items: center;
+  background:
+    radial-gradient(120px 120px at 50% 0%, rgba(77, 226, 255, 0.30), transparent 70%),
+    var(--surface-alt);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 10px 40px rgba(226, 77, 255, 0.22);
+}
+.lh-name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 30px; letter-spacing: 0.01em; text-transform: none;
+  margin: 20px 0 0; display: inline-flex; align-items: baseline; gap: 2px;
+  background: var(--grad-chrome); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.lh-name .caret { -webkit-text-fill-color: var(--brand-magenta); color: var(--brand-magenta); font-size: 0.7em; transform: translateY(-1px); }
+.lh-tag { color: var(--text); font-size: 15.5px; margin: 12px auto 0; max-width: 34ch; }
+.lh-meta {
+  font-family: var(--font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-secondary); margin: 10px 0 0;
+}
+.lh-links { display: flex; flex-direction: column; gap: 12px; margin: 30px 0 0; }
+.lh-link {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 15px 20px; border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+  text-decoration: none; color: var(--text);
+  font-family: var(--font-display); font-weight: 600; font-size: 15.5px;
+  transition: transform .15s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.lh-link:hover { transform: translateY(-2px); border-color: var(--text); }
+.lh-link:active { transform: translateY(0); opacity: 0.88; }
+.lh-link.primary {
+  background: var(--grad-glow); color: var(--text-on-brand); border-color: transparent;
+  box-shadow: 0 6px 30px rgba(226, 77, 255, 0.28);
+}
+.lh-link.primary:hover { box-shadow: 0 10px 38px rgba(77, 226, 255, 0.4); }
+.lh-disc {
+  font-family: var(--font-display); font-size: 11px; line-height: 1.7; font-weight: 500;
+  letter-spacing: 0.02em; color: var(--text-secondary);
+  margin: 30px auto 0; max-width: 40ch;
+}
+.lh-legal {
+  font-family: var(--font-display); font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+  color: var(--text-secondary); margin: 16px 0 0;
+}
+.lh-legal a { color: var(--text-secondary); text-decoration: none; }
+.lh-legal a:hover { color: var(--brand-cyan); }
+/* non-color hover affordance (matches site.css a11y pattern) */
+.lh-legal a:hover, .lh-legal a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
