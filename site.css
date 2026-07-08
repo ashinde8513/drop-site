@@ -16,6 +16,7 @@
   --brand-cyan:    #4DE2FF;
   --brand-magenta: #E24DFF;
   --brand-lime:    #B6FF6A;
+  --brand-purple:  #7B2CBF;
   --chrome:      #C9D2DF;
   --gold:        #FFCB3D;   /* star ratings, presale-live */
   --danger:      #FF5C72;
@@ -87,7 +88,7 @@
 
 /* ===== Site-layer tokens (additions allowed by spec) ===== */
 :root {
-  --wrap: 1440px;          /* canonical web-shell content cap (mirrors app.trydropapp.com) */
+  --wrap: 1440px;          /* canonical website content cap */
   --wrap-narrow: 760px;    /* legal/about prose */
   --nav-h: 68px;
   --selected-bg: rgba(77,226,255,0.16);

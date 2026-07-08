@@ -6,15 +6,16 @@ the **mobile app** (`../drop-mobile-app`) — and both show the same content bec
 same backend (Supabase project `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`). The only
 difference is how users access it: native app vs. website.
 
-The **pre-login browse-first discovery site** (modeled on axs.com — see `AXS_MODEL.md`), NOT a
+The **browse-first discovery website** (modeled on axs.com — see `AXS_MODEL.md`), NOT a
 marketing landing: a unified search+dates+location bar over open discovery rails from the live
 Supabase catalog, plus event/artist/venue pages, the link-in-bio hub, and privacy/terms. The
-signed-in app is served at `/app` (worker-proxied). Plain HTML/CSS/JS, zero build step.
+native app is separate; stale `/app` browser URLs redirect to the download page. Plain
+HTML/CSS/JS, zero build step.
 
 ```
 index.html      Discovery home (search bar + featured + Happening + genre rails — AXS-style)
 events/artists/venues + event/artist/venue detail pages (open, no login)
-login.html      → 301 to /app/login (the app owns login)
+login.html      retired; /login redirects to download.html
 link.html       Link-in-bio hub for the Instagram/TikTok bios
 privacy.html    Privacy Policy  ← also your Apple "Privacy Policy URL"
 terms.html      Terms of Service / EULA  ← also your Apple "EULA URL"

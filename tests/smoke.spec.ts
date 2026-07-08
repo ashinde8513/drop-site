@@ -123,13 +123,13 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('.grid-tiles')).toHaveCount(1);
   });
 
-  test('login is owned by the app (nav → /app/login)', async ({ page }) => {
-    // Every page nav points Log in at the real app login (email/username + social).
-    // The /login and /login.html → /app/login 301s live in _redirects (Cloudflare
-    // Pages only — the local static server can't process them; verified live on deploy).
+  test('website header stays separate from the Expo web app', async ({ page }) => {
+    // The native app owns accounts. The public website must not link into the
+    // retired Expo web shell from its global nav.
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
-      await expect(page.locator('a[href="/app/login"]').first()).toHaveCount(1);
+      await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
+      await expect(page.locator('header a[href="/download.html"]').first()).toHaveCount(1);
     }
   });
 
@@ -140,7 +140,7 @@ test.describe('landing site smoke', () => {
     }
     await expect(page.locator('header a[href="/promoters.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
-    await expect(page.locator('header a[href="/app/login"]').first()).toHaveCount(1);
+    await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
   });
 
 });

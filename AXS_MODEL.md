@@ -1,16 +1,17 @@
 # The AXS model — how trydropapp.com must behave
 
-**Decision (2026-07-06, founder):** trydropapp.com is **NOT a marketing page**. It is Drop's
-**pre-login browse-first discovery site**, modeled on how **axs.com** behaves before and after login.
+**Decision (updated 2026-07-08, founder):** trydropapp.com is **NOT a marketing page**. It is Drop's
+**browse-first discovery website**, modeled on how **axs.com** lets signed-out visitors browse.
 Content is the hero — not a pitch. This doc is the spec to copy; the visual system is `../drop-design`
-(the canonical web shell) and the signed-in surface is the app at `/app`.
+(the canonical web shell) and the signed-in/account surface is the native app, not an Expo web shell.
 
 Investigated live on axs.com (Fable, 2026-07-06): homepage, event-detail, search bar, login gates.
 
 ## AXS before login (what a signed-out visitor gets — copy this)
 
-Everything is browsable with **no account**. The only auth affordance is a **"Sign In"** pill
-top-right. Login gates **purchase/account only**, never browsing.
+Everything is browsable with **no account**. AXS has a **"Sign In"** pill because AXS also operates
+web ticketing/account flows. Drop does not need to copy that browser-login affordance while the
+native app owns accounts. Login gates **purchase/account only**, never browsing.
 
 1. **Header** — logo left; right side = language + **Sign In** pill. That's it. No marketing nav.
 2. **Unified search bar, pinned under the header** — three segments in one pill:
@@ -36,14 +37,14 @@ top-right. Login gates **purchase/account only**, never browsing.
 The **Sign In** pill becomes an **account menu**; the browse experience is unchanged, plus:
 - Saved / favorited events, "My Events", ticket wallet (mobile tickets), transfer-to-friends,
   purchase history, personalized recommendations.
-For Drop this is exactly the **signed-in app shell at `/app`** — which already exists and already
+For Drop this is the **native app** — which already exists and already
 carries Drop's differentiator: the **social wedge** ("who's going", crew, Going/Interested).
 
 ## Drop = AXS browse pattern + the social layer
 
-Copy AXS's browse-first structure verbatim for the pre-login site; layer Drop's social wedge on top
-(friends-going chips, crew rail) the way the `/app` Discover already does. The pre-login site and the
-signed-in app should read as **one product**, same as AXS → one wordmark (`◦ drop`), one dark shell,
+Copy AXS's browse-first structure for the website; layer Drop's social wedge on top
+(friends-going chips, crew rail) the way the native Discover experience does. The website and the
+native app should read as **one Prism product family**, same as AXS → one wordmark (`◦ drop`), one dark shell,
 the same 300×340 image-forward cards (`../drop-design` `.wsc`), the same search+dates+location bar.
 
 ## What this replaces on trydropapp.com
@@ -60,6 +61,6 @@ crawlable pages), drop the "marketing landing" framing.
 - [ ] Wordmark → `◦ drop` (match the app) across the site.
 - [ ] Event pages: AXS-style open detail (lineup, venue, offers, directions) — Drop already has
       `event.html`; align to the offer-list + app-promo pattern.
-- [ ] Nav: collapse the marketing nav (For Promoters/About stay in footer); lead with Sign In +
-      the search bar, AXS-style.
+- [ ] Nav: collapse the marketing nav (For Promoters/About stay in footer); lead with search,
+      browse links, and Get the app — no browser login.
 - [ ] Social wedge on cards/rails (friends-going, crew) so it's Drop, not a plain AXS clone.

@@ -6,11 +6,11 @@ product (browse-first discovery — the pre-login face of Drop)
 
 ## Users
 
-EDM and live-music fans — festival-goers, club regulars, and the friend-group "planner" who tracks who's going to what. They arrive to **browse shows**: from a social bio link (`link.html`), a search result, or typing the URL, on a phone or desktop. The job is to **discover events immediately** — search by artist/venue, filter by date + location, open an event, see who's going — with no account required, exactly like axs.com. The signed-in experience lives in the app at `/app`; the site is the open front door to the same catalog.
+EDM and live-music fans — festival-goers, club regulars, and the friend-group "planner" who tracks who's going to what. They arrive to **browse shows**: from a social bio link (`link.html`), a search result, or typing the URL, on a phone or desktop. The job is to **discover events immediately** — search by artist/venue, filter by date + location, open an event, see who's going — with no account required, exactly like axs.com. Account-bound actions belong to the native app; the site is the open front door to the same catalog.
 
 ## Product Purpose
 
-trydropapp.com is Drop's **pre-login browse-first discovery site** — modeled on **axs.com** (see `AXS_MODEL.md`), NOT a marketing landing page. Content is the hero: a unified search+dates+location bar over discovery rails (Featured, Happening this week — Today/This Weekend/Next 30 Days, genre rails), all openly browsable from the same Supabase catalog the app reads. It also (a) hosts the legal URLs (Privacy, Terms) + App Store URL required to ship and to unlock partner applications (Etix/Partnerize, Apple), and (b) acts as the social link-in-bio hub for @trydropapp. Login gates nothing on the site except account-bound actions (which route into the app at `/app`). Success = a fan lands, finds a show worth going to in seconds, and — Drop's differentiator over AXS — sees the social wedge ("who's going", crew).
+trydropapp.com is Drop's **browse-first discovery website** — modeled on **axs.com** (see `AXS_MODEL.md`), NOT a marketing landing page. Content is the hero: a unified search+dates+location bar over discovery rails (Featured, Happening this week — Today/This Weekend/Next 30 Days, genre rails), all openly browsable from the same Supabase catalog the app reads. It also (a) hosts the legal URLs (Privacy, Terms) + App Store URL required to ship and to unlock partner applications (Etix/Partnerize, Apple), and (b) acts as the social link-in-bio hub for @trydropapp. The website does not host a browser login shell; account-bound actions point users to the native app. Success = a fan lands, finds a show worth going to in seconds, and — Drop's differentiator over AXS — sees the social wedge ("who's going", crew).
 
 ## Brand Personality
 
@@ -30,7 +30,7 @@ This should NOT look like:
 - **Motion is music.** Animation reinforces the EDM narrative (the spectrum, the marquee). It is intentional and rhythmic, never decorative filler.
 - **Browse-first, AXS-style.** Content is the hero. The homepage is a discovery stack (search bar → featured → Happening time-tabs → genre rails), openly browsable with no account — never a marketing pitch or waitlist gate. See `AXS_MODEL.md`.
 - **Social proof is the hook.** "Who's going" is the north star and Drop's edge over AXS; foreground belonging and the crowd (friends-going, crew) on cards and rails, not feature lists.
-- **One product across surfaces.** The pre-login site and the signed-in app (`/app`) read as one thing — same wordmark, shell, and cards — the way AXS's logged-out and logged-in states do.
+- **One Prism across surfaces.** The website and native app share identity, data, wordmark, shell language, and cards, but they remain separate products: website for open discovery, native app for accounts.
 - **Premium through restraint.** Richness lives in the signature visual and typography; the rest stays calm so the brand reads as considered, not loud.
 
 ## Accessibility & Inclusion

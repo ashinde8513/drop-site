@@ -68,4 +68,4 @@ Spectrum animation and marquee scroll are the primary motion. Add `prefers-reduc
 
 ## Brand Assets
 
-Wordmark "DROP▾" — chrome-gradient "DROP" + magenta caret, Space Grotesk. Link-hub uses an inline SVG frequency-spectrum badge. Favicon: `favicon.svg` (spectrum mark). Domain `trydropapp.com` (site) · `app.trydropapp.com` (Expo web app, post-cutover).
+Wordmark "DROP▾" — chrome-gradient "DROP" + magenta caret, Space Grotesk. Link-hub uses an inline SVG frequency-spectrum badge. Favicon: `favicon.svg` (spectrum mark). Domain `trydropapp.com` (website). `app.trydropapp.com` and `/app` are legacy browser-app routes that redirect to `download.html`.

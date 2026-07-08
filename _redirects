@@ -5,9 +5,9 @@
 # App share/deep-link paths (deepLinks.ts contract). When the app is installed
 # the OS intercepts these via Universal/App Links; on the web they land here.
 /event/*  /event  200
-/plan/:id   /download      302
-/onboarding /download      302
+/plan/:id   /download.html  302
+/onboarding /download.html  302
 
-# Bespoke site login retired 2026-07-06 → the app owns login (social + shell layout)
-/login      /app/login   301
-/login.html /app/login   301
+# Browser login/app shell retired from the website. Native app only.
+/login      /download.html  302
+/login.html /download.html  302

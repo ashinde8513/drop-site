@@ -1,7 +1,7 @@
 name = "drop-app-path"
 main = "worker.js"
 compatibility_date = "2026-07-01"
-account_id = "ba8c4fedf96b95e46b4d8b87789ccb69"  # Trydropapp@gmail.com (same account as Pages drop-site/drop-web)
+account_id = "ba8c4fedf96b95e46b4d8b87789ccb69"  # Trydropapp@gmail.com (same account as Pages drop-site)
 
 # Both routes live on the trydropapp.com zone. Workers routes intercept ahead of
 # the Pages custom domains (both hosts are proxied CNAMEs to *.pages.dev).
