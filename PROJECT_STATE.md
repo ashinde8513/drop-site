@@ -26,9 +26,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. Founder QA: hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, then sign into that page with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
-2. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time.
-3. Check GSC sitemap status flipped from "Couldn't fetch" (submit-time placeholder; /sitemap.xml serves 200) to Success — GSC → Sitemaps for property https://trydropapp.com; if still failing after ~24h, inspect content-type served by CF Pages.
+1. (Agent-actionable) User reviews `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md`; on approval invoke `writing-plans`, then implement **A1** hero flip-words (new `flipwords.js` + hero HTML `<span data-flip>`) and **A2** hero aurora backdrop (`.aurora` CSS behind the waveform) in `site.css` — Prism-tokened, `prefers-reduced-motion` fallback — then `npm test` + wrangler deploy. Also create `prism-tokens/DESIGN_RESOURCES.md` + backlog pointers.
+2. **Founder QA:** hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, then sign into that page with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
+3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time. Then check GSC sitemap status flipped from "Couldn't fetch" to Success (GSC → Sitemaps); if still failing after ~24h, inspect content-type served by CF Pages.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -95,6 +95,16 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-08 — Claude (Opus) — Native-effects design spec (brainstorming, approved; no code yet)
+- **Changed:** added `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md` (commit 29efed8). Design-only — no site code, no deploy.
+- **Context:** reviewed 3 UI-inspiration sites (refero.design, Aceternity UI, Componentry). Verdict: neither library imports into Drop (site = vanilla HTML/CSS, app = React Native). Plan = reimplement a small free-effect subset natively, Prism-tokened, reduce-motion guarded, zero new deps. UX-preserving subset chosen (user deferred to recommendation): **A1** hero flip-words headline (vanilla JS), **A2** hero aurora backdrop layered *behind* the existing waveform (CSS), **B1** post-show recap celebration burst in the app (RN Animated, no dep). Backlogged: site moving-cards (needs real logos). Cut: app always-on animated hero (battery/a11y).
+- **Tested:** N/A — spec only. Committed clean (gitleaks pass).
+- **Remaining:** user to review the spec; then writing-plans → implementation. `prism-tokens/DESIGN_RESOURCES.md` (the "where to look" reference) not yet created — it's part of the plan.
+- **Next steps (ranked):**
+  1. User reviews `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md`; on approval invoke `writing-plans`, then implement A1 flip-words + A2 aurora in this repo (`site.css` + new `flipwords.js` + hero HTML), `npm test`, deploy.
+  2. Create `/Users/aryashinde/Developer/Drop/prism-tokens/DESIGN_RESOURCES.md` (refero/Aceternity/Componentry catalog) + one-line pointer in this repo's `BACKLOG.md`, DropApp, and resonance backlog.
+  3. App B1 (`<RecapCelebration />`) is a separate `drop-mobile-app` task — build after the web items land.
+
 ### 2026-07-08 — Codex — Login route cleanup + auth redirect normalization
 - **Changed:** switched website auth links to `/account.html`; updated `workers/app-path/worker.js` so `/`, `/app*`, `/login`, and `/account.html` on `app.trydropapp.com` all serve the static account shell from `/account.html` with no-cache response handling.
 - **Changed:** normalized `account.js` auth callbacks from `/login` to `/account.html` for `AUTH_REDIRECT`, including password-reset return paths.
@@ -106,11 +116,3 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Changed:** `workers/app-path/worker.js` now serves `app.trydropapp.com` login/sign-up/account shell routes from `/account.html` (explicit, non-extensionless route) and stamps shell responses with `Cache-Control: no-store, no-cache, max-age=0` to avoid stale login UI from CDN/browser cache.
 - **Changed:** `/_headers` now enforces same no-cache headers for `/account.html`, `/account.css`, and `/account.js`.
 - **Tested:** local path-rewrite checks and project diff review; Playwright suite cannot run in this environment because local test server binding is blocked by sandbox networking policy.
-### 2026-07-06 — Claude (Fable) — 4-track parallel: AXS page-align + anon going-count + GSC + Drop-App cross-links
-- **Changed:** (this repo, IN FLIGHT — subagent still editing events/artists/venues/event.html + site.css in main checkout, unverified until its npm test + commit lands). LANDED: worktree branch `feat/anon-going-count` commit bb48627 (data.js `Drop.fetchGoingCounts` batched RPC, site.js "N going" pill via `Drop.renderEvents` choke point, shown only when ≥2; site.css `.wsc__going`); drop-backend commit 488ac7c migration `migrations/0004_event_going_counts.sql` — `event_going_counts(uuid[])` aggregate RPC, APPLIED to prod Supabase, anon-safety live-verified (RPC returns counts only; raw attendance blocked for anon). GSC: URL-prefix property https://trydropapp.com created, token `google75d252b1adf86e07.html`, deploy snapshot staged in session scratchpad. Drop-App cross-links PR in flight (branch chore/split-surface-crosslinks).
-- **Tested:** post-merge npm test 34/34 (incl. fixed stale h1 expectation); anon REST safety verified live; dist parity-checked vs root sources; founder deployed (7d34def3.drop-site.pages.dev → live); GSC ownership VERIFIED (HTML file; CF pretty-URL 308 harmless) + /sitemap.xml SUBMITTED; live event page 0 console errors (agent Playwright drive). ALL FOUR TRACKS LANDED: page-align 180024d + wedge merge + GSC token 6006fec pushed; drop-backend 488ac7c pushed; Drop-App cross-links PR (#136) squash-merged after agent-ci + web-smoke green (welcome.tsx 1370→230 lines).
-- **Remaining:** Bing import (founder OAuth); GSC sitemap status re-check; founder QA of live pills/login.
-- **Next steps (ranked):**
-  1. **Founder-blocked:** approve prod deploy `npx wrangler pages deploy <scratchpad>/dist-snapshot --project-name=drop-site --branch=main` (live dist + GSC token file only) — classifier denied autonomous run; OR fold token file into the integration deploy below.
-  2. Integrate: in /Users/aryashinde/Developer/Drop/drop-web-app merge agent page-align commit + branch `feat/anon-going-count` (worktree at ../drop-web-app-socialwedge, commit bb48627), add google75d252b1adf86e07.html at root, fix 2 pre-existing smoke failures (h1 copy expectation in tests/smoke.spec.ts), npm test green, rebuild dist, deploy drop-site.
-  3. Post-deploy: GSC Verify → submit https://trydropapp.com/sitemap.xml → Bing webmaster import-from-GSC; merge Drop-App PR chore/split-surface-crosslinks once agent-ci green.

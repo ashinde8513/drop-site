@@ -1,7 +1,7 @@
 // Static browser account shell. No Expo web proxy.
 const SITE_ORIGIN = 'https://trydropapp.com';
 const ACCOUNT_HOST = 'app.trydropapp.com';
-const ACCOUNT_PATH = '/account.html';
+const ACCOUNT_PATH = '/account';
 const WEBSITE_LOGIN_PATH = '/account.html';
 
 export default {
@@ -34,7 +34,12 @@ export default {
 };
 
 function isAccountRoute(pathname) {
-  if (pathname === ACCOUNT_PATH || pathname === '/login') return true;
+  if (
+    pathname === ACCOUNT_PATH ||
+    pathname === '/account.html' ||
+    pathname === '/login' ||
+    pathname === '/signup'
+  ) return true;
   if (pathname === '/' || pathname === '') return true;
   if (pathname.indexOf('.') !== -1) return false;
   return true;
