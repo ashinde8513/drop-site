@@ -36,7 +36,7 @@
   background:
     radial-gradient(circle at 12% 8%, rgba(77, 226, 255, 0.12), transparent 30%),
     radial-gradient(circle at 62% 110%, rgba(226, 77, 255, 0.20), transparent 44%),
-    linear-gradient(135deg, #111318 0%, #1A1B21 58%, #2E1A31 100%);
+    linear-gradient(135deg, var(--surface) 0%, var(--surface-alt) 58%, color-mix(in srgb, var(--brand-magenta) 15%, var(--ink)) 100%);
 }
 
 .account-brand::after {
@@ -208,7 +208,7 @@
 }
 
 .auth-field input::placeholder {
-  color: rgba(170, 178, 194, 0.62);
+  color: var(--text-mute);
 }
 
 .auth-field input:focus {
