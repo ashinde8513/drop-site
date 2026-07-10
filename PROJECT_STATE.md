@@ -26,7 +26,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder: review + merge the Prism web-shell redesign PR (#13)** (`redesign/prism-web-shell`; all 5 tracks landed, `npm test` 58/58, dist/ mirrored locally), then give explicit deploy go (`npx wrangler pages deploy dist --project-name=drop-site --branch=main` from the branch checkout); after deploy, decide app.trydropapp.com repoint → `/app/` + retire the drop-web Expo export project.
+1. **Founder decision: flip the post-login app live** — update Worker `drop-app-path` so `/app/*` passes through to Pages (currently 302→/account, masking the deployed app) and `app.trydropapp.com` serves `/app/`; then retire the drop-web (Expo export) CF Pages project. (Redesign PR #13 MERGED + DEPLOYED 2026-07-09, live-verified: root/events/venues/city all serving the new design, deployment `7c14f5a2`.)
 2. **Follow-ons (post-merge, in order):** wire `app/` mock state to Supabase (auth+data; the big one) · sitemap entries for city/genre templates · fix data.js `fetchArtist` nested PostgREST filter (doesn't narrow server-side) · add `app/tokens.css` to prism-tokens sync.mjs targets.
 3. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 4. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property verified + sitemap in GSC 2026-07-06); recheck GSC sitemap status after.
