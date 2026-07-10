@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>shell.css scratch test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="../shell.css">
+</head>
+<body>
+<div class="drop-scroll">
+
+  <nav class="wn">
+    <div class="wn__inner">
+      <a class="wordmark" href="#"><span class="droplet"></span>drop<span class="caret">•</span></a>
+      <div class="wn__links">
+        <a class="wn__link is-active" href="#">Events</a>
+        <a class="wn__link" href="#">Venues</a>
+        <a class="wn__link" href="#">Artists</a>
+      </div>
+      <div class="wn__right">
+        <span class="wn__bell">🔔<span class="wn__badge">3</span></span>
+        <button class="btn btn--primary btn--sm">Get started</button>
+      </div>
+      <button type="button" class="wn__mobicon">☰</button>
+    </div>
+  </nav>
+
+  <main class="wsh">
+    <div class="wsh__content">
+      <div class="wsh__headrow">
+        <h1 class="wsh__title">Test surface</h1>
+        <div class="wsh__controls">
+          <div class="seg">
+            <span class="seg__item is-active">Today</span>
+            <span class="seg__item">Weekend</span>
+          </div>
+          <span class="locchip"><span class="dot"></span> Denver, CO</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="chip is-active">Techno</span>
+        <span class="chip">House</span>
+        <span class="chip">Bass</span>
+      </div>
+
+      <div class="wsh__grid">
+        <a class="wsc__card" href="#">
+          <div class="wsc__img"></div>
+          <div class="wsc__scrim"></div>
+          <span class="wsc__price">$25+</span>
+          <span class="wsc__friends">
+            <span class="avstack"><span class="av"></span><span class="av"></span></span>
+            12 going
+          </span>
+          <div class="wsc__text">
+            <span class="wsc__date">Fri, Jul 18</span>
+            <span class="wsc__title">Test Event Title</span>
+            <span class="wsc__venue">Test Venue, Denver</span>
+          </div>
+        </a>
+        <div class="wsc__skeleton skel"></div>
+      </div>
+
+      <div>
+        <button class="btn btn--primary">Primary CTA</button>
+        <button class="btn btn--ghost">Ghost</button>
+        <button class="btn btn--secondary">Secondary</button>
+      </div>
+
+      <div class="metric">
+        <span class="metric__label">Shows this month</span>
+        <span class="metric__value">42</span>
+        <span class="metric__delta is-up">+8 vs last</span>
+      </div>
+
+      <div class="dual" style="max-width:300px;">
+        <div class="dual__track"></div>
+        <div class="dual__fill" style="left:20%; width:40%;"></div>
+        <input type="range" min="0" max="100" value="20">
+        <input type="range" min="0" max="100" value="60">
+      </div>
+
+      <div class="empty">
+        <span class="empty__ico">🎧</span>
+        <span class="empty__title">Nothing here yet</span>
+        <span class="empty__body">Empty state test copy.</span>
+      </div>
+
+      <div class="toast toast--success">
+        <span class="toast__ico">✓</span>
+        <span class="toast__msg">Toast test message</span>
+        <button class="toast__close">✕</button>
+      </div>
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,300 @@
+/* Drop — shell.css: Prism web-shell component layer.
+   ========================================================================
+   Loads AFTER site.css (site.css stays generated-token-only + legacy page
+   styles). This file is the NEW component vocabulary for the Prism
+   redesign — ported from drop-design/components/app.css (the app's shared
+   web-shell language: nav/cards/chips/buttons/etc, mirrors app.trydropapp.com)
+   and overridden per design-drop/Drop Website.dc.html's own <style> block
+   where the two disagree (dc.html wins — it's the newer, redesign-specific
+   pass). All colors are var(--*) from site.css's synced token block; no
+   raw brand hexes. Foundation only — no page markup lives here.
+   ======================================================================== */
+
+/* ========================================================================
+   Web nav (.wn) — persistent top bar, replaces the old .site-nav for
+   redesigned pages. Source: drop-design app.css.
+   ======================================================================== */
+.wn {
+  width: 100%; background: var(--glass-dark); border-bottom: 1px solid var(--border-strong);
+  display: flex; justify-content: center; backdrop-filter: blur(12px);
+}
+.wn__inner { width: 100%; max-width: 1440px; display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-md) var(--sp-xl); }
+.wn__links { flex: 1; display: flex; align-items: center; gap: var(--sp-xl); }
+.wn__link { font-family: var(--font-body); font-weight: var(--fw-medium); font-size: var(--fs-sm); letter-spacing: var(--tr-snug); color: var(--text-muted); text-decoration: none; }
+.wn__link.is-active { color: var(--text); font-weight: var(--fw-bold); }
+.wn__right { display: flex; align-items: center; gap: var(--sp-md); }
+.wn__bell { position: relative; width: 38px; height: 38px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text); }
+.wn__badge { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 3px; border-radius: 9px; background: var(--going); border: 2px solid var(--bg); color: var(--text); font-family: var(--font-body); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+/* ponytail: .wn__avatar (signed-in account menu) and .wn__search-inline are
+   fully inline-styled per-page in dc.html — no base rule needed here beyond
+   the mobile hide below. Signed-in avatar is out of scope (INGEST_PLAN). */
+
+/* Mobile-only nav icon + drawer trigger (hidden on desktop by default) */
+.wn__mobicon { display: none; }
+
+/* Mobile nav drawer (hidden on desktop; JS toggles the native `hidden`
+   attribute on .mnav — no CSS state class needed for open/closed). */
+.mnav { display: none; }
+.mnav__scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); }
+.mnav__panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 82%; max-width: 320px;
+  background: var(--surface-hi); border-left: 1px solid var(--border-strong);
+  box-shadow: var(--overlay-shadow); padding: var(--sp-lg); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+/* ========================================================================
+   Page frame (.wsh) — 1440-cap left-flowing content under .wn.
+   ======================================================================== */
+.wsh { background: var(--bg); min-height: 100%; }
+.wsh__content { width: 100%; max-width: 1440px; margin: 0 auto; padding: var(--sp-xl) var(--sp-xl) var(--sp-xxxl); display: flex; flex-direction: column; gap: var(--sp-lg); }
+.wsh__headrow { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-md); }
+.wsh__title { font-family: var(--font-display); font-size: var(--fs-display); letter-spacing: var(--tr-tight); color: var(--text); }
+.wsh__controls { display: flex; align-items: center; gap: var(--sp-md); flex-wrap: wrap; }
+.wsh__grid { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--sp-lg); }
+
+/* ========================================================================
+   Web show card (.wsc) — uniform 300x340 image-forward unit. Signed-out
+   fields only; .wsc__actions/.wsc__act/.wsc__share (signed-in RSVP row)
+   are intentionally excluded — out of scope per INGEST_PLAN and their
+   --going-glass/--going-glass-border tokens are undefined (see report).
+   ======================================================================== */
+.wsc { width: 300px; }
+.wsc__card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--border); text-decoration: none; }
+.wsc__img { position: absolute; inset: 0; background: var(--surface-alt) center/cover no-repeat; }
+.wsc__scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; background: var(--scrim); pointer-events: none; }
+.wsc__price { position: absolute; top: var(--sp-md); right: var(--sp-md); background: var(--glass-dark); border: 1px solid var(--glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--text); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.wsc__friends { position: absolute; top: var(--sp-md); left: var(--sp-md); display: flex; align-items: center; gap: 4px; background: var(--social-glass); border: 1px solid var(--social-glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--accent); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.wsc__text { position: relative; padding: var(--sp-lg); display: flex; flex-direction: column; gap: 4px; }
+.wsc__date { color: var(--accent); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); letter-spacing: var(--tr-wide); text-transform: uppercase; }
+.wsc__title { color: var(--text); font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); letter-spacing: var(--tr-tight); line-height: 24px; }
+.wsc__venue { color: var(--text-secondary); font-family: var(--font-body); font-size: var(--fs-sm); }
+.wsc__skeleton { width: 300px; height: 340px; border-radius: var(--r-lg); background: var(--surface-alt); }
+
+/* ========================================================================
+   Glass pills — location chip + genre/filter chip.
+   ======================================================================== */
+.locchip { display: inline-flex; align-items: center; gap: 7px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 7px var(--sp-md); font-size: var(--fs-sm); color: var(--text-secondary); }
+.locchip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.locchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 7px var(--sp-md); font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--text-secondary); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.chip:hover { background: var(--surface-hi); border-color: var(--border-strong); }
+.chip:active { transform: scale(0.96); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip.is-active, .chip[aria-pressed="true"] { background: var(--social-glass); border-color: var(--social-glass-border); color: var(--accent); }
+.chip.is-active .chip__dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.chip__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+
+/* ========================================================================
+   Segmented control (glass).
+   ======================================================================== */
+.seg { display: inline-flex; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
+.seg__item { padding: 7px 16px; border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.seg__item.is-active { background: var(--surface-hi); color: var(--text); }
+.seg__item:hover:not(.is-active) { background: var(--glass); color: var(--text-secondary); }
+.seg__item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg__item.is-social.is-active { background: var(--social-glass); border: 1px solid var(--social-glass-border); color: var(--accent); }
+
+/* ========================================================================
+   Buttons (.btn) — BEM variant, distinct from the legacy .btn-primary/
+   .btn-ghost in site.css (kept for old pages; no collision).
+   .btn--primary uses dc.html's desaturated large-fill override (rule 9:
+   gradient fills desaturate) — same --grad-glow-fill stops site.css
+   already defines; the shadow tint uses color-mix() off --brand-magenta,
+   not the raw rgba(195,80,217,..) dc.html hardcodes.
+   ======================================================================== */
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 54px; padding: 0 var(--sp-lg); border: 1px solid transparent; border-radius: var(--r-lg); font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-md); letter-spacing: var(--tr-snug); overflow: hidden; cursor: pointer; text-decoration: none; -webkit-appearance: none; appearance: none; transition: filter var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease); }
+.btn--primary { background-image: var(--grad-glow-fill); color: var(--text-on-brand); box-shadow: 0 6px 24px color-mix(in srgb, var(--brand-magenta) 28%, transparent); }
+.btn--secondary { background: var(--surface-alt); border-color: var(--border); color: var(--text); }
+.btn--ghost { background: transparent; border-color: var(--border-strong); color: var(--text); }
+.btn--danger { background: var(--danger); color: var(--text-on-brand); }
+.btn--sm { height: 44px; border-radius: var(--r-md); font-size: var(--fs-sm); padding: 0 var(--sp-md); }
+.btn--block { display: flex; width: 100%; }
+.btn:hover:not(:disabled):not([aria-disabled=true]) { filter: brightness(1.08); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--r-md); }
+.btn:disabled, .btn[aria-disabled=true] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn.is-loading { pointer-events: none; color: transparent; }
+.btn.is-loading::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; border-top-color: currentColor; animation: btn-spin 0.7s linear infinite; color: var(--text-on-brand); }
+.btn--secondary.is-loading::after, .btn--ghost.is-loading::after { color: var(--text); }
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* ========================================================================
+   Metric / stat.
+   ======================================================================== */
+.metric { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.metric__label { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-muted); font-weight: var(--fw-medium); }
+.metric__value { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-xxl); letter-spacing: var(--tr-tight); color: var(--text); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.metric__delta { font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.metric__delta.is-up { color: var(--attended); }
+.metric__delta.is-down { color: var(--danger); }
+
+/* ========================================================================
+   Skeleton loader — dc.html's shimmer (background-position sweep)
+   supersedes app.css's background-size version for .skel itself; the
+   size modifiers are untouched in dc.html so app.css's still apply.
+   ======================================================================== */
+.skel { background: var(--surface-hi); background-image: linear-gradient(90deg, transparent 0, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 60%, transparent 100%); background-size: 800px 100%; background-repeat: no-repeat; animation: shimmer 1.4s var(--ease) infinite; border-radius: var(--r-sm); }
+.skel[aria-hidden=true] { pointer-events: none; }
+.skel--text  { height: 14px; border-radius: var(--r-pill); }
+.skel--title { height: 20px; border-radius: var(--r-pill); }
+.skel--avatar { width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto; }
+.skel--card  { height: 200px; border-radius: var(--r-lg); }
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+
+/* ========================================================================
+   Empty state.
+   ======================================================================== */
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-md); padding: var(--sp-xxxl) var(--sp-xl); }
+.empty__ico { font-size: 48px; line-height: 1; }
+.empty__title { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tr-snug); color: var(--text); }
+.empty__body  { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-base); max-width: 260px; }
+
+/* ========================================================================
+   Avatar stack (friends going).
+   ======================================================================== */
+.avstack { display: inline-flex; }
+.avstack .av { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--surface); background-image: var(--grad-brand); margin-left: -8px; }
+.avstack .av:first-child { margin-left: 0; }
+
+/* ========================================================================
+   Dual-handle range slider (filters — e.g. price/date range).
+   ======================================================================== */
+.dual { position: relative; height: 28px; }
+.dual__track { position: absolute; top: 11px; left: 0; right: 0; height: 6px; border-radius: var(--r-pill); background: var(--surface-hi); }
+.dual__fill { position: absolute; top: 11px; height: 6px; border-radius: var(--r-pill); background: var(--grad-cool); }
+.dual input[type=range] { position: absolute; top: 0; left: 0; width: 100%; height: 28px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.dual input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); border: 3px solid var(--ink); box-shadow: 0 0 8px var(--accent); cursor: pointer; pointer-events: auto; }
+.dual input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid var(--ink); box-shadow: 0 0 8px var(--accent); cursor: pointer; pointer-events: auto; }
+
+/* ========================================================================
+   Toast notification.
+   ======================================================================== */
+.toast { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--sp-lg); background: var(--surface-hi); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--overlay-shadow); font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text); max-width: 360px; }
+.toast__ico { font-size: var(--fs-md); flex: 0 0 auto; }
+.toast__msg { flex: 1; }
+.toast__close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: var(--fs-md); padding: 4px; border-radius: var(--r-sm); flex: 0 0 auto; }
+.toast__close:hover { color: var(--text); }
+.toast--success { border-color: color-mix(in srgb, var(--brand-lime) 32%, transparent); }
+.toast--success .toast__ico { color: var(--attended); }
+.toast--error   { border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
+.toast--error   .toast__ico { color: var(--danger); }
+.toast--info    { border-color: color-mix(in srgb, var(--accent) 32%, transparent); }
+.toast--info    .toast__ico { color: var(--accent); }
+
+/* ========================================================================
+   Overlay / modal / bottom sheet.
+   ======================================================================== */
+.overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--ink) 72%, transparent); backdrop-filter: blur(4px); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.overlay--center { align-items: center; }
+.modal { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--r-xl); padding: var(--sp-xl); width: 100%; max-width: 360px; box-shadow: var(--overlay-shadow); }
+.modal__title { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-lg); color: var(--text); margin-bottom: var(--sp-sm); }
+.modal__body { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-base); margin-bottom: var(--sp-xl); }
+.modal__actions { display: flex; gap: var(--sp-sm); justify-content: flex-end; }
+.sheet { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--r-xl) var(--r-xl) 0 0; padding: var(--sp-lg) var(--sp-lg) var(--sp-xxxl); width: 100%; max-width: 480px; box-shadow: var(--overlay-shadow); }
+.sheet__handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: var(--r-pill); margin: 0 auto var(--sp-lg); }
+.sheet__title { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tr-snug); color: var(--text); margin-bottom: var(--sp-md); }
+/* ponytail: no dedicated .login-gate class exists in dc.html or app.css —
+   account.html (login/signup/forgot/reset) uses .auth-* layout classes
+   (ported below) + inline form markup, not a gate/paywall component. */
+
+/* ========================================================================
+   Footer — reuses site.css's existing .site-foot/.foot-grid (already
+   token-only, already a 4-column → 2-col → 1-col responsive layout).
+   No new footer classes: dc.html has no marketing-footer markup (it's an
+   app-screens reference); porting a second footer system would duplicate
+   what site.css already does correctly. Shell.css loading after site.css
+   means any future override just needs to target .site-foot here.
+   ======================================================================== */
+
+/* ========================================================================
+   Utility classes carried from dc.html's shared <style> block.
+   ======================================================================== */
+.drop-scroll { min-height: 100vh; }
+.is-active-legal { background: var(--surface-hi); color: var(--text) !important; }
+@keyframes wavebar { 0%, 100% { transform: scaleY(0.28); } 50% { transform: scaleY(1); } }
+@keyframes floatGlow { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(20px,-24px); } }
+
+/* Mobile bottom sticky CTA bar hook (event detail "Get tickets" etc). */
+.ed-bottombar { display: none; }
+
+/* ========================================================================
+   Mobile (<=720px) — condensed nav w/ hamburger drawer, single-column
+   grids, horizontal chip/tile rails, sticky bottom action bars, 44px tap
+   targets. Ported verbatim (var-only) from dc.html's shared media query;
+   the .auth-*/.ed-*/.search-*/.legal-*/.wiz-*/.m-* hooks are shared class
+   contracts future page tracks (1-4) build their desktop layout against.
+   ======================================================================== */
+@media (max-width: 720px) {
+  /* nav: logo + location pill + search icon + menu */
+  .wn__inner { gap: 10px; padding: 10px 14px; }
+  .wn__links { flex: 1; gap: 10px; justify-content: flex-start; min-width: 0; }
+  .wn__navlink { display: none !important; }
+  .wn__search-inline { display: none !important; }
+  .wn__right .btn, .wn__right > .wn__link { display: none !important; }
+  .wn__avatar, .wn__bell { display: none !important; }
+  .wn__mobicon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text); font-size: 19px; cursor: pointer; flex: 0 0 auto; padding: 0; }
+  .locchip { max-width: 160px; overflow: hidden; white-space: nowrap; }
+
+  /* mobile drawer */
+  .mnav { display: block; position: fixed; inset: 0; z-index: 90; }
+  .mnav__scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); }
+  .mnav__panel { position: absolute; top: 0; right: 0; bottom: 0; width: 82%; max-width: 320px; background: var(--surface-hi); border-left: 1px solid var(--border-strong); box-shadow: var(--overlay-shadow); padding: var(--sp-lg); overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+
+  /* cards: single column full width */
+  .wsh__grid { justify-content: stretch; gap: var(--sp-md); }
+  .wsc, .wsc__card { width: 100% !important; }
+  .wsh__content { padding: var(--sp-md) var(--sp-md) var(--sp-xxxl); }
+
+  /* horizontal scroll rails (date chips, genre tiles, filters) */
+  .m-rail { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; grid-template-columns: none !important; margin: 0 calc(-1 * var(--sp-md)); padding: 0 var(--sp-md) var(--sp-xs); }
+  .m-rail::-webkit-scrollbar { display: none; }
+  .m-rail > * { flex: 0 0 auto; }
+  .m-rail-tile > * { width: 132px; }
+
+  /* auth: brand strip on top, form leads */
+  .auth-main { flex-direction: column !important; min-height: 100vh; }
+  .auth-brand { flex: 0 0 auto !important; padding: 16px 20px !important; }
+  .auth-hero, .auth-foot { display: none !important; }
+  .auth-form { flex: 1 1 auto !important; padding: 24px 20px 56px !important; align-items: flex-start !important; }
+
+  /* event detail: stack, drop buy box, sticky bottom bar */
+  .ed-grid { grid-template-columns: 1fr !important; gap: var(--sp-lg) !important; }
+  .ed-aside { display: none !important; }
+  .ed-wrap { padding-bottom: 96px !important; }
+  .ed-bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; gap: var(--sp-sm); align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--glass-dark); backdrop-filter: blur(12px); border-top: 1px solid var(--border-strong); }
+
+  /* search: stack filter above results */
+  .search-grid { grid-template-columns: 1fr !important; }
+  .search-filter { position: static !important; top: auto !important; }
+
+  /* generic multi-col grids */
+  .m-stack { grid-template-columns: 1fr !important; }
+  .m-2col { grid-template-columns: 1fr 1fr !important; }
+  /* legal: sidebar → horizontal rail on top */
+  .legal-grid { grid-template-columns: 1fr !important; gap: var(--sp-lg) !important; padding-left: var(--sp-md) !important; padding-right: var(--sp-md) !important; }
+  .legal-nav { position: static !important; top: auto !important; flex-direction: row !important; gap: var(--sp-sm) !important; overflow-x: auto; scrollbar-width: none; padding-bottom: var(--sp-xs); border-bottom: 1px solid var(--border); }
+  .legal-nav::-webkit-scrollbar { display: none; }
+  .legal-nav > button { flex: 0 0 auto; white-space: nowrap; }
+  /* sticky bottom CTA bar for form-heavy screens */
+  .m-ctabar { position: sticky; bottom: 0; z-index: 40; margin: var(--sp-lg) calc(-1 * var(--sp-md)) calc(-1 * var(--sp-xxxl)); padding: 12px var(--sp-md) calc(12px + env(safe-area-inset-bottom)); background: var(--glass-dark); backdrop-filter: blur(12px); border-top: 1px solid var(--border-strong); }
+
+  /* wizard */
+  .wiz-main { align-items: stretch !important; padding: var(--sp-lg) var(--sp-md) var(--sp-xxl) !important; }
+  .wiz-card { padding: var(--sp-lg) !important; }
+  .wiz-foot { position: sticky; bottom: 0; background: var(--surface); margin: var(--sp-lg) calc(-1 * var(--sp-lg)) calc(-1 * var(--sp-lg)); padding: var(--sp-md) var(--sp-lg) calc(var(--sp-md) + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+
+  /* headings that were nowrap can wrap on mobile */
+  .m-wrap { white-space: normal !important; }
+}
+
+/* ========================================================================
+   Reduced motion — kill this file's shimmer/spinner/aurora-style animation.
+   ======================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+  .btn.is-loading::after { animation: none; }
+  .btn:hover:not(:disabled):not([aria-disabled=true]) { filter: none; }
+  .btn:active:not(:disabled), .chip:active { transform: none; }
+}
