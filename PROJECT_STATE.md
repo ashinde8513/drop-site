@@ -26,8 +26,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder decision: flip the post-login app live** — update Worker `drop-app-path` so `/app/*` passes through to Pages (currently 302→/account, masking the deployed app) and `app.trydropapp.com` serves `/app/`; then retire the drop-web (Expo export) CF Pages project. (Redesign PR #13 MERGED + DEPLOYED 2026-07-09, live-verified: root/events/venues/city all serving the new design, deployment `7c14f5a2`.)
-2. **Follow-ons (post-merge, in order):** wire `app/` mock state to Supabase (auth+data; the big one) · sitemap entries for city/genre templates · fix data.js `fetchArtist` nested PostgREST filter (doesn't narrow server-side) · add `app/tokens.css` to prism-tokens sync.mjs targets.
+1. **Founder QA the live redesign + app**: trydropapp.com (design landing + .wn nav sitewide, deploy `24cc5a21`), app.trydropapp.com (the ported design SPA, REAL Supabase auth/events/RSVP/follows/My Shows — sign in with a real account and exercise an RSVP + follow to verify the write paths, which are shape-confirmed but never exercised against prod). Report anything off.
+2. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore (Worker + DNS bypass it); delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
+3. **Schema design for the social features** (founder decision): crew/plans/chat/wallet/wrapped screens run on demo data — real versions need new Supabase tables + RLS. Scope one feature first (plans?) before building.
+4. **Resubmit sitemap in GSC** (now 27 URLs incl. 11 city + 6 genre acquisition pages) + the standing Bing Webmaster import.
 3. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 4. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property verified + sitemap in GSC 2026-07-06); recheck GSC sitemap status after.
 
