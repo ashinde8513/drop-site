@@ -66,6 +66,16 @@
             <input id="auth-new-password" name="new-password" type="password" autocomplete="new-password" placeholder="New password" />
           </div>
 
+          <div class="auth-field" data-signup-only hidden>
+            <label for="auth-dob">Date of birth</label>
+            <input id="auth-dob" name="dob" type="date" placeholder="mm/dd/yyyy" />
+          </div>
+
+          <label class="auth-check" data-signup-only hidden>
+            <input id="auth-consent" type="checkbox" />
+            <span>I agree to Drop's <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</span>
+          </label>
+
           <div class="auth-row">
             <button class="auth-link" type="button" id="forgot-button">Forgot password?</button>
           </div>
@@ -92,6 +102,32 @@
 
         <footer class="auth-foot">
           <p><span id="mode-copy">No account?</span> <button class="auth-link auth-link-strong" type="button" id="mode-button">Create one</button></p>
+        </footer>
+      </div>
+
+      <div class="auth-panel" id="verify-panel" hidden>
+        <div class="verify-icon" aria-hidden="true">&#9993;</div>
+        <h2>Verify your email</h2>
+        <p>We sent a link to <strong id="verify-email"></strong>. Click it to activate your account.</p>
+        <button class="auth-submit" type="button" id="verify-continue">I've verified — continue</button>
+        <p class="auth-message" id="verify-message" role="status" aria-live="polite"></p>
+        <footer class="auth-foot">
+          <p>Didn't get it? <button class="auth-link auth-link-strong" type="button" id="resend-verify">Resend email</button></p>
+        </footer>
+      </div>
+
+      <div class="auth-panel" id="referral-panel" hidden>
+        <div class="referral-card">
+          <span class="referral-avatar" aria-hidden="true"></span>
+          <div><strong data-referral-name>A friend</strong> invited you to Drop<br><small>Joins you both to a free week of Drop+</small></div>
+        </div>
+        <h2>Every show. Who's going. Before you go.</h2>
+        <p>Create your free account and you'll land right in <span data-referral-name>a friend</span>'s crew.</p>
+        <label for="referral-email">Email</label>
+        <input id="referral-email" type="email" autocomplete="email" placeholder="you@example.com" />
+        <button class="auth-submit" type="button" id="referral-submit">Claim my free week</button>
+        <footer class="auth-foot">
+          <p>Already on Drop? <button class="auth-link auth-link-strong" type="button" id="referral-login">Log in</button></p>
         </footer>
       </div>
 

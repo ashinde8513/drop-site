@@ -1,0 +1,81 @@
+/* Drop — pages.css: page-specific styles for the Prism web-shell redesign
+   (index.html, events.html, event.html). Loads AFTER shell.css. Token-only,
+   zero raw hexes. Shared component vocabulary (.wsh/.chip/.locchip/.dual/
+   .metric/.btn etc.) lives in shell.css — this file only holds the desktop
+   layout rules shell.css's mobile media query expects a page to supply
+   (e.g. .ed-grid/.search-grid base columns) plus small page-scoped bits.
+   ======================================================================== */
+
+/* ===== shared: centered browse heading (index "Happening" row / events top) === */
+.browse-head { text-align: center; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--sp-md); }
+.browse-head .field-box { width: 100%; max-width: 440px; }
+
+/* Standalone search field-box (site.css's version is scoped under .sp-field;
+   this one is used bare on events.html's centered search row). */
+.field-box {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: rgba(11,13,18,0.5); border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill); padding: 12px 18px;
+  transition: border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+.field-box:focus-within { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(77,226,255,0.16); }
+.field-box .search-icon { color: var(--accent); flex: 0 0 auto; }
+.field-box input {
+  flex: 1 1 auto; min-width: 0; background: transparent; border: none;
+  color: var(--text); font-family: var(--font-body); font-size: var(--fs-md);
+}
+.field-box input:focus { outline: none; }
+.field-box input::placeholder { color: var(--text-muted); }
+
+/* Genre-tile rail ("Pick your night") reused as an in-page filter — button
+   variant of site.css's .tile so it can be a <button> instead of an <a>. */
+.tile-btn { border: 1px solid var(--border); background: none; text-align: left; cursor: pointer; font: inherit; }
+.tile-btn.is-active { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ===== events.html: two-column search + filter layout ===== */
+.search-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--sp-xxl); align-items: start; }
+.search-filter {
+  position: sticky; top: calc(var(--nav-h) + 20px);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-lg); display: flex; flex-direction: column; gap: var(--sp-md);
+}
+.search-filter .filt-label {
+  font-size: var(--fs-xs); color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: var(--tr-wide); display: flex; justify-content: space-between; align-items: baseline;
+}
+.search-filter .filt-note { font-size: 11px; color: var(--text-muted); line-height: var(--lh-base); }
+.price-range-label { color: var(--accent); font-variant-numeric: tabular-nums; text-transform: none; }
+.filt-row { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+
+/* ===== event.html: two-column detail + sticky buy box ===== */
+.ed-wrap { max-width: var(--wrap); margin: 0 auto; padding: var(--sp-lg) var(--sp-xl) var(--sp-xxxl); }
+/* Guard against an empty flex bar flashing while the event is still loading —
+   shell.css's mobile rule forces display:flex !important, so only a higher-
+   specificity !important (:empty pseudo-class) can suppress it pre-render. */
+.ed-bottombar:empty { display: none !important; }
+.ed-grid { display: grid; grid-template-columns: 1fr 360px; gap: var(--sp-xxl); align-items: start; }
+.ed-aside { position: sticky; top: calc(var(--nav-h) + 20px); display: flex; flex-direction: column; gap: var(--sp-md); }
+.ed-buybox {
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg);
+  padding: var(--sp-lg); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--sp-md);
+}
+.ed-facts { display: flex; flex-wrap: wrap; gap: var(--sp-xl); padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
+.ed-section { padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
+.ed-section:last-child { border-bottom: none; }
+.ed-price-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-lg); background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); flex-wrap: wrap;
+}
+.ed-best {
+  font-size: 10px; font-weight: 800; letter-spacing: var(--tr-wide); color: var(--ink);
+  background: var(--attended); padding: 3px 8px; border-radius: var(--r-pill); text-transform: uppercase;
+}
+.ed-tools { display: flex; flex-wrap: wrap; gap: var(--sp-sm); padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
+.ed-onsale { display: flex; align-items: center; gap: var(--sp-sm); color: var(--text-secondary); font-size: var(--fs-xs); padding-top: var(--sp-md); border-top: 1px solid var(--border); }
+.ed-onsale .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--attended); box-shadow: 0 0 8px var(--attended); }
+.ed-lineup-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--grad-brand); flex: 0 0 auto; }
+
+/* Login-gated chip/button (Going/Interested/Save/Follow when signed out) —
+   same visual language, slightly muted so it doesn't read as "already on". */
+.gate { opacity: 0.92; }

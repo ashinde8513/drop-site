@@ -28,6 +28,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -74,16 +75,30 @@
     </nav>
   </header>
 
-  <main class="doc" id="main">
-    <div class="wrap">
-      <div class="doc-inner">
+  <main class="wsh" id="main">
+    <div class="legal-grid">
+      <nav class="legal-nav" aria-label="Legal document sections">
+        <a class="legal-doc-link is-active-legal" href="/privacy.html" aria-current="page">Privacy Policy</a>
+        <a class="legal-doc-link" href="/terms.html">Terms of Service</a>
+        <div class="legal-nav-sep"></div>
+        <a href="#collect">Information we collect</a>
+        <a href="#use">How we use your information</a>
+        <a href="#share">How we share information</a>
+        <a href="#rights">Your choices and rights</a>
+        <a href="#retention">Data retention</a>
+        <a href="#security">Security</a>
+        <a href="#children">Children</a>
+        <a href="#changes">Changes to this policy</a>
+        <a href="#contact">Contact us</a>
+      </nav>
+      <div class="doc"><article class="doc-inner">
         <a class="back" href="/index.html">← Back to Drop</a>
         <h1>Privacy Policy</h1>
         <p class="meta">Last updated: June 2026 · Effective on the app's public launch date</p>
 
         <p>Drop ("Drop," "we," "us," or "our") is an EDM event-discovery and social app operated by <strong>Resonance Ventures LLC</strong>, a Colorado limited liability company. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using Drop, you agree to this policy.</p>
 
-        <h2><span class="num">01</span>Information we collect</h2>
+        <h2 id="collect"><span class="num">01</span>Information we collect</h2>
         <p>We collect the following, depending on how you use the app:</p>
         <ul>
           <li><strong>Account information.</strong> When you create an account, we collect your name or username, email address, and (if you add one) a profile photo. Authentication is handled through our backend provider, Supabase.</li>
@@ -93,7 +108,7 @@
           <li><strong>Usage and device data.</strong> How you interact with the app, plus device type, operating-system version, app version, general location inferred from IP address, and diagnostic or crash data.</li>
         </ul>
 
-        <h2><span class="num">02</span>How we use your information</h2>
+        <h2 id="use"><span class="num">02</span>How we use your information</h2>
         <ul>
           <li>Provide and personalize your event-discovery feed.</li>
           <li>Enable social features, including group chat and finding your crew at a venue.</li>
@@ -103,7 +118,7 @@
           <li>Comply with legal obligations.</li>
         </ul>
 
-        <h2><span class="num">03</span>How we share information</h2>
+        <h2 id="share"><span class="num">03</span>How we share information</h2>
         <p>We do not sell your personal information. We share it only as described here:</p>
         <ul>
           <li><strong>Service providers.</strong> Companies that run infrastructure on our behalf — including Supabase (backend, authentication, and database hosting), push-notification delivery, and analytics or crash-reporting tools — under agreements that limit their use of your data.</li>
@@ -113,7 +128,7 @@
           <li><strong>Business transfers.</strong> If Drop is involved in a merger, acquisition, or sale of assets, information may transfer as part of that transaction.</li>
         </ul>
 
-        <h2><span class="num">04</span>Your choices and rights</h2>
+        <h2 id="rights"><span class="num">04</span>Your choices and rights</h2>
         <ul>
           <li><strong>Access and update</strong> your account information in the app.</li>
           <li><strong>Delete your account.</strong> You can permanently delete your account and associated data from within the app; this removes your information except where we must retain it for legal reasons.</li>
@@ -121,21 +136,21 @@
           <li><strong>Privacy rights.</strong> Depending on where you live (including under the Colorado Privacy Act and similar U.S. state laws), you may have rights to access, correct, delete, or limit certain uses of your information. Contact us to exercise them.</li>
         </ul>
 
-        <h2><span class="num">05</span>Data retention</h2>
+        <h2 id="retention"><span class="num">05</span>Data retention</h2>
         <p>We keep your information for as long as your account is active and as needed to provide the app. When you delete your account, we delete or de-identify your personal information within a reasonable period, except where retention is required by law.</p>
 
-        <h2><span class="num">06</span>Security</h2>
+        <h2 id="security"><span class="num">06</span>Security</h2>
         <p>We use reasonable technical and organizational safeguards to protect your information. No method of transmission or storage is perfectly secure, so we cannot guarantee absolute security.</p>
 
-        <h2><span class="num">07</span>Children</h2>
+        <h2 id="children"><span class="num">07</span>Children</h2>
         <p>Drop is not directed to children under 13, and we do not knowingly collect information from them. Some events listed in the app may carry their own age restrictions set by venues or organizers.</p>
 
-        <h2><span class="num">08</span>Changes to this policy</h2>
+        <h2 id="changes"><span class="num">08</span>Changes to this policy</h2>
         <p>We may update this policy from time to time. When we make material changes, we will update the date above and, where appropriate, notify you in the app.</p>
 
-        <h2><span class="num">09</span>Contact us</h2>
+        <h2 id="contact"><span class="num">09</span>Contact us</h2>
         <p>Questions about this policy or your data? Email <a href="mailto:trydropapp@gmail.com">trydropapp@gmail.com</a>.</p>
-      </div>
+      </article></div>
     </div>
   </main>
 

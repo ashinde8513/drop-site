@@ -33,10 +33,33 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
 
   <script type="application/ld+json">
   { "@context": "https://schema.org", "@type": "CollectionPage", "name": "Venues — Drop", "url": "https://trydropapp.com/venues.html" }
   </script>
+
+  <style>
+    /* Page-specific — venue search + state-grouped list. Token-vars only. */
+    .v-search { position: relative; margin-bottom: var(--sp-xl); max-width: 480px; }
+    .v-search input { width: 100%; height: 52px; padding: 0 var(--sp-lg) 0 44px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); font-family: var(--font-body); font-size: var(--fs-md); outline: none; }
+    .v-search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .v-search-ico { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--accent); }
+    .v-group { margin-bottom: var(--sp-xl); }
+    .v-group__head { position: sticky; top: var(--nav-h); z-index: 10; background: var(--bg); padding: var(--sp-sm) 0; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--border); margin-bottom: var(--sp-sm); }
+    .v-group__state { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); letter-spacing: var(--tr-snug); color: var(--text); }
+    .v-group__count { font-size: var(--fs-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tr-wide); }
+    .v-row { display: flex; align-items: center; gap: var(--sp-lg); width: 100%; padding: var(--sp-md) var(--sp-lg); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); text-align: left; cursor: pointer; text-decoration: none; margin-bottom: var(--sp-sm); }
+    .v-row:hover { border-color: var(--border-strong); }
+    .v-row__art { width: 48px; height: 48px; border-radius: var(--r-md); flex: 0 0 auto; }
+    .v-row__body { flex: 1; min-width: 0; }
+    .v-row__name { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--text); }
+    .v-row__meta { font-size: var(--fs-sm); color: var(--text-secondary); }
+    .v-badge { font-size: 10px; font-weight: 800; letter-spacing: var(--tr-wide); padding: 4px 10px; border-radius: var(--r-pill); flex: 0 0 auto; }
+    .v-badge--drop { background: var(--social-glass); border: 1px solid var(--social-glass-border); color: var(--accent); }
+    .v-badge--axs { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); }
+    .v-row__caret { color: var(--text-muted); flex: 0 0 auto; }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -83,26 +106,20 @@
   </header>
 
   <main id="main">
-    <section class="section section--tight">
-      <div class="wrap">
-        <div class="section-head section-head--row">
-          <div>
-            <span class="eyebrow"><span class="dot"></span>Venues</span>
-            <h1 id="v-h1" class="sec-h2">Venues in Denver</h1>
-          </div>
-          <div class="sp-field" style="max-width:220px;">
-            <label for="v-city">City</label>
-            <div class="field-box">
-              <select id="v-city"></select>
-            </div>
-          </div>
-        </div>
-        <div class="grid-venues" id="grid-venues"></div>
-        <div style="display:flex; justify-content:center; margin-top:32px;">
-          <button type="button" class="btn-ghost" id="v-more" hidden>Show more</button>
-        </div>
+    <div class="wsh">
+      <div class="wsh__content">
+        <span class="eyebrow"><span class="dot"></span>Venues</span>
+        <h1 id="v-h1" class="wsh__title">Venues</h1>
+
+        <form class="v-search" role="search" aria-label="Search venues" onsubmit="return false;">
+          <label for="v-q" class="sr-only">Search venues, cities, states</label>
+          <input id="v-q" type="text" placeholder="Search venues, cities, states" autocomplete="off" />
+          <span class="v-search-ico" aria-hidden="true">⌕</span>
+        </form>
+
+        <div id="grid-venues"></div>
       </div>
-    </section>
+    </div>
   </main>
 
   <footer class="site-foot">
@@ -146,77 +163,97 @@
   <script>
     (function () {
       var D = window.Drop;
-      var city = D.city();
-      document.title = 'Venues in ' + city + ' — Drop';
-      document.getElementById('v-h1').textContent = 'Venues in ' + city;
-
-      var citySel = document.getElementById('v-city');
-      var all = D.CITIES.concat([D.ALL_CITIES]);
-      all.forEach(function (c) {
-        var o = document.createElement('option');
-        o.value = c; o.textContent = c;
-        if (c === city) o.selected = true;
-        citySel.appendChild(o);
-      });
-      citySel.addEventListener('change', function () {
-        D.setCity(citySel.value);
-        location.reload();
-      });
+      document.title = 'Venues — Drop';
 
       var host = document.getElementById('grid-venues');
-      var moreBtn = document.getElementById('v-more');
+      var searchInput = document.getElementById('v-q');
+      var fullGroups = []; // [{ state, venues: [...] }] sorted
+
+      // Real, derived (not fabricated) source badge: a venue is "AXS" if any of
+      // its upcoming events ticket through axs.com; otherwise it's "In Drop".
+      function badgeFor(v) {
+        var isAxs = v.events.some(function (ev) { return /axs\.com/i.test(ev.ticket_url || ''); });
+        return isAxs ? { label: 'AXS', cls: 'v-badge--axs' } : { label: 'In Drop', cls: 'v-badge--drop' };
+      }
+
+      function renderRow(v) {
+        var row = D.el('a', 'v-row');
+        row.href = '/venue.html?name=' + encodeURIComponent(v.name) + '&city=' + encodeURIComponent(v.city || '');
+        row.setAttribute('aria-label', v.name + ' — ' + v.count + ' upcoming shows');
+        row.appendChild(D.el('div', 'v-row__art art-prism ' + v.cls));
+        var body = D.el('div', 'v-row__body');
+        body.appendChild(D.el('div', 'v-row__name', v.name));
+        var metaBits = [v.city, v.count + ' upcoming show' + (v.count === 1 ? '' : 's')].filter(Boolean);
+        body.appendChild(D.el('div', 'v-row__meta', metaBits.join(' · ')));
+        row.appendChild(body);
+        var badge = badgeFor(v);
+        var badgeEl = D.el('span', 'v-badge ' + badge.cls, badge.label);
+        row.appendChild(badgeEl);
+        row.appendChild(D.el('span', 'v-row__caret', '›'));
+        return row;
+      }
+
+      function renderGroups(groups) {
+        host.innerHTML = '';
+        if (!groups.length) {
+          D.stateEmpty(host, 'No venues match "' + searchInput.value.trim() + '".', 'Browse all events', '/events.html');
+          return;
+        }
+        groups.forEach(function (grp) {
+          var section = D.el('div', 'v-group');
+          var head = D.el('div', 'v-group__head');
+          head.appendChild(D.el('span', 'v-group__state', grp.state));
+          head.appendChild(D.el('span', 'v-group__count', grp.venues.length));
+          section.appendChild(head);
+          grp.venues.forEach(function (v) { section.appendChild(renderRow(v)); });
+          host.appendChild(section);
+        });
+      }
+
+      function applySearch() {
+        var q = searchInput.value.trim().toLowerCase();
+        if (!q) { renderGroups(fullGroups); return; }
+        var filtered = fullGroups.map(function (grp) {
+          if (grp.state.toLowerCase().indexOf(q) !== -1) return grp;
+          var venues = grp.venues.filter(function (v) {
+            return v.name.toLowerCase().indexOf(q) !== -1 || (v.city || '').toLowerCase().indexOf(q) !== -1;
+          });
+          return venues.length ? { state: grp.state, venues: venues } : null;
+        }).filter(Boolean);
+        renderGroups(filtered);
+      }
+      searchInput.addEventListener('input', applySearch);
 
       function load() {
-        moreBtn.hidden = true;
         D.skeletonGrid(host, 6);
-        D.fetchEvents({ city: city, limit: 200 }).then(function (evs) {
+        D.fetchEvents({ limit: 1000 }).then(function (evs) {
           var map = {};
           evs.forEach(function (ev) {
             if (!ev.venue_name) return;
             var key = ev.venue_name + '||' + (ev.city || '');
-            if (!map[key]) map[key] = { name: ev.venue_name, city: ev.city, state: ev.state, count: 0, cls: D.genreClass(ev), genreTally: {}, nextDate: ev.date };
-            var v = map[key];
-            v.count++;
-            var g = D.genreOf(ev);
-            v.genreTally[g] = (v.genreTally[g] || 0) + 1;
-            if (ev.date < v.nextDate) v.nextDate = ev.date;
+            if (!map[key]) map[key] = { name: ev.venue_name, city: ev.city, state: ev.state || 'Other', count: 0, cls: D.genreClass(ev), events: [] };
+            map[key].count++;
+            map[key].events.push(ev);
           });
-          var list = Object.keys(map).map(function (k) { return map[k]; })
-            .sort(function (a, b) { return b.count - a.count; });
+          var list = Object.keys(map).map(function (k) { return map[k]; });
 
-          host.classList.remove('is-loading');
-          host.innerHTML = '';
+          var stateMap = {};
+          list.forEach(function (v) {
+            var s = v.state || 'Other';
+            if (!stateMap[s]) stateMap[s] = [];
+            stateMap[s].push(v);
+          });
+          fullGroups = Object.keys(stateMap).sort(function (a, b) { return stateMap[b].length - stateMap[a].length; })
+            .map(function (s) {
+              return { state: s, venues: stateMap[s].sort(function (a, b) { return a.name.localeCompare(b.name); }) };
+            });
+
           if (!list.length) {
-            D.stateEmpty(host, 'No venues in ' + city + ' yet.', 'Browse all events', '/events.html');
-            moreBtn.hidden = true;
+            D.stateEmpty(host, 'No venues with upcoming shows yet.', 'Browse all events', '/events.html');
             return;
           }
-          function renderCard(v) {
-            var card = D.venueCard(v);
-            var topGenre = Object.keys(v.genreTally).sort(function (a, b) { return v.genreTally[b] - v.genreTally[a]; })[0];
-            var body = card.querySelector('.vcard-body');
-            body.appendChild(D.el('p', 'ar-meta', D.fmtDate(v.nextDate) + ' · ' + topGenre));
-            return card;
-          }
-          var PAGE = 36, shown = 0;
-          function renderChunk() {
-            list.slice(shown, shown + PAGE).forEach(function (v) { host.appendChild(renderCard(v)); });
-            shown = Math.min(shown + PAGE, list.length);
-            moreBtn.hidden = shown >= list.length;
-          }
-          moreBtn.onclick = renderChunk;
-          renderChunk();
-
-          // ponytail: live type-to-filter on the header search; reuses the fetched list.
-          document.getElementById('nav-q').addEventListener('input', function (e) {
-            var q = e.target.value.trim().toLowerCase();
-            host.innerHTML = '';
-            if (!q) { shown = 0; renderChunk(); return; }
-            moreBtn.hidden = true;
-            list.filter(function (v) { return v.name.toLowerCase().indexOf(q) !== -1; })
-              .forEach(function (v) { host.appendChild(renderCard(v)); });
-          });
-        }).catch(function () { moreBtn.hidden = true; D.stateError(host, load); });
+          renderGroups(fullGroups);
+        }).catch(function () { D.stateError(host, load); });
       }
       load();
     })();

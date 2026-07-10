@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join a plan on Drop</title>
+  <meta name="description" content="See who's going, and join the plan on Drop — the EDM show discovery app." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex" />
+
+  <meta property="og:title" content="Join a plan on Drop" />
+  <meta property="og:description" content="See who's going, and join the plan on Drop." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+</head>
+<body>
+  <main class="share-wrap">
+    <div class="share-glow" style="width:520px; height:520px; background:radial-gradient(circle,rgba(226,77,255,0.28),transparent 62%); top:-180px; right:-80px;"></div>
+    <div style="position:relative; width:100%; max-width:440px;">
+      <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
+
+      <div class="share-card">
+        <div class="share-card__media" id="plan-media" style="background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);">
+          <div class="wsc__scrim"></div>
+          <span class="share-card__pill" id="plan-genre">House</span>
+          <div class="share-card__text">
+            <div class="wsc__date" id="plan-date">FRI, JUL 18</div>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-xl); letter-spacing:var(--tr-snug); line-height:1.1; color:var(--text);" id="plan-title">Test Event Title</div>
+            <div style="color:var(--text-secondary); font-size:var(--fs-sm);" id="plan-venue">Venue, Denver</div>
+          </div>
+        </div>
+        <div class="share-card__body">
+          <div class="share-social">
+            <span class="avstack"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></span>
+            <span id="plan-social">Maya + 4 friends are going</span>
+          </div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md);" id="plan-headline">Join Maya's plan on Drop</div>
+          <a class="btn btn--primary btn--block" id="plan-join" href="/account.html">Join on Drop — it's free</a>
+          <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/data.js"></script>
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var friend = p.get('friend') || 'Maya';
+      var friendHandle = p.get('u') || friend.toLowerCase().replace(/[^a-z0-9]/g, '');
+      var extra = parseInt(p.get('count') || '4', 10);
+      var title = p.get('event') || 'Test Event Title';
+      var venue = p.get('venue') || 'Venue';
+      var city = p.get('city') || 'Denver';
+      var genre = p.get('genre') || 'House';
+      var date = p.get('date') || '';
+
+      document.title = 'Join ' + friend + "'s plan on Drop";
+      document.getElementById('plan-genre').textContent = genre;
+      document.getElementById('plan-title').textContent = title;
+      document.getElementById('plan-venue').textContent = venue + ', ' + city;
+      document.getElementById('plan-social').textContent = friend + (extra > 0 ? ' + ' + extra + ' friends are going' : ' is going');
+      document.getElementById('plan-headline').textContent = "Join " + friend + "'s plan on Drop";
+      if (date) {
+        try {
+          document.getElementById('plan-date').textContent =
+            new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
+        } catch (e) { /* keep default */ }
+      }
+      // Carry the referral through — account.html renders a referrer card for ?ref=.
+      document.getElementById('plan-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+    })();
+  </script>
+</body>
+</html>

@@ -20,8 +20,12 @@
     : null;
 
   var mode = modeFromUrl();
+  var referralRef = new URLSearchParams(location.search).get('ref') || '';
+  var verifyEmail = '';
   var authPanel = document.getElementById('auth-panel');
   var dashPanel = document.getElementById('dash-panel');
+  var verifyPanel = document.getElementById('verify-panel');
+  var referralPanel = document.getElementById('referral-panel');
   var authForm = document.getElementById('auth-form');
   var authTitle = document.getElementById('auth-title');
   var authCopy = document.getElementById('auth-copy');
@@ -35,7 +39,9 @@
     var path = location.pathname.replace(/\/+$/, '');
     var query = new URLSearchParams(location.search);
     if (query.get('mode') === 'reset-password') return 'reset-password';
+    if (query.get('mode') === 'verify') return 'verify';
     if (path === '/signup') return 'signup';
+    if (query.get('ref')) return 'referral';
     return 'login';
   }
 
@@ -58,6 +64,11 @@
 
   function setMode(next) {
     mode = next;
+    var authFormModes = mode === 'login' || mode === 'signup' || mode === 'reset' || mode === 'reset-password';
+    authPanel.hidden = !authFormModes;
+    verifyPanel.hidden = mode !== 'verify';
+    referralPanel.hidden = mode !== 'referral';
+    if (!authFormModes) return;
     var signup = mode === 'signup';
     var reset = mode === 'reset';
     var resetPassword = mode === 'reset-password';
@@ -124,20 +135,47 @@
     if (out.error) throw out.error;
   }
 
+  function age(dobValue) {
+    var dob = new Date(dobValue);
+    if (isNaN(dob.getTime())) return null;
+    var diff = Date.now() - dob.getTime();
+    return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+  }
+
   async function signUp() {
     var email = document.getElementById('auth-email').value.trim();
     var username = cleanUsername(document.getElementById('auth-username').value);
     var password = document.getElementById('auth-password').value;
+    var dobValue = document.getElementById('auth-dob').value;
+    var consented = document.getElementById('auth-consent').checked;
     if (!email || !password) throw new Error('Enter your email and password.');
-    var options = { emailRedirectTo: AUTH_REDIRECT };
-    if (username) options.data = { username: username };
+    if (!dobValue) throw new Error('Enter your date of birth.');
+    var years = age(dobValue);
+    if (years == null || years < 16) throw new Error('You must be 16 or older to use Drop.');
+    if (!consented) throw new Error('Agree to the Terms and Privacy Policy to continue.');
+    var data = { dob: dobValue, consented_at: new Date().toISOString() };
+    if (username) data.username = username;
+    // ponytail: referral is cosmetic (no crew-join backend yet) — the raw ref
+    // token rides along as user metadata so a future crew-join job can use it.
+    if (referralRef) data.referred_by = referralRef;
+    var options = { emailRedirectTo: AUTH_REDIRECT, data: data };
     var out = await client.auth.signUp({ email: email, password: password, options: options });
     if (out.error) throw out.error;
     if (!out.data.session) {
-      setMessage('Check your email to confirm your account.', 'ok');
+      verifyEmail = email;
+      document.getElementById('verify-email').textContent = email;
+      setMode('verify');
       return;
     }
     await showDashboard();
+  }
+
+  async function resendVerify() {
+    if (!verifyEmail) return;
+    var el = document.getElementById('verify-message');
+    el.textContent = 'Sending...';
+    var out = await client.auth.resend({ type: 'signup', email: verifyEmail });
+    el.textContent = out.error ? (out.error.message || 'Could not resend — try again.') : 'Email resent — check your inbox.';
   }
 
   async function sendReset() {
@@ -321,12 +359,15 @@
     var sessionOut = await client.auth.getSession();
     var session = sessionOut.data && sessionOut.data.session;
     if (!session) {
-      authPanel.hidden = false;
+      // Don't clobber a verify/referral panel the user is mid-flow on.
+      if (mode !== 'verify' && mode !== 'referral') authPanel.hidden = false;
       dashPanel.hidden = true;
       return;
     }
     var user = session.user;
     authPanel.hidden = true;
+    verifyPanel.hidden = true;
+    referralPanel.hidden = true;
     dashPanel.hidden = false;
     var profileOut = await client
       .from('profiles')
@@ -350,6 +391,25 @@
   });
 
   authForm.addEventListener('submit', handleSubmit);
+
+  document.getElementById('verify-continue').addEventListener('click', async function () {
+    var el = document.getElementById('verify-message');
+    el.textContent = 'Checking...';
+    await showDashboard();
+    if (mode === 'verify') el.textContent = 'Not verified yet — click the link in your email first.';
+  });
+  document.getElementById('resend-verify').addEventListener('click', resendVerify);
+
+  if (referralRef) {
+    var refLabel = '@' + referralRef.replace(/^@+/, '');
+    document.querySelectorAll('[data-referral-name]').forEach(function (el) { el.textContent = refLabel; });
+  }
+  document.getElementById('referral-submit').addEventListener('click', function () {
+    var email = document.getElementById('referral-email').value.trim();
+    setMode('signup');
+    if (email) document.getElementById('auth-email').value = email;
+  });
+  document.getElementById('referral-login').addEventListener('click', function () { setMode('login'); });
 
   document.querySelectorAll('[data-provider]').forEach(function (button) {
     button.addEventListener('click', function () { socialSignIn(button.getAttribute('data-provider')); });

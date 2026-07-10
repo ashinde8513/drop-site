@@ -34,6 +34,14 @@ const PAGES = [
   { path: '/terms.html', title: /Drop/ },
   { path: '/link.html', title: /Drop — Get the app/ },
   { path: '/account.html', title: /Log In \| Drop/ },
+  { path: '/city.html', title: /EDM Shows in .+\| Drop/ },
+  { path: '/404.html', title: /404 — Page not found \| Drop/ },
+  { path: '/genre.html', title: /Events Near .+\| Drop/ },
+  { path: '/share-plan.html', title: /Drop/ },
+  { path: '/share-recap.html', title: /Drop/ },
+  { path: '/share-wrapped.html', title: /Drop/ },
+  // ponytail: app/index.html is in-scope per INGEST_PLAN (track A) but owned
+  // by a different in-flight track — add its PAGES entry in that track's commit.
 ];
 
 // event/venue/artist are param-driven detail templates (?id=, ?name=&city=).

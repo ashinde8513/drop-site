@@ -7,19 +7,21 @@
   min-height: 100svh;
   display: flex; flex-direction: column; align-items: center;
   padding: clamp(44px, 10vw, 84px) 0 56px;
+  /* design's dc.html link screen: single top-center magenta glow over a
+     dark-to-ink fade — color-mix keeps it token-only (no raw hex). */
   background:
-    radial-gradient(680px 420px at 50% -6%, rgba(77, 226, 255, 0.18), transparent 62%),
-    radial-gradient(520px 360px at 50% 108%, rgba(226, 77, 255, 0.14), transparent 60%);
+    radial-gradient(520px 420px at 50% -8%, color-mix(in srgb, var(--brand-magenta) 30%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-magenta) 10%, var(--ink)), var(--bg) 70%);
 }
-.linkhub .wrap { max-width: 460px; text-align: center; }
+.linkhub .wrap { max-width: 420px; text-align: center; }
 .lh-badge {
-  width: 88px; height: 88px; margin: 0 auto;
+  width: 96px; height: 96px; margin: 0 auto;
   border-radius: var(--r-lg); display: grid; place-items: center;
   background:
     radial-gradient(120px 120px at 50% 0%, rgba(77, 226, 255, 0.30), transparent 70%),
     var(--surface-alt);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 8px 14px rgba(226, 77, 255, 0.22);
+  box-shadow: 0 0 0 3px var(--accent), 0 8px 14px rgba(226, 77, 255, 0.22);
 }
 .lh-name {
   font-family: var(--font-display); font-weight: 700;
@@ -46,11 +48,17 @@
 }
 .lh-link:hover { transform: translateY(-2px); border-color: var(--brand-cyan); }
 .lh-link:active { transform: translateY(0); opacity: 0.88; }
+.lh-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lh-link.primary {
   background: var(--grad-glow-fill); color: var(--text-on-brand); border-color: transparent;
   box-shadow: 0 6px 18px rgba(226, 77, 255, 0.28);
 }
 .lh-link.primary:hover { box-shadow: 0 10px 24px rgba(77, 226, 255, 0.34); }
+/* icon + label + chevron row (design's link-hub button anatomy) */
+.lh-ico { font-size: 20px; width: 24px; text-align: center; flex: 0 0 auto; }
+.lh-label { flex: 1; text-align: left; }
+.lh-chev { color: var(--text-muted); flex: 0 0 auto; }
+.lh-link.primary .lh-chev { color: inherit; opacity: 0.7; }
 .lh-disc {
   font-family: var(--font-display); font-size: 11px; line-height: 1.7; font-weight: 500;
   letter-spacing: 0.02em; color: var(--text-secondary);

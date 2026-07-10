@@ -1,0 +1,97 @@
+/* app/tokens.css
+   COPY of drop-design/foundations/tokens.css — regenerate via prism-tokens sync;
+   TODO add app/tokens.css to sync.mjs targets so it stays in lockstep. */
+
+/* Drop Design System — PRISM foundation tokens.
+   AUTO-GENERATED from prism-tokens/palette.json — the single source of truth
+   for Drop's brand colors/gradients. Edit values there, then run
+   `node sync.mjs` (in prism-tokens) to regenerate this file, the app's
+   primitives.ts, and drop-website/site.css. Do not hand-edit. */
+:root {
+  /* ===== Primitives ===== */
+  --ink:         #0B0D12;
+  --surface:     #14161D;
+  --surface-alt: #1C1F28;
+  --surface-hi:  #262A35;
+  --brand-cyan:    #4DE2FF;
+  --brand-magenta: #E24DFF;
+  --brand-lime:    #B6FF6A;
+  --brand-purple:  #7B2CBF;
+  --chrome:      #C9D2DF;
+  --gold:        #FFCB3D;   /* star ratings, presale-live */
+  --danger:      #FF5C72;
+  --white:       #FFFFFF;
+  --text-dim:    #C4CCD8;
+  --text-mute:   #7C8597;
+
+  /* ===== Gradients ===== */
+  --grad-glow:      linear-gradient(120deg, #4DE2FF 0%, #E24DFF 52%, #B6FF6A 100%); /* iridescent CTA — TEXT/glow accents */
+  --grad-glow-fill: linear-gradient(120deg, #5DCFE6 0%, #C350D9 52%, #B3EB78 100%); /* desat large-fill variant (buttons/CTA rows) */
+  --grad-brand:     linear-gradient(120deg, #E24DFF, #4DE2FF);
+  --grad-cool:      linear-gradient(120deg, #4DE2FF, #B6FF6A);
+  --grad-chrome:    linear-gradient(120deg, #C9D2DF, #8A93A5, #EDF2F8);
+  --scrim:          linear-gradient(180deg, transparent, rgba(11,13,18,0.25) 40%, rgba(11,13,18,0.92));
+
+  /* ===== Semantic roles (mirrors app semantic.ts — named by JOB) ===== */
+  --bg:             var(--ink);
+  --text:           var(--white);
+  --text-secondary: var(--text-dim);
+  --text-muted:     var(--text-mute);
+  --text-on-brand:  var(--ink);            /* ink text on bright/iridescent fills */
+  --accent:         var(--brand-cyan);     /* everyday interactive */
+
+  /* status — RSVP / attendance (each its own role; do not collapse onto brand) */
+  --going:      var(--brand-magenta);
+  --interested: var(--brand-cyan);
+  --attended:   var(--brand-lime);
+
+  /* lines */
+  --border:        rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.16);
+
+  /* glass */
+  --glass:        rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.16);
+  --glass-dark:   rgba(11,13,18,0.55);
+
+  /* social wedge — the "N friends going" chip (cyan-tinted) */
+  --social-glass:        rgba(77,226,255,0.14);
+  --social-glass-border: rgba(77,226,255,0.28);
+
+  /* going state glass — selected "Going" pill (magenta-tinted; mirrors semantic.ts goingGlass) */
+  --going-glass:        rgba(226,77,255,0.12);
+  --going-glass-border: rgba(226,77,255,0.32);
+
+  /* hairlines on dark glass (mirrors semantic.ts borderHi) */
+  --border-hi: rgba(255,255,255,0.16);
+
+  /* ===== Type ===== */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;  /* SpaceGrotesk-Bold/Medium */
+  --font-body:    'Sora', system-ui, sans-serif;           /* Sora-Regular/Medium */
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 18px;
+  --fs-xl: 22px; --fs-xxl: 28px; --fs-xxxl: 34px; --fs-display: 40px;
+  --tr-tight: -0.8px; --tr-snug: -0.3px; --tr-wide: 1.2px; --tr-wider: 2px;
+  /* line-height + font-weight tokens (mirrors app theme usage) */
+  --lh-tight: 1.15; --lh-base: 1.4; --lh-loose: 1.6;
+  --fw-regular: 400; --fw-medium: 600; --fw-bold: 700;
+
+  /* ===== Spacing ===== */
+  /* ponytail: --sp-md = 12px fits 4pt grid (3×4); not 8pt-grid. Intentional — mirrors app primitives.spacing.md. */
+  --sp-xs: 4px; --sp-sm: 8px; --sp-md: 12px; --sp-lg: 16px; --sp-xl: 24px; --sp-xxl: 32px; --sp-xxxl: 48px;
+
+  /* ===== Radius ===== */
+  --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+
+  /* ===== Elevation ===== */
+  --shadow-card: 0 8px 16px rgba(0,0,0,0.45);
+  --shadow-glow: 0 6px 18px rgba(226,77,255,0.45);
+  --overlay-shadow: 0 24px 48px rgba(0,0,0,0.72); /* modal/sheet backdrop lift */
+
+  /* ===== Motion ===== */
+  --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

@@ -34,6 +34,8 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+  <link rel="stylesheet" href="/pages.css" />
 </head>
 <body class="event-page">
   <a href="#main" class="skip-link">Skip to content</a>
@@ -88,10 +90,10 @@
     </div>
 
     <!-- Content injected by JS once the event resolves (skeleton below is the loading state). -->
-    <section class="section section--tight" id="event-root">
-      <div class="wrap">
-        <div class="event-hero">
-          <div class="skeleton skel-media" style="aspect-ratio:4/3; border-radius: var(--r-xl);"></div>
+    <div class="ed-wrap" id="event-root">
+      <div class="ed-grid">
+        <div>
+          <div class="skeleton skel-media" style="height:360px; border-radius: var(--r-xl); margin-bottom: var(--sp-xl);"></div>
           <div style="display:flex; flex-direction:column; gap:14px;">
             <div class="skeleton skel-line" style="width:40%;"></div>
             <div class="skeleton skel-line" style="height:40px; width:90%;"></div>
@@ -99,12 +101,13 @@
             <div class="skeleton skel-line short"></div>
           </div>
         </div>
+        <div class="skeleton" style="height:320px;border-radius:var(--r-xl);"></div>
       </div>
-    </section>
+    </div>
   </main>
 
-  <!-- Mobile sticky Get-tickets bar (thumb zone) — populated once event loads. -->
-  <div class="sticky-cta" id="sticky-cta" hidden></div>
+  <!-- Mobile sticky action bar (thumb zone) — populated once the event loads. -->
+  <div class="ed-bottombar" id="sticky-cta"></div>
 
   <!-- ============================ FOOTER ============================ -->
   <footer class="site-foot">
@@ -146,7 +149,11 @@
   <script src="/data.js"></script>
   <script src="/site.js"></script>
   <script>
-    // Event detail page — fetch by ?id=, render hero + lineup + rails, inject JSON-LD.
+    // Event detail page — fetch by ?id=, render Prism web-shell hero + facts +
+    // lineup + description + price compare + tool row + sticky buy box
+    // (desktop) / bottom action bar (mobile, via shell.css .ed-bottombar).
+    // Signed-in-only actions (Going/Interested/Save/Follow) are login-gated —
+    // this static site has no session, so they link to /account.html.
     (function () {
       var D = window.Drop;
       var el = D.el;
@@ -215,94 +222,109 @@
         document.head.appendChild(s);
       }
 
+      // ---- Login gate — Going/Interested/Save/Follow have no signed-out
+      // meaning on a static site; link straight to the account shell instead
+      // of faking local toggle state. ------------------------------------------
+      function gateLink(cls, label, title) {
+        var a = el('a', cls, label);
+        a.href = '/account.html';
+        a.title = title || 'Log in on Drop';
+        return a;
+      }
+
+      // ---- .ics download — real, client-side, no network/dependency. ----------
+      function icsFor(ev) {
+        var start = new Date(ev.date);
+        var end = ev.end_date ? new Date(ev.end_date) : new Date(start.getTime() + 3 * 60 * 60 * 1000);
+        function stamp(d) { return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; }
+        function escText(s) { return String(s || '').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,'); }
+        var lines = [
+          'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Drop//trydropapp.com//EN', 'BEGIN:VEVENT',
+          'UID:' + ev.id + '@trydropapp.com',
+          'DTSTAMP:' + stamp(new Date()),
+          'DTSTART:' + stamp(start),
+          'DTEND:' + stamp(end),
+          'SUMMARY:' + escText(ev.title),
+          'LOCATION:' + escText([ev.venue_name, ev.city, ev.state].filter(Boolean).join(', ')),
+          'DESCRIPTION:' + escText((ev.description || '').slice(0, 400)),
+          'URL:' + location.href,
+          'END:VEVENT', 'END:VCALENDAR'
+        ];
+        var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (ev.title || 'event').replace(/[^\w\- ]+/g, '').trim().slice(0, 60) + '.ics';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+      }
+
+      // ---- Seller name from the ticket URL's hostname. One real listing today
+      // (Drop links a single ticket source per event) — a true multi-seller
+      // compare table needs the price-compare data feed (separate project,
+      // not merged); this degrades to one honest, real row instead of a
+      // fabricated "beats 3 competitors" table. ---------------------------------
+      var SELLERS = {
+        'ticketmaster.com': 'Ticketmaster', 'axs.com': 'AXS', 'eventbrite.com': 'Eventbrite',
+        'dice.fm': 'DICE', 'tixr.com': 'Tixr', 'frontgatetickets.com': 'Front Gate Tickets',
+        'seetickets.us': 'See Tickets', 'seetickets.com': 'See Tickets', 'etix.com': 'Etix',
+        'venuepilot.co': 'Venue Pilot', 'ticketweb.com': 'Ticketweb', 'stubhub.com': 'StubHub',
+        'seatgeek.com': 'SeatGeek'
+      };
+      function sellerName(url) {
+        try {
+          var host = new URL(url).hostname.replace(/^www\./, '');
+          if (SELLERS[host]) return SELLERS[host];
+          var parts = host.split('.');
+          var base = parts.length > 1 ? parts[parts.length - 2] : host;
+          return base.charAt(0).toUpperCase() + base.slice(1);
+        } catch (e) { return 'Tickets'; }
+      }
+
       function renderHero(ev) {
-        var hero = el('div', 'event-hero');
+        var wrap = el('div');
 
-        var media = el('div', 'event-hero-media');
+        var box = el('div');
+        box.style.cssText = 'position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);';
+        var media;
         if (ev.image_url) {
-          var img = el('img');
-          img.src = ev.image_url; img.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
-          img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
-          img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(D.prismArt(ev), img); };
-          media.appendChild(img);
+          media = el('img');
+          media.src = ev.image_url; media.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
+          media.loading = 'eager'; media.referrerPolicy = 'no-referrer';
+          media.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+          media.onerror = function () {
+            var art = D.prismArt(ev);
+            art.style.cssText = 'position:absolute;inset:0;';
+            if (media.parentNode) media.parentNode.replaceChild(art, media);
+          };
         } else {
-          media.appendChild(D.prismArt(ev));
+          media = D.prismArt(ev);
+          media.style.cssText = 'position:absolute;inset:0;';
         }
-        hero.appendChild(media);
+        box.appendChild(media);
 
-        var info = el('div', 'event-hero-info');
-        var genrePill = el('span', 'genre-pill genre-pill--static', D.genreOf(ev));
-        info.appendChild(genrePill);
+        var scrim = el('div');
+        scrim.style.cssText = 'position:absolute;inset:0;background:var(--scrim);pointer-events:none;';
+        box.appendChild(scrim);
 
-        info.appendChild(el('h1', null, ev.title));
-
-        var meta = el('div', 'event-meta-row');
-        meta.appendChild(el('span', null, D.fmtDate(ev.date, ev.time_tbd)));
-        var venueLine = el('span');
-        var venueLink = el('a', null, ev.venue_name || 'Venue TBA');
-        venueLink.href = '/venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
-        venueLine.appendChild(venueLink);
-        venueLine.appendChild(document.createTextNode(' · ' + [ev.city, ev.state].filter(Boolean).join(', ')));
-        meta.appendChild(venueLine);
-        info.appendChild(meta);
-
-        // AXS pattern: venue address + Get Directions (no street address in the
-        // data model, so — like venue.html — link a Maps search on name+city+state).
-        if (ev.venue_name) {
-          var directions = el('a', 'link-more', 'Get directions →');
-          directions.href = D.mapsUrl(ev.venue_name, ev.city, ev.state);
-          directions.target = '_blank';
-          directions.rel = 'noopener';
-          info.appendChild(directions);
-        }
-
-        info.appendChild(el('div', 'event-price', D.fmtPrice(ev.price_min, ev.price_max)));
-
-        // Description with 4-line clamp + read-more toggle.
-        if (ev.description) {
-          var desc = el('p', 'event-desc clamped', ev.description);
-          info.appendChild(desc);
-          // Only show the toggle if the text actually overflows the clamp. Run
-          // once now and again after webfonts load, since font swap changes the
-          // measured height (and would otherwise mis-decide before fonts land).
-          var added = false;
-          function checkOverflow() {
-            if (added) return;
-            if (desc.scrollHeight > desc.clientHeight + 2) {
-              added = true;
-              var toggle = el('button', 'read-more-btn', 'Read more');
-              toggle.type = 'button';
-              toggle.addEventListener('click', function () {
-                var expanded = desc.classList.toggle('clamped') === false;
-                toggle.textContent = expanded ? 'Show less' : 'Read more';
-              });
-              info.appendChild(toggle);
-            }
-          }
-          requestAnimationFrame(checkOverflow);
-          if (document.fonts && document.fonts.ready) document.fonts.ready.then(checkOverflow);
-        }
-
-        var ctaRow = el('div', 'event-cta-row');
-        var ticketUrl = D.safeUrl(ev.ticket_url);
-        if (ticketUrl) {
-          var buy = el('a', 'btn-primary', 'Get tickets');
-          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
-          ctaRow.appendChild(buy);
-        }
-        var plan = el('a', 'btn-ghost', 'Plan it with your crew');
-        plan.href = '/download.html';
-        ctaRow.appendChild(plan);
-
-        var shareBtn = el('button', 'share-btn', 'Share');
-        shareBtn.type = 'button';
-        ctaRow.appendChild(shareBtn);
-        info.appendChild(ctaRow);
+        box.appendChild(el('span', 'genre-pill', D.genreOf(ev)));
 
         var shareStatus = el('p', 'share-status');
         shareStatus.setAttribute('aria-live', 'polite');
-        info.appendChild(shareStatus);
+        shareStatus.style.cssText = 'position:absolute;bottom:var(--sp-sm);right:var(--sp-lg);z-index:2;';
 
+        var actions = el('div');
+        actions.style.cssText = 'position:absolute;top:var(--sp-lg);right:var(--sp-lg);z-index:2;display:flex;gap:var(--sp-sm);';
+        var circleStyle = 'width:44px;height:44px;border-radius:50%;background:var(--glass-dark);border:1px solid var(--glass-border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
+        var saveBtn = gateLink(null, '🔖', 'Log in to save this show');
+        saveBtn.setAttribute('aria-label', 'Log in to save this show');
+        saveBtn.style.cssText = circleStyle;
+        actions.appendChild(saveBtn);
+        var shareBtn = el('button', null, '↗');
+        shareBtn.type = 'button';
+        shareBtn.setAttribute('aria-label', 'Share');
+        shareBtn.style.cssText = circleStyle + 'cursor:pointer;';
         shareBtn.addEventListener('click', function () {
           var shareData = { title: ev.title, text: ev.title + ' at ' + (ev.venue_name || ''), url: location.href };
           if (navigator.share) {
@@ -315,35 +337,198 @@
             shareStatus.textContent = location.href;
           }
         });
+        actions.appendChild(shareBtn);
+        box.appendChild(actions);
 
-        hero.appendChild(info);
-        return hero;
+        var caption = el('div');
+        caption.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:1;padding:var(--sp-xl);';
+        caption.appendChild(el('div', 'wsc__date', D.fmtDate(ev.date, ev.time_tbd)));
+        var h1 = el('h1', null, ev.title);
+        h1.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4vw,44px);letter-spacing:var(--tr-tight);line-height:1.05;margin:6px 0 8px;color:var(--text);';
+        caption.appendChild(h1);
+        var sub = el('div', null, [ev.venue_name, ev.city].filter(Boolean).join(' · '));
+        sub.style.cssText = 'color:var(--text-secondary);font-size:var(--fs-md);';
+        caption.appendChild(sub);
+        box.appendChild(caption);
+
+        wrap.appendChild(box);
+        wrap.appendChild(shareStatus);
+        return wrap;
+      }
+
+      function metric(label, value, color) {
+        var m = el('div', 'metric');
+        m.appendChild(el('span', 'metric__label', label));
+        var v = el('span', 'metric__value', value);
+        v.style.fontSize = 'var(--fs-lg)';
+        if (color) v.style.color = color;
+        m.appendChild(v);
+        return m;
+      }
+
+      function renderFacts(ev) {
+        var row = el('div', 'ed-facts');
+        row.appendChild(metric('Date & time', D.fmtDate(ev.date, ev.time_tbd)));
+        var venueMetric = el('div', 'metric');
+        venueMetric.appendChild(el('span', 'metric__label', 'Venue'));
+        var venueLink = el('a', null, ev.venue_name || 'Venue TBA');
+        venueLink.href = '/venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
+        venueLink.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--text);';
+        venueMetric.appendChild(venueLink);
+        row.appendChild(venueMetric);
+        // ponytail: no "Interested" count metric — anon Supabase only exposes an
+        // aggregate Going RPC (event_going_counts); Interested has no equivalent
+        // yet. Going itself is appended async below once the RPC returns, rather
+        // than fabricating either number.
+        return row;
       }
 
       function renderLineup(ev) {
         var arts = (ev.event_artists || []).map(function (ea) { return ea.artists; }).filter(Boolean);
         if (!arts.length) return null;
-        var section = el('section', 'section section--tight');
-        var wrap = el('div', 'wrap');
-        var head = el('div', 'section-head');
-        head.appendChild(el('h2', 'sec-h2', 'Lineup'));
-        wrap.appendChild(head);
-        var list = el('div', 'pill-list');
+        var section = el('div', 'ed-section');
+        section.appendChild(el('div', 'sec-h2', 'Lineup'));
+        var list = el('div', 'filt-row');
+        list.style.marginTop = 'var(--sp-md)';
         arts.forEach(function (a) {
-          var pill = el('a', 'pill', a.name);
-          pill.href = '/artist.html?id=' + encodeURIComponent(a.id);
-          list.appendChild(pill);
+          var chip = el('a', 'chip', a.name);
+          chip.href = '/artist.html?id=' + encodeURIComponent(a.id);
+          var dot = el('span', 'ed-lineup-dot');
+          chip.insertBefore(dot, chip.firstChild);
+          list.appendChild(chip);
         });
-        wrap.appendChild(list);
-        section.appendChild(wrap);
+        section.appendChild(list);
         return section;
       }
 
-      // ponytail: dropped renderSocialPreview() — called a D.socialChip() that
-      // was never defined (threw on every real event load) and hard-coded fake
-      // friend names, which DESIGN.md explicitly bans outside product-preview
-      // sections ("never faked on real events"). Real "who's going" needs the
-      // app's auth'd social graph — add when that data is exposed to the site.
+      function renderDescription(ev) {
+        if (!ev.description) return null;
+        var section = el('div', 'ed-section');
+        section.appendChild(el('div', 'sec-h2', 'About this show'));
+        var desc = el('p', 'event-desc clamped', ev.description);
+        desc.style.marginTop = 'var(--sp-md)';
+        section.appendChild(desc);
+        var added = false;
+        function checkOverflow() {
+          if (added) return;
+          if (desc.scrollHeight > desc.clientHeight + 2) {
+            added = true;
+            var toggle = el('button', 'read-more-btn', 'Read more');
+            toggle.type = 'button';
+            toggle.addEventListener('click', function () {
+              var expanded = desc.classList.toggle('clamped') === false;
+              toggle.textContent = expanded ? 'Show less' : 'Read more';
+            });
+            section.appendChild(toggle);
+          }
+        }
+        requestAnimationFrame(checkOverflow);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(checkOverflow);
+        return section;
+      }
+
+      function renderPriceCompare(ev) {
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (!ticketUrl) return null;
+        var section = el('div', 'ed-section');
+        var head = el('div', 'sec-h2', 'Compare tickets');
+        var note = el('span', null, ' · all-in, fees included');
+        note.style.cssText = 'font-weight:400;font-size:var(--fs-xs);color:var(--text-muted);';
+        head.appendChild(note);
+        section.appendChild(head);
+        var row = el('div', 'ed-price-row');
+        row.style.marginTop = 'var(--sp-md)';
+        var left = el('div');
+        left.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
+        left.appendChild(el('span', null, sellerName(ticketUrl)));
+        left.appendChild(el('span', 'ed-best', 'Best price'));
+        row.appendChild(left);
+        var right = el('div');
+        right.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
+        var priceEl = el('span', null, D.fmtPrice(ev.price_min, ev.price_max));
+        priceEl.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);';
+        right.appendChild(priceEl);
+        var buy = el('a', 'btn btn--secondary btn--sm', 'Get tickets');
+        buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+        right.appendChild(buy);
+        row.appendChild(right);
+        section.appendChild(row);
+        return section;
+      }
+
+      function renderTools(ev) {
+        var row = el('div', 'ed-tools');
+        row.appendChild(gateLink('chip gate', '👥 Plan with friends', 'Log in to plan with your crew'));
+        var ics = el('button', 'chip', '📅 Download .ics');
+        ics.type = 'button';
+        ics.addEventListener('click', function () { icsFor(ev); });
+        row.appendChild(ics);
+        if (ev.venue_name) {
+          var directions = el('a', 'chip', '🧭 Get directions');
+          directions.href = D.mapsUrl(ev.venue_name, ev.city, ev.state);
+          directions.target = '_blank'; directions.rel = 'noopener';
+          row.appendChild(directions);
+        }
+        row.appendChild(gateLink('chip gate', '＋ Follow venue', 'Log in to follow this venue'));
+        return row;
+      }
+
+      function renderBuyBox(ev) {
+        var aside = el('aside', 'ed-aside');
+        var box = el('div', 'ed-buybox');
+        var priceRow = el('div');
+        priceRow.style.cssText = 'display:flex;align-items:baseline;justify-content:space-between;';
+        priceRow.appendChild(el('span', null, 'From')).style.cssText = 'color:var(--text-muted);font-size:var(--fs-sm);';
+        var price = el('span', null, D.fmtPrice(ev.price_min, ev.price_max));
+        price.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);';
+        priceRow.appendChild(price);
+        box.appendChild(priceRow);
+
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (ticketUrl) {
+          var buy = el('a', 'btn btn--primary btn--block', 'Get tickets');
+          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+          box.appendChild(buy);
+        }
+
+        var rsvpRow = el('div');
+        rsvpRow.style.cssText = 'display:flex;gap:var(--sp-sm);';
+        var going = gateLink('chip gate', '✓ Going', 'Log in to RSVP');
+        going.style.flex = '1'; going.style.justifyContent = 'center';
+        var interested = gateLink('chip gate', '☆ Interested', 'Log in to RSVP');
+        interested.style.flex = '1'; interested.style.justifyContent = 'center';
+        rsvpRow.appendChild(going); rsvpRow.appendChild(interested);
+        box.appendChild(rsvpRow);
+
+        var onsale = el('div', 'ed-onsale');
+        onsale.appendChild(el('span', 'dot'));
+        onsale.appendChild(el('span', null, ticketUrl ? 'Tickets available now' : 'Tickets not yet available'));
+        box.appendChild(onsale);
+
+        aside.appendChild(box);
+        aside.appendChild(gateLink('btn btn--ghost btn--block gate', 'Invite friends to this show', 'Log in to invite friends'));
+        return aside;
+      }
+
+      function renderBottomBar(ev) {
+        stickyBar.innerHTML = '';
+        var save = gateLink('gate', '🔖', 'Log in to save this show');
+        save.style.cssText = 'width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;';
+        stickyBar.appendChild(save);
+        var interested = gateLink('chip gate', '☆', 'Log in to RSVP');
+        interested.style.cssText = 'flex:1;height:48px;display:inline-flex;align-items:center;justify-content:center;';
+        stickyBar.appendChild(interested);
+        var going = gateLink('chip gate', '✓ Going', 'Log in to RSVP');
+        going.style.cssText = 'flex:1;height:48px;display:inline-flex;align-items:center;justify-content:center;';
+        stickyBar.appendChild(going);
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (ticketUrl) {
+          var buy = el('a', 'btn btn--primary', 'Get tickets · ' + D.fmtPrice(ev.price_min, ev.price_max));
+          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+          buy.style.cssText = 'flex:1.4;height:48px;';
+          stickyBar.appendChild(buy);
+        }
+      }
 
       function renderRail(title, events, excludeId) {
         var evs = (events || []).filter(function (e) { return String(e.id) !== String(excludeId); });
@@ -365,36 +550,41 @@
         return section;
       }
 
-      function renderStickyBar(ev) {
-        stickyBar.innerHTML = '';
-        var ticketUrl = D.safeUrl(ev.ticket_url);
-        if (ticketUrl) {
-          var a = el('a', 'btn-primary', 'Get tickets');
-          a.href = ticketUrl; a.target = '_blank'; a.rel = 'noopener nofollow sponsored';
-          stickyBar.appendChild(a);
-          stickyBar.hidden = false;
-          document.body.classList.add('has-sticky-cta');
-        }
-      }
-
       function render(ev) {
         setMeta(ev);
         injectLd(ev);
         bcCurrent.textContent = ev.title;
 
         root.innerHTML = '';
-        var wrap = el('div', 'wrap');
-        wrap.appendChild(renderHero(ev));
-        root.appendChild(wrap);
+        var grid = el('div', 'ed-grid');
 
-        var lineup = renderLineup(ev);
-        if (lineup) root.parentNode.insertBefore(lineup, root.nextSibling);
+        var left = el('div');
+        left.appendChild(renderHero(ev));
+        left.appendChild(renderFacts(ev));
+        var lineup = renderLineup(ev); if (lineup) left.appendChild(lineup);
+        var desc = renderDescription(ev); if (desc) left.appendChild(desc);
+        var compare = renderPriceCompare(ev); if (compare) left.appendChild(compare);
+        left.appendChild(renderTools(ev));
+        grid.appendChild(left);
 
-        renderStickyBar(ev);
+        grid.appendChild(renderBuyBox(ev));
+        root.appendChild(grid);
+
+        renderBottomBar(ev);
+
+        // Going count — real aggregate RPC, appended once it resolves rather
+        // than blocking the rest of the page on it.
+        D.fetchGoingCounts([ev.id]).then(function (counts) {
+          var n = counts[ev.id];
+          if (n && n >= 1) {
+            var factsRow = left.querySelector('.ed-facts');
+            if (factsRow) factsRow.appendChild(metric('Going', String(n), 'var(--going)'));
+          }
+        });
 
         // Extra rails: more at this venue, more of this genre in this city.
-        // Appended to <main> in arrival order — both are best-effort, silently
-        // skipped on fetch failure since the page is already complete without them.
+        // Best-effort — silently skipped on fetch failure since the page is
+        // already complete without them.
         var main = document.getElementById('main');
         if (ev.venue_name) {
           D.fetchVenue(ev.venue_name, ev.city).then(function (v) {

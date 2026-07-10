@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A recap from Drop</title>
+  <meta name="description" content="See the shows your friends are hitting and build recaps of your own on Drop." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex" />
+
+  <meta property="og:title" content="A recap from Drop" />
+  <meta property="og:description" content="See the shows your friends are hitting and build recaps of your own on Drop." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+</head>
+<body>
+  <main class="share-wrap">
+    <div class="share-glow" style="width:520px; height:520px; background:radial-gradient(circle,rgba(77,226,255,0.24),transparent 62%); bottom:-200px; left:-100px; animation-direction:reverse;"></div>
+    <div class="share-recap-grid" style="position:relative; width:100%; max-width:640px; display:grid; grid-template-columns:280px 1fr; gap:var(--sp-xxl); align-items:center;">
+      <div class="share-story" style="background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);">
+        <div class="share-story__inner">
+          <span class="share-mark" style="margin-bottom:0; font-size:13px;"><span class="droplet" aria-hidden="true"></span>DROP</span>
+          <div class="share-story__grid"><span></span><span></span><span></span><span></span></div>
+          <div>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:18px; line-height:1.1; color:var(--text);" id="recap-artist">ODESZA</div>
+            <div style="font-size:11px; color:var(--text-secondary);" id="recap-meta">Red Rocks · Jun 20, 2026</div>
+            <div class="share-story__stars" id="recap-stars">★★★★★</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
+        <div class="wsc__date" id="recap-eyebrow">RECAP · RED ROCKS AMPHITHEATRE</div>
+        <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(26px,4vw,40px); letter-spacing:var(--tr-tight); line-height:1.05; margin:6px 0 var(--sp-sm); color:var(--text);" id="recap-headline">Maya's night at ODESZA</h1>
+        <p style="color:var(--text-secondary); font-size:var(--fs-md); margin:0 0 var(--sp-xl);">See the shows your friends are hitting and build recaps of your own.</p>
+        <a class="btn btn--primary btn--block" id="recap-join" href="/account.html">Join Maya on Drop</a>
+        <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var friend = p.get('friend') || 'Maya';
+      var friendHandle = p.get('u') || friend.toLowerCase().replace(/[^a-z0-9]/g, '');
+      var artist = p.get('artist') || 'ODESZA';
+      var venue = p.get('venue') || 'Red Rocks';
+      var date = p.get('date') || '';
+      var rating = Math.max(1, Math.min(5, parseInt(p.get('rating') || '5', 10)));
+
+      var dateLabel = date;
+      if (date) {
+        try { dateLabel = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(date)); }
+        catch (e) { dateLabel = date; }
+      } else {
+        dateLabel = 'Jun 20, 2026';
+      }
+
+      document.title = friend + "'s night at " + artist + ' — Drop';
+      document.getElementById('recap-artist').textContent = artist;
+      document.getElementById('recap-meta').textContent = venue + ' · ' + dateLabel;
+      document.getElementById('recap-stars').textContent = '★★★★★'.slice(0, rating) + '☆☆☆☆☆'.slice(0, 5 - rating);
+      document.getElementById('recap-eyebrow').textContent = 'RECAP · ' + venue.toUpperCase();
+      document.getElementById('recap-headline').textContent = friend + "'s night at " + artist;
+      document.getElementById('recap-join').textContent = 'Join ' + friend + ' on Drop';
+      document.getElementById('recap-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+    })();
+  </script>
+</body>
+</html>

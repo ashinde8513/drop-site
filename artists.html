@@ -33,10 +33,25 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
 
   <script type="application/ld+json">
   { "@context": "https://schema.org", "@type": "CollectionPage", "name": "Artists — Drop", "url": "https://trydropapp.com/artists.html" }
   </script>
+
+  <style>
+    /* Page-specific — artists grid tile + genre chip row. Token-vars only. */
+    .a-chiprow { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+    .a-legend { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--fs-xs); }
+    .a-legend-dot, .atile-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--attended); box-shadow: 0 0 8px var(--attended); flex: 0 0 auto; }
+    .a-sub { color: var(--text-secondary); font-size: var(--fs-sm); margin: 4px 0 0; }
+    .atile { position: relative; }
+    .atile .acard-media { position: relative; }
+    .atile-dot { position: absolute; bottom: 6px; right: 6px; border: 2px solid var(--surface); }
+    .atile-open { display: flex; flex-direction: column; width: 100%; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+    .atile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .atile-follow { display: flex; justify-content: center; margin: 0 var(--sp-md) var(--sp-md); }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -83,26 +98,35 @@
   </header>
 
   <main id="main">
-    <section class="section section--tight">
-      <div class="wrap">
-        <div class="section-head section-head--row">
+    <div class="wsh">
+      <div class="wsh__content">
+        <div class="wsh__headrow">
           <div>
             <span class="eyebrow"><span class="dot"></span>Artists</span>
-            <h1 id="a-h1" class="sec-h2">Artists playing Denver</h1>
+            <h1 id="a-h1" class="wsh__title">Artists playing Denver</h1>
+            <p class="a-sub">Get an alert the moment they announce a show near you.</p>
           </div>
-          <div class="sp-field" style="max-width:220px;">
-            <label for="a-city">City</label>
-            <div class="field-box">
-              <select id="a-city"></select>
+          <div class="wsh__controls">
+            <a class="btn btn--secondary btn--sm" id="a-bulk" href="/account.html" hidden></a>
+            <div class="sp-field" style="max-width:200px;">
+              <label for="a-city">City</label>
+              <div class="field-box">
+                <select id="a-city"></select>
+              </div>
             </div>
           </div>
         </div>
+
+        <div class="a-chiprow" id="a-genres" role="group" aria-label="Filter by genre"></div>
+
+        <div class="a-legend"><span class="a-legend-dot" aria-hidden="true"></span> Has a show in the next 2 weeks</div>
+
         <div class="grid-artists" id="grid-artists"></div>
         <div style="display:flex; justify-content:center; margin-top:32px;">
           <button type="button" class="btn-ghost" id="a-more" hidden>Show more</button>
         </div>
       </div>
-    </section>
+    </div>
   </main>
 
   <footer class="site-foot">
@@ -165,6 +189,72 @@
 
       var host = document.getElementById('grid-artists');
       var moreBtn = document.getElementById('a-more');
+      var genreRow = document.getElementById('a-genres');
+      var bulkBtn = document.getElementById('a-bulk');
+      var activeGenre = ''; // '' = All
+
+      // Bucket an artist into the same genre taxonomy events.html uses, by
+      // reusing Drop.genreOf on a one-artist pseudo-event — no duplicated
+      // genre-keyword map here.
+      function artistGenre(artist) {
+        return D.genreOf({ event_artists: [{ artists: artist }] });
+      }
+
+      // "Has upcoming shows near you" = next show within 2 weeks — a real,
+      // derived signal (every card already has SOME upcoming show in this
+      // city, so "any show" would light every dot; soon-ness is the useful cut).
+      function isSoon(iso) {
+        var d = new Date(iso);
+        if (isNaN(d)) return false;
+        return (d - Date.now()) <= 14 * 24 * 60 * 60 * 1000;
+      }
+
+      function renderTile(item) {
+        var a = item.artist, genre = artistGenre(a);
+        var tile = D.el('div', 'acard atile');
+
+        var openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'atile-open';
+        openBtn.setAttribute('aria-label', 'View ' + a.name);
+        openBtn.addEventListener('click', function () {
+          location.href = '/artist.html?id=' + encodeURIComponent(a.id);
+        });
+
+        var media = D.el('div', 'acard-media');
+        function fallback() {
+          var art = D.el('div', 'art-prism ' + D.genreCls(genre));
+          art.setAttribute('aria-hidden', 'true');
+          art.appendChild(D.el('span', 'art-mark', (a.name || '•').charAt(0).toUpperCase()));
+          return art;
+        }
+        if (a.image_url) {
+          var img = D.el('img', 'acard-img');
+          img.src = a.image_url; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
+          img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(fallback(), img); };
+          media.appendChild(img);
+        } else {
+          media.appendChild(fallback());
+        }
+        if (isSoon(item.nextDate)) media.appendChild(D.el('span', 'atile-dot'));
+        openBtn.appendChild(media);
+
+        var body = D.el('div', 'acard-body');
+        body.appendChild(D.el('h3', 'acard-title', a.name));
+        body.appendChild(D.el('span', 'pill', genre));
+        body.appendChild(D.el('p', 'acard-meta', D.fmtDate(item.nextDate)));
+        openBtn.appendChild(body);
+
+        tile.appendChild(openBtn);
+
+        // Follow is a signed-in action — login-gate straight to account.html.
+        var follow = D.el('a', 'btn btn--secondary btn--sm atile-follow', 'Follow');
+        follow.href = '/account.html?next=' + encodeURIComponent('/artist.html?id=' + a.id);
+        follow.setAttribute('aria-label', 'Log in to follow ' + a.name);
+        tile.appendChild(follow);
+
+        return tile;
+      }
 
       function load() {
         moreBtn.hidden = true;
@@ -180,40 +270,79 @@
               if (ev.date < map[art.id].nextDate) map[art.id].nextDate = ev.date;
             });
           });
-          var list = Object.keys(map).map(function (k) { return map[k]; })
+          var fullList = Object.keys(map).map(function (k) { return map[k]; })
             .filter(function (item) { return item.artist && (item.artist.name || '').trim(); })
             .sort(function (a, b) { return b.count - a.count; });
 
           host.classList.remove('is-loading');
           host.innerHTML = '';
-          if (!list.length) {
+          if (!fullList.length) {
             D.stateEmpty(host, 'No artists with upcoming shows in ' + city + ' yet.', 'Browse all events', '/events.html');
             moreBtn.hidden = true;
+            genreRow.innerHTML = '';
             return;
           }
-          // Cap the initial paint (mobile was painting ~49,000px) and reveal the
-          // rest in PAGE-sized chunks on demand.
-          function renderCard(item) {
-            var genre = (item.artist.genres && item.artist.genres[0]) || 'Live music';
-            return D.acard(item.artist, { genre: genre, meta: D.fmtDate(item.nextDate) });
+
+          // ---- Genre chips (built from what's actually in this city's data) ----
+          var genres = [];
+          fullList.forEach(function (item) {
+            var g = artistGenre(item.artist);
+            if (genres.indexOf(g) === -1) genres.push(g);
+          });
+          function renderChips() {
+            genreRow.innerHTML = '';
+            var all = D.el('button', 'chip' + (activeGenre === '' ? ' is-active' : ''), 'All');
+            all.type = 'button';
+            all.setAttribute('aria-pressed', activeGenre === '' ? 'true' : 'false');
+            all.addEventListener('click', function () { activeGenre = ''; renderChips(); applyFilter(); });
+            genreRow.appendChild(all);
+            genres.forEach(function (g) {
+              var chip = D.el('button', 'chip' + (activeGenre === g ? ' is-active' : ''), g);
+              chip.type = 'button';
+              chip.setAttribute('aria-pressed', activeGenre === g ? 'true' : 'false');
+              chip.addEventListener('click', function () { activeGenre = (activeGenre === g ? '' : g); renderChips(); applyFilter(); });
+              genreRow.appendChild(chip);
+            });
           }
-          var PAGE = 48, shown = 0;
+
+          function updateBulk() {
+            if (!activeGenre) { bulkBtn.hidden = true; return; }
+            bulkBtn.hidden = false;
+            bulkBtn.textContent = 'Follow all ' + activeGenre;
+            bulkBtn.href = '/account.html?next=' + encodeURIComponent('/artists.html');
+            bulkBtn.setAttribute('aria-label', 'Log in to follow all ' + activeGenre + ' artists');
+          }
+
+          var PAGE = 48, shown = 0, filtered = fullList;
           function renderChunk() {
-            list.slice(shown, shown + PAGE).forEach(function (item) { host.appendChild(renderCard(item)); });
-            shown = Math.min(shown + PAGE, list.length);
-            moreBtn.hidden = shown >= list.length;
+            filtered.slice(shown, shown + PAGE).forEach(function (item) { host.appendChild(renderTile(item)); });
+            shown = Math.min(shown + PAGE, filtered.length);
+            moreBtn.hidden = shown >= filtered.length;
+          }
+          function applyFilter() {
+            updateBulk();
+            filtered = activeGenre ? fullList.filter(function (item) { return artistGenre(item.artist) === activeGenre; }) : fullList;
+            host.innerHTML = '';
+            shown = 0;
+            if (!filtered.length) {
+              D.stateEmpty(host, 'No ' + activeGenre + ' artists with upcoming shows in ' + city + ' yet.', null, null);
+              moreBtn.hidden = true;
+              return;
+            }
+            renderChunk();
           }
           moreBtn.onclick = renderChunk;
-          renderChunk();
+          renderChips();
+          applyFilter();
 
           // ponytail: live type-to-filter on the header search; reuses the fetched list.
           document.getElementById('nav-q').addEventListener('input', function (e) {
             var q = e.target.value.trim().toLowerCase();
             host.innerHTML = '';
-            if (!q) { shown = 0; renderChunk(); return; }
+            if (!q) { applyFilter(); return; }
             moreBtn.hidden = true;
-            list.filter(function (item) { return (item.artist.name || '').toLowerCase().indexOf(q) !== -1; })
-              .forEach(function (item) { host.appendChild(renderCard(item)); });
+            fullList.filter(function (item) { return (item.artist.name || '').toLowerCase().indexOf(q) !== -1; })
+              .forEach(function (item) { host.appendChild(renderTile(item)); });
           });
         }).catch(function () { moreBtn.hidden = true; D.stateError(host, load); });
       }
