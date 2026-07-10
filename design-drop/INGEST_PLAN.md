@@ -12,11 +12,15 @@ promoters, legal→privacy.html+terms.html, link, login/signup/forgot/reset/veri
 NEW: city.html + genre.html (SEO templates), share-plan.html + share-recap.html +
 share-wrapped.html (share landings), 404.html, search (embedded in events.html).
 
-OUT (signed-in app surfaces → app.trydropapp.com / drop-mobile-app web export, future work):
-discover signed-in state, crew/plans, myshows/memories/recap/wrapped/seen/tagged,
-wallet/paywall, profile/settings/editprofile/blocked/delete, wizard, notifications,
-festival my-schedule, suggest, promoter dashboard/manage, admin. Their design rides the
-same tokens; implement in the app repo later.
+ALSO IN — Track A, the standalone post-login web app (founder 2026-07-09: NOT Expo web;
+its own web experience matching the claude.ai design exactly): port the design dc.html
+SPA itself into `app/` — index.html + app.js (the design's router/state/render script,
+cleaned of claude-design runtime: no support.js, no _ds/ links, no image-slot loader) +
+app-only CSS (what shell.css doesn't cover). All 49 screens ride along incl. signed-in
+surfaces (discover, crew/plans, myshows/memories/wrapped, wallet/paywall, profile/
+settings, wizard, notifications, festival, suggest, promoter, admin). Data = design's
+mock state for now; Supabase wiring is the follow-on (flagged, not this ingest).
+Deploy target/domain = Arya's pick later (replaces the Expo web export experience).
 
 ## Token map
 Identity — the design was generated FROM the synced Prism design system; site.css
