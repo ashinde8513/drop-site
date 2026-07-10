@@ -34,6 +34,8 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+  <link rel="stylesheet" href="/pages.css" />
 
   <script type="application/ld+json">
   {
@@ -90,54 +92,107 @@
     </nav>
   </header>
 
-  <main id="main">
-    <section class="section section--tight section--flush-top">
-      <div class="wrap">
-        <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
-        <h1 class="sec-h2" style="margin-top:10px;">Shows near you</h1>
-        <p class="section-head" id="result-count" style="margin-top:10px;" aria-live="polite">Loading shows…</p>
-      </div>
-    </section>
+  <main id="main" class="wsh">
+    <div class="wsh__content">
 
-    <!-- ============================ FILTER BAR ============================ -->
-    <div class="filter-bar">
-      <div class="fb-inner">
-        <div class="chip-row" id="fb-when" aria-label="Filter by date" style="margin:0;">
-          <button type="button" class="chip" data-when="" aria-pressed="true">Any</button>
-          <button type="button" class="chip" data-when="tonight" aria-pressed="false">Tonight</button>
-          <button type="button" class="chip" data-when="weekend" aria-pressed="false">This weekend</button>
-          <button type="button" class="chip" data-when="month" aria-pressed="false">This month</button>
+      <!-- ==================== CENTERED HEADING + SEARCH ==================== -->
+      <section class="section--tight section--flush-top">
+        <div class="browse-head">
+          <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
+          <h1 class="sec-h2">Shows near you</h1>
+          <form class="field-box" id="events-search" role="search" aria-label="Search events">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <label for="events-q" class="sr-only">Search artists, venues, shows</label>
+            <input id="events-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+          </form>
         </div>
-        <div class="chip-row" id="fb-genre" aria-label="Filter by genre" style="margin:0;">
-          <button type="button" class="chip" data-genre="" aria-pressed="true">All genres</button>
-          <button type="button" class="chip" data-genre="Festivals" aria-pressed="false">Festivals</button>
-          <button type="button" class="chip" data-genre="House" aria-pressed="false">House</button>
-          <button type="button" class="chip" data-genre="Bass" aria-pressed="false">Bass</button>
-          <button type="button" class="chip" data-genre="Techno" aria-pressed="false">Techno</button>
-          <button type="button" class="chip" data-genre="Drum &amp; Bass" aria-pressed="false">DnB</button>
-          <button type="button" class="chip" data-genre="Hip-Hop" aria-pressed="false">Hip-Hop</button>
-          <button type="button" class="chip" data-genre="Indie" aria-pressed="false">Indie</button>
-        </div>
-        <label class="sr-only" for="fb-venue">Venue</label>
-        <select class="fb-select" id="fb-venue"><option value="">All venues</option></select>
-        <label class="sr-only" for="fb-city">City</label>
-        <select class="fb-select" id="fb-city"></select>
-        <div class="chip-row" id="fb-sort" aria-label="Sort by" style="margin:0;">
-          <button type="button" class="chip" data-sort="date" aria-pressed="true">Date</button>
-          <button type="button" class="chip" data-sort="new" aria-pressed="false">Just dropped</button>
-        </div>
-        <button type="button" class="fb-clear" id="fb-clear">Clear all</button>
+      </section>
+
+      <!-- ==================== DATE CHIPS ==================== -->
+      <div class="m-rail" id="fb-when" aria-label="Filter by date" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+        <button type="button" class="chip is-active" data-when="" aria-pressed="true"><span class="chip__dot"></span>Any date</button>
+        <button type="button" class="chip" data-when="tonight" aria-pressed="false"><span class="chip__dot"></span>Tonight</button>
+        <button type="button" class="chip" data-when="weekend" aria-pressed="false"><span class="chip__dot"></span>This weekend</button>
+        <button type="button" class="chip" data-when="month" aria-pressed="false"><span class="chip__dot"></span>This month</button>
       </div>
+
+      <!-- ==================== GENRE TILE RAIL ("pick your night") ==================== -->
+      <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-sm);">
+        <div class="eyebrow"><span class="dot"></span>Browse by scene</div>
+        <h2 class="sec-h2" style="margin-top:6px;">Pick your night.</h2>
+      </div>
+      <div class="grid-tiles m-rail m-rail-tile" id="fb-genre-tiles"></div>
+
+      <!-- ==================== SEARCH + FILTER GRID ==================== -->
+      <section class="section section--flush-top">
+        <div class="search-grid">
+          <!-- Filter panel -->
+          <aside class="search-filter" aria-label="Filters">
+            <div class="sec-h2" style="font-size:var(--fs-lg);">Filters</div>
+
+            <div>
+              <div class="filt-label">Location</div>
+              <button type="button" id="use-loc" class="locchip" style="width:100%;justify-content:center;margin-top:8px;">
+                <span class="dot"></span><span id="use-loc-label">Use my current location</span>
+              </button>
+              <p class="filt-note">We use this only to suggest the nearest city — your location is never sent anywhere.</p>
+            </div>
+
+            <div>
+              <div class="filt-label">Distance</div>
+              <div class="filt-row" id="fb-distance">
+                <button type="button" class="chip" data-distance="5" aria-pressed="false">5 mi</button>
+                <button type="button" class="chip" data-distance="10" aria-pressed="false">10 mi</button>
+                <button type="button" class="chip" data-distance="25" aria-pressed="false">25 mi</button>
+                <button type="button" class="chip" data-distance="50" aria-pressed="false">50 mi</button>
+              </div>
+              <p class="filt-note">Distance filtering is rolling out — results are matched by city for now.</p>
+            </div>
+
+            <div>
+              <div class="filt-label"><span>Price</span><span class="price-range-label" id="price-label">$0–$300+</span></div>
+              <div class="dual" style="margin-top:10px;">
+                <div class="dual__track"></div>
+                <div class="dual__fill" id="price-fill"></div>
+                <input type="range" id="price-min" min="0" max="300" step="5" value="0" aria-label="Minimum price" />
+                <input type="range" id="price-max" min="0" max="300" step="5" value="300" aria-label="Maximum price" />
+              </div>
+            </div>
+
+            <div>
+              <div class="filt-label">Genre</div>
+              <div class="filt-row" id="fb-genre"></div>
+            </div>
+
+            <div>
+              <label class="filt-label" for="fb-city">City</label>
+              <select class="fb-select" id="fb-city" style="width:100%;margin-top:8px;"></select>
+            </div>
+            <div>
+              <label class="filt-label" for="fb-venue">Venue</label>
+              <select class="fb-select" id="fb-venue" style="width:100%;margin-top:8px;"><option value="">All venues</option></select>
+            </div>
+
+            <button type="button" class="btn-ghost btn-block" id="fb-clear">Clear all</button>
+          </aside>
+
+          <!-- Results -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+              <p id="result-count" aria-live="polite" style="color:var(--text-secondary);font-size:var(--fs-sm);">Loading shows…</p>
+              <div class="filt-row" id="fb-sort" aria-label="Sort by">
+                <button type="button" class="chip is-active" data-sort="date" aria-pressed="true">Date</button>
+                <button type="button" class="chip" data-sort="new" aria-pressed="false">Just dropped</button>
+              </div>
+            </div>
+            <div class="grid-events" id="grid"></div>
+            <div style="display:flex; justify-content:center; margin-top:32px;">
+              <button type="button" class="btn-ghost" id="load-more" hidden>Load more</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="grid-events" id="grid"></div>
-        <div style="display:flex; justify-content:center; margin-top:32px;">
-          <button type="button" class="btn-ghost" id="load-more" hidden>Load more</button>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- ============================ FOOTER ============================ -->
@@ -180,10 +235,22 @@
   <script src="/data.js"></script>
   <script src="/site.js"></script>
   <script>
-    // Events listing page — filters ⇄ URL params, paginated grid.
+    // Events listing page — filters ⇄ URL params, paginated grid, client-side
+    // price refinement + genre tiles/chips, geolocation → nearest known city.
     (function () {
       var D = window.Drop;
       var qs = new URLSearchParams(location.search);
+
+      var GENRES = [
+        { genre: '', label: 'All genres', cls: '' },
+        { genre: 'Festivals', label: 'Festivals', cls: 'g-fest' },
+        { genre: 'House', label: 'House', cls: 'g-house' },
+        { genre: 'Techno', label: 'Techno', cls: 'g-techno' },
+        { genre: 'Bass', label: 'Dubstep', cls: 'g-bass' },
+        { genre: 'Drum & Bass', label: 'Drum & Bass', cls: 'g-dnb' },
+        { genre: 'Hip-Hop', label: 'Hip-Hop', cls: 'g-hiphop' },
+        { genre: 'Indie', label: 'Indie', cls: 'g-indie' }
+      ];
 
       var state = {
         q: qs.get('q') || '',
@@ -192,18 +259,100 @@
         when: qs.get('when') || '',
         venue: qs.get('venue') || '',
         festival: qs.get('festival') === '1',
-        sort: qs.get('sort') === 'new' ? 'new' : 'date'
+        sort: qs.get('sort') === 'new' ? 'new' : 'date',
+        priceMin: 0, priceMax: 300
       };
 
       var PAGE = 24;
+      var PRICE_MIN = 0, PRICE_MAX = 300;
       var offset = 0;
-      var loaded = []; // accumulated across "Load more" — feeds the venue select
+      var loaded = []; // accumulated across "Load more" — feeds the venue select + price refinement
 
       var gridEl = document.getElementById('grid');
       var countEl = document.getElementById('result-count');
       var loadMoreBtn = document.getElementById('load-more');
 
-      // ---- Filter bar wiring --------------------------------------------
+      // ---- Genre tile rail + filter-panel chips (two entry points, one state) --
+      var tilesHost = document.getElementById('fb-genre-tiles');
+      var genreChipsHost = document.getElementById('fb-genre');
+      GENRES.forEach(function (g) {
+        if (g.genre) {
+          var tile = document.createElement('button');
+          tile.type = 'button';
+          tile.className = 'tile tile-btn ' + g.cls;
+          tile.setAttribute('data-genre', g.genre);
+          tile.innerHTML = '<span>' + g.label + '</span>';
+          tilesHost.appendChild(tile);
+        }
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.setAttribute('data-genre', g.genre);
+        chip.setAttribute('aria-pressed', g.genre === state.genre ? 'true' : 'false');
+        chip.textContent = g.label;
+        genreChipsHost.appendChild(chip);
+      });
+
+      function reflectGenre() {
+        Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
+          t.classList.toggle('is-active', t.getAttribute('data-genre') === state.genre);
+        });
+        Array.prototype.forEach.call(genreChipsHost.querySelectorAll('.chip'), function (c) {
+          c.setAttribute('aria-pressed', c.getAttribute('data-genre') === state.genre ? 'true' : 'false');
+        });
+      }
+      function setGenre(val) { state.genre = val; reflectGenre(); applyFilterChange(); }
+      Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
+        t.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
+      });
+      Array.prototype.forEach.call(genreChipsHost.querySelectorAll('.chip'), function (c) {
+        c.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
+      });
+      reflectGenre();
+
+      // ---- Date + sort chips (single host each, existing pattern) --------------
+      function wireChips(hostId, key) {
+        var host = document.getElementById(hostId);
+        var chips = host.querySelectorAll('.chip');
+        for (var i = 0; i < chips.length; i++) {
+          chips[i].addEventListener('click', function () {
+            var val = this.getAttribute('data-' + key) || '';
+            state[key] = val;
+            for (var j = 0; j < chips.length; j++) {
+              chips[j].classList.toggle('is-active', chips[j] === this);
+              chips[j].setAttribute('aria-pressed', chips[j] === this ? 'true' : 'false');
+            }
+            applyFilterChange();
+          });
+        }
+      }
+      wireChips('fb-when', 'when');
+      wireChips('fb-sort', 'sort');
+      function setPressed(hostId, key, val) {
+        var chips = document.getElementById(hostId).querySelectorAll('.chip');
+        for (var i = 0; i < chips.length; i++) {
+          var on = (chips[i].getAttribute('data-' + key) || '') === val;
+          chips[i].classList.toggle('is-active', on);
+          chips[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+      }
+      setPressed('fb-when', 'when', state.when);
+      setPressed('fb-sort', 'sort', state.sort);
+
+      // Distance chips — UI-only (no per-event coordinates in the data model yet;
+      // real radius filtering needs venue lat/lon, tracked separately). Single-
+      // select toggle so the control still feels real, with an honest caption
+      // above explaining today's behavior — never silently fakes a filter.
+      var distChips = document.getElementById('fb-distance').querySelectorAll('.chip');
+      Array.prototype.forEach.call(distChips, function (c) {
+        c.addEventListener('click', function () {
+          var already = c.getAttribute('aria-pressed') === 'true';
+          Array.prototype.forEach.call(distChips, function (o) { o.setAttribute('aria-pressed', 'false'); });
+          c.setAttribute('aria-pressed', already ? 'false' : 'true');
+        });
+      });
+
+      // ---- City / venue selects -------------------------------------------------
       var citySel = document.getElementById('fb-city');
       D.CITIES.concat([D.ALL_CITIES]).forEach(function (c) {
         var o = document.createElement('option');
@@ -220,41 +369,89 @@
       var venueSel = document.getElementById('fb-venue');
       venueSel.addEventListener('change', function () { state.venue = venueSel.value; applyFilterChange(); });
 
-      function wireChips(hostId, key) {
-        var host = document.getElementById(hostId);
-        var chips = host.querySelectorAll('.chip');
-        for (var i = 0; i < chips.length; i++) {
-          chips[i].addEventListener('click', function () {
-            var val = this.getAttribute('data-' + key) || '';
-            state[key] = val;
-            for (var j = 0; j < chips.length; j++) chips[j].setAttribute('aria-pressed', chips[j] === this ? 'true' : 'false');
-            applyFilterChange();
-          });
-        }
+      // ---- Geolocation → nearest known city (real math, no geocoding API/key) --
+      var CITY_COORDS = {
+        Denver: [39.7392, -104.9903], 'Los Angeles': [34.0522, -118.2437], Seattle: [47.6062, -122.3321],
+        Portland: [45.5152, -122.6784], 'San Diego': [32.7157, -117.1611], Brooklyn: [40.6782, -73.9442],
+        'New York': [40.7128, -74.0060], Chicago: [41.8781, -87.6298], Dallas: [32.7767, -96.7970],
+        Austin: [30.2672, -97.7431], Boston: [42.3601, -71.0589]
+      };
+      function haversineMiles(lat1, lon1, lat2, lon2) {
+        var R = 3958.8, toRad = function (d) { return d * Math.PI / 180; };
+        var dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
-      wireChips('fb-when', 'when');
-      wireChips('fb-genre', 'genre');
-      wireChips('fb-sort', 'sort');
+      function nearestCity(lat, lng) {
+        var best = null, bestD = Infinity;
+        Object.keys(CITY_COORDS).forEach(function (c) {
+          var d = haversineMiles(lat, lng, CITY_COORDS[c][0], CITY_COORDS[c][1]);
+          if (d < bestD) { bestD = d; best = c; }
+        });
+        return best;
+      }
+      var useLocBtn = document.getElementById('use-loc');
+      var useLocLabel = document.getElementById('use-loc-label');
+      useLocBtn.addEventListener('click', function () {
+        if (!navigator.geolocation) { useLocLabel.textContent = 'Location not supported here'; return; }
+        useLocBtn.disabled = true;
+        useLocLabel.textContent = 'Locating…';
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          var c = nearestCity(pos.coords.latitude, pos.coords.longitude);
+          state.city = c; D.setCity(c); citySel.value = c;
+          useLocLabel.textContent = 'Near ' + c;
+          useLocBtn.disabled = false;
+          applyFilterChange();
+        }, function () {
+          useLocLabel.textContent = 'Use my current location';
+          useLocBtn.disabled = false;
+        }, { timeout: 8000 });
+      });
+
+      // ---- Price dual-handle slider — real client-side refinement -------------
+      var priceMinInput = document.getElementById('price-min');
+      var priceMaxInput = document.getElementById('price-max');
+      var priceFill = document.getElementById('price-fill');
+      var priceLabel = document.getElementById('price-label');
+      function paintPrice() {
+        var loPct = (state.priceMin - PRICE_MIN) / (PRICE_MAX - PRICE_MIN) * 100;
+        var hiPct = (state.priceMax - PRICE_MIN) / (PRICE_MAX - PRICE_MIN) * 100;
+        priceFill.style.left = loPct + '%';
+        priceFill.style.width = Math.max(0, hiPct - loPct) + '%';
+        priceLabel.textContent = '$' + state.priceMin + (state.priceMax >= PRICE_MAX ? '+' : '–$' + state.priceMax);
+        priceMinInput.value = state.priceMin;
+        priceMaxInput.value = state.priceMax;
+      }
+      priceMinInput.addEventListener('input', function () {
+        state.priceMin = Math.min(Number(this.value), state.priceMax - 5);
+        paintPrice(); renderGrid();
+      });
+      priceMaxInput.addEventListener('input', function () {
+        state.priceMax = Math.max(Number(this.value), state.priceMin + 5);
+        paintPrice(); renderGrid();
+      });
+      paintPrice();
 
       document.getElementById('fb-clear').addEventListener('click', function () {
         state.q = ''; state.genre = ''; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
+        state.priceMin = 0; state.priceMax = 300;
+        document.getElementById('events-q').value = '';
         venueSel.value = '';
         setPressed('fb-when', 'when', '');
-        setPressed('fb-genre', 'genre', '');
         setPressed('fb-sort', 'sort', 'date');
+        reflectGenre();
+        Array.prototype.forEach.call(distChips, function (o) { o.setAttribute('aria-pressed', 'false'); });
+        paintPrice();
         applyFilterChange();
       });
 
-      function setPressed(hostId, key, val) {
-        var chips = document.getElementById(hostId).querySelectorAll('.chip');
-        for (var i = 0; i < chips.length; i++) {
-          chips[i].setAttribute('aria-pressed', (chips[i].getAttribute('data-' + key) || '') === val ? 'true' : 'false');
-        }
-      }
-      // Reflect incoming URL state into the chip UI on first load.
-      setPressed('fb-when', 'when', state.when);
-      setPressed('fb-genre', 'genre', state.genre);
-      setPressed('fb-sort', 'sort', state.sort);
+      // ---- In-page search (typeahead already auto-attaches via site.js) -------
+      document.getElementById('events-search').addEventListener('submit', function (e) {
+        e.preventDefault();
+        state.q = document.getElementById('events-q').value.trim();
+        applyFilterChange();
+      });
 
       // ---- Date-window helper --------------------------------------------
       function whenRange(when) {
@@ -285,8 +482,6 @@
         return {
           city: state.city, q: state.q || undefined, genre: state.genre || undefined,
           venue: state.venue || undefined,
-          // Festivals genre → server-side is_festival filter so festivals are never
-          // paginated out of the client-side genre match.
           festival: (state.festival || state.genre === 'Festivals') || undefined,
           sort: state.sort === 'new' ? 'new' : undefined,
           from: range.from, to: range.to, limit: PAGE, offset: off
@@ -336,22 +531,36 @@
         gridEl.appendChild(box);
       }
 
+      // Client-side price refinement — events with no price data are never
+      // excluded (we can't know if they'd match, so don't hide them).
+      function priceMatches(ev) {
+        if (ev.price_min == null && ev.price_max == null) return true;
+        var lo = ev.price_min != null ? ev.price_min : ev.price_max;
+        var hi = ev.price_max != null ? ev.price_max : ev.price_min;
+        if (state.priceMax < PRICE_MAX && lo > state.priceMax) return false;
+        if (state.priceMin > PRICE_MIN && hi < state.priceMin) return false;
+        return true;
+      }
+      function visibleEvents() { return loaded.filter(priceMatches); }
+
+      function renderGrid() {
+        var vis = visibleEvents();
+        gridEl.classList.remove('is-loading');
+        gridEl.innerHTML = '';
+        if (!vis.length) { renderEmpty(); }
+        else vis.forEach(function (ev) { gridEl.appendChild(D.ecard(ev)); });
+        var filtered = vis.length !== loaded.length;
+        countEl.textContent = vis.length + (vis.length === 1 ? ' show' : ' shows') + ' shown' + (filtered ? ' (price filter applied)' : '');
+      }
+
       function load(reset) {
         if (reset) { offset = 0; loaded = []; syncUrl(); }
         if (reset) D.skeletonGrid(gridEl, 8);
         loadMoreBtn.disabled = true;
         D.fetchEvents(buildOpts(offset)).then(function (evs) {
-          if (reset) { gridEl.classList.remove('is-loading'); gridEl.innerHTML = ''; }
-          loaded = loaded.concat(evs);
+          loaded = reset ? evs : loaded.concat(evs);
           refreshVenueOptions();
-          if (!loaded.length) {
-            renderEmpty();
-          } else {
-            evs.forEach(function (ev) { gridEl.appendChild(D.ecard(ev)); });
-          }
-          // ponytail: result count reflects shows loaded so far, not a separate
-          // total-count query — "N shown" is accurate and cheap (one request).
-          countEl.textContent = loaded.length + (loaded.length === 1 ? ' show' : ' shows') + ' shown';
+          renderGrid();
           loadMoreBtn.hidden = evs.length < PAGE;
           loadMoreBtn.disabled = false;
         }).catch(function () {
@@ -364,6 +573,7 @@
 
       loadMoreBtn.addEventListener('click', function () { offset += PAGE; load(false); });
 
+      document.getElementById('events-q').value = state.q;
       load(true);
     })();
   </script>

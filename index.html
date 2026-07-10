@@ -35,6 +35,8 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+  <link rel="stylesheet" href="/pages.css" />
 
   <!-- Structured data -->
   <script type="application/ld+json">
@@ -117,6 +119,7 @@
     <section class="discover-head">
       <div class="aurora" aria-hidden="true"></div>
       <div class="wrap">
+        <span class="chip" style="margin-bottom:14px;">✦&nbsp; The EDM show discovery app</span>
         <h1 class="discover-h1">Discover live <span class="flip" data-flip="shows,sets,drops">shows</span> near you</h1>
 
         <!-- Search panel -->
@@ -159,10 +162,10 @@
           </div>
           <a class="link-more" href="/events.html">See all events →</a>
         </div>
-        <div class="time-tabs" role="tablist" aria-label="When">
-          <button class="time-tab is-on" type="button" role="tab" aria-selected="true" data-when="today">Today</button>
-          <button class="time-tab" type="button" role="tab" aria-selected="false" data-when="weekend">This Weekend</button>
-          <button class="time-tab" type="button" role="tab" aria-selected="false" data-when="month">Next 30 Days</button>
+        <div class="time-tabs" role="tablist" aria-label="When" style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px;">
+          <button class="chip is-active" type="button" role="tab" aria-selected="true" data-when="today"><span class="chip__dot"></span>Today</button>
+          <button class="chip" type="button" role="tab" aria-selected="false" data-when="weekend"><span class="chip__dot"></span>This Weekend</button>
+          <button class="chip" type="button" role="tab" aria-selected="false" data-when="month"><span class="chip__dot"></span>Next 30 Days</button>
         </div>
         <div class="rail-wrap" data-rail>
           <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
@@ -383,11 +386,11 @@
       }
 
       // Time-tabs → refetch Happening for the chosen window.
-      var tabs = Array.prototype.slice.call(document.querySelectorAll('.time-tab'));
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.time-tabs .chip'));
       tabs.forEach(function (t) {
         t.addEventListener('click', function () {
-          tabs.forEach(function (o) { o.classList.remove('is-on'); o.setAttribute('aria-selected', 'false'); });
-          t.classList.add('is-on'); t.setAttribute('aria-selected', 'true');
+          tabs.forEach(function (o) { o.classList.remove('is-active'); o.setAttribute('aria-selected', 'false'); });
+          t.classList.add('is-active'); t.setAttribute('aria-selected', 'true');
           loadWeek(t.getAttribute('data-when'));
         });
       });

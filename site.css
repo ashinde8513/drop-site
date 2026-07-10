@@ -272,19 +272,6 @@ button { font: inherit; cursor: pointer; }
   to   { transform: translate3d(6%, 3%, 0) scale(1.12); }
 }
 
-/* Happening time-tabs (Today / This Weekend / Next 30 Days) */
-.time-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 16px; }
-.time-tab {
-  padding: 8px 16px; border-radius: var(--r-pill);
-  background: var(--glass); border: 1px solid var(--glass-border);
-  font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; transition: background var(--dur-base) var(--ease), color var(--dur-base) var(--ease),
-              border-color var(--dur-base) var(--ease);
-}
-.time-tab:hover { color: var(--text); }
-.time-tab.is-on { background: var(--selected-bg); color: var(--selected-text); border-color: var(--selected-border); }
-.time-tab:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
-
 /* Location button + popover */
 .loc-wrap { position: relative; flex: 0 0 auto; }
 .loc-btn {
@@ -1001,27 +988,11 @@ button { font: inherit; cursor: pointer; }
 .faq-item summary:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
 
 /* ========================================================================
-   Event detail (event.html) — hero split, sticky mobile CTA, read-more,
-   share status. Added for blueprint #3; reuses tokens/components above.
+   Event detail (event.html) — read-more + share status. The hero/meta/CTA-
+   row/sticky-CTA layer was retired for the Prism web-shell redesign (now
+   .ed-grid/.ed-aside/.ed-bottombar in shell.css + pages.css); these two are
+   still used by event.html's description clamp + share-link status line.
    ======================================================================== */
-.event-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding-top: 28px; }
-.event-hero-media { position: relative; border-radius: var(--r-xl); overflow: hidden; aspect-ratio: 4 / 3; }
-.event-hero-media img { width: 100%; height: 100%; object-fit: cover; }
-.event-hero-media .art-prism { position: absolute; inset: 0; }
-.event-hero-info { display: flex; flex-direction: column; gap: 14px; }
-.event-hero-info h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.02em; line-height: 1.05; }
-.genre-pill--static { position: static; display: inline-flex; width: fit-content; }
-.event-meta-row { color: var(--text-secondary); font-size: 15px; display: flex; flex-direction: column; gap: 6px; }
-.event-meta-row a { color: var(--brand-cyan); }
-.event-meta-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.event-price { font-family: var(--font-display); font-weight: 700; font-size: 22px; }
-.event-cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; align-items: center; }
-.share-btn {
-  background: none; border: 1px solid var(--border); border-radius: var(--r-pill);
-  padding: 11px 18px; color: var(--text); font-size: 14px; cursor: pointer;
-  transition: border-color var(--dur-base) var(--ease);
-}
-.share-btn:hover { border-color: var(--border-strong); }
 .share-status { font-size: 13px; color: var(--brand-cyan); min-height: 1.2em; }
 .event-desc { color: var(--text-secondary); font-size: 16px; line-height: 1.65; margin-top: 8px; }
 .event-desc.clamped { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1029,17 +1000,6 @@ button { font: inherit; cursor: pointer; }
 .read-more-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .pill-list a.pill { transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease); }
 .pill-list a.pill:hover, .pill-list a.pill:focus-visible { border-color: var(--border-strong); color: var(--text); outline: none; }
-.sticky-cta {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
-  display: none; gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  background: var(--glass-dark); backdrop-filter: blur(14px); border-top: 1px solid var(--border);
-}
-.sticky-cta .btn-primary { flex: 1 1 auto; text-align: center; }
-@media (max-width: 900px) {
-  .event-hero { grid-template-columns: 1fr; }
-  .sticky-cta { display: flex; }
-  body.has-sticky-cta #main { padding-bottom: 84px; }
-}
 .faq-item p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; padding: 0 0 18px; margin: 0; }
 
 /* ========================================================================
@@ -1052,16 +1012,6 @@ button { font: inherit; cursor: pointer; }
   -webkit-mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
           mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
   scroll-padding-right: 24px; padding-inline-end: 44px;
-}
-
-/* F3: event.html mobile shows an always-visible sticky "Get tickets" primary,
-   so demote the in-hero "Get tickets" to a ghost look there — one gradient
-   primary on screen, not two. Desktop (no sticky bar) keeps the hero primary. */
-@media (max-width: 900px) {
-  .event-cta-row .btn-primary {
-    background: var(--glass); color: var(--text);
-    border-color: var(--glass-border); box-shadow: none;
-  }
 }
 
 /* F5: artist hero — fixed narrow image column so the title/genres/CTA fill the

@@ -260,8 +260,15 @@
    Mobile (<=720px) — condensed nav w/ hamburger drawer, single-column
    grids, horizontal chip/tile rails, sticky bottom action bars, 44px tap
    targets. Ported verbatim (var-only) from dc.html's shared media query;
-   the .auth-*/.ed-*/.search-*/.legal-*/.wiz-*/.m-* hooks are shared class
-   contracts future page tracks (1-4) build their desktop layout against.
+   the .auth-, .ed-, .search-, .legal-, .wiz-, .m- prefixed hooks are shared
+   class contracts future page tracks (1-4) build their desktop layout
+   against. (Bug fix: this comment previously separated those prefixes with
+   a star then a forward slash, which is the two-character sequence that
+   ends a CSS comment. Writing that sequence inside prose closed this
+   comment mid-sentence, so everything after it parsed as bogus CSS and the
+   whole mobile media query below got silently dropped in every browser,
+   sitewide. Never write a star immediately followed by a slash inside a
+   CSS comment.)
    ======================================================================== */
 @media (max-width: 720px) {
   /* nav: logo + location pill + search icon + menu */
