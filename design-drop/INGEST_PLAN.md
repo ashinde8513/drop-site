@@ -20,7 +20,15 @@ app-only CSS (what shell.css doesn't cover). All 49 screens ride along incl. sig
 surfaces (discover, crew/plans, myshows/memories/wrapped, wallet/paywall, profile/
 settings, wizard, notifications, festival, suggest, promoter, admin). Data = design's
 mock state for now; Supabase wiring is the follow-on (flagged, not this ingest).
-Deploy target/domain = Arya's pick later (replaces the Expo web export experience).
+Deploy target/domain = Arya's pick later.
+
+## Entity split (founder, 2026-07-09)
+Website and mobile app are two SEPARATE entities sharing Supabase as the data layer.
+Expo/RN stays mobile-only — nothing Expo touches the web. app.trydropapp.com currently
+serves the OLD Expo web export (the old login screen); when this ingest deploys, that
+CF Pages project (drop-web + web-deploy.yml in drop-mobile-app) gets retired/repointed
+to the new standalone web app. Follow-on after ingest: wire the web app to Supabase
+directly (auth + data), replacing the design's mock state.
 
 ## Token map
 Identity — the design was generated FROM the synced Prism design system; site.css
