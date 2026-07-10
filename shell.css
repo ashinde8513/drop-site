@@ -209,6 +209,43 @@
    ======================================================================== */
 
 /* ========================================================================
+   Legal doc layout (.legal-*) — sticky section-nav sidebar + prose article.
+   Desktop base; mobile counterpart (horizontal rail) is in the media query
+   below. Typography reuses site.css's existing .doc/.doc-inner prose rules
+   (h1/h2/.num/.meta/p/ul/li/a) verbatim — .legal-grid .doc just zeroes
+   .doc's own vertical padding since the grid supplies it instead.
+   ======================================================================== */
+.legal-grid { max-width: 1000px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-xl) var(--sp-xxxl); display: grid; grid-template-columns: 200px 1fr; gap: var(--sp-xxl); align-items: start; }
+.legal-grid .doc { padding: 0; }
+.legal-grid .doc-inner { max-width: 640px; }
+.legal-grid .doc h2 { scroll-margin-top: calc(var(--nav-h) + var(--sp-xl)); }
+.legal-nav { position: sticky; top: calc(var(--nav-h) + var(--sp-lg)); display: flex; flex-direction: column; gap: var(--sp-xs); }
+.legal-nav a { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-secondary); padding: 8px 12px; border-radius: var(--r-sm); text-decoration: none; }
+.legal-nav a:hover { color: var(--text); background: var(--surface-hi); }
+.legal-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legal-nav a.legal-doc-link { font-weight: var(--fw-bold); color: var(--text); }
+.legal-nav-sep { height: 1px; background: var(--border); margin: var(--sp-sm) 0; }
+
+/* ========================================================================
+   Branded 404 (.e404) — animated waveform + glow, single centered CTA.
+   Source: dc.html's e404 screen; waveBars loop replaced by a fixed set of
+   bars with staggered animation-delay (no JS needed for a static page).
+   ======================================================================== */
+.e404 { position: relative; overflow: hidden; min-height: 70vh; display: flex; align-items: center; justify-content: center; padding: 64px var(--sp-xl); text-align: center; }
+.e404__glow { position: absolute; width: 480px; height: 480px; border-radius: 50%; top: -140px; left: -60px; filter: blur(40px); pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--brand-magenta) 20%, transparent), transparent 62%); }
+.e404__inner { position: relative; max-width: 440px; }
+.e404__wave { display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 80px; margin-bottom: var(--sp-xl); }
+.e404__wave span { width: 5px; flex: 0 0 5px; height: 100%; border-radius: var(--r-pill); background: var(--grad-glow); transform-origin: bottom; animation: wavebar 1.3s var(--ease) infinite; }
+.e404__wave span:nth-child(4n+1) { animation-delay: 0ms; }
+.e404__wave span:nth-child(4n+2) { animation-delay: 120ms; }
+.e404__wave span:nth-child(4n+3) { animation-delay: 240ms; }
+.e404__wave span:nth-child(4n+4) { animation-delay: 360ms; }
+.e404__code { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: clamp(48px, 9vw, 88px); letter-spacing: var(--tr-tight); line-height: 1; margin: 0 0 var(--sp-sm); background: var(--grad-glow); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.e404__title { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-xl); color: var(--text); margin: 0 0 var(--sp-xs); }
+.e404__body { color: var(--text-secondary); margin: 0 0 var(--sp-xl); }
+@media (prefers-reduced-motion: reduce) { .e404__wave span { animation: none; } }
+
+/* ========================================================================
    Utility classes carried from dc.html's shared <style> block.
    ======================================================================== */
 .drop-scroll { min-height: 100vh; }
@@ -290,10 +327,47 @@
 }
 
 /* ========================================================================
+   Share landings (share-plan / share-recap / share-wrapped) — non-user
+   conversion pages: no site nav, a centered branded card, one CTA back to
+   /account.html. Track 3 of the ingest plan; new here because no existing
+   page needed a standalone "card + join" layout.
+   ======================================================================== */
+.share-wrap { position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--sp-xxl) var(--sp-xl); }
+.share-mark { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: var(--tr-tight); background: var(--grad-chrome); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: var(--sp-lg); }
+.share-mark .droplet { width: 14px; height: 14px; border-radius: 50% 50% 50% 2px; transform: rotate(45deg); background: var(--grad-glow); box-shadow: var(--shadow-glow); display: inline-block; }
+.share-glow { position: absolute; border-radius: 50%; filter: blur(42px); pointer-events: none; animation: floatGlow 10s var(--ease) infinite; }
+
+.share-card { border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--border-strong); box-shadow: var(--shadow-card); }
+.share-card__media { position: relative; height: 180px; }
+.share-card__body { padding: var(--sp-lg); background: var(--surface); }
+.share-card__pill { position: absolute; top: var(--sp-md); left: var(--sp-md); background: var(--glass-dark); border: 1px solid var(--glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--text); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; text-transform: uppercase; }
+.share-card__text { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-lg); }
+
+.share-social { display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-lg); color: var(--accent); font-weight: 700; font-size: var(--fs-sm); }
+
+.share-story { aspect-ratio: 9/16; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border-strong); position: relative; box-shadow: var(--shadow-card); }
+.share-story__inner { position: absolute; inset: 0; display: flex; flex-direction: column; padding: var(--sp-lg); }
+.share-story__grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; margin: var(--sp-md) 0; }
+.share-story__grid span { border-radius: var(--r-sm); background: rgba(255,255,255,0.06); }
+.share-story__stars { margin-top: 8px; color: var(--gold); font-size: 10px; letter-spacing: 1px; }
+
+.share-wrapped-card { border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--border-strong); box-shadow: var(--shadow-card); padding: var(--sp-xxl) var(--sp-xl); margin-bottom: var(--sp-lg); text-align: center; }
+.share-wrapped-num { font-family: var(--font-display); font-weight: 700; font-size: clamp(56px,11vw,88px); line-height: 1; background: var(--grad-glow); -webkit-background-clip: text; background-clip: text; color: transparent; margin: var(--sp-sm) 0; }
+.share-wrapped-stats { display: flex; justify-content: space-around; gap: var(--sp-md); margin-bottom: var(--sp-lg); }
+.share-wrapped-bar-track { height: 12px; border-radius: var(--r-pill); background: rgba(255,255,255,0.12); overflow: hidden; }
+.share-wrapped-bar-fill { height: 100%; background: var(--grad-glow-fill); border-radius: var(--r-pill); }
+
+@media (max-width: 720px) {
+  .share-recap-grid { grid-template-columns: 1fr !important; }
+  .share-story { max-width: 280px; margin: 0 auto var(--sp-xl); }
+}
+
+/* ========================================================================
    Reduced motion — kill this file's shimmer/spinner/aurora-style animation.
    ======================================================================== */
 @media (prefers-reduced-motion: reduce) {
   .skel { animation: none; }
+  .share-glow { animation: none; }
   .btn.is-loading::after { animation: none; }
   .btn:hover:not(:disabled):not([aria-disabled=true]) { filter: none; }
   .btn:active:not(:disabled), .chip:active { transform: none; }

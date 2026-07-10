@@ -37,6 +37,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
   <link rel="stylesheet" href="/link.css" />
 </head>
 <body>
@@ -74,19 +75,21 @@
         <!-- PRIMARY: smart routes iOS → App Store at launch, otherwise → launch list.
              Text + destination are set by the script below from the LAUNCHED flag.
              No-JS fallback points to the launch list. -->
-        <a class="lh-link primary" id="getApp" href="/index.html#notify">Get launch access →</a>
+        <a class="lh-link primary" id="getApp" href="/index.html#notify">
+          <span class="lh-ico" aria-hidden="true">📲</span><span class="lh-label">Get launch access</span><span class="lh-chev" aria-hidden="true">›</span>
+        </a>
 
         <a class="lh-link" id="joinList" href="/index.html#notify">
-          <span>Join the launch list</span>
+          <span class="lh-ico" aria-hidden="true">🔔</span><span class="lh-label">Join the launch list</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
         <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener noreferrer">
-          <span>Instagram — @trydropapp</span>
+          <span class="lh-ico" aria-hidden="true">📷</span><span class="lh-label">Instagram — @trydropapp</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
         <a class="lh-link" href="https://tiktok.com/@trydropapp" target="_blank" rel="noopener noreferrer">
-          <span>TikTok — @trydropapp</span>
+          <span class="lh-ico" aria-hidden="true">🎵</span><span class="lh-label">TikTok — @trydropapp</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
         <a class="lh-link" href="/index.html">
-          <span>About Drop · trydropapp.com</span>
+          <span class="lh-ico" aria-hidden="true">ℹ️</span><span class="lh-label">About Drop · trydropapp.com</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
       </nav>
 
@@ -117,6 +120,9 @@
 
       var btn = document.getElementById('getApp');
       if (!btn) return;
+      // Label lives in a child span (icon/chevron flank it) — set that, not
+      // the whole button, so restyled markup survives the state switch.
+      var label = btn.querySelector('.lh-label') || btn;
 
       // Capture the traffic source (?src=ig_bio / tiktok_bio / …) for attribution.
       var src = new URLSearchParams(window.location.search).get('src') || '';
@@ -135,11 +141,11 @@
           url += (url.indexOf('?') === -1 ? '?' : '&') + 'ct=' + encodeURIComponent(src) + '&pt=0&mt=8';
         }
         btn.setAttribute('href', url);
-        btn.textContent = 'Download on the App Store →';
+        label.textContent = 'Download on the App Store →';
       } else if (LAUNCHED && APP_STORE_URL) {
         // Launched, but not on iOS yet (Drop is iOS-first) — keep them on the list.
         btn.setAttribute('href', WAITLIST_URL);
-        btn.textContent = 'Get notified on Android →';
+        label.textContent = 'Get notified on Android →';
       } else {
         // Pre-launch: everyone joins the list. Insert ?src= BEFORE the #fragment
         // so the anchor still resolves and the param stays readable on the target.
@@ -150,7 +156,7 @@
           wl += (wl.indexOf('?') === -1 ? '?' : '&') + 'src=' + encodeURIComponent(src) + hash;
         }
         btn.setAttribute('href', wl);
-        btn.textContent = 'Get launch access →';
+        label.textContent = 'Get launch access →';
       }
     })();
   </script>

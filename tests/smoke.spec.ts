@@ -34,6 +34,12 @@ const PAGES = [
   { path: '/terms.html', title: /Drop/ },
   { path: '/link.html', title: /Drop — Get the app/ },
   { path: '/account.html', title: /Log In \| Drop/ },
+  { path: '/city.html', title: /EDM Shows in .+\| Drop/ },
+  { path: '/404.html', title: /404 — Page not found \| Drop/ },
+  // ponytail: genre.html, share-plan/recap/wrapped.html, app/index.html are
+  // in-scope per INGEST_PLAN (tracks 3/A) but not yet landed on disk as of
+  // this pass — add their PAGES entries in the same commit that ships them,
+  // not speculatively (a guessed title here would just be a future false-red).
 ];
 
 // event/venue/artist are param-driven detail templates (?id=, ?name=&city=).
