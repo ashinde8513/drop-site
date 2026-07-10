@@ -117,23 +117,19 @@
 
   Drop.fetchArtist = function (id) {
     var artistP = get('artists?' + q({ select: 'id,name,genres,image_url', id: 'eq.' + id, limit: 1 }));
-    // Events for this artist, upcoming.
+    // Events for this artist, upcoming. `!inner` on the join table makes the
+    // filter an actual server-side narrowing of parent rows (plain
+    // `event_artists.artists.id=eq.X` only narrows the embed, not which
+    // events come back — with limit=100 that silently truncated real shows
+    // off the list for anyone not in the first 100 upcoming events site-wide).
     var evP = get('events?' + q({
-      select: EVENT_SELECT,
+      select: EVENT_COLS + ',event_artists!inner(artists(id,name,genres,image_url))',
       status: 'eq.published',
       date: 'gte.' + todayISO(),
       order: 'date.asc',
-      'event_artists.artists.id': 'eq.' + id,
+      'event_artists.artist_id': 'eq.' + id,
       limit: 100
-    })).then(function (rows) {
-      // The nested filter above narrows the embed, not the parent — keep only events
-      // that actually embed this artist.
-      return (rows || []).filter(function (ev) {
-        return (ev.event_artists || []).some(function (ea) {
-          return ea.artists && String(ea.artists.id) === String(id);
-        });
-      });
-    });
+    }));
     return Promise.all([artistP, evP]).then(function (r) {
       if (!r[0] || !r[0].length) throw new Error('not found');
       return { artist: r[0][0], events: r[1] };
