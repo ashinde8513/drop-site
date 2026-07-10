@@ -33,6 +33,22 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+
+  <style>
+    /* Page-specific — artist profile hero + teaser wedge. Token-vars only. */
+    .art-hero { position: relative; height: 300px; overflow: hidden; }
+    .art-hero-inner { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-xl); display: flex; align-items: flex-end; gap: var(--sp-xl); flex-wrap: wrap; }
+    .art-avatar { width: 112px; height: 112px; border-radius: 50%; flex: 0 0 auto; object-fit: cover; box-shadow: 0 0 0 3px var(--accent); background-image: var(--grad-brand); }
+    .art-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px,5vw,48px); letter-spacing: var(--tr-tight); line-height: 1; margin: 4px 0 0; color: var(--text); }
+    .art-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--fs-sm); text-decoration: none; margin: var(--sp-lg) 0; }
+    .art-back:hover { color: var(--text); }
+    .art-teaser { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--sp-lg); background: var(--social-glass); border: 1px solid var(--social-glass-border); border-radius: var(--r-md); flex-wrap: wrap; }
+    .art-teaser-txt { color: var(--accent); font-weight: 700; font-size: var(--fs-sm); }
+    .art-teaser a { color: inherit; text-decoration: underline; }
+    .art-section { padding-bottom: var(--sp-xl); border-bottom: 1px solid var(--border); margin-bottom: var(--sp-xl); }
+    .art-bio { color: var(--text-secondary); font-size: var(--fs-md); line-height: var(--lh-base); max-width: 760px; margin: 0; }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -79,17 +95,17 @@
   </header>
 
   <main id="main">
-    <nav class="breadcrumb wrap" aria-label="Breadcrumb">
-      <a href="/artists.html">Artists</a><span class="sep">/</span><span id="bc-name">Artist</span>
-    </nav>
+    <div class="wsh">
+      <div class="wsh__content" style="padding-top:0;">
+        <nav class="breadcrumb wrap" aria-label="Breadcrumb" style="display:none;">
+          <a href="/artists.html">Artists</a><span class="sep">/</span><span id="bc-name">Artist</span>
+        </nav>
 
-    <div id="artist-content">
-      <section class="section section--tight">
-        <div class="wrap">
-          <div class="skeleton skel-line" style="width:40%; height:36px;"></div>
-          <div class="skeleton skel-line" style="width:24%; height:18px; margin-top:14px;"></div>
+        <div id="artist-content">
+          <div class="skeleton skel-line" style="width:40%; height:36px; margin:24px;"></div>
+          <div class="skeleton skel-line" style="width:24%; height:18px; margin:0 24px;"></div>
         </div>
-      </section>
+      </div>
     </div>
   </main>
 
@@ -175,114 +191,137 @@
         document.getElementById('bc-name').textContent = a.name;
         injectLd(a);
 
+        // Real, derived (not fabricated) primary genre + "plays most in" city —
+        // reuses the same genre-bucketing events.html/artists.html use.
+        var genreLabel = events.length ? D.genreOf(events[0]) : D.genreOf({ event_artists: [{ artists: a }] });
+        var cityTally = {};
+        events.forEach(function (ev) { if (ev.city) cityTally[ev.city] = (cityTally[ev.city] || 0) + 1; });
+        var topCity = Object.keys(cityTally).sort(function (x, y) { return cityTally[y] - cityTally[x]; })[0];
+
         host.innerHTML = '';
 
-        // ---- Hero: image + name + genre pills + count ----
-        var hero = D.el('section', 'section section--tight');
-        var hwrap = D.el('div', 'wrap');
-        var split = D.el('div', 'artist-hero');
+        // ---- Hero ----
+        var hero = D.el('div', 'art-hero art-prism ' + D.genreCls(genreLabel));
+        var scrim = D.el('div', 'wsc__scrim');
+        scrim.style.height = '100%';
+        hero.appendChild(scrim);
+        var heroInner = D.el('div', 'art-hero-inner');
 
-        var mediaWrap = D.el('div', 'artist-hero-media', null);
-        mediaWrap.style.borderRadius = 'var(--r-lg)';
-        mediaWrap.style.position = 'relative';
-        mediaWrap.style.overflow = 'hidden';
-        mediaWrap.style.aspectRatio = '1 / 1';
-        mediaWrap.style.border = '1px solid var(--border)';
         function fallbackArt() {
-          var art = D.el('div', 'art-prism g-other');
-          art.setAttribute('aria-hidden', 'true');
-          art.appendChild(D.el('span', 'art-mark', (a.name || '•').charAt(0).toUpperCase()));
+          var art = D.el('div', 'art-avatar', (a.name || '•').charAt(0).toUpperCase());
+          art.style.display = 'flex'; art.style.alignItems = 'center'; art.style.justifyContent = 'center';
+          art.style.fontFamily = 'var(--font-display)'; art.style.fontWeight = '700'; art.style.fontSize = '40px'; art.style.color = 'var(--text)';
           return art;
         }
         if (a.image_url) {
-          var img = D.el('img', null);
+          var img = D.el('img', 'art-avatar');
           img.src = a.image_url; img.alt = a.name; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
-          img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
           img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(fallbackArt(), img); };
-          mediaWrap.appendChild(img);
+          heroInner.appendChild(img);
         } else {
-          mediaWrap.appendChild(fallbackArt());
+          heroInner.appendChild(fallbackArt());
         }
 
         var info = D.el('div');
-        info.appendChild(D.el('h1', null, a.name));
-        if (a.genres && a.genres.length) {
-          var pills = D.el('div', 'pill-list');
-          pills.style.marginTop = '14px';
-          a.genres.slice(0, 5).forEach(function (g) { pills.appendChild(D.el('span', 'pill', g)); });
-          info.appendChild(pills);
-        }
-        var countP = D.el('p', 'section-head', events.length + ' upcoming show' + (events.length === 1 ? '' : 's'));
-        countP.style.marginTop = '14px';
-        info.appendChild(countP);
+        info.style.flex = '1'; info.style.minWidth = '240px';
+        info.appendChild(D.el('div', 'wsc__date', genreLabel));
+        info.appendChild(D.el('h1', 'art-name', a.name));
+        heroInner.appendChild(info);
 
-        // Follow nudge beside the image (fills the info column, no dead space).
-        var heroCta = D.el('a', 'btn-primary', 'Follow ' + a.name + ' in the app');
-        heroCta.href = '/download.html';
-        heroCta.style.marginTop = '18px';
-        info.appendChild(heroCta);
+        // Follow is a signed-in action — login-gate to account.html.
+        var followBtn = D.el('a', 'btn btn--primary', 'Follow');
+        followBtn.href = '/account.html?next=' + encodeURIComponent('/artist.html?id=' + a.id);
+        followBtn.setAttribute('aria-label', 'Log in to follow ' + a.name);
+        heroInner.appendChild(followBtn);
 
-        split.appendChild(mediaWrap);
-        split.appendChild(info);
-        hwrap.appendChild(split);
-        hero.appendChild(hwrap);
+        hero.appendChild(heroInner);
         host.appendChild(hero);
 
-        // ---- Shows list ----
-        var showsSec = D.el('section', 'section section--flush-top');
-        var swrap = D.el('div', 'wrap');
-        var sh = D.el('div', 'section-head');
-        sh.appendChild(D.el('h2', 'sec-h2', 'Upcoming shows'));
-        swrap.appendChild(sh);
-        var list = D.el('div');
-        list.style.display = 'flex'; list.style.flexDirection = 'column'; list.style.gap = '12px';
-        if (!events.length) {
-          D.stateEmpty(list, 'No upcoming shows for ' + a.name + ' right now.', 'Browse all events', '/events.html');
-        } else {
-          events.forEach(function (ev) {
-            var row = D.el('a', 'artist-row');
-            row.href = '/event.html?id=' + encodeURIComponent(ev.id);
-            row.setAttribute('aria-label', ev.title + ' at ' + (ev.venue_name || 'venue'));
-            var db = D.dateBlock(ev.date);
-            var dblock = D.el('div', 'date-block');
-            dblock.appendChild(D.el('div', 'db-mon', db.mon));
-            dblock.appendChild(D.el('div', 'db-day', db.day));
-            row.appendChild(dblock);
-            var body = D.el('div', 'ar-body');
-            body.appendChild(D.el('p', 'ar-title', ev.title));
-            body.appendChild(D.el('p', 'ar-meta', [ev.venue_name, ev.city].filter(Boolean).join(' · ')));
-            row.appendChild(body);
-            row.appendChild(D.el('span', 'ar-price', D.fmtPrice(ev.price_min, ev.price_max)));
-            var ticketUrl = D.safeUrl(ev.ticket_url);
-            if (ticketUrl) {
-              var btn = D.el('a', 'btn-ghost', 'Get tickets');
-              btn.href = ticketUrl;
-              btn.target = '_blank';
-              btn.rel = 'noopener nofollow sponsored';
-              btn.addEventListener('click', function (e) { e.stopPropagation(); });
-              row.appendChild(btn);
-            }
-            list.appendChild(row);
-          });
-        }
-        swrap.appendChild(list);
-        showsSec.appendChild(swrap);
-        host.appendChild(showsSec);
+        var body = D.el('div', 'wrap');
+        body.style.paddingTop = 'var(--sp-xl)';
 
-        // ---- Fans also see (one extra fetch) ----
-        // Only when there ARE upcoming shows — otherwise we'd stack two dashed
-        // empty-state boxes (empty "Upcoming" + empty "Fans also see").
-        if (events.length) {
-          var primaryGenre = D.genreOf(events[0]);
-          if (primaryGenre) loadFansAlsoSee(primaryGenre, a.id);
+        var back = D.el('a', 'art-back', '← Back to artists');
+        back.href = '/artists.html';
+        body.appendChild(back);
+
+        // ---- Stat row (real/derived only — no fabricated follower counts) ----
+        var stats = D.el('div', 'art-section');
+        stats.style.display = 'flex'; stats.style.flexWrap = 'wrap'; stats.style.gap = 'var(--sp-xl)';
+        function metric(label, value) {
+          var m = D.el('div', 'metric');
+          m.appendChild(D.el('span', 'metric__label', label));
+          m.appendChild(D.el('span', 'metric__value', value));
+          return m;
         }
+        stats.appendChild(metric('Upcoming shows', String(events.length)));
+        if (topCity) stats.appendChild(metric('Plays most in', topCity));
+        var followersM = D.el('div', 'metric');
+        followersM.appendChild(D.el('span', 'metric__label', 'Followers on Drop'));
+        var followLink = D.el('a', 'metric__value', 'Log in to see');
+        followLink.href = '/account.html';
+        followLink.style.fontSize = 'var(--fs-md)';
+        followersM.appendChild(followLink);
+        stats.appendChild(followersM);
+        body.appendChild(stats);
+
+        // ---- Friends-who-saw wedge — login-gated teaser, not a fake count ----
+        var teaser = D.el('div', 'art-teaser');
+        teaser.style.marginBottom = 'var(--sp-xl)';
+        teaser.appendChild(D.el('div', 'avstack', null));
+        teaser.querySelector('.avstack').innerHTML = '<span class="av"></span><span class="av"></span><span class="av"></span>';
+        var teaserTxt = D.el('span', 'art-teaser-txt');
+        var teaserLink = D.el('a', null, 'Log in');
+        teaserLink.href = '/account.html';
+        teaserTxt.appendChild(teaserLink);
+        teaserTxt.appendChild(document.createTextNode(' to see which friends have seen ' + (a.name || 'this artist') + ' live'));
+        teaser.appendChild(teaserTxt);
+        body.appendChild(teaser);
+
+        // ---- About (derived, factual — no invented biography) ----
+        var about = D.el('div', 'art-section');
+        about.appendChild(D.el('h2', 'sec-h2', 'About'));
+        var genreList = (a.genres || []).slice(0, 4).join(', ') || genreLabel;
+        var bioTxt = a.name + ' performs ' + genreList + '.' +
+          (events.length ? ' ' + events.length + ' upcoming show' + (events.length === 1 ? '' : 's') + ' listed on Drop' + (topCity ? ', most often around ' + topCity : '') + '.' : ' No upcoming shows listed on Drop right now.');
+        about.appendChild(D.el('p', 'art-bio', bioTxt));
+        body.appendChild(about);
+
+        // ---- Shows list — always shown, empty state when none ----
+        var showsSec = D.el('div', 'art-section');
+        showsSec.appendChild(D.el('h2', 'sec-h2', 'Upcoming shows near you'));
+        var grid = D.el('div', 'grid-events');
+        showsSec.appendChild(grid);
+        if (events.length) {
+          events.forEach(function (ev) { grid.appendChild(D.ecard(ev)); });
+        } else {
+          D.stateEmpty(grid, 'No upcoming shows for ' + a.name + ' right now.', 'Browse all events', '/events.html');
+        }
+        body.appendChild(showsSec);
+
+        // ---- Fan reviews — honest empty state, no fabricated testimonials ----
+        var reviews = D.el('div', 'art-section');
+        var rh = D.el('div', 'section-head');
+        rh.style.marginBottom = 'var(--sp-md)';
+        rh.appendChild(D.el('h2', 'sec-h2', 'Fan reviews'));
+        reviews.appendChild(rh);
+        var reviewsEmpty = D.el('div');
+        reviews.appendChild(reviewsEmpty);
+        D.stateEmpty(reviewsEmpty, 'No fan reviews yet for ' + a.name + '.', null, null);
+        body.appendChild(reviews);
+
+        host.appendChild(body);
+
+        // ---- Fans also follow (one extra fetch) ----
+        // Only when there ARE upcoming shows — otherwise we'd stack two dashed
+        // empty-state boxes (empty "Upcoming" + empty "Fans also follow").
+        if (events.length) loadFansAlsoSee(genreLabel, a.id);
       }
 
       function loadFansAlsoSee(genre, excludeId) {
         var sec = D.el('section', 'section section--flush-top');
         var wrap = D.el('div', 'wrap');
         var sh = D.el('div', 'section-head');
-        sh.appendChild(D.el('h2', 'sec-h2', 'Fans also see'));
+        sh.appendChild(D.el('h2', 'sec-h2', 'Fans also follow'));
         wrap.appendChild(sh);
         var grid = D.el('div', 'grid-artists');
         wrap.appendChild(grid);

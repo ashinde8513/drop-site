@@ -33,6 +33,23 @@
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+
+  <style>
+    /* Page-specific — venue profile hero + policy chips. Token-vars only. */
+    .ven-hero { position: relative; height: 260px; overflow: hidden; }
+    .ven-hero-inner { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-xl); display: flex; align-items: flex-end; gap: var(--sp-lg); flex-wrap: wrap; }
+    .ven-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px,4.5vw,44px); letter-spacing: var(--tr-tight); line-height: 1.02; margin: 4px 0 8px; color: var(--text); }
+    .ven-meta-row { display: flex; gap: var(--sp-lg); color: var(--text-secondary); font-size: var(--fs-sm); flex-wrap: wrap; }
+    .ven-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--fs-sm); text-decoration: none; margin: var(--sp-lg) 0; }
+    .ven-back:hover { color: var(--text); }
+    .ven-section { padding-bottom: var(--sp-xl); border-bottom: 1px solid var(--border); margin-bottom: var(--sp-xl); }
+    .ven-bio { color: var(--text-secondary); font-size: var(--fs-md); line-height: var(--lh-base); max-width: 760px; margin: 0; }
+    .ven-chiprow { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+    .v-badge { font-size: 10px; font-weight: 800; letter-spacing: var(--tr-wide); padding: 4px 10px; border-radius: var(--r-pill); }
+    .v-badge--drop { background: var(--social-glass); border: 1px solid var(--social-glass-border); color: var(--accent); }
+    .v-badge--axs { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); }
+  </style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -79,17 +96,17 @@
   </header>
 
   <main id="main">
-    <nav class="breadcrumb wrap" aria-label="Breadcrumb">
-      <a href="/venues.html">Venues</a><span class="sep">/</span><span id="bc-name">Venue</span>
-    </nav>
+    <div class="wsh">
+      <div class="wsh__content" style="padding-top:0;">
+        <nav class="breadcrumb wrap" aria-label="Breadcrumb" style="display:none;">
+          <a href="/venues.html">Venues</a><span class="sep">/</span><span id="bc-name">Venue</span>
+        </nav>
 
-    <div id="venue-content">
-      <section class="section section--tight">
-        <div class="wrap">
-          <div class="skeleton skel-line" style="width:40%; height:36px;"></div>
-          <div class="skeleton skel-line" style="width:24%; height:18px; margin-top:14px;"></div>
+        <div id="venue-content">
+          <div class="skeleton skel-line" style="width:40%; height:36px; margin:24px;"></div>
+          <div class="skeleton skel-line" style="width:24%; height:18px; margin:0 24px;"></div>
         </div>
-      </section>
+      </div>
     </div>
   </main>
 
@@ -143,17 +160,14 @@
       function renderError() {
         document.title = 'Venue not found — Drop';
         host.innerHTML = '';
-        var sec = D.el('section', 'section section--tight');
-        var wrap = D.el('div', 'wrap');
         var box = D.el('div', 'state-error');
+        box.style.margin = '24px';
         box.appendChild(D.el('span', 'state-icon', '!'));
         box.appendChild(D.el('p', 'state-msg', "We couldn't find that venue. It may have been removed or the link is out of date."));
         var back = D.el('a', 'btn-ghost', 'Browse venues');
         back.href = '/venues.html';
         box.appendChild(back);
-        wrap.appendChild(box);
-        sec.appendChild(wrap);
-        host.appendChild(sec);
+        host.appendChild(box);
       }
 
       function renderVenue(data) {
@@ -161,44 +175,76 @@
         document.title = v.name + ' — Drop';
         document.getElementById('bc-name').textContent = v.name;
 
-        // Vibe tags: top 3 genres among this venue's upcoming events.
+        // Vibe tags: top 3 genres among this venue's upcoming events — real,
+        // derived data (stands in for the design's "policy chips" slot, since
+        // this schema has no per-venue parking/bag/age-policy facts to show
+        // honestly).
         var tally = {};
         events.forEach(function (ev) {
           var g = D.genreOf(ev);
           tally[g] = (tally[g] || 0) + 1;
         });
         var vibes = Object.keys(tally).sort(function (a, b) { return tally[b] - tally[a]; }).slice(0, 3);
+        var badgeIsAxs = events.some(function (ev) { return /axs\.com/i.test(ev.ticket_url || ''); });
 
         host.innerHTML = '';
 
-        var head = D.el('section', 'section section--tight');
-        var hwrap = D.el('div', 'wrap venue-hero');
-        hwrap.appendChild(D.el('h1', null, v.name));
-        var loc = D.el('p', 'venue-hero-meta', [v.city, v.state].filter(Boolean).join(', '));
-        hwrap.appendChild(loc);
+        // ---- Hero ----
+        var hero = D.el('div', 'ven-hero art-prism ' + (events.length ? D.genreClass(events[0]) : 'g-other'));
+        var scrim = D.el('div', 'wsc__scrim');
+        scrim.style.height = '100%';
+        hero.appendChild(scrim);
+        var heroInner = D.el('div', 'ven-hero-inner');
+        var info = D.el('div');
+        info.style.flex = '1'; info.style.minWidth = '240px';
+        info.appendChild(D.el('div', 'wsc__date', '📍 ' + [v.city, v.state].filter(Boolean).join(', ')));
+        info.appendChild(D.el('h1', 'ven-name', v.name));
+        var metaRow = D.el('div', 'ven-meta-row');
+        metaRow.appendChild(D.el('span', null, events.length + ' upcoming show' + (events.length === 1 ? '' : 's')));
+        metaRow.appendChild(D.el('span', badgeIsAxs ? 'v-badge v-badge--axs' : 'v-badge v-badge--drop', badgeIsAxs ? 'AXS' : 'In Drop'));
+        info.appendChild(metaRow);
+        heroInner.appendChild(info);
+
+        // Follow is a signed-in action — login-gate to account.html.
+        var followBtn = D.el('a', 'btn btn--primary', 'Follow');
+        followBtn.href = '/account.html?next=' + encodeURIComponent('/venue.html?name=' + name + '&city=' + city);
+        followBtn.setAttribute('aria-label', 'Log in to follow ' + v.name);
+        heroInner.appendChild(followBtn);
+        hero.appendChild(heroInner);
+        host.appendChild(hero);
+
+        var body = D.el('div', 'wrap');
+        body.style.paddingTop = 'var(--sp-xl)';
+
+        var back = D.el('a', 'ven-back', '← Back to venues');
+        back.href = '/venues.html';
+        body.appendChild(back);
+
+        // ---- About + vibe chips ----
+        var about = D.el('div', 'ven-section');
+        about.appendChild(D.el('h2', 'sec-h2', 'About this venue'));
+        var aboutTxt = v.name + ' hosts live shows in ' + [v.city, v.state].filter(Boolean).join(', ') + '.' +
+          (vibes.length ? ' Known for ' + vibes.join(', ') + '.' : '');
+        var aboutP = D.el('p', 'ven-bio', aboutTxt);
+        aboutP.style.marginBottom = 'var(--sp-lg)';
+        about.appendChild(aboutP);
         if (vibes.length) {
-          var chipRow = D.el('div', 'pill-list');
-          chipRow.style.marginTop = '14px';
+          var chipRow = D.el('div', 'ven-chiprow');
           vibes.forEach(function (g) {
-            var a = D.el('a', 'pill', g);
+            var a = D.el('a', 'chip', g);
             a.href = '/events.html?genre=' + encodeURIComponent(g) + (v.city ? '&city=' + encodeURIComponent(v.city) : '');
             chipRow.appendChild(a);
           });
-          hwrap.appendChild(chipRow);
+          about.appendChild(chipRow);
         }
-        head.appendChild(hwrap);
-        host.appendChild(head);
+        body.appendChild(about);
 
-        var gridSec = D.el('section', 'section section--flush-top');
-        var gwrap = D.el('div', 'wrap');
-        var gh = D.el('div', 'section-head');
-        gh.appendChild(D.el('h2', 'sec-h2', 'Upcoming at ' + v.name));
-        gwrap.appendChild(gh);
-        gridSec.appendChild(gwrap);
-        host.appendChild(gridSec);
+        // ---- Upcoming shows ----
+        var gridSec = D.el('div', events.length ? 'ven-section' : null);
+        gridSec.appendChild(D.el('h2', 'sec-h2', 'Upcoming at ' + v.name));
         if (!events.length) {
           var grid = D.el('div', 'grid-events');
-          gwrap.appendChild(grid);
+          gridSec.appendChild(grid);
           D.stateEmpty(grid, 'No upcoming shows at ' + v.name + ' right now.', 'Browse all events', '/events.html');
         } else {
           // Group the (date.asc) list by month with a small eyebrow subhead each.
@@ -215,46 +261,32 @@
               eb.appendChild(document.createTextNode(
                 isNaN(d) ? 'Dates TBA' : d.toLocaleString('en-US', { month: 'long', year: 'numeric' })));
               sub.appendChild(eb);
-              gwrap.appendChild(sub);
+              gridSec.appendChild(sub);
               grid = D.el('div', 'grid-events');
-              gwrap.appendChild(grid);
+              gridSec.appendChild(grid);
             }
             grid.appendChild(D.ecard(ev));
           });
         }
+        body.appendChild(gridSec);
 
-        // Practical block: location + Maps link.
-        var practSec = D.el('section', 'section section--flush-top');
-        var pwrap = D.el('div', 'wrap');
-        var row = D.el('div', 'artist-row');
-        row.style.justifyContent = 'space-between';
-        var body = D.el('div', 'ar-body');
-        body.appendChild(D.el('p', 'ar-title', v.name));
-        body.appendChild(D.el('p', 'ar-meta', [v.city, v.state].filter(Boolean).join(', ')));
-        row.appendChild(body);
+        // ---- Practical: location + Maps link ----
+        var pract = D.el('div', 'ven-section');
+        var practRow = D.el('div', 'artist-row');
+        practRow.style.justifyContent = 'space-between';
+        var practBody = D.el('div', 'ar-body');
+        practBody.appendChild(D.el('p', 'ar-title', v.name));
+        practBody.appendChild(D.el('p', 'ar-meta', [v.city, v.state].filter(Boolean).join(', ')));
+        practRow.appendChild(practBody);
         var mapsLink = D.el('a', 'btn-ghost', 'Open in Google Maps');
         mapsLink.href = D.mapsUrl(v.name, v.city, v.state);
         mapsLink.target = '_blank';
         mapsLink.rel = 'noopener';
-        row.appendChild(mapsLink);
-        pwrap.appendChild(row);
-        practSec.appendChild(pwrap);
-        host.appendChild(practSec);
+        practRow.appendChild(mapsLink);
+        pract.appendChild(practRow);
+        body.appendChild(pract);
 
-        // Follow-venue nudge.
-        var nudgeSec = D.el('section', 'section section--flush-top');
-        var nwrap = D.el('div', 'wrap');
-        var band = D.el('div', 'promo-band');
-        var btxt = D.el('div');
-        btxt.appendChild(D.el('h2', null, 'Never miss a show here.'));
-        btxt.appendChild(D.el('p', null, 'Follow ' + v.name + ' in the Drop app and get notified when new shows go on sale.'));
-        band.appendChild(btxt);
-        var cta = D.el('a', 'btn-primary', 'Get the app');
-        cta.href = '/download.html';
-        band.appendChild(cta);
-        nwrap.appendChild(band);
-        nudgeSec.appendChild(nwrap);
-        host.appendChild(nudgeSec);
+        host.appendChild(body);
       }
 
       function load() {
