@@ -175,20 +175,21 @@
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Welcome back</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Log in to RSVP, save shows and find your crew.</p>
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email or username</label>
-        <input type="text" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input id="login-email" type="text" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
           <label style="font-size:var(--fs-sm);color:var(--text-secondary);">Password</label>
           <a href="#" onClick="{{ goForgot }}" style="font-size:var(--fs-xs);">Forgot?</a>
         </div>
-        <input type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ doLogin }}">Log in</button>
+        <input id="login-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+        <button type="button" class="btn btn--primary btn--block" onClick="{{ doLogin }}" disabled="{{ authBusy }}">{{ loginBtnLabel }}</button>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
-          <button type="button" class="btn btn--secondary btn--block" onClick="{{ doLogin }}">Continue with Google</button>
-          <button type="button" class="btn btn--secondary btn--block" onClick="{{ doLogin }}">Continue with Apple</button>
-          <button type="button" class="btn btn--secondary btn--block" onClick="{{ doLogin }}">Continue with Facebook</button>
+          <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthGoogle }}">Continue with Google</button>
+          <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthApple }}">Continue with Apple</button>
+          <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthFacebook }}">Continue with Facebook</button>
         </div>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">New to Drop? <a href="#" onClick="{{ goSignup }}">Create one</a></p>
       </div>
@@ -220,7 +221,7 @@
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Create your account</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Free forever. 16+ only.</p>
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email</label>
-        <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
         <div style="position:relative;margin-bottom:var(--sp-lg);">
           <input type="text" value="{{ username }}" onInput="{{ setUsername }}" placeholder="raver_name" style="width:100%;height:52px;padding:0 44px 0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid {{ unameBorder }};color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
@@ -228,22 +229,23 @@
         </div>
         <sc-if value="{{ unameMsg }}"><div style="font-size:var(--fs-xs);color:{{ unameMsgColor }};margin-top:-8px;margin-bottom:var(--sp-lg);">{{ unameMsg }}</div></sc-if>
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date of birth</label>
-        <input type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
+        <input id="signup-dob" type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Password</label>
-        <input type="password" placeholder="Create a password" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input id="signup-password" type="password" placeholder="Create a password" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <label class="cb" style="margin-bottom:var(--sp-xl);">
-          <input class="cb__input" type="checkbox" />
+          <input id="signup-consent" class="cb__input" type="checkbox" />
           <span class="cb__box"></span>
           <span class="cb__label">I agree to Drop's <a href="#" onClick="{{ noop }}">Terms</a> and <a href="#" onClick="{{ noop }}">Privacy Policy</a>.</span>
         </label>
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}">Create account</button>
+        <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+        <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
         </div>
         <div style="display:flex;gap:var(--sp-md);">
-          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ doSignup }}">Google</button>
-          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ doSignup }}">Apple</button>
-          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ doSignup }}">Facebook</button>
+          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthGoogle }}">Google</button>
+          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthApple }}">Apple</button>
+          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthFacebook }}">Facebook</button>
         </div>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">Already have an account? <a href="#" onClick="{{ goLogin }}">Log in</a></p>
       </div>
@@ -667,7 +669,7 @@
       <div style="position:relative;overflow:hidden;border-radius:var(--r-xl);border:1px solid var(--border);padding:var(--sp-xxl) var(--sp-xl);margin-bottom:var(--sp-xl);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);">
         <div style="position:absolute;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(226,77,255,0.4),transparent 62%);top:-140px;right:-60px;filter:blur(30px);"></div>
         <div style="position:relative;">
-          <div class="wsc__date">SAT–SUN · JUL 26–27 · COMMERCE CITY, CO</div>
+          <div class="wsc__date">SAT–SUN · JUL 26–27 · COMMERCE CITY, CO <span class="chip" style="pointer-events:none;vertical-align:middle;">Demo data</span></div>
           <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4vw,48px);letter-spacing:var(--tr-tight);margin:6px 0 4px;">Global Dance Festival 2026</h1>
           <div style="color:var(--text-secondary);">Dick's Sporting Goods Park · 4 stages · 38 sets</div>
         </div>
@@ -859,11 +861,11 @@
         <span style="width:104px;height:104px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span>
         <div style="flex:1;min-width:220px;">
           <div style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
-            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Alex Rivera</h1>
-            <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:4px 10px;border-radius:var(--r-pill);">DROP+</span>
+            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">{{ prof.name }}</h1>
+            <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--surface-hi);color:var(--text-muted);padding:4px 10px;border-radius:var(--r-pill);">DEMO — DROP+</span>
           </div>
-          <div style="color:var(--text-secondary);margin:2px 0 var(--sp-sm);">@alexraves · Denver, CO</div>
-          <p style="color:var(--text-secondary);font-size:var(--fs-sm);max-width:480px;margin:0;">Melodic house &amp; techno. Red Rocks regular. Always down for a warehouse set.</p>
+          <div style="color:var(--text-secondary);margin:2px 0 var(--sp-sm);">{{ prof.handleCity }}</div>
+          <p style="color:var(--text-secondary);font-size:var(--fs-sm);max-width:480px;margin:0;">{{ prof.bio }}</p>
         </div>
         <button type="button" class="btn btn--secondary" onClick="{{ goEditProfile }}">Edit profile</button>
       </div>
@@ -909,13 +911,13 @@
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Change photo</button>
       </div>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
-      <input type="text" value="Alex Rivera" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
-      <input type="text" value="alexraves" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
-      <textarea style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:none;">Melodic house &amp; techno. Red Rocks regular. Always down for a warehouse set.</textarea>
+      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:none;">{{ prof.bio }}</textarea>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
-      <input type="text" value="Denver, CO" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
       <label class="sw" style="justify-content:space-between;width:100%;margin-bottom:var(--sp-xxl);">
         <span style="font-size:var(--fs-sm);color:var(--text);">Let friends find me by phone number</span>
         <input class="sw__input" type="checkbox" role="switch" /><span class="sw__track"><span class="sw__thumb"></span></span>
@@ -930,7 +932,7 @@
   <main class="wsh">
     <div style="max-width:640px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Notifications</h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Notifications <span class="chip" style="pointer-events:none;">Demo data</span></h1>
         <div style="display:flex;gap:var(--sp-sm);">
           <button type="button" class="btn btn--ghost btn--sm" onClick="{{ markAllRead }}">Mark all read</button>
           <button type="button" class="btn btn--ghost btn--sm" onClick="{{ clearNotifs }}">Clear all</button>
@@ -1249,7 +1251,7 @@
           </sc-for>
         </div>
         <sc-if value="{{ mySavedEmpty }}">
-          <div class="empty"><div class="empty__ico">♡</div><div class="empty__title">Nothing saved yet</div><div class="empty__body">Tap the heart on any show to save it for later.</div><button type="button" class="btn btn--primary btn--sm" onClick="{{ goDiscover }}">Browse shows</button></div>
+          <div class="empty"><div class="empty__ico">♡</div><div class="empty__title">Nothing saved yet</div><div class="empty__body">Tap the heart on any show to save it for later. <span class="chip" style="pointer-events:none;">Demo data — this device only</span></div><button type="button" class="btn btn--primary btn--sm" onClick="{{ goDiscover }}">Browse shows</button></div>
         </sc-if>
       </sc-if>
 
@@ -1288,8 +1290,8 @@
     <div style="max-width:1440px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-md);">
         <div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Follow artists</h1>
-          <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Get an alert the moment they announce a show near you.</p>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Follow artists <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
+          <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Get an alert the moment they announce a show near you. (This browse list is a fixed sample — follow the artists in a show's real lineup on the event page to save for real.)</p>
         </div>
         <sc-if value="{{ artBulkShow }}"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ artBulkFollow }}">{{ artBulkLabel }}</button></sc-if>
       </div>
@@ -1362,7 +1364,7 @@
   <main class="wsh">
     <div style="max-width:820px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Crew</h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Crew <span class="chip" style="pointer-events:none;">Demo data</span></h1>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goInvite }}">↗ Invite friends</button>
       </div>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
@@ -1468,7 +1470,7 @@
         <div class="wsc__scrim"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:var(--sp-xl);">
           <div class="wsc__date">{{ pd.dateShort }}</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:var(--tr-tight);margin:4px 0 2px;">{{ pd.title }}</h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:var(--tr-tight);margin:4px 0 2px;">{{ pd.title }} <span class="chip" style="pointer-events:none;vertical-align:middle;">Demo data</span></h1>
           <div style="color:var(--text-secondary);font-size:var(--fs-sm);">{{ pd.venueCity }}</div>
         </div>
       </div>
@@ -1535,7 +1537,7 @@
     <div style="position:relative;width:100%;max-width:480px;">
       <div style="text-align:center;margin-bottom:var(--sp-xl);">
         <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-md);">✓ &nbsp;You're going to {{ cbTitle }}</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-sm);">Who are you going with?</h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-sm);">Who are you going with? <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
         <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0;">Start a plan and we'll keep everyone in sync.</p>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-xl);padding:var(--sp-lg);box-shadow:var(--shadow-card);">
@@ -1561,7 +1563,7 @@
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goCrew }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to crew</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends, earn Drop+</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends, earn Drop+ <span class="chip" style="pointer-events:none;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Every friend who joins gets you closer to a free month of Drop+.</p>
 
       <!-- reward meter -->
@@ -1613,7 +1615,7 @@
       <div class="wsh__headrow" style="margin-bottom:var(--sp-xl);">
         <div>
           <div class="wsc__date">DROP WRAPPED</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(32px,5vw,52px);letter-spacing:var(--tr-tight);margin:2px 0 0;">Your year in raving</h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(32px,5vw,52px);letter-spacing:var(--tr-tight);margin:2px 0 0;">Your year in raving <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
         </div>
         <div class="seg">
           <sc-for list="{{ wrappedTabs }}" as="t" hint-placeholder-count="2">
@@ -1671,7 +1673,7 @@
   <main class="wsh">
     <div style="max-width:560px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goMemories }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to memories</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Log a past show</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Log a past show <span class="chip" style="pointer-events:none;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Add a show you attended to build your history and Wrapped.</p>
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner</label>
@@ -1720,7 +1722,7 @@
     <div style="max-width:1000px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
         <div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Memories</h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Memories <span class="chip" style="pointer-events:none;">Demo data</span></h1>
           <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:4px 0 0;">Photos from your nights out. Only you can see these until you post a recap.</p>
         </div>
         <div style="display:flex;gap:var(--sp-sm);">
@@ -1756,7 +1758,7 @@
         <div style="max-width:460px;margin:8vh auto 0;text-align:center;">
           <div style="width:120px;height:120px;border-radius:var(--r-xl);margin:0 auto var(--sp-lg);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);"></div>
           <div class="wsc__date">FRI, JUN 20 · RED ROCKS</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);margin:6px 0 var(--sp-xs);">Were you at ODESZA?</h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);margin:6px 0 var(--sp-xs);">Were you at ODESZA? <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
           <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Confirm you attended to build a recap. Recaps are only for shows you were actually at.</p>
           <div style="display:flex;gap:var(--sp-md);justify-content:center;">
             <button type="button" class="btn btn--primary" onClick="{{ recapYes }}">Yes, I was there</button>
@@ -1817,7 +1819,7 @@
   <main class="wsh">
     <div style="max-width:720px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-xl);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Shows you've seen</h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Shows you've seen <span class="chip" style="pointer-events:none;">Demo data</span></h1>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goLogShow }}">＋ Log a show</button>
       </div>
       <sc-for list="{{ seenYears }}" as="yr" hint-placeholder-count="2">
@@ -1845,7 +1847,7 @@
 <sc-if value="{{ screenTagged }}">
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Tagged in shows</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Tagged in shows <span class="chip" style="pointer-events:none;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Friends tagged you as attending. Accept to add it to your history — nothing shows up without your OK.</p>
       <sc-if value="{{ taggedEmpty }}">
         <div class="empty"><div class="empty__ico">🏷️</div><div class="empty__title">You're all caught up</div><div class="empty__body">No pending tags right now.</div></div>
@@ -1874,7 +1876,7 @@
         <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(182,255,106,0.24),transparent 62%);top:-120px;right:-40px;filter:blur(28px);"></div>
         <div style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-lg);">
           <div>
-            <div style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:4px 10px;border-radius:var(--r-pill);margin-bottom:var(--sp-md);">DROP+ MEMBER</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:var(--sp-md);"><span style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:4px 10px;border-radius:var(--r-pill);">DROP+ MEMBER</span><span class="chip" style="pointer-events:none;">Demo data</span></div>
             <div class="metric__label" style="color:var(--text-secondary);">Renews in</div>
             <div style="font-family:var(--font-display);font-weight:700;font-size:clamp(36px,6vw,56px);line-height:1;">218 days</div>
           </div>
@@ -1915,7 +1917,7 @@
       <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Not now</a>
       <div style="text-align:center;margin-bottom:var(--sp-xl);">
         <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:5px 12px;border-radius:var(--r-pill);margin-bottom:var(--sp-md);">✦ DROP+</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop</h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-sm);">Presale alerts, early RSVPs, and cashback — earn free months back by referring friends.</p>
         <p style="font-size:var(--fs-sm);color:var(--accent);margin:0;font-weight:600;">Members keep earning free Drop+ time every month.</p>
       </div>
@@ -1954,8 +1956,9 @@
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-xxl);"><span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Reset your password</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Enter your email and we'll send a reset link.</p>
-      <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ goReset }}">Send reset link</button>
+      <input id="forgot-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+      <button type="button" class="btn btn--primary btn--block" onClick="{{ goReset }}" disabled="{{ authBusy }}">Send reset link</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);"><a href="#" onClick="{{ goLogin }}">Back to log in</a></p>
     </div>
   </main>
@@ -1968,10 +1971,11 @@
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-xxl);"><span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xl);">Choose a new password</h1>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">New password</label>
-      <input type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="reset-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Confirm password</label>
-      <input type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ doReset }}">Update password</button>
+      <input id="reset-password-confirm" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+      <button type="button" class="btn btn--primary btn--block" onClick="{{ doReset }}" disabled="{{ authBusy }}">Update password</button>
     </div>
   </main>
 </sc-if>
@@ -1982,7 +1986,8 @@
     <div style="width:100%;max-width:420px;">
       <div style="width:88px;height:88px;border-radius:var(--r-xl);margin:0 auto var(--sp-xl);background:var(--grad-glow-fill);display:flex;align-items:center;justify-content:center;font-size:38px;">✉</div>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Verify your email</h1>
-      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">We sent a link to <b style="color:var(--text);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="63020f061b23061b020e130f064d000c0e">[email&#160;protected]</a></b>. Click it to activate your account.</p>
+      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">We sent a link to <b style="color:var(--text);">{{ verifyEmail }}</b>. Click it to activate your account.</p>
+      <sc-if value="{{ verifyMessage }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ verifyMessage }}</div></sc-if>
       <button type="button" class="btn btn--primary btn--block" onClick="{{ doVerify }}">I've verified — continue</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-lg);">Didn't get it? <a href="#" onClick="{{ resendVerify }}">Resend email</a></p>
     </div>
@@ -2349,7 +2354,7 @@
 <sc-if value="{{ screenTaste }}">
   <main class="wsh">
     <div style="max-width:640px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Your music taste</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Your music taste <span class="chip" style="pointer-events:none;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Tell Drop what you listen to and we'll surface the shows worth your night.</p>
 
       <sc-if value="{{ tasteImport }}">
@@ -2433,7 +2438,7 @@
 <sc-if value="{{ screenSuggest }}">
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Suggest an event</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Suggest an event <span class="chip" style="pointer-events:none;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Spot a show we're missing? Add it and earn scout rewards when it goes live.</p>
 
       <!-- reward meter -->
@@ -2501,7 +2506,7 @@
       <sc-if value="{{ isPromoter }}">
         <div class="wsh__headrow" style="margin-bottom:var(--sp-xl);">
           <div>
-            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Promoter dashboard</h1>
+            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Promoter dashboard <span class="chip" style="pointer-events:none;">Demo data</span></h1>
             <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Manage your shows, guest lists, and presale codes.</p>
           </div>
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoNewEvent }}">+ New event</button>
@@ -2560,7 +2565,7 @@
   <main class="wsh">
     <div style="max-width:760px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goPromoter }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to dashboard</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ pm.title }}</h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ pm.title }} <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-lg);">{{ pm.date }}</p>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
         <sc-for list="{{ promoTabs }}" as="t" hint-placeholder-count="3"><div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div></sc-for>
@@ -2636,6 +2641,7 @@
       <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Admin</h1>
         <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--gold);padding:4px 10px;border-radius:var(--r-pill);">STAFF ONLY</span>
+        <span class="chip" style="pointer-events:none;">Demo data</span>
       </div>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
         <sc-for list="{{ adminTabs }}" as="t" hint-placeholder-count="3"><div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div></sc-for>
@@ -2840,6 +2846,8 @@
 </div>
 </template>
 <div id="app"></div>
+<script src="/vendor/supabase.js"></script>
+<script src="/data.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

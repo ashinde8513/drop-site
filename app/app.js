@@ -302,10 +302,91 @@
   }
 
   // =======================================================================
+  // PHASE 1 — real Supabase wiring. Same client + auth patterns as
+  // account.js (same URL/anon key, same login-with-username edge function,
+  // same PKCE flow) and the same public fetch layer as data.js (loaded via
+  // <script src="/data.js"> — window.Drop). Kept outside the "verbatim"
+  // Component class below so the ported design block stays diffable against
+  // the .dc.html source; Component methods reference these by closure.
+  // =======================================================================
+  var SUPA_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
+  var SUPA_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
+  var supa = window.supabase && window.supabase.createClient
+    ? window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+      })
+    : null;
+  var Drop = window.Drop || null; // from data.js — public event catalog + formatters
+
+  function looksLikeEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
+  function cleanUsername(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
+  function ageFromDob(v) {
+    var dob = new Date(v);
+    if (isNaN(dob.getTime())) return null;
+    return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  }
+  function fieldVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+  function fieldChecked(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+
+  // Stable per-event gradient — real events carry no per-row art direction,
+  // so pick deterministically from the design's preset palette (same trick
+  // already used for the artist-page ARTIST_GRADS pick further down).
+  var EVENT_GRADS = [
+    'linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22)', 'linear-gradient(120deg,#4d1c37,#52270d 55%,#22143a)',
+    'linear-gradient(120deg,#1c384d,#3b0d52 55%,#3a2b14)', 'linear-gradient(120deg,#3a1c4d,#0d5250 55%,#3a1414)',
+    'linear-gradient(120deg,#1c274d,#520d47 55%,#143a3a)', 'linear-gradient(120deg,#4d3a1c,#0d2f52 55%,#3a1436)',
+  ];
+  function hashStr(str) {
+    var h = 0, s = String(str || '');
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+  function gradFor(id) { return EVENT_GRADS[hashStr(id) % EVENT_GRADS.length]; }
+
+  // Discover date-chip -> real from/to window for Drop.fetchEvents.
+  function dateWindow(dchip) {
+    var now = new Date();
+    var from = new Date(now); from.setHours(0, 0, 0, 0);
+    var to;
+    if (dchip === 'today') { to = new Date(from); to.setHours(23, 59, 59, 999); }
+    else if (dchip === 'weekend') {
+      var toFri = (5 - now.getDay() + 7) % 7;
+      var fri = new Date(from); fri.setDate(fri.getDate() + toFri);
+      to = new Date(fri); to.setDate(to.getDate() + 2); to.setHours(23, 59, 59, 999);
+    } else { to = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999); }
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+
+  // Real Supabase event row -> the view-model shape the ported markup expects.
+  // `friends`/goingCount stay at 0/'—' — there is no real friend-attendance
+  // signal wired yet (out of Phase 1 scope), so no fake social proof is shown.
+  function mapRealEvent(ev) {
+    var artists = (ev.event_artists || []).map(function (x) { return x.artists; }).filter(Boolean);
+    return {
+      id: ev.id,
+      title: ev.title,
+      venue: ev.venue_name || '',
+      venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
+      dateShort: (Drop && Drop.fmtDate(ev.date, ev.time_tbd) || 'Date TBD').toUpperCase(),
+      dateLong: (Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD',
+      price: Drop ? Drop.fmtPrice(ev.price_min, ev.price_max) : 'See tickets',
+      genre: Drop ? Drop.genreOf(ev) : 'Live music',
+      grad: gradFor(ev.id),
+      friends: 0,
+      goingCount: '—', interestedCount: '—',
+      presaleLive: false, presaleCode: '', onsale: ev.status === 'published' ? 'On sale now' : 'Not yet on sale',
+      lineup: artists.map(function (a) { return a.name; }),
+      lineupArtists: artists, // [{id,name,genres,image_url}] — real artist ids, used to wire follow writes
+      city: ev.city || '',
+    };
+  }
+
+  // =======================================================================
   // DESIGN COMPONENT (verbatim) — Drop Website.dc.html lines 2933-4105,
   // byte-for-byte unchanged: state, all 49 screens' derived render values,
   // go() router, every event handler. Do not hand-edit; re-run the ingest
-  // if the design file changes.
+  // if the design file changes. (Phase 1 wiring lives in new methods/state
+  // added at the edges — search "PHASE 1" — rather than inline in this block.)
   // =======================================================================
 class Component extends DCLogic {
   state = {
@@ -363,6 +444,12 @@ class Component extends DCLogic {
     legalDoc: 'privacy',
     // mobile nav
     navOpen: false,
+    // PHASE 1 — real Supabase wiring
+    userId: null, userEmail: '', profile: null,
+    authBusy: false, authError: '', verifyEmail: '', verifyMessage: '',
+    activeArtistId: null, venueCity: '',
+    realEvents: [], eventsLoading: true, eventsError: null,
+    myShowsRows: [], realShowsCount: null, realArtistsCount: null,
   };
 
   EVENTS = [
@@ -376,13 +463,17 @@ class Component extends DCLogic {
     { genre:'House', id:'peggygou', title:'Peggy Gou', venue:'The Church', venueCity:'The Church · Denver, CO', dateShort:'THU, SEP 18 · 10:00 PM', dateLong:'Thu, Sep 18 · 10:00 PM', price:'$40+', friends:0, grad:'linear-gradient(120deg,#4d1c4a,#0d3b52 55%,#3a3014)', goingCount:'410', interestedCount:'1.1k', presaleLive:false, onsale:'On sale now', lineup:['Peggy Gou','DJ Tennis'] },
   ];
 
+  // Renamed to match data.js's real genre buckets (Drop.genreOf) instead of
+  // the design's invented labels — Dubstep/Melodic/Trance had no real
+  // counterpart in the actual event data. ponytail: gradients unchanged, just
+  // relabeled, so no CSS/markup churn.
   GENRES = [
     { name:'House', grad:'background:linear-gradient(120deg,#2b1c4d,#0d3b52);' },
-    { name:'Dubstep', grad:'background:linear-gradient(120deg,#4d1c37,#52270d);' },
+    { name:'Bass', grad:'background:linear-gradient(120deg,#4d1c37,#52270d);' },
     { name:'Techno', grad:'background:linear-gradient(120deg,#1c384d,#3b0d52);' },
-    { name:'Melodic', grad:'background:linear-gradient(120deg,#1c274d,#520d47);' },
-    { name:'Bass', grad:'background:linear-gradient(120deg,#4d3a1c,#0d2f52);' },
-    { name:'Trance', grad:'background:linear-gradient(120deg,#1c4d3a,#52270d);' },
+    { name:'Drum & Bass', grad:'background:linear-gradient(120deg,#1c274d,#520d47);' },
+    { name:'Hip-Hop', grad:'background:linear-gradient(120deg,#4d3a1c,#0d2f52);' },
+    { name:'Indie', grad:'background:linear-gradient(120deg,#1c4d3a,#52270d);' },
   ];
 
   CREW = [
@@ -636,26 +727,118 @@ class Component extends DCLogic {
 
   toggleRsvp(id, status){
     if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return; }
-    this.setState(s=>{ const cur=s.rsvp[id]; const rsvp={...s.rsvp}; rsvp[id]=cur===status?null:status; return {rsvp}; });
+    const cur = this.state.rsvp[id];
+    const next = cur===status ? null : status;
+    this.setState(s=>{ const rsvp={...s.rsvp}; rsvp[id]=next; return {rsvp}; });
+    // PHASE 1: real write — attendance(user_id,event_id,status), same
+    // upsert/delete shape as DropApp/src/data/index.ts's setAttendance().
+    if (supa && this.state.userId) {
+      const uid = this.state.userId;
+      const p = next===null
+        ? supa.from('attendance').delete().eq('user_id', uid).eq('event_id', id)
+        : supa.from('attendance').upsert({ user_id: uid, event_id: id, status: next }, { onConflict: 'user_id,event_id' });
+      p.then(r=>{ if (r && r.error) console.error('[app] attendance write failed:', r.error.message); else this.loadMyShows(uid); });
+    }
   }
   toggleSave(id){
     if(!this.state.authed){ this.openGate('Log in to save'); return; }
+    // ponytail: "Saved" has no backing table (attendance only has going/
+    // interested/attended) — stays a local-only bookmark, not persisted.
     this.setState(s=>({ saved:{...s.saved, [id]: !s.saved[id]} }));
     this.flash(this.state.saved[id] ? 'Removed from saved' : 'Saved to My Shows');
   }
 
+  // ===== PHASE 1: real data loaders =====================================
+  loadEvents(){
+    this.setState({ eventsLoading:true, eventsError:null });
+    if (!Drop) { this.setState({ eventsLoading:false, eventsError:'Event catalog unavailable.' }); return; }
+    const cityName = (this.state.city || '').split(',')[0].trim();
+    const win = dateWindow(this.state.dchip);
+    Drop.fetchEvents({ city: cityName || undefined, from: win.from, to: win.to, limit: 48 })
+      .then(rows=>this.setState({ realEvents: rows || [], eventsLoading:false }))
+      .catch(err=>{ console.error('[app] events fetch failed:', err.message); this.setState({ eventsLoading:false, eventsError:'Could not load shows — try again.' }); });
+  }
+  loadProfile(uid){
+    if (!supa) return;
+    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image').eq('id', uid).maybeSingle()
+      .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null }); });
+  }
+  loadUserData(uid){
+    if (!supa) return;
+    supa.from('attendance').select('event_id,status').eq('user_id', uid).then(({ data, error })=>{
+      if (error) { console.error('[app] attendance load failed:', error.message); return; }
+      const rsvp = {}; (data||[]).forEach(r=>{ rsvp[r.event_id] = r.status; });
+      this.setState({ rsvp });
+    });
+    supa.from('artist_follows').select('artist_id, artists(name)').eq('user_id', uid).then(({ data, error })=>{
+      if (error) { console.error('[app] artist_follows load failed:', error.message); return; }
+      const following = {}; (data||[]).forEach(r=>{ if (r.artists && r.artists.name) following[r.artists.name] = true; });
+      this.setState({ following });
+    });
+    supa.from('venue_follows').select('venue_name').eq('user_id', uid).then(({ data, error })=>{
+      if (error) { console.error('[app] venue_follows load failed:', error.message); return; }
+      const followingVenue = {}; (data||[]).forEach(r=>{ if (r.venue_name) followingVenue[r.venue_name] = true; });
+      this.setState({ followingVenue });
+    });
+    Promise.all([
+      supa.from('attendance').select('id', { count:'exact', head:true }).eq('user_id', uid).in('status', ['going','attended']),
+      supa.from('artist_follows').select('artist_id', { count:'exact', head:true }).eq('user_id', uid),
+    ]).then(([showsRes, artistsRes])=>{
+      this.setState({ realShowsCount: showsRes.count || 0, realArtistsCount: artistsRes.count || 0 });
+    }).catch(()=>{});
+    this.loadMyShows(uid);
+  }
+  // Dedicated My Shows read — a join, not derived from Discover's fetch, so
+  // it's not limited by Discover's city/date-window pagination. Mirrors
+  // account.js's loadShows() query shape.
+  loadMyShows(uid){
+    if (!supa) return;
+    supa.from('attendance')
+      .select('status, created_at, events(id,title,date,venue_name,city,ticket_url,time_tbd,is_festival,event_artists(artists(genres)))')
+      .eq('user_id', uid)
+      .order('created_at', { ascending:false })
+      .limit(100)
+      .then(({ data, error })=>{
+        if (error) { console.error('[app] my shows load failed:', error.message); return; }
+        this.setState({ myShowsRows: data || [] });
+      });
+  }
+  afterLogin(){
+    if (!supa) return;
+    supa.auth.getSession().then(({ data })=>{
+      const session = data && data.session;
+      if (!session) return;
+      this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
+      this.loadProfile(session.user.id);
+      this.loadUserData(session.user.id);
+    });
+  }
+  logout(){
+    if (supa) supa.auth.signOut().catch(()=>{});
+    this.setState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[] });
+  }
+  oauth(provider){
+    if (!supa) { this.setState({ authError:'Login is unavailable. Refresh and try again.' }); return; }
+    supa.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } })
+      .then(out=>{ if (out.error) this.setState({ authError: out.error.message }); });
+  }
+
   renderVals(){
     const s = this.state;
-    const ae = this.EVENTS.find(e=>e.id===s.activeId) || this.EVENTS[0];
     const fl = n => n===1 ? '1 friend' : n+' friends';
 
-    const events = this.EVENTS.map(e=>{
+    // PHASE 1: real events — Discover/Home/Search/Event-detail all read from
+    // s.realEvents (Drop.fetchEvents, PostgREST against the `events` table),
+    // not the design's mock EVENTS array. this.EVENTS is kept untouched below
+    // for the screens that are still explicitly mock (Plans, activation
+    // wizard's welcome moment, share cards) and reference its fictional ids.
+    const events = (s.realEvents||[]).map(mapRealEvent).map(e=>{
       const st = s.rsvp[e.id];
       return {
         ...e,
         gradStyle: 'background-image:'+e.grad,
-        hasFriends: e.friends>0,
-        friendsLabel: fl(e.friends),
+        hasFriends: false,
+        friendsLabel: '',
         open: (ev)=>{ this.prevent(ev); this.setState({screen:'event', activeId:e.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
         going: ()=>this.toggleRsvp(e.id,'going'),
         interested: ()=>this.toggleRsvp(e.id,'interested'),
@@ -665,6 +848,7 @@ class Component extends DCLogic {
         interestedGlyph: st==='interested'?'★':'☆',
       };
     });
+    const ae = events.find(e=>e.id===s.activeId) || events[0] || { ...this.EVENTS[0], lineupArtists:[], city:'' };
 
     const aeSt = s.rsvp[ae.id];
     const aeSaved = !!s.saved[ae.id];
@@ -673,11 +857,11 @@ class Component extends DCLogic {
       label:t, cls: s.dtab===t?'is-active':'', pick:()=>this.setState({dtab:t}),
     }));
     const chipDefs = [['today','Today'],['weekend','This weekend'],['30','Next 30 days']];
-    const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pick:()=>this.setState({dchip:k}) }));
+    const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pick:()=>{ this.setState({dchip:k}); this.loadEvents(); } }));
     const dateChipLabel = ({today:'Today',weekend:'This weekend','30':'Next 30 days'})[s.dchip];
 
     const cities = ['Denver, CO','Los Angeles, CA','New York, NY','Near me'].map(c=>({
-      label:c, pick:()=>this.setState({city: c==='Near me'?'Denver, CO':c, cityOpen:false}),
+      label:c, pick:()=>{ this.setState({city: c==='Near me'?'Denver, CO':c, cityOpen:false}); this.loadEvents(); },
     }));
 
     const menuRoute = {
@@ -687,7 +871,7 @@ class Component extends DCLogic {
       ['Profile','var(--text)'],['My Shows','var(--text)'],['Crew','var(--text)'],
       ['Notifications','var(--text)'],['Drop+','var(--text)'],['Settings','var(--text)'],['Log out','var(--danger)'],
     ].map(([label,color])=>({ label, color, act:()=>{
-      if(label==='Log out'){ this.setState({authed:false, menuOpen:false}); this.go('home'); }
+      if(label==='Log out'){ this.setState({menuOpen:false}); this.logout(); this.go('home'); }
       else if(menuRoute[label]){ this.setState({menuOpen:false}); this.go(menuRoute[label]); }
       else { this.setState({menuOpen:false}); this.flash(label+' — coming soon'); }
     } }));
@@ -701,7 +885,7 @@ class Component extends DCLogic {
       ['⚙','Settings','var(--text)','settings'],
       ['⎋','Log out','var(--danger)',null],
     ].map(([icon,label,color,route])=>({ icon, label, color, act:()=>{
-      if(label==='Log out'){ this.setState({authed:false, navOpen:false}); this.go('home'); }
+      if(label==='Log out'){ this.setState({navOpen:false}); this.logout(); this.go('home'); }
       else { this.go(route); }
     } }));
     const un = s.username.trim().toLowerCase();
@@ -716,11 +900,22 @@ class Component extends DCLogic {
       style:'animation-delay:'+(-(i%11)*0.12)+'s;opacity:'+(0.45+0.55*Math.abs(Math.sin(i*0.7))),
     }));
 
-    const lineup = ae.lineup.map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>{ this.setState({screen:'artist', activeArtist:name}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
-    const priceRows = [
+    // Lineup chips carry the real artist id (from event_artists) when the
+    // event came from a real fetch, so Artist-page follow can write through
+    // to artist_follows; falls back to name-only for the this.EVENTS stub.
+    const lineupArtists = ae.lineupArtists || [];
+    const lineup = lineupArtists.length
+      ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>{ this.setState({screen:'artist', activeArtist:a.name, activeArtistId:a.id}); if(typeof window!=='undefined') window.scrollTo(0,0); } }))
+      : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>{ this.setState({screen:'artist', activeArtist:name, activeArtistId:null}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
+    // ponytail: no real seller-comparison feed wired (that's the separate
+    // price-comparison project) — these rows are a synthetic estimate off
+    // the one real price, same as the original mock. Guarded against events
+    // with no price ("See tickets") so it doesn't render "$NaN all-in".
+    const aeBasePrice = parseInt((ae.price||'').replace(/\D/g,''), 10);
+    const priceRows = isNaN(aeBasePrice) ? [] : [
       { seller:'Drop (AXS)', price:ae.price.replace('+','').replace(' all-in',''), best:true, border:'var(--attended)' },
-      { seller:'Ticketmaster', price:'$'+(parseInt(ae.price.replace(/\D/g,''))+14)+' all-in', best:false, border:'var(--border)' },
-      { seller:'StubHub', price:'$'+(parseInt(ae.price.replace(/\D/g,''))+31)+' all-in', best:false, border:'var(--border)' },
+      { seller:'Ticketmaster', price:'$'+(aeBasePrice+14)+' all-in', best:false, border:'var(--border)' },
+      { seller:'StubHub', price:'$'+(aeBasePrice+31)+' all-in', best:false, border:'var(--border)' },
     ];
 
     // ===== Genre filter (discover) =====
@@ -739,7 +934,7 @@ class Component extends DCLogic {
     const q = s.query.trim().toLowerCase();
     const searchEmpty = q.length===0;
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
-    const filterPrice = e => { const p = parseInt(e.price.replace(/\D/g,'')); return p >= lo && p <= hi; };
+    const filterPrice = e => { const p = parseInt((e.price||'').replace(/\D/g,''),10); return isNaN(p) || (p >= lo && p <= hi); };
     const filterGenre = e => Object.keys(s.sGenres).filter(k=>s.sGenres[k]).length===0 || s.sGenres[e.genre];
     const matched = events.filter(e =>
       (e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
@@ -821,11 +1016,24 @@ class Component extends DCLogic {
     const wizArtOpen = artQ.length>0 && wizArtMatches.length>0;
     const wizArtChosen = this.WIZ_ARTISTS.filter(a=>s.wizArtistSel[a]).map(a=>({ name:a, remove:()=>this.setState(x=>{ const sel={...x.wizArtistSel}; delete sel[a]; return {wizArtistSel:sel}; }) }));
 
-    // ===== Profile =====
+    // ===== Profile — real profiles-table fields where a session exists;
+    // Shows/Artists stats are real counts (attendance/artist_follows).
+    // Friends stays a placeholder — no real friend system wired this phase. =====
+    const profileSrc = s.profile;
+    const prof = {
+      name: (profileSrc && (profileSrc.display_name || profileSrc.username)) || s.userEmail || 'Drop user',
+      handleCity: [
+        profileSrc && profileSrc.username ? '@'+profileSrc.username : null,
+        profileSrc && profileSrc.city ? profileSrc.city + (profileSrc.state ? ', '+profileSrc.state : '') : null,
+      ].filter(Boolean).join(' · ') || s.userEmail || '',
+      bio: (profileSrc && profileSrc.bio) || 'Add a bio so your crew knows your vibe.',
+      username: (profileSrc && profileSrc.username) || '',
+      cityState: profileSrc && profileSrc.city ? profileSrc.city + (profileSrc.state ? ', '+profileSrc.state : '') : '',
+    };
     const profileStats = [
-      { value:'47', label:'Shows', color:'' },
-      { value:'128', label:'Artists', color:'color:var(--interested);' },
-      { value:'23', label:'Friends', color:'color:var(--going);' },
+      { value: s.realShowsCount!=null ? String(s.realShowsCount) : '—', label:'Shows', color:'' },
+      { value: s.realArtistsCount!=null ? String(s.realArtistsCount) : '—', label:'Artists', color:'color:var(--interested);' },
+      { value:'23', label:'Friends', color:'color:var(--going);' }, // ponytail: no friends table wired this phase — placeholder
     ];
     const profileMenu = [
       { icon:'🎟️', label:'My Shows', act:()=>this.go('myshows') },
@@ -885,29 +1093,52 @@ class Component extends DCLogic {
     const venShows = events.filter(e=>e.venue===venName);
     const venFollowing = !!s.followingVenue[venName];
 
-    // ===== My Shows =====
-    const goingEvents = events.filter(e=>s.rsvp[e.id]==='going');
-    const interestedEvents = events.filter(e=>s.rsvp[e.id]==='interested');
-    const myUpcoming = [...goingEvents, ...interestedEvents].map(e=>({
-      ...e,
-      statusLabel: s.rsvp[e.id]==='going' ? '✓ Going' : '☆ Interested',
-      statusStyle: s.rsvp[e.id]==='going' ? 'background:var(--going);color:var(--white);' : 'background:var(--interested);color:var(--ink);',
-      ics: (evn)=>{ this.prevent(evn); this.flash('Added to calendar (.ics)'); },
-      share: (evn)=>{ this.prevent(evn); this.flash('Link copied to clipboard'); },
-    }));
+    // ===== My Shows — real, from a dedicated attendance⋈events join
+    // (s.myShowsRows, loaded by loadMyShows()) rather than derived from
+    // Discover's city/date-filtered fetch, so a show outside the current
+    // Discover window still shows up here. =====
+    const myNow = Date.now();
+    const myRows = (s.myShowsRows||[]).map(r=>({ row:r, ev: r.events||{} }));
+    const myUpcoming = myRows
+      .filter(x=>(x.row.status==='going'||x.row.status==='interested') && (!x.ev.date || new Date(x.ev.date).getTime()>=myNow))
+      .map(x=>{
+        const ev = x.ev;
+        return {
+          id: ev.id, title: ev.title || 'Untitled show',
+          venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
+          dateShort: ((Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD').toUpperCase(),
+          genre: Drop ? Drop.genreOf(ev) : '',
+          gradStyle: 'background-image:'+gradFor(ev.id||x.row.status),
+          statusLabel: x.row.status==='going' ? '✓ Going' : '☆ Interested',
+          statusStyle: x.row.status==='going' ? 'background:var(--going);color:var(--white);' : 'background:var(--interested);color:var(--ink);',
+          open: (evn)=>{ this.prevent(evn); this.setState({screen:'event', activeId: ev.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+          ics: (evn)=>{ this.prevent(evn); this.flash('Added to calendar (.ics)'); },
+          share: (evn)=>{ this.prevent(evn); this.flash('Link copied to clipboard'); },
+        };
+      });
+    // ponytail: "Saved" has no backing table — local-only bookmark, so it
+    // can only surface events from the currently-loaded Discover batch.
     const mySaved = events.filter(e=>s.saved[e.id]).map(e=>({
       ...e,
       unsave: (evn)=>{ this.prevent(evn); this.toggleSave(e.id); },
       share: (evn)=>{ this.prevent(evn); this.flash('Link copied to clipboard'); },
     }));
-    const myPast = this.PAST_SHOWS.map(p=>{
-      const r = s.ratings[p.id] || 0;
-      return {
-        ...p, gradStyle:'background-image:'+p.grad,
-        rateLabel: r>0 ? 'You rated '+r+'★' : 'Rate this show',
-        stars: [1,2,3,4,5].map(n=>({ glyph: n<=r?'★':'☆', color: n<=r?'var(--gold)':'var(--text-muted)', set:()=>{ if(!this.state.authed){ this.openGate('Log in to rate shows'); return; } this.setState(x=>({ ratings:{...x.ratings, [p.id]: x.ratings[p.id]===n?0:n} })); this.flash('Rated '+n+'★'); } })),
-      };
-    });
+    const myPast = myRows
+      .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))
+      .map(x=>{
+        const ev = x.ev;
+        const r = s.ratings[ev.id] || 0;
+        return {
+          id: ev.id, title: ev.title || 'Untitled show',
+          venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
+          dateShort: ((Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD').toUpperCase(),
+          gradStyle: 'background-image:'+gradFor(ev.id||'past'),
+          // ponytail: no show_ratings table wired this phase — ratings stay
+          // local/session-only (matches the original mock behavior).
+          rateLabel: r>0 ? 'You rated '+r+'★' : 'Rate this show',
+          stars: [1,2,3,4,5].map(n=>({ glyph: n<=r?'★':'☆', color: n<=r?'var(--gold)':'var(--text-muted)', set:()=>{ if(!this.state.authed){ this.openGate('Log in to rate shows'); return; } this.setState(x2=>({ ratings:{...x2.ratings, [ev.id]: x2.ratings[ev.id]===n?0:n} })); this.flash('Rated '+n+'★'); } })),
+        };
+      });
     const myTabs = ['Upcoming','Saved','Past'].map(t=>({ label:t, cls: s.myTab===t?'is-active':'', pick:()=>this.setState({myTab:t}) }));
 
     // ===== Pick Artists =====
@@ -935,7 +1166,7 @@ class Component extends DCLogic {
         name:v.name, city:v.city, capacity:v.capacity,
         badge: v.inDrop?'In Drop':'AXS',
         badgeStyle: v.inDrop?'background:var(--attended);color:var(--ink);':'background:var(--surface-hi);color:var(--text-secondary);',
-        open:()=>{ this.setState({screen:'venue', activeVenue:v.name}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+        open:()=>{ this.setState({screen:'venue', activeVenue:v.name, venueCity:v.city}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       })) };
     });
 
@@ -1207,8 +1438,11 @@ class Component extends DCLogic {
       topEvents: this.ADMIN_TOP_EVENTS, adminActions: this.ADMIN_ACTIONS,
       legalKicker: legalActive.kicker, legalTitle: legalActive.title, legalBody: legalActive.body, legalSections,
       legalPrivacyCls: s.legalDoc==='privacy'?'is-active-legal':'', legalTermsCls: s.legalDoc==='terms'?'is-active-legal':'',
-      loading: s.loading,
-      contentReady: !s.loading,
+      // Real events fetch factors into the shared skeleton/content-ready gate
+      // so Discover/Home/Event/Search never flash an empty grid before the
+      // first real fetch resolves.
+      loading: s.loading || s.eventsLoading,
+      contentReady: !s.loading && !s.eventsLoading,
       skelCards: [1,2,3,4,5,6,7,8].map(n=>({})),
       skelRows: [1,2,3,4].map(n=>({})),
       tasteImport: s.tasteImport, tasteConsent: s.tasteConsent,
@@ -1222,8 +1456,14 @@ class Component extends DCLogic {
       seoGenre, seoGenreLower, seoGenreGrad, genreShows, genreArtists, relatedGenres,
       sharePlan,
       authed: s.authed, signedOut: !s.authed,
+      // PHASE 1 auth UI state
+      authError: s.authError, authBusy: s.authBusy,
+      loginBtnLabel: s.authBusy ? 'Working…' : 'Log in',
+      signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
+      verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
       city: s.city, cityOpen: s.cityOpen, cities, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents: discoverSource, genreActive, gridLabel, gridEmpty, genreName: s.genre, crew: this.CREW,
+      eventsLoading: s.eventsLoading, eventsError: s.eventsError,
       tabs: tabList, dateChips, dateChipLabel,
       comments: this.COMMENTS,
       waveBars,
@@ -1296,7 +1536,7 @@ class Component extends DCLogic {
       linkButtons,
 
       // profile / settings
-      profileStats, profileMenu, notifications, notifEmpty: notifications.length===0, settingsToggles, recapPrivacy: s.recapPrivacy,
+      prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0, settingsToggles, recapPrivacy: s.recapPrivacy,
       blocked, blockedEmpty: blocked.length===0,
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk,
       deleteBtnBg: deleteOk?'var(--danger)':'var(--surface-hi)', deleteBtnColor: deleteOk?'var(--white)':'var(--text-muted)', deleteCursor: deleteOk?'pointer':'not-allowed',
@@ -1376,9 +1616,24 @@ class Component extends DCLogic {
       setSugLink:(e)=>this.setState({sugLink:e.target.value}),
       submitSuggestion:()=>{ if(this.state.sugArtist.trim()===''){ this.flash('Add an artist first'); return; } this.setState({sugArtist:'', sugVenue:'', sugLink:''}); this.flash('Submitted for review — thanks, scout!'); },
       goReferral:(e)=>{ this.prevent(e); this.go('referral'); },
-      goForgot:(e)=>{ this.prevent(e); this.go('forgot'); },
+      goForgot:(e)=>{ this.prevent(e); this.setState({authError:''}); this.go('forgot'); },
       goVerify:(e)=>{ this.prevent(e); this.go('verify'); },
-      goReset:(e)=>{ this.prevent(e); this.go('reset'); this.flash('Reset link sent — check your email'); },
+      // Forgot-password submit: sends a REAL reset email (supa.auth.resetPasswordForEmail).
+      // Stays on the forgot screen — the actual password change only happens
+      // after the user clicks the emailed link, which lands back here with
+      // ?mode=reset-password (see initRealData) and routes to the reset screen.
+      goReset:(e)=>{
+        this.prevent(e);
+        if (!supa) { this.setState({authError:'Password reset is unavailable. Refresh and try again.'}); return; }
+        const email = fieldVal('forgot-email').trim();
+        if (!email) { this.setState({authError:'Enter your account email.'}); return; }
+        this.setState({authBusy:true, authError:''});
+        supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '?mode=reset-password' }).then(out=>{
+          this.setState({authBusy:false});
+          if (out.error) { this.setState({authError: out.error.message}); return; }
+          this.flash('Reset link sent — check your email');
+        });
+      },
       setLogArtist:(e)=>this.setState({logArtist:e.target.value}),
       setLogVenue:(e)=>this.setState({logVenue:e.target.value}),
       saveLog:()=>{ this.setState({logArtist:'', logVenue:'', logRating:0}); this.go('seen'); this.flash('Show added to your history'); },
@@ -1387,9 +1642,35 @@ class Component extends DCLogic {
       recapDownload:()=>this.flash('Recap image (9:16) downloaded'),
       walletRedeem:()=>this.flash('Free time applied to your Drop+ renewal'),
       plusContinue:()=>this.flash('Drop+ checkout — coming soon'),
-      doReset:()=>{ this.go('login'); this.flash('Password updated — log in'); },
-      doVerify:()=>{ this.setState({authed:true}); this.go('discover'); this.flash('Email verified — welcome to Drop'); },
-      resendVerify:(e)=>{ this.prevent(e); this.flash('Verification email resent'); },
+      doReset:()=>{
+        if (!supa) return;
+        const pw = fieldVal('reset-password'), pw2 = fieldVal('reset-password-confirm');
+        if (!pw || pw.length<8) { this.setState({authError:'Use at least 8 characters.'}); return; }
+        if (pw !== pw2) { this.setState({authError:'Passwords do not match.'}); return; }
+        this.setState({authBusy:true, authError:''});
+        supa.auth.updateUser({ password: pw }).then(out=>{
+          this.setState({authBusy:false});
+          if (out.error) { this.setState({authError: out.error.message}); return; }
+          this.flash('Password updated — log in');
+          this.go('login');
+        });
+      },
+      doVerify:()=>{
+        if (!supa) { this.go('discover'); return; }
+        this.setState({verifyMessage:'Checking...'});
+        supa.auth.getSession().then(({data})=>{
+          if (data && data.session) { this.setState({verifyMessage:''}); this.afterLogin(); this.go('discover'); this.flash('Email verified — welcome to Drop'); }
+          else this.setState({verifyMessage:'Not verified yet — click the link in your email first.'});
+        });
+      },
+      resendVerify:(e)=>{
+        this.prevent(e);
+        if (!supa || !this.state.verifyEmail) return;
+        this.setState({verifyMessage:'Sending...'});
+        supa.auth.resend({ type:'signup', email:this.state.verifyEmail }).then(out=>{
+          this.setState({ verifyMessage: out.error ? (out.error.message||'Could not resend — try again.') : 'Email resent — check your inbox.' });
+        });
+      },
       setVenueQuery:(e)=>this.setState({venueQuery:e.target.value}),
       artBulkFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>{ const f={...x.followArt}; artFiltered.forEach(a=>{ f[a.name]=!artAllFollowed; }); return {followArt:f}; }); this.flash(artAllFollowed?('Unfollowed all '+s.artGenre):('Following all '+s.artGenre)); },
       planSend:()=>this.flash('Message sent to your crew'),
@@ -1401,8 +1682,35 @@ class Component extends DCLogic {
       goArtist:(e)=>{ this.prevent(e); this.go('artist'); },
       goVenue:(e)=>{ this.prevent(e); this.go('venue'); },
       goMyShows:(e)=>{ this.prevent(e); this.go('myshows'); },
-      artFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>({ following:{...x.following, [artName]: !x.following[artName]} })); this.flash(artFollowing?'Unfollowed '+artName:'Following '+artName); },
-      venFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow venues'); return; } this.setState(x=>({ followingVenue:{...x.followingVenue, [venName]: !x.followingVenue[venName]} })); this.flash(venFollowing?'Unfollowed '+venName:'Following '+venName); },
+      // Real write only when opened from a real event's lineup (activeArtistId
+      // set — see `lineup` above). Opened from the mock Browse/Pick Artists
+      // catalog (no real id) — same local-only toggle as before, unchanged.
+      artFollow:()=>{
+        if(!this.state.authed){ this.openGate('Log in to follow artists'); return; }
+        const aid = this.state.activeArtistId, uid = this.state.userId;
+        this.setState(x=>({ following:{...x.following, [artName]: !x.following[artName]} }));
+        this.flash(artFollowing?'Unfollowed '+artName:'Following '+artName);
+        if (supa && uid && aid) {
+          const p = artFollowing
+            ? supa.from('artist_follows').delete().eq('user_id', uid).eq('artist_id', aid)
+            : supa.from('artist_follows').insert({ user_id: uid, artist_id: aid });
+          p.then(r=>{ if (r && r.error) console.error('[app] artist_follows write failed:', r.error.message); });
+        }
+      },
+      // Real write always — venue_follows keys on (venue_name, city), which
+      // both the real-event path and the Browse Venues mock catalog supply.
+      venFollow:()=>{
+        if(!this.state.authed){ this.openGate('Log in to follow venues'); return; }
+        const uid = this.state.userId, city = this.state.venueCity || '';
+        this.setState(x=>({ followingVenue:{...x.followingVenue, [venName]: !x.followingVenue[venName]} }));
+        this.flash(venFollowing?'Unfollowed '+venName:'Following '+venName);
+        if (supa && uid) {
+          const p = venFollowing
+            ? supa.from('venue_follows').delete().eq('user_id', uid).eq('venue_name', venName).eq('city', city)
+            : supa.from('venue_follows').insert({ user_id: uid, venue_name: venName, city });
+          p.then(r=>{ if (r && r.error) console.error('[app] venue_follows write failed:', r.error.message); });
+        }
+      },
       bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
       onSearchFocus:()=>this.go('search'),
       toggleCity:(e)=>{ this.prevent(e); this.setState(st=>({cityOpen:!st.cityOpen, menuOpen:false})); },
@@ -1414,8 +1722,76 @@ class Component extends DCLogic {
       navGoArtists:(e)=>{ this.prevent(e); this.go('artists'); },
       navGoLogin:(e)=>{ this.prevent(e); this.go('login'); },
       navGoSignup:(e)=>{ this.prevent(e); this.go('signup'); },
-      doLogin:()=>{ const ret=this.state.gateReturn; this.setState({authed:true, gate:false, gateReturn:null, screen: ret||'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash('Welcome back to Drop'); },
-      doSignup:()=>{ this.setState({authed:true, gate:false, gateReturn:null, screen:'activation', wizStep:0}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      // Real auth — reuses account.js's exact patterns: email/password via
+      // signInWithPassword, username login via the login-with-username edge
+      // function (exchanges for a real session via setSession).
+      doLogin:()=>{
+        if (!supa) { this.setState({authError:'Login is unavailable. Refresh and try again.'}); return; }
+        const login = fieldVal('login-email').trim();
+        const password = fieldVal('login-password');
+        if (!login || !password) { this.setState({authError:'Enter your email or username and password.'}); return; }
+        this.setState({authBusy:true, authError:''});
+        const finish = (err)=>{
+          this.setState({authBusy:false});
+          if (err) { this.setState({authError: err.message || 'Could not log in.'}); return; }
+          const ret = this.state.gateReturn;
+          this.setState({gate:false, gateReturn:null, screen: ret||'discover'});
+          if (typeof window!=='undefined') window.scrollTo(0,0);
+          this.flash('Welcome back to Drop');
+          this.afterLogin();
+        };
+        (async ()=>{
+          try {
+            if (!looksLikeEmail(login)) {
+              const username = cleanUsername(login);
+              const res = await supa.functions.invoke('login-with-username', { body: { username, password } });
+              if (res.error || !res.data || !res.data.access_token || !res.data.refresh_token) throw new Error('Invalid username or password.');
+              const sessionRes = await supa.auth.setSession({ access_token: res.data.access_token, refresh_token: res.data.refresh_token });
+              if (sessionRes.error) throw sessionRes.error;
+            } else {
+              const out = await supa.auth.signInWithPassword({ email: login, password });
+              if (out.error) throw out.error;
+            }
+            finish(null);
+          } catch (e) { finish(e); }
+        })();
+      },
+      doSignup:()=>{
+        if (!supa) { this.setState({authError:'Signup is unavailable. Refresh and try again.'}); return; }
+        const email = fieldVal('signup-email').trim();
+        const username = cleanUsername(this.state.username);
+        const password = fieldVal('signup-password');
+        const dobValue = fieldVal('signup-dob');
+        const consented = fieldChecked('signup-consent');
+        if (!email || !password) { this.setState({authError:'Enter your email and password.'}); return; }
+        if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
+        const years = ageFromDob(dobValue);
+        if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+        if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
+        this.setState({authBusy:true, authError:''});
+        const data = { dob: dobValue, consented_at: new Date().toISOString() };
+        if (username) data.username = username;
+        // ponytail: referral is cosmetic (no crew-join backend yet) — same
+        // note as account.js's signUp(); the raw ref token still rides along
+        // as user metadata for a future crew-join job.
+        const referralRef = (typeof location!=='undefined' && new URLSearchParams(location.search).get('ref')) || '';
+        if (referralRef) data.referred_by = referralRef;
+        const redirectTo = location.origin + location.pathname;
+        (async ()=>{
+          try {
+            const out = await supa.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data } });
+            if (out.error) throw out.error;
+            this.setState({authBusy:false});
+            if (!out.data.session) { this.setState({ verifyEmail: email, screen:'verify' }); return; }
+            this.setState({gate:false, gateReturn:null, screen:'activation', wizStep:0});
+            if (typeof window!=='undefined') window.scrollTo(0,0);
+            this.afterLogin();
+          } catch (e) { this.setState({authBusy:false, authError: e.message || 'Could not create your account.'}); }
+        })();
+      },
+      oauthGoogle:()=>this.oauth('google'),
+      oauthApple:()=>this.oauth('apple'),
+      oauthFacebook:()=>this.oauth('facebook'),
       setUsername:(e)=>this.setState({username: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
@@ -1424,7 +1800,7 @@ class Component extends DCLogic {
       aeInterested:()=>this.toggleRsvp(ae.id,'interested'),
       aeSave:()=>this.toggleSave(ae.id),
       aeShare:()=>this.flash('Link copied to clipboard'),
-      aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue, venueCity:ae.city||''}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       aeCopyCode:()=>this.flash('Presale code copied'),
       aeIcs:()=>this.flash('Calendar file (.ics) downloaded'),
       toggleDesc:()=>this.setState(st=>({descClamped:!st.descClamped})),
@@ -1469,14 +1845,36 @@ class Component extends DCLogic {
       goBlocked:(e)=>{ this.prevent(e); this.go('blocked'); },
       goDelete:(e)=>{ this.prevent(e); this.go('delete'); },
       goNotifications:(e)=>{ this.prevent(e); this.go('notifications'); },
-      saveProfile:()=>{ this.go('profile'); this.flash('Profile saved'); },
+      saveProfile:()=>{
+        if (supa && this.state.userId) {
+          const uid = this.state.userId;
+          const name = fieldVal('edit-name').trim();
+          const uname = cleanUsername(fieldVal('edit-username'));
+          const bioEl = document.getElementById('edit-bio');
+          const bio = bioEl ? bioEl.value.trim() : '';
+          const cityState = fieldVal('edit-city').trim();
+          const parts = cityState.split(',');
+          const city = (parts[0]||'').trim(), state_ = (parts[1]||'').trim();
+          supa.from('profiles').update({ display_name: name || null, username: uname || null, bio, city, state: state_ }).eq('id', uid).then(({error})=>{
+            if (error) { this.flash('Could not save — ' + error.message); return; }
+            this.loadProfile(uid);
+            this.go('profile'); this.flash('Profile saved');
+          });
+          return;
+        }
+        this.go('profile'); this.flash('Profile saved');
+      },
       toastWrapped:(e)=>{ this.prevent&&this.prevent(e); this.go('wrapped'); },
       markAllRead:()=>{ const all={}; this.NOTIFS.forEach(n=>all[n.id]=true); this.setState({notifRead:all}); this.flash('All caught up'); },
       clearNotifs:()=>{ this.setState({notifCleared:true}); this.flash('Notifications cleared'); },
       toggleRecap:()=>this.setState(x=>({recapPrivacy:!x.recapPrivacy})),
-      doLogout:()=>{ this.setState({authed:false}); this.go('home'); },
+      doLogout:()=>{ this.logout(); this.go('home'); },
       setDeleteConfirm:(e)=>this.setState({deleteConfirm:e.target.value}),
-      confirmDelete:()=>{ if(this.state.deleteConfirm.trim().toUpperCase()==='DELETE'){ this.setState({authed:false, deleteConfirm:''}); this.go('home'); this.flash('Account deleted'); } },
+      // ponytail: real account-row deletion needs a service-role edge
+      // function (can't run client-side with the anon key) — not built this
+      // phase. This signs the session out for real; the account itself is
+      // NOT actually deleted. Flag as unverified/mock in the Phase-1 report.
+      confirmDelete:()=>{ if(this.state.deleteConfirm.trim().toUpperCase()==='DELETE'){ this.logout(); this.setState({deleteConfirm:''}); this.go('home'); this.flash('Account deleted'); } },
     };
   }
 }
@@ -1504,6 +1902,21 @@ class Component extends DCLogic {
       });
     };
     mount(container, render, instance.renderVals());
+
+    // PHASE 1: real events + session check, run once after first mount.
+    // A Supabase password-reset email lands back here with
+    // ?mode=reset-password (detectSessionInUrl already consumed the token) —
+    // route straight to the "choose a new password" screen instead of Home.
+    instance.loadEvents();
+    if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('mode') === 'reset-password') {
+      instance.setState({ screen: 'reset' });
+    }
+    if (supa) {
+      instance.afterLogin(); // checks for an existing/just-confirmed session
+      supa.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') instance.setState({ authed:false, userId:null, profile:null });
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
