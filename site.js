@@ -50,10 +50,26 @@
     return art;
   };
 
+  // Login-gated chip <button> — safe to nest inside the card's outer <a>
+  // (an <a> can't nest another <a>). Stops the click from bubbling into the
+  // card link, then sends the visitor to sign in.
+  Drop.gateChip = function (label) {
+    var b = el('button', 'chip gate', label);
+    b.type = 'button';
+    b.title = 'Log in to RSVP';
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      location.href = '/account.html';
+    });
+    return b;
+  };
+
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event) -> <a> shell show card (canonical web look: uniform
+  // Drop.ecard(event, opts) -> <a> shell show card (canonical web look: uniform
   // 300x340 image-forward unit mirroring the app's WebShowCard). Reused everywhere.
-  Drop.ecard = function (event) {
+  // opts.gate: true adds an inline Going/Interested row, login-gated to /account.html.
+  Drop.ecard = function (event, opts) {
+    opts = opts || {};
     var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);
     a.dataset.eventId = event.id;
@@ -85,6 +101,13 @@
     var venue = el('p', 'wsc__venue');
     venue.textContent = [event.venue_name, event.city].filter(Boolean).join(' \u00b7 ');
     text.appendChild(venue);
+    if (opts.gate) {
+      var gateRow = el('div', 'wsc__gate');
+      gateRow.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+      gateRow.appendChild(Drop.gateChip('\u2713 Going'));
+      gateRow.appendChild(Drop.gateChip('\u2606 Interested'));
+      text.appendChild(gateRow);
+    }
     a.appendChild(text);
     return a;
   };
@@ -206,28 +229,32 @@
   };
 
   // ---- Nav: drawer, location popover, search ------------------------------
+  // Binds the Prism .wn nav (replaces the old .site-nav — see shell.css).
   function initNav() {
-    var nav = doc.querySelector('.site-nav');
+    var nav = doc.querySelector('.wn');
     if (!nav) return;
 
     // Reflect current city into every location label — nav pill AND in-page
-    // eyebrows ("Near <city>"), which live in <main>, not the nav.
+    // eyebrows/headings ("Near <city>", "Happening in <city>"), not just the nav.
     var city = Drop.city();
     var locLabels = doc.querySelectorAll('.loc-city');
     for (var i = 0; i < locLabels.length; i++) locLabels[i].textContent = city;
 
-    // Hamburger → drawer.
-    var burger = nav.querySelector('.nav-burger');
-    var drawer = nav.querySelector('.nav-drawer');
+    // Hamburger → mobile drawer (.mnav). Inline `display` toggle — the drawer
+    // markup ships with `style="display:none"` so it stays hidden on desktop
+    // regardless of shell.css's mobile media query forcing `.mnav{display:block}`.
+    var burger = nav.querySelector('[data-nav-menu]');
+    var drawer = doc.getElementById('nav-drawer');
     if (burger && drawer) {
-      burger.addEventListener('click', function () {
-        var open = drawer.classList.toggle('open');
-        burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-      });
+      var closeEls = drawer.querySelectorAll('[data-nav-close]');
+      function openDrawer() { drawer.style.display = 'block'; burger.setAttribute('aria-expanded', 'true'); }
+      function closeDrawer() { drawer.style.display = 'none'; burger.setAttribute('aria-expanded', 'false'); }
+      burger.addEventListener('click', openDrawer);
+      for (var d = 0; d < closeEls.length; d++) closeEls[d].addEventListener('click', closeDrawer);
     }
 
     // Location popover.
-    var locBtn = nav.querySelector('.loc-btn');
+    var locBtn = nav.querySelector('.locchip');
     var pop = nav.querySelector('.loc-pop');
     if (locBtn && pop) {
       buildCityList(pop);
@@ -250,8 +277,8 @@
       });
     }
 
-    // Search forms → events.html?q=
-    var searches = nav.querySelectorAll('form[role="search"]');
+    // Search forms → events.html?q= (nav search + any in-page search form).
+    var searches = doc.querySelectorAll('form[role="search"]');
     for (var s = 0; s < searches.length; s++) {
       searches[s].addEventListener('submit', function (e) {
         e.preventDefault();
@@ -263,17 +290,18 @@
       });
     }
 
-    // Typeahead on every search input (header + hero search panel).
+    // Typeahead on every search input (nav + in-page search fields).
     var searchInputs = doc.querySelectorAll('input[type="search"]');
     for (var t = 0; t < searchInputs.length; t++) Drop.typeahead(searchInputs[t]);
 
-    // Mobile search toggle (icon reveals full-width row).
-    var searchToggle = nav.querySelector('.search-toggle');
+    // Mobile search icon — reveals the nav search row (icon-only otherwise; see
+    // shell.css .wn.search-open override of the mobile `.wn__search-inline` hide).
+    var searchToggle = nav.querySelector('[data-nav-search]');
     if (searchToggle) {
       searchToggle.addEventListener('click', function () {
         var open = nav.classList.toggle('search-open');
         searchToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if (open) { var f = nav.querySelector('.nav-search input'); if (f) f.focus(); }
+        if (open) { var f = nav.querySelector('.wn__search-inline input'); if (f) f.focus(); }
       });
     }
   }

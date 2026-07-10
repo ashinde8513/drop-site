@@ -53,46 +53,50 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
-  <header class="site-nav">
-    <div class="nav-inner">
-      <a class="wordmark" href="/index.html" aria-label="Drop home"><span class="droplet" aria-hidden="true"></span>drop</a>
-
-      <div class="loc-wrap">
-        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
-          <span class="loc-pin" aria-hidden="true"></span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
-        </button>
-        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
-      </div>
-
-      <form class="nav-search" role="search" aria-label="Search events">
-        <div class="search-box">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
-          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+  <nav class="wn" style="position:sticky;top:0;z-index:50;">
+    <div class="wn__inner">
+      <a class="wn__logo" href="/index.html" aria-label="Drop home" style="font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP
+      </a>
+      <div class="wn__links">
+        <div class="loc-wrap">
+          <button type="button" class="locchip" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+            <span class="dot"></span><span class="loc-city">Denver</span><span style="color:var(--text-muted);font-size:10px;">▾</span>
+          </button>
+          <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
         </div>
-      </form>
-
-      <nav class="nav-links" aria-label="Primary">
-        <a href="/events.html">Events</a>
-        <a href="/venues.html">Venues</a>
-        <a href="/artists.html" aria-current="page">Artists</a>
-        <a href="/account.html">Log in</a>
-      </nav>
-      <a class="btn-primary nav-cta" href="/download.html">Get the app</a>
-
-      <span class="nav-spacer"></span>
-      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
-      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+        <form class="wn__search-inline" role="search" aria-label="Search events" style="position:relative;flex:1;max-width:360px;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows" autocomplete="off" style="width:100%;height:38px;padding:0 var(--sp-lg) 0 38px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+        </form>
+        <a class="wn__link wn__navlink" href="/events.html">Events</a>
+        <a class="wn__link wn__navlink" href="/venues.html">Venues</a>
+        <a class="wn__link wn__navlink is-active" href="/artists.html" aria-current="page">Artists</a>
+      </div>
+      <div class="wn__right">
+        <button type="button" class="wn__mobicon" data-nav-search aria-label="Search" aria-expanded="false">⌕</button>
+        <button type="button" class="wn__mobicon" data-nav-menu aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+        <a class="wn__link" href="/account.html">Log in</a>
+        <a class="btn btn--primary btn--sm" href="/account.html?mode=signup">Get started</a>
+      </div>
     </div>
-
-    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
-      <a href="/events.html">Events</a>
-      <a href="/venues.html">Venues</a>
-      <a href="/artists.html" aria-current="page">Artists</a>
-      <a href="/account.html">Log in</a>
-      <a class="btn-primary btn-block" href="/download.html">Get the app</a>
-    </nav>
-  </header>
+  </nav>
+  <div class="mnav" id="nav-drawer" style="display:none;">
+    <div class="mnav__scrim" data-nav-close></div>
+    <div class="mnav__panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-md);">
+        <span style="font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:var(--tr-tight);color:var(--text-muted);">MENU</span>
+        <button type="button" data-nav-close aria-label="Close menu" style="width:36px;height:36px;border-radius:50%;background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <a href="/events.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Events</a>
+      <a href="/venues.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Venues</a>
+      <a href="/artists.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Artists</a>
+      <div style="height:1px;background:var(--border);margin:var(--sp-sm) 0;"></div>
+      <a class="btn btn--primary btn--block" style="margin-top:var(--sp-sm);" href="/account.html?mode=signup">Get started</a>
+      <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/account.html">Log in</a>
+    </div>
+  </div>
 
   <main id="main">
     <div class="wsh">

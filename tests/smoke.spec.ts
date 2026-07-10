@@ -78,12 +78,14 @@ test.describe('landing site smoke', () => {
     });
   }
 
-  test('homepage shows the core value prop and hero search', async ({ page }) => {
-    // ponytail: was asserting 'friends' from the retired marketing hero copy —
-    // stale since the 2026-07-06 AXS browse-first rebuild (h1 is now discover-first).
+  test('homepage shows the core value prop and the Prism design hero', async ({ page }) => {
+    // ponytail: stale since the 2026-07-09 Prism design rebuild — index.html is
+    // now the design's signed-out home screen (static hero, no flip-words).
     await page.goto('/index.html');
-    await expect(page.locator('h1')).toContainText('Discover live shows');
-    await expect(page.locator('#hero-search')).toHaveCount(1);
+    await expect(page.locator('h1')).toContainText("Who's going.");
+    await expect(page.locator('h1')).not.toContainText('Discover live shows near you');
+    await expect(page.locator('#home-search')).toHaveCount(1);
+    await expect(page.locator('#home-grid')).toHaveCount(1);
   });
 
   test('legal links from homepage resolve', async ({ page }) => {
@@ -106,11 +108,11 @@ test.describe('landing site smoke', () => {
 
   test('search typeahead opens a suggestions dropdown while typing', async ({ page }) => {
     await page.goto('/index.html');
-    // Hero input — visible on desktop AND mobile (nav search hides behind a toggle).
-    await page.locator('#hs-q').fill('house');
+    // "Happening in {city}" search — visible on desktop AND mobile (nav search hides behind a toggle).
+    await page.locator('#home-q').fill('house');
     // Always at least the "Search “house”" row, even with zero live matches.
-    await expect(page.locator('#hero-search .ta-pop')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#hero-search .ta-row').first()).toBeVisible();
+    await expect(page.locator('#home-search .ta-pop')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#home-search .ta-row').first()).toBeVisible();
   });
 
   test('city label follows the selected location everywhere on the page', async ({ page }) => {
@@ -123,22 +125,22 @@ test.describe('landing site smoke', () => {
     }
   });
 
-  test('About lives in the footer, not the header; genres listed once', async ({ page }) => {
+  test('About lives in the footer, not the nav', async ({ page }) => {
     await page.goto('/index.html');
-    await expect(page.locator('header a[href="/about.html"]')).toHaveCount(0);
+    await expect(page.locator('nav.wn a[href="/about.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/about.html"]')).toHaveCount(1);
-    // The chip row duplicated the "Pick your night" genre tiles — it's gone.
-    await expect(page.locator('.chip-row')).toHaveCount(0);
-    await expect(page.locator('.grid-tiles')).toHaveCount(1);
   });
 
-  test('website header points login to the static browser account shell', async ({ page }) => {
+  test('website nav points login to the static browser account shell', async ({ page }) => {
     // Browser login now points to the static account shell on this static domain.
+    // "Get the app" is gone from the nav (design replaces it with Log in / Get
+    // started) — get-the-app now lives only at /download in the footer.
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
-      await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
-      await expect(page.locator('header a[href="/account.html"]').first()).toHaveCount(1);
-      await expect(page.locator('header a[href="/download.html"]').first()).toHaveCount(1);
+      await expect(page.locator('nav.wn a[href^="/app"]')).toHaveCount(0);
+      await expect(page.locator('nav.wn a[href="/account.html"]').first()).toHaveCount(1);
+      await expect(page.locator('nav.wn a[href="/download.html"]')).toHaveCount(0);
+      await expect(page.locator('footer a[href="/download.html"]').first()).toHaveCount(1);
     }
   });
 
@@ -151,15 +153,30 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('#auth-submit')).toHaveText('Log in');
   });
 
-  test('nav parity: browse links + corner, no For Promoters in header', async ({ page }) => {
+  test('nav parity: .wn browse links + Log in/Get started corner, no For Promoters', async ({ page }) => {
     await page.goto('/index.html');
     for (const href of ['/events.html', '/venues.html', '/artists.html']) {
-      await expect(page.locator(`header .nav-links a[href="${href}"]`)).toHaveCount(1);
+      await expect(page.locator(`nav.wn .wn__navlink[href="${href}"]`)).toHaveCount(1);
     }
-    await expect(page.locator('header a[href="/promoters.html"]')).toHaveCount(0);
+    await expect(page.locator('nav.wn a[href="/promoters.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
-    await expect(page.locator('header a[href^="/app"]')).toHaveCount(0);
-    await expect(page.locator('header a[href="/account.html"]').first()).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href^="/app"]')).toHaveCount(0);
+    await expect(page.locator('nav.wn a[href="/account.html"]').first()).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href="/account.html?mode=signup"]').first()).toHaveCount(1);
+  });
+
+  test('mobile: hamburger opens the .mnav drawer at 390px', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/index.html');
+    const drawer = page.locator('#nav-drawer');
+    await expect(drawer).toBeHidden();
+    await page.locator('nav.wn [data-nav-menu]').click();
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator('a[href="/events.html"]')).toBeVisible();
+    // Close via the panel's ✕ button — the scrim also carries [data-nav-close]
+    // but sits fully behind the panel at this viewport width, so target the button.
+    await page.locator('.mnav__panel button[data-nav-close]').click();
+    await expect(drawer).toBeHidden();
   });
 
 });

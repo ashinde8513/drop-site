@@ -17,7 +17,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    // Deterministic: keeps the hero flip-word static ("shows") and aurora still.
+    // Deterministic: keeps the hero's corner-glow blobs (.share-glow) still.
     reducedMotion: 'reduce',
   },
   projects: [

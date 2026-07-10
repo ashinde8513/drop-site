@@ -72,172 +72,83 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
-  <!-- ============================ HEADER ============================ -->
-  <header class="site-nav">
-    <div class="nav-inner">
-      <a class="wordmark" href="/index.html" aria-label="Drop home"><span class="droplet" aria-hidden="true"></span>drop</a>
-
-      <div class="loc-wrap">
-        <button class="loc-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
-          <span class="loc-pin" aria-hidden="true"></span><span class="loc-city">Denver</span><span class="loc-caret" aria-hidden="true">▾</span>
-        </button>
-        <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
-      </div>
-
-      <form class="nav-search" role="search" aria-label="Search events">
-        <div class="search-box">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
-          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" />
+  <nav class="wn" style="position:sticky;top:0;z-index:50;">
+    <div class="wn__inner">
+      <a class="wn__logo" href="/index.html" aria-label="Drop home" style="font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP
+      </a>
+      <div class="wn__links">
+        <div class="loc-wrap">
+          <button type="button" class="locchip" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+            <span class="dot"></span><span class="loc-city">Denver</span><span style="color:var(--text-muted);font-size:10px;">▾</span>
+          </button>
+          <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
         </div>
-      </form>
-
-      <nav class="nav-links" aria-label="Primary">
-        <a href="/events.html">Events</a>
-        <a href="/venues.html">Venues</a>
-        <a href="/artists.html">Artists</a>
-        <a href="/account.html">Log in</a>
-      </nav>
-      <a class="btn-primary nav-cta" href="/download.html">Get the app</a>
-
-      <span class="nav-spacer"></span>
-      <button class="search-toggle" type="button" aria-label="Search" aria-expanded="false">⌕</button>
-      <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+        <form class="wn__search-inline" role="search" aria-label="Search events" style="position:relative;flex:1;max-width:360px;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">⌕</span>
+          <label for="nav-q" class="sr-only">Search artists, venues, shows</label>
+          <input id="nav-q" name="q" type="search" placeholder="Search artists, venues, shows" autocomplete="off" style="width:100%;height:38px;padding:0 var(--sp-lg) 0 38px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+        </form>
+        <a class="wn__link wn__navlink" href="/events.html">Events</a>
+        <a class="wn__link wn__navlink" href="/venues.html">Venues</a>
+        <a class="wn__link wn__navlink" href="/artists.html">Artists</a>
+      </div>
+      <div class="wn__right">
+        <button type="button" class="wn__mobicon" data-nav-search aria-label="Search" aria-expanded="false">⌕</button>
+        <button type="button" class="wn__mobicon" data-nav-menu aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
+        <a class="wn__link" href="/account.html">Log in</a>
+        <a class="btn btn--primary btn--sm" href="/account.html?mode=signup">Get started</a>
+      </div>
     </div>
-
-    <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile">
-      <a href="/events.html">Events</a>
-      <a href="/venues.html">Venues</a>
-      <a href="/artists.html">Artists</a>
-      <a href="/account.html">Log in</a>
-      <a class="btn-primary btn-block" href="/download.html">Get the app</a>
-    </nav>
-  </header>
+  </nav>
+  <div class="mnav" id="nav-drawer" style="display:none;">
+    <div class="mnav__scrim" data-nav-close></div>
+    <div class="mnav__panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-md);">
+        <span style="font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:var(--tr-tight);color:var(--text-muted);">MENU</span>
+        <button type="button" data-nav-close aria-label="Close menu" style="width:36px;height:36px;border-radius:50%;background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <a href="/events.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Events</a>
+      <a href="/venues.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Venues</a>
+      <a href="/artists.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Artists</a>
+      <div style="height:1px;background:var(--border);margin:var(--sp-sm) 0;"></div>
+      <a class="btn btn--primary btn--block" style="margin-top:var(--sp-sm);" href="/account.html?mode=signup">Get started</a>
+      <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/account.html">Log in</a>
+    </div>
+  </div>
 
   <main id="main">
-    <!-- ==================== DISCOVER (search-first, AXS-style) ==================== -->
-    <section class="discover-head">
-      <div class="aurora" aria-hidden="true"></div>
+    <!-- ==================== HERO (signed-out home) ==================== -->
+    <section class="hero">
+      <div class="share-glow" aria-hidden="true" style="width:520px;height:520px;background:radial-gradient(circle,rgba(226,77,255,0.5),transparent 62%);top:-160px;right:-80px;"></div>
+      <div class="share-glow" aria-hidden="true" style="width:460px;height:460px;background:radial-gradient(circle,rgba(77,226,255,0.42),transparent 62%);bottom:-200px;left:-120px;animation-direction:reverse;animation-duration:11s;"></div>
       <div class="wrap">
-        <span class="chip" style="margin-bottom:14px;">✦&nbsp; The EDM show discovery app</span>
-        <h1 class="discover-h1">Discover live <span class="flip" data-flip="shows,sets,drops">shows</span> near you</h1>
-
-        <!-- Search panel -->
-        <form class="search-panel" id="hero-search" role="search" aria-label="Find events">
-          <div class="sp-row">
-            <div class="sp-field">
-              <label for="hs-q">Search</label>
-              <div class="field-box">
-                <span class="search-icon" aria-hidden="true">⌕</span>
-                <input id="hs-q" name="q" type="search" placeholder="Artists, venues, shows…" autocomplete="off" />
-              </div>
-            </div>
-            <div class="sp-field">
-              <label for="hs-when">Date</label>
-              <div class="field-box">
-                <select id="hs-when" name="when">
-                  <option value="">Any date</option>
-                  <option value="tonight">Tonight</option>
-                  <option value="weekend">This weekend</option>
-                  <option value="month">This month</option>
-                </select>
-              </div>
-            </div>
-            <div class="sp-submit">
-              <button class="btn-primary" type="submit">Find events</button>
-            </div>
-          </div>
-        </form>
-
+        <span class="chip" style="margin-bottom:var(--sp-lg);">✦&nbsp;The EDM show discovery app</span>
+        <h1>Every show.<br>Who's going.<br><span style="background:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;">Before you go.</span></h1>
+        <p class="hero-sub">Discover every EDM event near you, see which friends are going, lock in your crew, and never miss a drop.</p>
+        <div class="hero-cta">
+          <a class="btn btn--primary" href="/account.html?mode=signup">Get started — it's free</a>
+          <a class="btn btn--ghost" href="/account.html">Log in</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:28px;color:var(--text-muted);font-size:var(--fs-sm);">
+          <div class="avstack" aria-hidden="true"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></div>
+          <span>Join <b style="color:var(--text);">40,000+</b> ravers already on Drop</span>
+        </div>
       </div>
     </section>
 
-    <!-- ==================== HAPPENING THIS WEEK ==================== -->
+    <!-- ==================== HAPPENING IN {CITY} ==================== -->
     <section class="section section--flush-top">
       <div class="wrap">
-        <div class="section-head section-head--row">
-          <div>
-            <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
-            <h2 class="sec-h2">Happening</h2>
-          </div>
-          <a class="link-more" href="/events.html">See all events →</a>
+        <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
+          <h2 class="sec-h2 m-wrap" style="margin:0;white-space:nowrap;">Happening in <span class="loc-city">Denver</span></h2>
+          <form class="field-box" id="home-search" role="search" aria-label="Search shows" style="flex:1;min-width:260px;max-width:420px;">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <label for="home-q" class="sr-only">Search shows, artists, venues near you</label>
+            <input id="home-q" name="q" type="search" placeholder="Search shows, artists, venues near you…" autocomplete="off" />
+          </form>
         </div>
-        <div class="time-tabs" role="tablist" aria-label="When" style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px;">
-          <button class="chip is-active" type="button" role="tab" aria-selected="true" data-when="today"><span class="chip__dot"></span>Today</button>
-          <button class="chip" type="button" role="tab" aria-selected="false" data-when="weekend"><span class="chip__dot"></span>This Weekend</button>
-          <button class="chip" type="button" role="tab" aria-selected="false" data-when="month"><span class="chip__dot"></span>Next 30 Days</button>
-        </div>
-        <div class="rail-wrap" data-rail>
-          <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
-          <div class="rail" id="rail-week" aria-label="Happening"></div>
-          <button class="rail-btn next" type="button" aria-label="Scroll right" hidden>›</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== CATEGORY TILES ==================== -->
-    <section class="section section--tight">
-      <div class="wrap">
-        <div class="section-head">
-          <span class="eyebrow"><span class="dot"></span>Browse by scene</span>
-          <h2 class="sec-h2">Pick your night.</h2>
-        </div>
-        <div class="grid-tiles">
-          <a class="tile g-fest" href="/events.html?genre=Festivals"><span>Festivals</span></a>
-          <a class="tile g-house" href="/events.html?genre=House"><span>House</span></a>
-          <a class="tile g-techno" href="/events.html?genre=Techno"><span>Techno</span></a>
-          <a class="tile g-bass" href="/events.html?genre=Bass"><span>Dubstep</span></a>
-          <a class="tile g-dnb" href="/events.html?genre=Drum%20%26%20Bass"><span>Drum &amp; Bass</span></a>
-          <a class="tile g-hiphop" href="/events.html?genre=Hip-Hop"><span>Hip-Hop</span></a>
-          <a class="tile g-indie" href="/events.html?genre=Indie"><span>Indie</span></a>
-          <a class="tile g-club" href="/events.html?q=club"><span>Clubs</span></a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== JUST DROPPED ==================== -->
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="section-head section-head--row">
-          <div>
-            <span class="eyebrow"><span class="dot"></span>Newest listings</span>
-            <h2 class="sec-h2">Just dropped</h2>
-          </div>
-          <a class="link-more" href="/events.html?sort=new">See all →</a>
-        </div>
-        <div class="rail-wrap" data-rail>
-          <button class="rail-btn prev" type="button" aria-label="Scroll left" hidden>‹</button>
-          <div class="rail" id="rail-new" aria-label="Just dropped"></div>
-          <button class="rail-btn next" type="button" aria-label="Scroll right" hidden>›</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== POPULAR NEAR YOU (venues) ==================== -->
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="section-head section-head--row">
-          <div>
-            <span class="eyebrow"><span class="dot"></span>Venues</span>
-            <h2 class="sec-h2">Popular near you</h2>
-          </div>
-          <a class="link-more" href="/venues.html">All venues →</a>
-        </div>
-        <div class="grid-venues" id="grid-venues"></div>
-      </div>
-    </section>
-
-    <!-- ==================== PROMOTER BAND ==================== -->
-    <section class="section section--flush-top">
-      <div class="wrap">
-        <div class="promo-band">
-          <div>
-            <span class="eyebrow"><span class="dot"></span>For promoters</span>
-            <h2>Put your event in front of the right crowd.</h2>
-            <p>List your shows free and reach fans who actually go out in your city.</p>
-          </div>
-          <a class="btn-primary" href="/promoters.html">Submit an event</a>
-        </div>
+        <div class="grid-events" id="home-grid" aria-label="Upcoming shows"></div>
       </div>
     </section>
   </main>
@@ -281,121 +192,38 @@
 
   <script src="/data.js"></script>
   <script src="/site.js"></script>
-  <script src="/flipwords.js"></script>
   <script>
-    // Home page — wire live rails + venue derivation.
+    // Home page — "Happening in {city}" live grid + its search field.
     (function () {
       var D = window.Drop;
+      var city = D.city();
 
-      // Hero search → events.html with params. City comes from the one
-      // location control (the nav pill / Drop.city()).
-      var hs = document.getElementById('hero-search');
+      var hs = document.getElementById('home-search');
       hs.addEventListener('submit', function (e) {
         e.preventDefault();
-        var qv = document.getElementById('hs-q').value.trim();
-        var wv = document.getElementById('hs-when').value;
+        var qv = document.getElementById('home-q').value.trim();
         var url = '/events.html?city=' + encodeURIComponent(D.city());
         if (qv) url += '&q=' + encodeURIComponent(qv);
-        if (wv) url += '&when=' + encodeURIComponent(wv);
         location.href = url;
       });
 
-      var city = D.city();
-
-      // Rail: Happening — time-tabbed (Today / This Weekend / Next 30 Days), AXS-style.
-      // Computes an inclusive [from,to] window for the active tab and refetches.
-      function happeningWindow(when) {
-        var from = new Date(); from.setHours(0, 0, 0, 0);
-        var to = new Date(); to.setHours(23, 59, 59, 0);
-        if (when === 'today') {
-          // from = start of today, to = end of today
-        } else if (when === 'weekend') {
-          // upcoming Fri 00:00 → Sun 23:59 (if already the weekend, use the current one)
-          var day = from.getDay(); // 0 Sun .. 6 Sat
-          var toFri = (5 - day + 7) % 7; // days until Friday
-          if (day === 0) { from.setDate(from.getDate() - 2); } // Sun → back to Fri
-          else if (day === 6) { from.setDate(from.getDate() - 1); } // Sat → back to Fri
-          else { from.setDate(from.getDate() + toFri); }
-          to = new Date(from); to.setDate(from.getDate() + (from.getDay() === 5 ? 2 : 1)); to.setHours(23, 59, 59, 0);
-        } else { // month / next 30 days
-          to.setDate(to.getDate() + 30);
-        }
-        return { from: from.toISOString(), to: to.toISOString() };
-      }
-
-      function loadWeek(when) {
-        when = when || 'today';
-        var host = document.getElementById('rail-week');
-        D.skeletonGrid(host, 6);
-        var win = happeningWindow(when);
-        D.fetchEvents({ city: city, from: win.from, to: win.to, limit: 12 })
+      function loadGrid() {
+        var host = document.getElementById('home-grid');
+        D.skeletonGrid(host, 8);
+        D.fetchEvents({ city: city, limit: 8 })
           .then(function (evs) {
             // Prefer cards with real artwork up front (stable sort, no extra fetch).
             evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
             D.renderEvents(host, evs, {
-              limit: 12,
-              emptyMsg: 'No shows in ' + city + ' for that window yet. Try browsing all events.',
+              limit: 8, gate: true,
+              emptyMsg: 'No shows in ' + city + ' yet. Try browsing all events.',
               emptyAction: 'Browse all events', emptyHref: '/events.html'
             });
-            D.initRails();
           })
-          .catch(function () { D.stateError(host, loadWeek); });
+          .catch(function () { D.stateError(host, loadGrid); });
       }
 
-      // Rail: Just dropped (newest by created_at).
-      function loadNew() {
-        var host = document.getElementById('rail-new');
-        D.skeletonGrid(host, 6);
-        D.fetchEvents({ city: city, sort: 'new', limit: 12 })
-          .then(function (evs) {
-            evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
-            D.renderEvents(host, evs, {
-              limit: 12,
-              emptyMsg: 'Nothing new in ' + city + ' right now.',
-              emptyAction: 'Browse all events', emptyHref: '/events.html'
-            });
-            D.initRails();
-          })
-          .catch(function () { D.stateError(host, loadNew); });
-      }
-
-      // Venues: derive top venues by upcoming count from a broad city fetch.
-      function loadVenues() {
-        var host = document.getElementById('grid-venues');
-        D.skeletonGrid(host, 4);
-        D.fetchEvents({ city: city, limit: 100 })
-          .then(function (evs) {
-            var map = {};
-            evs.forEach(function (ev) {
-              if (!ev.venue_name) return;
-              var key = ev.venue_name + '||' + (ev.city || '');
-              if (!map[key]) map[key] = { name: ev.venue_name, city: ev.city, state: ev.state, count: 0, cls: D.genreClass(ev) };
-              map[key].count++;
-            });
-            var list = Object.keys(map).map(function (k) { return map[k]; })
-              .sort(function (a, b) { return b.count - a.count; }).slice(0, 4);
-            host.classList.remove('is-loading');
-            host.innerHTML = '';
-            if (!list.length) {
-              D.stateEmpty(host, 'No venues in ' + city + ' yet.', 'Browse all events', '/events.html');
-              return;
-            }
-            list.forEach(function (v) { host.appendChild(D.venueCard(v)); });
-          })
-          .catch(function () { D.stateError(host, loadVenues); });
-      }
-
-      // Time-tabs → refetch Happening for the chosen window.
-      var tabs = Array.prototype.slice.call(document.querySelectorAll('.time-tabs .chip'));
-      tabs.forEach(function (t) {
-        t.addEventListener('click', function () {
-          tabs.forEach(function (o) { o.classList.remove('is-active'); o.setAttribute('aria-selected', 'false'); });
-          t.classList.add('is-active'); t.setAttribute('aria-selected', 'true');
-          loadWeek(t.getAttribute('data-when'));
-        });
-      });
-
-      loadWeek('today'); loadNew(); loadVenues();
+      loadGrid();
     })();
   </script>
 </body>

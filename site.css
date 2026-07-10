@@ -208,27 +208,11 @@ button { font: inherit; cursor: pointer; }
 }
 .btn-block { width: 100%; }
 
-/* event.html: hero "Get tickets" is the sole primary CTA; demote nav's. */
-.event-page .nav-cta {
-  background: var(--glass); color: var(--text); border-color: var(--glass-border);
-  box-shadow: none; backdrop-filter: blur(6px);
-}
-.event-page .nav-cta:hover { border-color: var(--text); box-shadow: none; }
-
 /* ========================================================================
-   Header / nav
+   Header / nav — the .wn nav (shell.css) is the only nav now; this file
+   keeps just the wordmark (still used in every page footer) and the
+   location/search popovers the new nav still reuses.
    ======================================================================== */
-.site-nav {
-  position: sticky; top: 0; z-index: 100;
-  backdrop-filter: blur(14px);
-  background: var(--glass-dark);
-  border-bottom: 1px solid var(--border-strong); /* shell --border-hi */
-}
-.nav-inner {
-  max-width: var(--wrap); margin: 0 auto; padding: 12px 24px;
-  min-height: var(--nav-h);
-  display: flex; align-items: center; gap: 18px;
-}
 /* Wordmark = ◦ drop (mirrors the app's droplet + lowercase lockup, drop-design .droplet) */
 .wordmark {
   font-family: var(--font-display); font-weight: 700; font-size: 24px;
@@ -247,49 +231,8 @@ button { font: inherit; cursor: pointer; }
   font-size: 0.7em; transform: translateY(-1px);
 }
 
-/* Discovery header (search-first, AXS-style) — replaces the marketing hero */
-.discover-head { position: relative; isolation: isolate; padding: clamp(20px, 3vw, 32px) 0 8px; }
-.discover-h1 {
-  font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.4vw, 34px);
-  letter-spacing: -0.02em; margin: 0 0 clamp(16px, 2vw, 22px);
-}
-/* Iridescent flip-word (cycled by flipwords.js; static under reduced-motion) */
-.discover-h1 .flip {
-  background: var(--grad-glow); -webkit-background-clip: text; background-clip: text;
-  color: transparent; will-change: opacity;
-}
-/* Hero aurora — subtle Prism glow behind the discovery header. */
-.aurora {
-  position: absolute; inset: -40% -10% auto -10%; height: 260px; z-index: -1;
-  pointer-events: none; opacity: 0.45; filter: blur(64px);
-  background:
-    radial-gradient(42% 60% at 22% 32%, color-mix(in srgb, var(--brand-cyan) 60%, transparent), transparent 70%),
-    radial-gradient(46% 64% at 76% 22%, color-mix(in srgb, var(--brand-magenta) 48%, transparent), transparent 70%);
-  animation: aurora-drift 18s var(--ease) infinite alternate;
-}
-@keyframes aurora-drift {
-  from { transform: translate3d(-4%, 0, 0) scale(1); }
-  to   { transform: translate3d(6%, 3%, 0) scale(1.12); }
-}
-
-/* Location button + popover */
+/* Location popover (button itself is now .locchip — shell.css) */
 .loc-wrap { position: relative; flex: 0 0 auto; }
-.loc-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 8px 12px; border-radius: var(--r-pill);
-  background: var(--glass); border: 1px solid var(--border);
-  color: var(--text); font-size: 14px; font-weight: 500;
-  transition: border-color var(--dur-base) var(--ease);
-}
-.loc-btn:hover { border-color: var(--border-strong); }
-.loc-btn .loc-pin {
-  display: inline-block;
-  width: 8px; height: 8px; border-radius: 50% 50% 50% 2px;
-  background: var(--grad-cool); color: transparent; font-size: 0;
-  box-shadow: 0 0 10px rgba(77,226,255,0.55);
-  transform: rotate(45deg); flex: 0 0 auto;
-}
-.loc-btn .loc-caret { font-size: 10px; color: var(--text-secondary); }
 .loc-pop {
   position: absolute; top: calc(100% + 8px); left: 0; z-index: 120;
   min-width: 200px; max-height: 320px; overflow-y: auto;
@@ -320,78 +263,6 @@ button { font: inherit; cursor: pointer; }
 .ta-row:hover, .ta-row.is-active { background: var(--glass); }
 .ta-primary { font-size: 14.5px; font-weight: 500; }
 .ta-secondary { font-size: 12.5px; color: var(--text-secondary); }
-
-/* Search form */
-.nav-search { flex: 1 1 auto; min-width: 0; max-width: 420px; }
-.nav-search .search-box {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(11,13,18,0.5); border: 1px solid var(--border-strong);
-  border-radius: var(--r-pill); padding: 8px 14px;
-  transition: border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
-}
-.nav-search .search-box:focus-within { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(77,226,255,0.16); }
-.nav-search .search-icon { color: var(--text-secondary); flex: 0 0 auto; }
-.nav-search input {
-  flex: 1 1 auto; min-width: 0; background: transparent; border: none;
-  color: var(--text); font-family: var(--font-body); font-size: 15px;
-}
-.nav-search input::placeholder { color: var(--text-muted); }
-.nav-search input:focus { outline: none; }
-
-/* Primary nav links */
-.nav-links { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
-.nav-links a {
-  padding: 8px 12px; border-radius: var(--r-sm); font-size: 14.5px; font-weight: 500;
-  color: var(--text-secondary); transition: color var(--dur-base) var(--ease);
-  position: relative;
-}
-.nav-links a:hover { color: var(--text); }
-.nav-links a[aria-current="page"] { color: var(--text); }
-.nav-links a[aria-current="page"]::after {
-  content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px;
-  height: 2px; background: var(--brand-cyan); border-radius: 2px;
-}
-.nav-cta { flex: 0 0 auto; }
-
-/* mobile-only controls hidden on desktop */
-.nav-burger, .search-toggle { display: none; }
-.nav-drawer { display: none; }
-
-@media (max-width: 980px) {
-  .nav-search { max-width: 260px; }
-  .nav-links a { padding: 8px 9px; }
-}
-@media (max-width: 900px) {
-  .nav-links, .nav-cta { display: none; }
-  .nav-search { position: absolute; left: 0; right: 0; top: 100%; max-width: none;
-    padding: 12px 24px; background: var(--glass-dark); border-bottom: 1px solid var(--border);
-    display: none; }
-  .site-nav.search-open .nav-search { display: block; }
-  .search-toggle, .nav-burger {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: var(--r-sm);
-    background: var(--glass); border: 1px solid var(--border); color: var(--text);
-  }
-  .nav-spacer { flex: 1 1 auto; }
-  /* Drawer: normal expanding panel (NOT an app tab bar) */
-  .nav-drawer {
-    display: block; position: absolute; left: 0; right: 0; top: 100%;
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 12px 24px 20px;
-    max-height: 0; overflow: hidden; visibility: hidden;
-    transition: max-height var(--dur-base) var(--ease);
-  }
-  .nav-drawer.open { max-height: 460px; visibility: visible; }
-  .nav-drawer a {
-    display: block; padding: 13px 4px; font-size: 16px; font-weight: 500;
-    color: var(--text); border-bottom: 1px solid var(--border);
-  }
-  .nav-drawer a:last-child { border-bottom: none; }
-  .nav-drawer .btn-primary { margin-top: 14px; }
-}
-@media (min-width: 901px) {
-  .nav-drawer { display: none !important; }
-}
 
 /* ========================================================================
    Footer
@@ -643,15 +514,10 @@ button { font: inherit; cursor: pointer; }
 .state-msg { color: var(--text-secondary); max-width: 42ch; }
 
 /* ========================================================================
-   Hero + search panel (home)
+   Hero (home) — corner glow is .share-glow (shell.css), ported straight
+   from the design's floatGlow blobs rather than duplicated here.
    ======================================================================== */
 .hero { position: relative; padding: clamp(48px, 8vw, 96px) 0 0; overflow: hidden; }
-.hero-bg {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(720px 420px at 82% -6%, rgba(77,226,255,0.14), transparent 60%),
-    radial-gradient(620px 420px at 6% 6%, rgba(226,77,255,0.12), transparent 58%);
-}
 .hero .wrap { position: relative; z-index: 2; }
 .hero h1 {
   font-family: var(--font-display); font-weight: 700;
@@ -664,13 +530,8 @@ button { font: inherit; cursor: pointer; }
 }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 0; }
 
-/* Search panel */
-.search-panel {
-  margin: 30px 0 0; padding: 16px; border-radius: var(--r-xl);
-  background: var(--surface); border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-card);
-}
-.search-panel .sp-row { display: flex; gap: 12px; flex-wrap: wrap; }
+/* .sp-field — standalone search field used bare on artists.html; the
+   .search-panel wrapper it used to live in was index-only and is gone. */
 .sp-field { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .sp-field label {
   font-family: var(--font-display); font-size: 11px; font-weight: 600;
@@ -691,8 +552,6 @@ button { font: inherit; cursor: pointer; }
 .sp-field select option { background: var(--surface-alt); color: var(--text); }
 .sp-field input:focus, .sp-field select:focus { outline: none; }
 .sp-field input::placeholder { color: var(--text-muted); }
-.sp-submit { flex: 0 0 auto; align-self: stretch; }
-.search-panel .sp-submit .btn-primary { height: 100%; padding-inline: 28px; }
 
 /* category chips row under search */
 .chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; }
@@ -930,8 +789,7 @@ button { font: inherit; cursor: pointer; }
 @media (max-width: 560px) {
   body { font-size: 16px; }
   .wrap { padding: 0 18px; }
-  .nav-inner { padding: 0 18px; }
-  .hero-cta .btn-primary, .hero-cta .btn-ghost { flex: 1 1 auto; }
+  .hero-cta .btn { flex: 1 1 auto; }
   .section-head--row { align-items: flex-start; }
 }
 @media (max-width: 360px) {
