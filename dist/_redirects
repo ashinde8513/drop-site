@@ -1,0 +1,16 @@
+# Old Expo-app paths (pre-cutover URLs must not 404)
+/legal/privacy  /privacy  301
+/legal/terms    /terms    301
+
+# App share/deep-link paths (deepLinks.ts contract). When the app is installed
+# the OS intercepts these via Universal/App Links; on the web they land here.
+/event/*  /event  200
+/plan/:id   /share-plan.html  302
+/onboarding /download.html  302
+
+# /app* redirect removed — the standalone post-login web app (ported Prism
+# design SPA) is served natively by Pages from /app/.
+
+# Browser account shell lives on app.trydropapp.com; the public site stays browse-first.
+/login      /account.html  302
+/login.html /account.html  302

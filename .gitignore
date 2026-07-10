@@ -6,3 +6,5 @@ playwright/.cache/
 dist/
 supabase/.temp/
 design-drop/Drop Website.dc.html
+!dist/_redirects
+!dist/_headers

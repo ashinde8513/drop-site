@@ -1,25 +1,26 @@
-// Static browser account shell. No Expo web proxy.
+// Standalone post-login web app (the ported Prism design SPA) lives at /app/ on
+// the drop-site Pages project. This Worker makes app.trydropapp.com serve it:
+// asset paths (contain a ".") map into /app/<path>, every extensionless path is
+// a client-side route and gets the SPA shell. trydropapp.com/app* passes through
+// to Pages directly (no more redirect to /account.html).
 const SITE_ORIGIN = 'https://trydropapp.com';
-const ACCOUNT_HOST = 'app.trydropapp.com';
-const ACCOUNT_PATH = '/account';
-const WEBSITE_LOGIN_PATH = '/account.html';
+const APP_HOST = 'app.trydropapp.com';
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    if (url.hostname === ACCOUNT_HOST) {
+    if (url.hostname === APP_HOST) {
       const upstream = new URL(SITE_ORIGIN);
-      const isShellRoute = isAccountRoute(url.pathname);
-      upstream.pathname = isShellRoute ? ACCOUNT_PATH : url.pathname;
+      const isAsset = url.pathname.indexOf('.') !== -1;
+      upstream.pathname = isAsset ? '/app' + url.pathname : '/app/';
       upstream.search = url.search;
       const response = await fetch(new Request(upstream.toString(), request));
       const headers = new Headers(response.headers);
-      // trydropapp.com's zone Browser Cache TTL would otherwise stamp a 4h
-      // max-age on css/js, serving stale assets against fresh HTML (the
-      // cross-browser split). Force revalidation: no-store for the auth shell,
-      // no-cache (etag 304) for assets so deploys take effect immediately.
-      headers.set('Cache-Control', isShellRoute ? 'no-store, no-cache, max-age=0' : 'no-cache');
+      // Zone Browser Cache TTL would stamp 4h max-age on css/js, serving stale
+      // assets against fresh HTML. no-store for the shell, no-cache (etag 304)
+      // for assets so deploys take effect immediately.
+      headers.set('Cache-Control', isAsset ? 'no-cache' : 'no-store, no-cache, max-age=0');
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -27,23 +28,7 @@ export default {
       });
     }
 
-    if (url.hostname === 'trydropapp.com' && url.pathname !== '/app' && !url.pathname.startsWith('/app/')) {
-      return fetch(request);
-    }
-
-    const redirectTarget = new URL(WEBSITE_LOGIN_PATH + url.search, SITE_ORIGIN).toString();
-    return Response.redirect(redirectTarget, 302);
+    // trydropapp.com/app and /app/... serve the deployed app straight from Pages.
+    return fetch(request);
   },
 };
-
-function isAccountRoute(pathname) {
-  if (
-    pathname === ACCOUNT_PATH ||
-    pathname === '/account.html' ||
-    pathname === '/login' ||
-    pathname === '/signup'
-  ) return true;
-  if (pathname === '/' || pathname === '') return true;
-  if (pathname.indexOf('.') !== -1) return false;
-  return true;
-}

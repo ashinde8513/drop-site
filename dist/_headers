@@ -1,0 +1,14 @@
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+
+# Revalidate all static assets so a new deploy never serves stale CSS/JS
+# against fresh HTML (the two-browser mismatch). no-cache = browser still
+# caches but must revalidate via etag → cheap 304 when unchanged.
+/*.css
+  Cache-Control: no-cache
+
+/*.js
+  Cache-Control: no-cache
+
+/*.html
+  Cache-Control: no-cache
