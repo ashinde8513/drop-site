@@ -26,10 +26,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen's root View (find via `grep -ri recap DropApp/src --include=*.tsx -l`), device-QA the burst + the reduce-motion skip, then merge per the app merge gate. (Hero effects already LIVE on trydropapp.com — deploy `a367ae37`, verified 2026-07-08.)
-2. **Founder QA:** hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, sign in with a real Drop account, confirm dashboard shows profile/shows/followed artists/venues.
-2. **Founder QA:** hard-refresh `https://trydropapp.com`, confirm header `Log in` opens `/account.html`, then sign into that page with a real Drop account and confirm the dashboard shows profile, shows, followed artists, and followed venues.
-3. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property https://trydropapp.com verified + sitemap submitted in GSC 2026-07-06). Also grant bing.com in the Claude-in-Chrome extension if you want agents to drive it next time. Then check GSC sitemap status flipped from "Couldn't fetch" to Success (GSC → Sitemaps); if still failing after ~24h, inspect content-type served by CF Pages.
+1. **Finish the Prism web-shell redesign ingest** on branch `redesign/prism-web-shell`: collect the 4 in-flight subagent tracks (app/ SPA port, index/events/event, artists/artist/venues/venue, account+city/genre+share-*+download/about/promoters), fix the flagged XSS in artist.html (build friends-teaser DOM without innerHTML interpolation of a.name), commit per track, run `npm test`, fix reds, refresh `dist/`, open PR "Prism web-shell redesign".
+2. **Founder:** review the redesign PR + preview, then give explicit deploy go (`npx wrangler pages deploy dist --project-name=drop-site --branch=main`); after deploy, decide app.trydropapp.com repoint → `/app/` + retire the drop-web Expo export project.
+3. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+4. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property verified + sitemap in GSC 2026-07-06); recheck GSC sitemap status after.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
@@ -96,6 +96,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-09 — Claude — Full Prism web-shell redesign ingest (IN PROGRESS, branch `redesign/prism-web-shell`)
+- **Changed:** Whole-site replacement per founder directive ("literally everything") from the finished claude.ai design (design-drop/"Drop Website.dc.html", 49 screens, desktop+mobile). Committed so far: `design-drop/INGEST_PLAN.md` (scope/entity-split: website standalone on Supabase, Expo mobile-only), `shell.css` (web-shell component layer, token-pure, aa490da), legal/link/404/tests (6e93492). IN FLIGHT via 4 parallel subagents: `app/` (post-login web app ported from the design SPA — index/app.js/app.css/tokens.css, mock state), core browse (index/events/event), artist+venue pages, auth+acquisition (account states, city/genre SEO templates, share-plan/recap/wrapped, download/about/promoters). account.html keeps the Codex Supabase shell wiring (login/dashboard via RLS).
+- **Tested:** shell.css verified token-pure (0 hexes, 0 undefined vars); track-4 pages Playwright-checked on a scratch server (7/7, console-clean); full `npm test` NOT yet run (pages in flux) — everything in flight is **unverified** until tracks land.
+- **Remaining:** collect + commit the 4 in-flight tracks; run `npm test` (fix reds); design-auditor pass; open PR "Prism web-shell redesign"; Arya review → deploy (manual `dist/` mirror + wrangler, founder-gated) → repoint app.trydropapp.com Worker at `/app/` and retire the Expo web export; follow-on: wire `app/` to Supabase (replace mock state).
+- **Next steps (ranked):**
+  1. On branch `redesign/prism-web-shell`: collect the 4 subagent tracks (files listed above), commit per track, then `npm test` in /Users/aryashinde/Developer/Drop/drop-website and fix failures.
+  2. Refresh `dist/` mirror (`cp` changed files; rm removed ones), open PR "Prism web-shell redesign", get Arya review + explicit deploy go.
+  3. After deploy: repoint the drop-app-path Worker so app.trydropapp.com serves `/app/`; retire drop-web (Expo export) CF Pages project; then Supabase wiring for `app/` mock state.
+
 ### 2026-07-08 — Claude (Opus) — Native hero effects BUILT + spec (not yet deployed)
 - **Changed:** spec `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md` (29efed8); then implemented (commit 2b8dbc1): **A1** hero flip-words — new `flipwords.js` cycles the h1 word (shows/sets/drops), reserves widest-word width so copy doesn't reflow, static under reduced-motion; hero h1 in `index.html` wraps the word in `<span class="flip" data-flip>`; `.flip` iridescent gradient text in `site.css`. **A2** aurora — `.aurora` CSS glow (Prism cyan/magenta radial gradients, `aurora-drift` keyframes) behind `.discover-head`, `<div class="aurora">` added, static under reduced-motion. `playwright.config.ts` → `reducedMotion:'reduce'` for deterministic hero. `BACKLOG.md` points at `prism-tokens/DESIGN_RESOURCES.md`.
 - **Context:** reviewed 3 UI-inspiration sites (refero.design, Aceternity, Componentry) — neither imports (site = vanilla HTML, app = RN), so effects reimplemented natively + Prism-tokened + reduced-motion guarded, zero deps. Cross-repo (this session): `prism-tokens/DESIGN_RESOURCES.md` created (d4fbff2); resonance BACKLOG pointer (5a61a44); app `<RecapCelebration />` confetti component → Drop-App PR #146 (unwired, tsc-green). Backlogged: site moving-cards (needs real logos). Cut: app always-on animated hero.
@@ -111,8 +120,3 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Tested:** `npm test` (46/46 pass, desktop + mobile-safari) in this environment.
 - **Remaining:** deploy with `CLOUDFLARE_API_TOKEN` and founder-level QA of live auth callback return flow.
 - **Next:** see Exact next step above.
-
-### 2026-07-08 — Codex — Login page routing/cache hardening
-- **Changed:** `workers/app-path/worker.js` now serves `app.trydropapp.com` login/sign-up/account shell routes from `/account.html` (explicit, non-extensionless route) and stamps shell responses with `Cache-Control: no-store, no-cache, max-age=0` to avoid stale login UI from CDN/browser cache.
-- **Changed:** `/_headers` now enforces same no-cache headers for `/account.html`, `/account.css`, and `/account.js`.
-- **Tested:** local path-rewrite checks and project diff review; Playwright suite cannot run in this environment because local test server binding is blocked by sandbox networking policy.
