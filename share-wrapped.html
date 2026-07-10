@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drop Wrapped</title>
+  <meta name="description" content="See a year in shows, wrapped — then get your own on Drop." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex" />
+
+  <meta property="og:title" content="Drop Wrapped" />
+  <meta property="og:description" content="See a year in shows, wrapped — then get your own on Drop." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://trydropapp.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trydropapp" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+</head>
+<body>
+  <main class="share-wrap">
+    <div class="share-glow" style="width:560px; height:560px; background:radial-gradient(circle,rgba(226,77,255,0.24),transparent 62%); top:-200px; right:-100px;"></div>
+    <div class="share-glow" style="width:480px; height:480px; background:radial-gradient(circle,rgba(182,255,106,0.18),transparent 62%); bottom:-220px; left:-120px; animation-direction:reverse; animation-duration:12s;"></div>
+    <div style="position:relative; width:100%; max-width:460px; text-align:center;">
+      <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
+
+      <div class="share-wrapped-card" style="background:linear-gradient(160deg,#4d1c4a,#1c274d 55%,#0d3b52);">
+        <div class="wsc__date" id="wr-eyebrow">MAYA'S 2026 WRAPPED</div>
+        <div class="share-wrapped-num" id="wr-shows">52</div>
+        <div style="font-size:var(--fs-md); color:var(--text-secondary); margin-bottom:var(--sp-lg);" id="wr-sub">shows this year · 141 artists</div>
+        <div class="share-wrapped-stats">
+          <div><div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-xl); color:var(--text);" id="wr-artist">ODESZA</div><div class="metric__label" style="color:var(--text-secondary);">Top artist</div></div>
+          <div><div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-xl); color:var(--attended);" id="wr-genre">Melodic</div><div class="metric__label" style="color:var(--text-secondary);">Top genre</div></div>
+        </div>
+        <div style="text-align:left;">
+          <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-secondary); margin-bottom:6px;">
+            <span id="wr-percentile-label">Top 2% of Denver ravers</span><span style="color:var(--accent);" id="wr-percentile-num">98th</span>
+          </div>
+          <div class="share-wrapped-bar-track"><div class="share-wrapped-bar-fill" id="wr-bar" style="width:98%;"></div></div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md); color:var(--text);">How does your year compare?</div>
+      <a class="btn btn--primary btn--block" id="wr-join" href="/account.html">Get your Drop Wrapped</a>
+      <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var friend = p.get('friend') || 'Maya';
+      var friendHandle = p.get('u') || friend.toLowerCase().replace(/[^a-z0-9]/g, '');
+      var year = p.get('year') || '2026';
+      var shows = p.get('shows') || '52';
+      var artists = p.get('artists') || '141';
+      var topArtist = p.get('topartist') || 'ODESZA';
+      var topGenre = p.get('topgenre') || 'Melodic';
+      var city = p.get('city') || 'Denver';
+      var percentile = Math.max(1, Math.min(99, parseInt(p.get('percentile') || '98', 10)));
+
+      document.title = friend + "'s " + year + ' Drop Wrapped';
+      document.getElementById('wr-eyebrow').textContent = friend.toUpperCase() + "'S " + year + ' WRAPPED';
+      document.getElementById('wr-shows').textContent = shows;
+      document.getElementById('wr-sub').textContent = 'shows this year · ' + artists + ' artists';
+      document.getElementById('wr-artist').textContent = topArtist;
+      document.getElementById('wr-genre').textContent = topGenre;
+      document.getElementById('wr-percentile-label').textContent = 'Top ' + (100 - percentile) + '% of ' + city + ' ravers';
+      document.getElementById('wr-percentile-num').textContent = percentile + (percentile === 1 ? 'st' : percentile === 2 ? 'nd' : percentile === 3 ? 'rd' : 'th');
+      document.getElementById('wr-bar').style.width = percentile + '%';
+      document.getElementById('wr-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+    })();
+  </script>
+</body>
+</html>

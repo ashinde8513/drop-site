@@ -36,10 +36,12 @@ const PAGES = [
   { path: '/account.html', title: /Log In \| Drop/ },
   { path: '/city.html', title: /EDM Shows in .+\| Drop/ },
   { path: '/404.html', title: /404 — Page not found \| Drop/ },
-  // ponytail: genre.html, share-plan/recap/wrapped.html, app/index.html are
-  // in-scope per INGEST_PLAN (tracks 3/A) but not yet landed on disk as of
-  // this pass — add their PAGES entries in the same commit that ships them,
-  // not speculatively (a guessed title here would just be a future false-red).
+  { path: '/genre.html', title: /Events Near .+\| Drop/ },
+  { path: '/share-plan.html', title: /Drop/ },
+  { path: '/share-recap.html', title: /Drop/ },
+  { path: '/share-wrapped.html', title: /Drop/ },
+  // ponytail: app/index.html is in-scope per INGEST_PLAN (track A) but owned
+  // by a different in-flight track — add its PAGES entry in that track's commit.
 ];
 
 // event/venue/artist are param-driven detail templates (?id=, ?name=&city=).
