@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-08
+Last updated: 2026-07-10
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -26,12 +26,19 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder QA the live redesign + app**: trydropapp.com (design landing + .wn nav sitewide, deploy `24cc5a21`), app.trydropapp.com (the ported design SPA, REAL Supabase auth/events/RSVP/follows/My Shows — sign in with a real account and exercise an RSVP + follow to verify the write paths, which are shape-confirmed but never exercised against prod). Report anything off.
-2. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore (Worker + DNS bypass it); delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
-3. **Schema design for the social features** (founder decision): crew/plans/chat/wallet/wrapped screens run on demo data — real versions need new Supabase tables + RLS. Scope one feature first (plans?) before building.
-4. **Resubmit sitemap in GSC** (now 27 URLs incl. 11 city + 6 genre acquisition pages) + the standing Bing Webmaster import.
-3. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
-4. **Founder: Bing Webmaster Tools** — bing.com/webmasters → "Import from Google Search Console" (OAuth grant; property verified + sitemap in GSC 2026-07-06); recheck GSC sitemap status after.
+1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `76b661c5`, commit f591340): sign in with a real account and exercise (a) an artist claim submit (artist page → "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
+2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
+3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
+4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
+5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
+6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-10 session — design iteration round 2 (LIVE, deploy `76b661c5`)
+- Landing: honest proof line ("Tracking 1,500+ shows across 11 cities") replaces invented 40k count; hero→section gradient seam + spacing; centered event grid all breakpoints; inline city dropdown in "Happening in {city}" synced with nav pill.
+- Artist public page: verified badge, Merch/Website pills (new artists.merch_url/website_url/verified columns), claim handoff link → app.trydropapp.com/?claim={id}. DOM-built, no innerHTML interpolation.
+- SPA: Wrapped rebuilt on REAL attendance history (2026/All-time modes, canvas story-card PNG download, honest empty state; demo WRAPPED mock deleted); artist claim 3-step wizard → artist_claims insert (dup→pending), owner Edit-links modal (RLS-scoped), ?claim= deep link.
+- Supabase migrations applied: artists +merch_url/website_url/claimed_by/verified, artist_claims table + RLS, admin RPC review_artist_claim (security definer; approval sets verified/claimed_by, creates artist from proposed_name).
+- 68/68 Playwright green (5 new tests). Design doc "Website design prompt" holds the same features (verified end-to-end in preview) + all six landing fixes.
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
