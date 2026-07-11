@@ -88,6 +88,66 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('#home-grid')).toHaveCount(1);
   });
 
+  test('hero proof line is the honest tracking stat, not a fabricated user count', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('.hero-proof')).toContainText('Tracking');
+    await expect(page.locator('.hero-proof')).toContainText('1,500+');
+    await expect(page.locator('.hero-proof')).toContainText('11 cities');
+    await expect(page.locator('.hero-proof')).not.toContainText('40,000');
+  });
+
+  test('"Happening in {city}" heading has a working city dropdown in sync with the nav pill', async ({ page }) => {
+    await page.goto('/index.html');
+    const headingBtn = page.locator('h2 .city-head-btn');
+    await expect(headingBtn).toBeVisible();
+    await expect(headingBtn.locator('.loc-city')).toHaveText('Denver');
+    await headingBtn.click();
+    const pop = page.locator('h2 .loc-pop');
+    await expect(pop).toBeVisible();
+    await pop.locator('[data-city="Seattle"]').click();
+    await page.waitForLoadState('load');
+    for (const label of await page.locator('.loc-city').all()) {
+      await expect(label).toHaveText('Seattle');
+    }
+  });
+
+  test('event card grid is centered, not left-flowing', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('#home-grid')).toHaveCSS('justify-content', 'center');
+  });
+
+  test('artist page renders verified badge, merch/website pills, and a claim-profile link', async ({ page }) => {
+    // Live data has no verified/merch/website rows populated yet — mock the
+    // Supabase response so this exercises the new artist.html render branches
+    // deterministically instead of depending on DB contents.
+    const fakeId = '04b70676-c8aa-408d-9470-0985b8fe8d3d';
+    await page.route('**/rest/v1/artists?**', async (route) => {
+      if (route.request().url().includes('id=eq.')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([{
+            id: fakeId, name: 'Test Artist', genres: ['house'], image_url: null,
+            merch_url: 'https://shop.example.com', website_url: 'https://example.com', verified: true,
+          }]),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/artist.html?id=${fakeId}`);
+    await expect(page.locator('.art-name')).toContainText('Test Artist');
+    await expect(page.locator('.art-verified')).toHaveAttribute('aria-label', 'Verified artist');
+    await expect(page.locator('a.art-linkpill[href="https://example.com"]')).toBeVisible();
+    await expect(page.locator('a.art-linkpill[href="https://shop.example.com"]')).toBeVisible();
+    const claim = page.locator('.art-claim');
+    await expect(claim).toContainText('Are you Test Artist?');
+    await expect(claim).toHaveAttribute('href', `https://app.trydropapp.com/?claim=${fakeId}`);
+  });
+
   test('legal links from homepage resolve', async ({ page }) => {
     await page.goto('/index.html');
     for (const href of ['/privacy.html', '/terms.html']) {

@@ -41,6 +41,11 @@
     .art-hero-inner { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--sp-xl); display: flex; align-items: flex-end; gap: var(--sp-xl); flex-wrap: wrap; }
     .art-avatar { width: 112px; height: 112px; border-radius: 50%; flex: 0 0 auto; object-fit: cover; box-shadow: 0 0 0 3px var(--accent); background-image: var(--grad-brand); }
     .art-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px,5vw,48px); letter-spacing: var(--tr-tight); line-height: 1; margin: 4px 0 0; color: var(--text); }
+    .art-verified { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 8px; vertical-align: middle; border-radius: 50%; background: var(--grad-glow-fill); color: var(--ink); font-size: 12px; font-weight: 900; box-shadow: var(--shadow-glow); flex: 0 0 auto; }
+    .art-links { display: flex; gap: var(--sp-sm); flex-wrap: wrap; margin-top: 10px; }
+    .art-linkpill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text); font-size: var(--fs-sm); font-weight: 600; }
+    .art-claim { display: block; font-size: var(--fs-sm); color: var(--text-muted); }
+    .art-claim .accent { color: var(--accent); font-weight: 600; }
     .art-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--fs-sm); text-decoration: none; margin: var(--sp-lg) 0; }
     .art-back:hover { color: var(--text); }
     .art-teaser { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--sp-lg); background: var(--social-glass); border: 1px solid var(--social-glass-border); border-radius: var(--r-md); flex-wrap: wrap; }
@@ -229,7 +234,36 @@
         var info = D.el('div');
         info.style.flex = '1'; info.style.minWidth = '240px';
         info.appendChild(D.el('div', 'wsc__date', genreLabel));
-        info.appendChild(D.el('h1', 'art-name', a.name));
+
+        // Name + verified badge — built with createTextNode/DOM, never innerHTML
+        // (artist name is untrusted data from Supabase).
+        var nameEl = D.el('h1', 'art-name');
+        nameEl.appendChild(document.createTextNode(a.name));
+        if (a.verified) {
+          var badge = D.el('span', 'art-verified', '✓');
+          badge.setAttribute('aria-label', 'Verified artist');
+          badge.title = 'Verified artist';
+          nameEl.appendChild(badge);
+        }
+        info.appendChild(nameEl);
+
+        // Merch / Website — pill links, only when the artist has a real URL.
+        var websiteUrl = D.safeUrl(a.website_url);
+        var merchUrl = D.safeUrl(a.merch_url);
+        if (websiteUrl || merchUrl) {
+          var linkRow = D.el('div', 'art-links');
+          if (websiteUrl) {
+            var webLink = D.el('a', 'art-linkpill', '🔗 Website');
+            webLink.href = websiteUrl; webLink.target = '_blank'; webLink.rel = 'noopener';
+            linkRow.appendChild(webLink);
+          }
+          if (merchUrl) {
+            var merchLink = D.el('a', 'art-linkpill', '🛒 Merch');
+            merchLink.href = merchUrl; merchLink.target = '_blank'; merchLink.rel = 'noopener';
+            linkRow.appendChild(merchLink);
+          }
+          info.appendChild(linkRow);
+        }
         heroInner.appendChild(info);
 
         // Follow is a signed-in action — login-gate to account.html.
@@ -319,6 +353,18 @@
         // Only when there ARE upcoming shows — otherwise we'd stack two dashed
         // empty-state boxes (empty "Upcoming" + empty "Fans also follow").
         if (events.length) loadFansAlsoSee(genreLabel, a.id);
+
+        // ---- Claim profile — always available; the wizard lives in the
+        // post-login app. Name is untrusted data, so build with createTextNode. ----
+        var claimWrap = D.el('div', 'wrap');
+        claimWrap.style.paddingTop = 'var(--sp-xl)';
+        claimWrap.style.paddingBottom = 'var(--sp-xxl)';
+        var claimLink = D.el('a', 'art-claim');
+        claimLink.href = 'https://app.trydropapp.com/?claim=' + encodeURIComponent(a.id);
+        claimLink.appendChild(document.createTextNode('Are you ' + a.name + '? '));
+        claimLink.appendChild(D.el('span', 'accent', 'Claim this profile →'));
+        claimWrap.appendChild(claimLink);
+        host.appendChild(claimWrap);
       }
 
       function loadFansAlsoSee(genre, excludeId) {

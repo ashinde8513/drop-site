@@ -116,7 +116,7 @@
   };
 
   Drop.fetchArtist = function (id) {
-    var artistP = get('artists?' + q({ select: 'id,name,genres,image_url', id: 'eq.' + id, limit: 1 }));
+    var artistP = get('artists?' + q({ select: 'id,name,genres,image_url,merch_url,website_url,verified', id: 'eq.' + id, limit: 1 }));
     // Events for this artist, upcoming. `!inner` on the join table makes the
     // filter an actual server-side narrowing of parent rows (plain
     // `event_artists.artists.id=eq.X` only narrows the embed, not which

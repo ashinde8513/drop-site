@@ -376,8 +376,9 @@ button { font: inherit; cursor: pointer; }
    Event card (.wsc-card) — the shell show card, the workhorse
    ======================================================================== */
 .grid-events {
-  /* shell grid: cards flow from the LEFT so a sparse feed never orphans one card */
-  display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 16px;
+  /* Centered at every breakpoint (design rule) — a sparse feed reads as
+     curated, not left-aligned/orphaned. Cards keep their own capped width. */
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
 }
 /* Shell show card — uniform 300x340 image-forward unit (mirrors the app's WebShowCard) */
 .wsc-card {
@@ -517,8 +518,13 @@ button { font: inherit; cursor: pointer; }
    Hero (home) — corner glow is .share-glow (shell.css), ported straight
    from the design's floatGlow blobs rather than duplicated here.
    ======================================================================== */
-.hero { position: relative; padding: clamp(48px, 8vw, 96px) 0 0; overflow: hidden; }
+.hero { position: relative; padding: clamp(48px, 8vw, 96px) 0 clamp(96px, 10vw, 112px); overflow: hidden; }
 .hero .wrap { position: relative; z-index: 2; }
+/* Fade the hero into the next section instead of a hard seam at the ink edge. */
+.hero::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 180px; z-index: 1;
+  background: linear-gradient(180deg, transparent, var(--ink)); pointer-events: none;
+}
 .hero h1 {
   font-family: var(--font-display); font-weight: 700;
   font-size: clamp(40px, 5.5vw, 76px); line-height: 1.02;

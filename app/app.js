@@ -381,6 +381,49 @@
     };
   }
 
+  // Canvas render of the Wrapped 9:16 share card — a from-scratch redraw
+  // (not a DOM screenshot; no html2canvas dependency) good enough for
+  // "Download image". Native share (wrappedShare handler) covers "post to
+  // story" without needing a pixel-perfect canvas clone of the on-screen card.
+  function renderWrappedCard(wr) {
+    var W = 720, H = 1280;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#2b1c4d'); grad.addColorStop(0.55, '#0d3b52'); grad.addColorStop(1, '#143a22');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 34px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText('◆ DROP', 56, 100);
+
+    ctx.fillStyle = '#4DE2FF';
+    ctx.font = '800 24px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText(wr.badge, 56, 180);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 140px "Space Grotesk", system-ui, sans-serif';
+    ctx.fillText(wr.shows, 52, 360);
+
+    ctx.fillStyle = '#C4CCD8';
+    ctx.font = '400 28px "Sora", system-ui, sans-serif';
+    ctx.fillText(wr.showsLabel, 56, 410);
+
+    var rows = [['Top artist', wr.topArtist], ['Top venue', wr.topVenue], ['Top genre', wr.topGenre]];
+    var y = H - 260;
+    rows.forEach(function (pair) {
+      ctx.fillStyle = '#7C8597';
+      ctx.font = '400 24px "Sora", system-ui, sans-serif';
+      ctx.fillText(pair[0], 56, y);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 26px "Space Grotesk", system-ui, sans-serif';
+      ctx.fillText(String(pair[1] || '—'), 260, y);
+      y += 60;
+    });
+    return canvas;
+  }
+
   // =======================================================================
   // DESIGN COMPONENT (verbatim) — Drop Website.dc.html lines 2933-4105,
   // byte-for-byte unchanged: state, all 49 screens' derived render values,
@@ -450,6 +493,12 @@ class Component extends DCLogic {
     activeArtistId: null, venueCity: '',
     realEvents: [], eventsLoading: true, eventsError: null,
     myShowsRows: [], realShowsCount: null, realArtistsCount: null,
+    // artist detail (real row) + claim/edit-links flow
+    activeArtistRow: null, claimStatus: null, pendingClaimArtistId: null,
+    claimStep: 0, claimArtist: null, claimArtistId: null, claimHasListing: true,
+    claimNotListed: false, claimNewName: '', claimWebsite: '', claimSocial: '', claimEmail: '',
+    claimSubmitted: false, claimBusy: false, claimError: '',
+    editLinksOpen: false, editMerch: '', editWebsite: '',
   };
 
   EVENTS = [
@@ -586,11 +635,6 @@ class Component extends DCLogic {
       { who:'Priya', color:'var(--going)', text:'Who’s in for dinner beforehand?', time:'4d' },
     ]},
   ];
-
-  WRAPPED = {
-    'This year': { shows:'47', artists:'128', hours:'186', topArtist:'ODESZA', topVenue:'Red Rocks', topGenre:'Melodic', percentile:96, spend:'$1,240', newArtists:'34' },
-    'All time': { shows:'213', artists:'440', hours:'820', topArtist:'Lane 8', topVenue:'Mission Ballroom', topGenre:'House', percentile:99, spend:'$6,180', newArtists:'160' },
-  };
 
   LEDGER = [
     { id:'l1', label:'Referral — Ren joined Drop', date:'Jul 2', amount:'+1 month', state:'confirmed' },
@@ -794,7 +838,7 @@ class Component extends DCLogic {
   loadMyShows(uid){
     if (!supa) return;
     supa.from('attendance')
-      .select('status, created_at, events(id,title,date,venue_name,city,ticket_url,time_tbd,is_festival,event_artists(artists(genres)))')
+      .select('status, created_at, events(id,title,date,venue_name,city,ticket_url,time_tbd,is_festival,event_artists(artists(id,name,genres)))')
       .eq('user_id', uid)
       .order('created_at', { ascending:false })
       .limit(100)
@@ -807,11 +851,66 @@ class Component extends DCLogic {
     if (!supa) return;
     supa.auth.getSession().then(({ data })=>{
       const session = data && data.session;
-      if (!session) return;
+      if (!session) { if (this.state.pendingClaimArtistId) this.openGate('Log in to claim your profile'); return; }
       this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
+      this.maybeResumeClaimDeepLink();
     });
+  }
+
+  // ===== Artist detail + claim/edit-links (PHASE 1 real writes) ==========
+  // Single entry point for every "go to an artist page" call site (lineup
+  // chips, similar-artists, pick-artists grid, seo genre page) so the real
+  // row fetch happens exactly once, in one place, no matter how the user
+  // got there — same root-cause-fix shape as the RSVP/follow writes above.
+  openArtist(name, id){
+    this.setState({ screen:'artist', activeArtist:name, activeArtistId:id||null, activeArtistRow:null, claimStatus:null });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+    this.loadArtistDetail(name, id);
+  }
+  loadArtistDetail(name, id){
+    if (!supa) return;
+    const q = supa.from('artists').select('id,name,merch_url,website_url,claimed_by,verified');
+    (id ? q.eq('id', id) : q.eq('name', name)).maybeSingle().then(({ data, error })=>{
+      if (error) { console.error('[app] artist detail load failed:', error.message); return; }
+      this.setState({ activeArtistRow: data || null, activeArtistId: (data && data.id) || id || null });
+      if (data && this.state.userId) this.loadClaimStatus(data.id);
+    });
+  }
+  loadClaimStatus(artistId){
+    if (!supa || !this.state.userId) return;
+    supa.from('artist_claims').select('status').eq('artist_id', artistId).eq('user_id', this.state.userId).maybeSingle()
+      .then(({ data, error })=>{ if (error) { console.error('[app] claim status load failed:', error.message); return; } this.setState({ claimStatus: data ? data.status : null }); });
+  }
+  // Opens the claim wizard for whatever artist row is currently loaded
+  // (activeArtistRow/activeArtistId) — used both by the on-page "Claim this
+  // profile" link and the ?claim= deep link below.
+  startClaim(){
+    const row = this.state.activeArtistRow;
+    const hasListing = !!(row && row.id);
+    this.setState({
+      screen:'claim', claimStep:0, claimArtist:this.state.activeArtist, claimArtistId:hasListing?row.id:null,
+      claimHasListing:hasListing, claimNotListed:!hasListing, claimNewName:hasListing?'':this.state.activeArtist,
+      claimWebsite:'', claimSocial:'', claimEmail:this.state.userEmail||'', claimSubmitted:false, claimError:'',
+    });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+  }
+  openClaimFor(artistId){
+    if (!supa) return;
+    supa.from('artists').select('id,name,merch_url,website_url,claimed_by,verified').eq('id', artistId).maybeSingle().then(({ data, error })=>{
+      if (error || !data) { this.flash('Could not find that artist'); return; }
+      this.setState({ activeArtist:data.name, activeArtistId:data.id, activeArtistRow:data });
+      this.startClaim();
+    });
+  }
+  // ?claim=<artistId> deep link from the public site — resumed once a
+  // session exists (right after login, or immediately if already logged in).
+  maybeResumeClaimDeepLink(){
+    const id = this.state.pendingClaimArtistId;
+    if (!id) return;
+    this.setState({ pendingClaimArtistId:null });
+    this.openClaimFor(id);
   }
   logout(){
     if (supa) supa.auth.signOut().catch(()=>{});
@@ -905,8 +1004,8 @@ class Component extends DCLogic {
     // to artist_follows; falls back to name-only for the this.EVENTS stub.
     const lineupArtists = ae.lineupArtists || [];
     const lineup = lineupArtists.length
-      ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>{ this.setState({screen:'artist', activeArtist:a.name, activeArtistId:a.id}); if(typeof window!=='undefined') window.scrollTo(0,0); } }))
-      : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>{ this.setState({screen:'artist', activeArtist:name, activeArtistId:null}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
+      ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(a.name, a.id) }))
+      : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(name, null) }));
     // ponytail: no real seller-comparison feed wired (that's the separate
     // price-comparison project) — these rows are a synthetic estimate off
     // the one real price, same as the original mock. Guarded against events
@@ -958,7 +1057,7 @@ class Component extends DCLogic {
     const typeaheadGroups = searchEmpty ? [] : [
       { label:'Events', items: matched.slice(0,3).map(e=>({ icon:'♪', label:e.title, pick:()=>{ this.setState({screen:'event', activeId:e.id, query:''}); if(typeof window!=='undefined') window.scrollTo(0,0); } })) },
       { label:'Genres', items: this.GENRES.filter(g=>g.name.toLowerCase().includes(q)).map(g=>({ icon:'◆', label:g.name+' shows', pick:()=>this.setState({query:g.name}) })) },
-      { label:'Artists', items: this.ARTISTS_ALL.filter(a=>a.name.toLowerCase().includes(q)).slice(0,3).map(a=>({ icon:'♪', label:a.name, pick:()=>{ this.setState({screen:'artist', activeArtist:a.name, query:''}); if(typeof window!=='undefined') window.scrollTo(0,0); } })) },
+      { label:'Artists', items: this.ARTISTS_ALL.filter(a=>a.name.toLowerCase().includes(q)).slice(0,3).map(a=>({ icon:'♪', label:a.name, pick:()=>{ this.setState({query:''}); this.openArtist(a.name, null); } })) },
     ].filter(grp=>grp.items.length>0);
     const typeaheadOpen = !searchEmpty && typeaheadGroups.length>0;
 
@@ -1067,11 +1166,17 @@ class Component extends DCLogic {
     // ===== Artist page =====
     const artName = s.activeArtist;
     const artMeta = this.ARTIST_META[artName] || { genre:'Electronic', followers:'120K', hometown:'Touring', bio:artName+' is on the road now — follow to get an alert the moment they announce a show near you.' };
+    // PHASE 1 real row (loadArtistDetail): verified badge + merch/website
+    // links + claim ownership all come from the artists table, not the mock.
+    const artRow = s.activeArtistRow;
+    const artOwned = !!(artRow && s.userId && artRow.claimed_by === s.userId);
+    const artMerchUrl = (artRow && Drop && Drop.safeUrl(artRow.merch_url)) || '';
+    const artWebsiteUrl = (artRow && Drop && Drop.safeUrl(artRow.website_url)) || '';
     const artGrad = this.ARTIST_GRADS[(artName.length) % this.ARTIST_GRADS.length];
     const artShows = events.filter(e=>e.lineup.some(n=>n===artName));
     const artFollowing = !!s.following[artName];
     const artSimilarNames = ['Lane 8','RÜFÜS DU SOL','FISHER','Disclosure','Peggy Gou','Skrillex'].filter(n=>n!==artName).slice(0,5);
-    const artSimilar = artSimilarNames.map(n=>({ name:n, open:()=>{ this.setState({screen:'artist', activeArtist:n}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
+    const artSimilar = artSimilarNames.map(n=>({ name:n, open:()=>this.openArtist(n, null) }));
     // people-focused extras (deterministic from name so it's stable per artist)
     const artHash = artName.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
     const artMonthly = [ '2.4M','1.1M','860K','540K','3.2M','1.8M' ][artHash % 6];
@@ -1148,7 +1253,7 @@ class Component extends DCLogic {
     const artistGrid = artFiltered.map(a=>{
       const on = !!s.followArt[a.name];
       return { name:a.name, genre:a.genre, followers:a.followers, upcoming:a.upcoming,
-        open:()=>{ this.setState({screen:'artist', activeArtist:a.name}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+        open:()=>this.openArtist(a.name, null),
         label: on?'✓ Following':'＋ Follow', cls: on?'wsc__act is-going':'wsc__act',
         toggle:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>({ followArt:{...x.followArt, [a.name]: !x.followArt[a.name]} })); } };
     });
@@ -1214,17 +1319,82 @@ class Component extends DCLogic {
     const inviteList = this.FIND_PEOPLE.map(p=>{ const on=!!s.invited[p.id]; return { name:p.name, handle:p.handle, label: on?'Invited':'Invite', cls: on?'wsc__act is-going':'wsc__act',
       invite:()=>{ this.setState(x=>({ invited:{...x.invited, [p.id]:true} })); this.flash('Invite sent to '+p.name); } }; });
 
-    // ===== Wrapped =====
-    const wrappedTabs = ['This year','All time'].map(t=>({ label:t, cls: s.wrappedRange===t?'is-active':'', pick:()=>this.setState({wrappedRange:t}) }));
-    const wd = this.WRAPPED[s.wrappedRange];
-    const wr = { shows:wd.shows, hours:wd.hours, newArtists:wd.newArtists, topArtist:wd.topArtist, topVenue:wd.topVenue,
-      percentile:wd.percentile, topPct:(100-wd.percentile)+'%', pctFill:'width:'+wd.percentile+'%;' };
+    // ===== Wrapped — real data, two modes (This year / All time) =====
+    // Built off myRows (attendance ⋈ events, defined above in My Shows) —
+    // same "is this show in the past" test as My Shows > Past, since Wrapped
+    // only counts shows that already happened.
+    const wrappedYear = s.wrappedRange==='This year';
+    const wrappedCurYear = new Date().getFullYear();
+    const wrappedPastRows = myRows
+      .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))
+      .map(x=>x.ev)
+      .filter(ev=>ev.date); // undated shows can't be placed on a timeline
+    const wrappedRows = wrappedYear ? wrappedPastRows.filter(ev=>new Date(ev.date).getFullYear()===wrappedCurYear) : wrappedPastRows;
+    const wrappedEmpty = wrappedPastRows.length===0;
+    const tally = (list)=>{ const counts=new Map(); list.forEach(v=>{ if(v) counts.set(v,(counts.get(v)||0)+1); }); return [...counts.entries()].sort((a,b)=>b[1]-a[1]); };
+    const wrArtistNames = ev=>(ev.event_artists||[]).map(x=>x.artists&&x.artists.name).filter(Boolean);
+    const wrArtistCounts = tally(wrappedRows.flatMap(wrArtistNames));
+    const wrVenueCounts = tally(wrappedRows.map(ev=>ev.venue_name));
+    const wrGenreCounts = tally(wrappedRows.map(ev=>Drop && Drop.genreOf(ev)));
+    const wrRankColors = ['color:var(--accent);','color:var(--interested);','color:var(--text-muted);'];
+    const wrappedTopArtists = wrArtistCounts.slice(0,3).map(([name,n],i)=>({ rank:(i+1)+'', name, meta:n+' show'+(n===1?'':'s'), rankColor:wrRankColors[i]||'' }));
+    const wrappedTopVenues = wrVenueCounts.slice(0,3).map(([name,n],i)=>({ rank:(i+1)+'', name, meta:n+' show'+(n===1?'':'s'), rankColor:wrRankColors[i]||'' }));
+    const wrGenreMax = wrGenreCounts.length ? wrGenreCounts[0][1] : 1;
+    const wrappedTopGenres = wrGenreCounts.slice(0,3).map(([name,n])=>({ name, pct:Math.round(n*100/wrappedRows.length)+'%', barStyle:'width:'+Math.round(n*100/wrGenreMax)+'%;' }));
+
+    // month-by-month strip — year mode only
+    const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthCounts = MONTH_LABELS.map(()=>0);
+    wrappedRows.forEach(ev=>{ monthCounts[new Date(ev.date).getMonth()]++; });
+    const monthMax = Math.max(1, ...monthCounts);
+    let busiestIdx = 0; monthCounts.forEach((c,i)=>{ if(c>monthCounts[busiestIdx]) busiestIdx=i; });
+    const wrappedMonths = MONTH_LABELS.map((label,i)=>({ label, barStyle:'height:'+Math.round(monthCounts[i]/monthMax*100)+'%;background:'+(i===busiestIdx&&monthCounts[i]>0?'var(--grad-glow-fill)':'var(--surface-hi)')+';' }));
+
+    // first-ever show + years active — all-time mode only
+    const wrSortedAll = [...wrappedPastRows].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const wrFirst = wrSortedAll[0];
+    const wrFirstYear = wrFirst ? new Date(wrFirst.date).getFullYear() : wrappedCurYear;
+    const wrYearsActive = Math.max(1, wrappedCurYear - wrFirstYear + 1);
+
+    // ponytail: no per-show duration is tracked — "hours on the floor" is a
+    // flat 3.5h/show estimate (clearly labeled "est."), not measured. Upgrade
+    // to real numbers if/when check-in times exist.
+    const wrHours = Math.round(wrappedRows.length * 3.5);
+    const wrArtistSet = new Set(wrappedRows.flatMap(wrArtistNames));
+    const wrVenueSet = new Set(wrappedRows.map(ev=>ev.venue_name).filter(Boolean));
+
+    const wrappedTabs = [['This year', wrappedCurYear+' Wrapped'],['All time','All-time Wrapped']]
+      .map(([key,label])=>({ label, cls: s.wrappedRange===key?'is-active':'', pick:()=>this.setState({wrappedRange:key}) }));
+    const wr = {
+      shows: String(wrappedRows.length),
+      showsLabel: wrappedYear ? ('Shows in '+wrappedCurYear) : 'Shows all-time',
+      subhead: wrappedYear ? 'Your year in raving' : ('Every show since '+wrFirstYear),
+      badge: wrappedYear ? (wrappedCurYear+' WRAPPED') : 'ALL-TIME WRAPPED',
+      hours: String(wrHours),
+      topArtist: (wrArtistCounts[0]||[])[0] || '—', topVenue: (wrVenueCounts[0]||[])[0] || '—', topGenre: (wrGenreCounts[0]||[])[0] || '—',
+      busiestMonth: MONTH_LABELS[busiestIdx], busiestCount: String(monthCounts[busiestIdx]),
+      yearsActive: String(wrYearsActive), sinceYear: String(wrFirstYear),
+      firstTitle: wrFirst ? (wrFirst.title||'Untitled show') : '—',
+      firstVenue: wrFirst ? [wrFirst.venue_name, wrFirst.city].filter(Boolean).join(' · ') : '—',
+      firstDate: wrFirst ? ((Drop && Drop.fmtDate(wrFirst.date, wrFirst.time_tbd)) || '') : '',
+    };
     const wrappedStats = [
-      { value:wd.artists, label:'Artists seen', color:'' },
-      { value:wd.hours, label:'Hours on the floor', color:'color:var(--interested);' },
-      { value:wd.topGenre, label:'Top genre', color:'color:var(--going);' },
-      { value:wd.spend, label:'Spent on tickets', color:'color:var(--attended);' },
+      { value:String(wrArtistSet.size), label:'Artists seen', color:'' },
+      { value:wr.hours, label:'Hours on the floor (est.)', color:'color:var(--interested);' },
+      { value:wr.topGenre, label:'Top genre', color:'color:var(--going);' },
+      { value:String(wrVenueSet.size), label:'Venues visited', color:'color:var(--attended);' },
     ];
+
+    // ===== Claim artist profile (artist_claims insert) =====
+    const claimListed = !s.claimNotListed;
+    const claimTargetName = s.claimNotListed ? (s.claimNewName.trim() || 'your artist') : (s.claimArtist || '');
+    const claimTitles = ['Confirm the artist','Verify it’s you','Review & submit'];
+    const claimSubs = ['Tell us which profile you’re claiming.','Add official links so our team can verify you.','Double-check the details, then send it to our team.'];
+    const claimStepNum = s.claimStep+1;
+    const claimEmailShown = s.claimEmail.trim() || 'your email';
+
+    // ===== Edit artist links modal (owner-only artists.merch_url/website_url) =====
+    const editArtistName = s.activeArtist;
 
     // ===== Log a past show =====
     const laq = s.logArtist.trim().toLowerCase();
@@ -1330,7 +1500,7 @@ class Component extends DCLogic {
     const seoGenreGrad = seoGenreGradMap[seoGenre] || seoGenreGradMap.Techno;
     const genreShows = (events.filter(e=>e.genre===seoGenre).length ? events.filter(e=>e.genre===seoGenre) : events).slice(0,3);
     const genreArtistNames = { Techno:['Charlotte de Witte','Amelie Lens','Adam Beyer','ISOxo'], House:['FISHER','Chris Lake','Peggy Gou','John Summit'], Melodic:['ODESZA','Lane 8','RÜFÜS DU SOL','Tycho'], Bass:['Skrillex','Subtronics','ISOxo','Peekaboo'], Dubstep:['Subtronics','Peekaboo','ISOxo','Skrillex'], Trance:['Above & Beyond','Ilan Bluestone','Seven Lions','Gareth Emery'] };
-    const genreArtists = (genreArtistNames[seoGenre]||genreArtistNames.Techno).map(n=>({ name:n, open:()=>{ this.setState({screen:'artist', activeArtist:n}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
+    const genreArtists = (genreArtistNames[seoGenre]||genreArtistNames.Techno).map(n=>({ name:n, open:()=>this.openArtist(n, null) }));
     const relatedGenres = this.GENRES.filter(g=>g.name!==seoGenre).slice(0,4).map(g=>({ name:g.name, open:()=>{ this.setState({screen:'genre', activeGenre:g.name}); if(typeof window!=='undefined') window.scrollTo(0,0); } }));
 
     const shareEv = this.EVENTS[0];
@@ -1407,13 +1577,13 @@ class Component extends DCLogic {
     const legalSections = legalActive.body.map(b=>({ label:b.h, jump:(e)=>{ this.prevent(e); } }));
 
     return {
-      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharerecap' && s.screen!=='sharewrapped',
+      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharerecap' && s.screen!=='sharewrapped' && s.screen!=='claim',
       screenHome: s.screen==='home', screenLogin: s.screen==='login', screenSignup: s.screen==='signup',
       screenDiscover: s.screen==='discover', screenEvent: s.screen==='event',
       screenSearch: s.screen==='search', screenFestival: s.screen==='festival', screenActivation: s.screen==='activation',
       screenRsvpMoment: s.screen==='rsvpmoment',
       screenArtist: s.screen==='artist', screenVenue: s.screen==='venue', screenMyShows: s.screen==='myshows',
-      screenArtists: s.screen==='artists', screenVenues: s.screen==='venues',
+      screenArtists: s.screen==='artists', screenVenues: s.screen==='venues', screenClaim: s.screen==='claim',
       screenCrew: s.screen==='crew', screenPlan: s.screen==='plan', screenCrewBuilder: s.screen==='crewbuilder',
       screenInvite: s.screen==='invite', screenWrapped: s.screen==='wrapped',
       screenProfile: s.screen==='profile', screenEditProfile: s.screen==='editprofile',
@@ -1494,9 +1664,22 @@ class Component extends DCLogic {
       // artist / venue / my shows
       art: { name:artName, ...artMeta, gradStyle:'background-image:'+artGrad,
         monthly:artMonthly, hasSeen:artSeenCount>0, seenCount:artSeenCount+'x',
-        hasFriends:artFriendsSaw>0, friendsLabel:artFriendsSaw+' friends', rating:artRating, reviewCount:artReviewCount },
+        hasFriends:artFriendsSaw>0, friendsLabel:artFriendsSaw+' friends', rating:artRating, reviewCount:artReviewCount,
+        verified: !!(artRow && artRow.verified), hasMerch: !!artMerchUrl, merchUrl: artMerchUrl, hasWebsite: !!artWebsiteUrl, websiteUrl: artWebsiteUrl,
+        ownedByMe: artOwned, claimPending: s.claimStatus==='pending', canClaim: !artOwned && s.claimStatus!=='pending' },
       artShows, artHasShows: artShows.length>0, artSimilar, artReviews,
       artFollowLabel: artFollowing?'✓ Following':'＋ Follow', artFollowCls: artFollowing?'btn btn--secondary':'btn btn--primary',
+      // claim artist + owner links
+      claimForm: !s.claimSubmitted, claimSubmitted: s.claimSubmitted,
+      claimStep1: s.claimStep===0, claimStep2: s.claimStep===1, claimStep3: s.claimStep===2,
+      claimStepNum, claimTitle: claimTitles[s.claimStep]||claimTitles[0], claimSubtitle: claimSubs[s.claimStep]||claimSubs[0],
+      claimNextLabel: s.claimStep>=2 ? (s.claimBusy?'Submitting…':'Submit claim') : 'Continue',
+      claimArtistName: s.claimArtist, claimNotListed: s.claimNotListed, claimNewName: s.claimNewName, claimHasListing: s.claimHasListing,
+      claimWebsite: s.claimWebsite, claimSocial: s.claimSocial, claimEmail: s.claimEmail, claimError: s.claimError,
+      claimTargetName, claimEmailShown, claimWebsiteShown: s.claimWebsite.trim()||'—', claimSocialShown: s.claimSocial.trim()||'—', claimEmailReview: s.claimEmail.trim()||'—',
+      claimListedBorder: claimListed?'var(--accent)':'var(--border)', claimListedDot: claimListed?'var(--accent)':'var(--border-strong)', claimListedFill: claimListed?'var(--accent)':'transparent',
+      claimNotListedBorder: s.claimNotListed?'var(--accent)':'var(--border)', claimNotListedDot: s.claimNotListed?'var(--accent)':'var(--border-strong)', claimNotListedFill: s.claimNotListed?'var(--accent)':'transparent',
+      editLinksOpen: s.editLinksOpen, editMerch: s.editMerch, editWebsite: s.editWebsite, editArtistName,
       ven: { name:venName, ...venMeta, gradStyle:'background-image:'+venMeta.grad },
       venShows, venHasShows: venShows.length>0,
       venFollowLabel: venFollowing?'✓ Following':'＋ Follow venue', venFollowCls: venFollowing?'btn btn--secondary':'btn btn--primary',
@@ -1522,7 +1705,8 @@ class Component extends DCLogic {
       // invite
       inviteCount, inviteRemainLabel: inviteRemain===0?'Reward unlocked 🎉':inviteRemain+' more for a free month', inviteFillStyle:'width:'+(inviteCount/5*100)+'%;', inviteMilestones, inviteList,
       // wrapped
-      wrappedTabs, wr, wrappedStats,
+      wrappedTabs, wr, wrappedStats, wrappedYear, wrappedAllTime: !wrappedYear, wrappedEmpty, wrappedHasData: !wrappedEmpty,
+      wrappedTopArtists, wrappedTopVenues, wrappedTopGenres, wrappedMonths,
       // memories / recap / seen / tagged
       logArtist: s.logArtist, logArtistMatches, logArtistOpen, logVenue: s.logVenue, logVenueMatches, logVenueOpen, logStars,
       memorySlots,
@@ -1677,8 +1861,30 @@ class Component extends DCLogic {
       cbStart:()=>{ this.setState({screen:'plan', activePlan: (this.PLANS.find(p=>p.eventId===this.state.activeId)||this.PLANS[0]).id}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash('Plan started — your crew is notified'); },
       cbSkip:()=>{ this.go('event'); },
       inviteCopy:()=>this.flash('Invite link copied'),
-      wrappedShare:()=>this.flash('Wrapped card copied to share'),
-      wrappedDownload:()=>this.flash('Wrapped image downloaded'),
+      // ponytail: no image-perfect html-to-image lib — native share sheet
+      // (text+URL) for "post to story", canvas render (below) for the actual
+      // image download. Covers both asks without a screenshot dependency.
+      wrappedShare:()=>{
+        const text = 'My '+wr.badge+' on Drop — '+wr.shows+' shows, top artist '+wr.topArtist+'.';
+        const url = typeof location!=='undefined' ? location.origin+location.pathname : '';
+        if (typeof navigator!=='undefined' && navigator.share) { navigator.share({ title:'Drop Wrapped', text, url }).catch(()=>{}); return; }
+        if (typeof navigator!=='undefined' && navigator.clipboard) { navigator.clipboard.writeText(text+' '+url).then(()=>this.flash('Wrapped card copied to share')).catch(()=>this.flash('Could not copy — try again')); return; }
+        this.flash('Wrapped card copied to share');
+      },
+      wrappedDownload:()=>{
+        try {
+          const canvas = renderWrappedCard(wr);
+          canvas.toBlob((blob)=>{
+            if (!blob) { this.flash('Could not generate image'); return; }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'drop-wrapped-'+s.wrappedRange.replace(/\s+/g,'-').toLowerCase()+'.png';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(url), 4000);
+            this.flash('Wrapped image downloaded');
+          });
+        } catch (e) { console.error('[app] wrapped image render failed:', e.message); this.flash('Could not generate image'); }
+      },
       goArtist:(e)=>{ this.prevent(e); this.go('artist'); },
       goVenue:(e)=>{ this.prevent(e); this.go('venue'); },
       goMyShows:(e)=>{ this.prevent(e); this.go('myshows'); },
@@ -1697,6 +1903,60 @@ class Component extends DCLogic {
           p.then(r=>{ if (r && r.error) console.error('[app] artist_follows write failed:', r.error.message); });
         }
       },
+      // claim artist profile → artist_claims insert (RLS: user_id = own uid)
+      goClaim:(e)=>{
+        this.prevent(e);
+        if(!this.state.authed){ this.openGate('Log in to claim your profile'); return; }
+        this.startClaim();
+      },
+      claimPickListed:()=>this.setState({claimNotListed:false}),
+      claimPickNotListed:()=>this.setState({claimNotListed:true}),
+      setClaimNewName:(e)=>this.setState({claimNewName:e.target.value}),
+      setClaimWebsite:(e)=>this.setState({claimWebsite:e.target.value}),
+      setClaimSocial:(e)=>this.setState({claimSocial:e.target.value}),
+      setClaimEmail:(e)=>this.setState({claimEmail:e.target.value}),
+      claimNext:()=>{
+        const st=this.state;
+        if(st.claimStep===0 && st.claimNotListed && !st.claimNewName.trim()){ this.setState({claimError:'Enter an artist or project name.'}); return; }
+        if(st.claimStep<2){ this.setState(x=>({claimStep:x.claimStep+1, claimError:''})); return; }
+        if(!supa || !st.userId){ this.setState({claimError:'Log in to submit a claim.'}); return; }
+        const evidence = ['Website: '+(st.claimWebsite.trim()||'—'), 'Social: '+(st.claimSocial.trim()||'—')].join('\n');
+        const row = {
+          user_id: st.userId,
+          proposed_name: st.claimNotListed ? (st.claimNewName.trim()||null) : null,
+          artist_id: st.claimNotListed ? null : st.claimArtistId,
+          evidence, contact_email: st.claimEmail.trim() || null,
+        };
+        this.setState({claimBusy:true, claimError:''});
+        supa.from('artist_claims').insert(row).then(({error})=>{
+          this.setState({claimBusy:false});
+          // Unique(artist_id,user_id) violation (Postgres 23505) or any
+          // duplicate-claim error → treat as "already pending", not a hard
+          // failure, and re-check the real status so the UI matches the DB.
+          if (error && error.code==='23505') { this.setState({claimStatus:'pending', claimSubmitted:true}); return; }
+          if (error) { this.setState({claimError: error.message||'Could not submit — try again.'}); return; }
+          if (!st.claimNotListed && st.claimArtistId) this.loadClaimStatus(st.claimArtistId);
+          this.setState({claimSubmitted:true});
+          if(typeof window!=='undefined') window.scrollTo(0,0);
+        });
+      },
+      claimBack:()=>{ const st=this.state; if(st.claimStep<=0){ this.setState({screen:'artist'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({claimStep:x.claimStep-1})); } },
+      claimDone:()=>{ this.setState({screen:'artist', claimSubmitted:false}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      // owner-only edit-links modal → artists.merch_url/website_url update
+      // (RLS restricts the update to rows where claimed_by = auth uid).
+      openEditLinks:()=>{ this.setState({ editLinksOpen:true, editMerch:artMerchUrl, editWebsite:artWebsiteUrl }); },
+      setEditMerch:(e)=>this.setState({editMerch:e.target.value}),
+      setEditWebsite:(e)=>this.setState({editWebsite:e.target.value}),
+      saveEditLinks:()=>{
+        if (!supa || !this.state.activeArtistId) { this.setState({editLinksOpen:false}); return; }
+        const id = this.state.activeArtistId, merch = this.state.editMerch.trim(), website = this.state.editWebsite.trim();
+        supa.from('artists').update({ merch_url: merch||null, website_url: website||null }).eq('id', id).then(({error})=>{
+          if (error) { this.flash('Could not save — '+error.message); return; }
+          this.setState(x=>({ editLinksOpen:false, activeArtistRow: x.activeArtistRow ? {...x.activeArtistRow, merch_url:merch, website_url:website} : x.activeArtistRow }));
+          this.flash('Links updated');
+        });
+      },
+      closeEditLinks:()=>this.setState({editLinksOpen:false}),
       // Real write always — venue_follows keys on (venue_name, city), which
       // both the real-event path and the Browse Venues mock catalog supply.
       venFollow:()=>{
@@ -1910,6 +2170,10 @@ class Component extends DCLogic {
     instance.loadEvents();
     if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('mode') === 'reset-password') {
       instance.setState({ screen: 'reset' });
+    }
+    if (typeof location !== 'undefined') {
+      const claimId = new URLSearchParams(location.search).get('claim');
+      if (claimId) instance.setState({ pendingClaimArtistId: claimId });
     }
     if (supa) {
       instance.afterLogin(); // checks for an existing/just-confirmed session

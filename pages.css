@@ -6,6 +6,10 @@
    (e.g. .ed-grid/.search-grid base columns) plus small page-scoped bits.
    ======================================================================== */
 
+/* Signed-out home "Happening in {city}" section — generous breathing room
+   under the hero's gradient fade instead of butting flush against it. */
+.home-shows { padding-top: 48px; }
+
 /* ===== shared: centered browse heading (index "Happening" row / events top) === */
 .browse-head { text-align: center; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--sp-md); }
 .browse-head .field-box { width: 100%; max-width: 440px; }

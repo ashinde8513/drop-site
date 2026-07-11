@@ -253,29 +253,12 @@
       for (var d = 0; d < closeEls.length; d++) closeEls[d].addEventListener('click', closeDrawer);
     }
 
-    // Location popover.
-    var locBtn = nav.querySelector('.locchip');
-    var pop = nav.querySelector('.loc-pop');
-    if (locBtn && pop) {
-      buildCityList(pop);
-      function closePop() { pop.hidden = true; locBtn.setAttribute('aria-expanded', 'false'); }
-      function openPop() { pop.hidden = false; locBtn.setAttribute('aria-expanded', 'true'); }
-      locBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (pop.hidden) openPop(); else closePop();
-      });
-      pop.addEventListener('click', function (e) {
-        var opt = e.target.closest('[data-city]');
-        if (!opt) return;
-        Drop.setCity(opt.getAttribute('data-city'));
-        // Refetch by reload — pages read Drop.city() on load. Simple + correct.
-        location.reload();
-      });
-      doc.addEventListener('click', function () { if (!pop.hidden) closePop(); });
-      doc.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { if (!pop.hidden) { closePop(); locBtn.focus(); } }
-      });
-    }
+    // Location popover(s) — the nav pill AND any inline heading dropdown (e.g.
+    // index.html's "Happening in {city}") share Drop.city()/Drop.setCity();
+    // picking a city from either reloads the page, so both re-render in sync
+    // and the live event grid re-filters through the same fetch path.
+    var locWraps = doc.querySelectorAll('.loc-wrap');
+    for (var w = 0; w < locWraps.length; w++) bindCityPicker(locWraps[w]);
 
     // Search forms → events.html?q= (nav search + any in-page search form).
     var searches = doc.querySelectorAll('form[role="search"]');
@@ -304,6 +287,32 @@
         if (open) { var f = nav.querySelector('.wn__search-inline input'); if (f) f.focus(); }
       });
     }
+  }
+
+  // Wires one city-picker trigger + its .loc-pop dropdown inside a .loc-wrap.
+  // Reused for the nav's .locchip pill and the heading's .city-head-btn.
+  function bindCityPicker(wrap) {
+    var btn = wrap.querySelector('.locchip, .city-head-btn');
+    var pop = wrap.querySelector('.loc-pop');
+    if (!btn || !pop) return;
+    buildCityList(pop);
+    function closePop() { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    function openPop() { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (pop.hidden) openPop(); else closePop();
+    });
+    pop.addEventListener('click', function (e) {
+      var opt = e.target.closest('[data-city]');
+      if (!opt) return;
+      Drop.setCity(opt.getAttribute('data-city'));
+      // Refetch by reload — pages read Drop.city() on load. Simple + correct.
+      location.reload();
+    });
+    doc.addEventListener('click', function () { if (!pop.hidden) closePop(); });
+    doc.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { if (!pop.hidden) { closePop(); btn.focus(); } }
+    });
   }
 
   function buildCityList(pop) {

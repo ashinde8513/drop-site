@@ -130,18 +130,25 @@
           <a class="btn btn--primary" href="/account.html?mode=signup">Get started — it's free</a>
           <a class="btn btn--ghost" href="/account.html">Log in</a>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:28px;color:var(--text-muted);font-size:var(--fs-sm);">
-          <div class="avstack" aria-hidden="true"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></div>
-          <span>Join <b style="color:var(--text);">40,000+</b> ravers already on Drop</span>
+        <div class="hero-proof" style="display:flex;align-items:center;gap:var(--sp-sm);margin-top:var(--sp-xxl);color:var(--text-muted);font-size:var(--fs-sm);">
+          <span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:var(--grad-glow);box-shadow:var(--shadow-glow);flex:0 0 auto;"></span>
+          <span>Tracking <b style="color:var(--text);">1,500+</b> shows across <b style="color:var(--text);">11 cities</b></span>
         </div>
       </div>
     </section>
 
     <!-- ==================== HAPPENING IN {CITY} ==================== -->
-    <section class="section section--flush-top">
+    <section class="section home-shows">
       <div class="wrap">
         <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
-          <h2 class="sec-h2 m-wrap" style="margin:0;white-space:nowrap;">Happening in <span class="loc-city">Denver</span></h2>
+          <h2 class="sec-h2 m-wrap" style="margin:0;white-space:nowrap;display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;">Happening in
+            <span class="loc-wrap" style="display:inline-flex;">
+              <button type="button" class="city-head-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change city" style="font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background-image:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                <span class="loc-city">Denver</span><span style="font-size:0.55em;color:var(--text-muted);-webkit-text-fill-color:var(--text-muted);">▾</span>
+              </button>
+              <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+            </span>
+          </h2>
           <form class="field-box" id="home-search" role="search" aria-label="Search shows" style="flex:1;min-width:260px;max-width:420px;">
             <span class="search-icon" aria-hidden="true">⌕</span>
             <label for="home-q" class="sr-only">Search shows, artists, venues near you</label>
