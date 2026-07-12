@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-10
+Last updated: 2026-07-11
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -26,12 +26,21 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `76b661c5`, commit f591340): sign in with a real account and exercise (a) an artist claim submit (artist page → "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
+1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `f9320e87`, commit 86c4261): sign in with a real account and exercise (a) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
 2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
 3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-11 session — 6 UX fixes (LIVE, deploy `f9320e87`, commit 86c4261)
+- Venues: per-row "In Drop" badge removed (every listed venue is in Drop — badge said nothing); AXS badge kept.
+- Mobile: home search field full-width, 16px input (kills iOS focus-zoom), taller tap target.
+- City picker (nav pill + heading, shared bindCityPicker): live list of every city with upcoming events via new `event_cities` view (security_invoker, anon-readable) + type-to-filter + free-text Enter accepts any city. Filter input is type=text — type=search collides with the global typeahead binding.
+- Art chain (Drop.ecard + event.html hero): real event image → first lineup-artist photo (Drop.artistArt; 97% of artists have image_url) → prism block. SPA artist hero renders artists.image_url (safeUrl-passed) instead of the gradient circle.
+- SPA artist screen: claim-profile link moved from top to bottom (matches public page).
+- Home: "More upcoming shows" pagination, 8/page offset, per-batch art-first sort (no reshuffle on append).
+- Tests 70/70 (added city-filter + load-more smoke). Also: claude.ai/design project "Drop Mobile App Redesign" (a4dd41e0-…) created + seeded from drop-design/APP_DESIGN_PROMPT.md, handed to a separate agent.
 
 ## 2026-07-10 session — design iteration round 2 (LIVE, deploy `76b661c5`)
 - Landing: honest proof line ("Tracking 1,500+ shows across 11 cities") replaces invented 40k count; hero→section gradient seam + spacing; centered event grid all breakpoints; inline city dropdown in "Happening in {city}" synced with nav pill.
