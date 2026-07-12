@@ -714,8 +714,11 @@ button { font: inherit; cursor: pointer; }
 }
 .filter-bar .fb-inner { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
 .fb-select {
-  background: var(--glass); border: 1px solid var(--border); border-radius: var(--r-pill);
-  color: var(--text); font-size: 14px; padding: 9px 14px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background: var(--glass) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23C4CCD8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  color: var(--text); font-size: 14px; font-family: var(--font-body);
+  padding: 9px 34px 9px 14px; cursor: pointer; text-align: left;
 }
 .fb-select option { background: var(--surface-alt); }
 .fb-clear { color: var(--text-secondary); font-size: 14px; padding: 9px 12px; background: none; border: none; }

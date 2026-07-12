@@ -260,7 +260,8 @@
       var state = {
         q: qs.get('q') || '',
         city: qs.get('city') || D.city(),
-        genre: qs.get('genre') || '',
+        genres: (qs.get('genre') || '').split(',').filter(Boolean), // multi-select
+
         when: qs.get('when') || '',
         venue: qs.get('venue') || '',
         festival: qs.get('festival') === '1',
@@ -300,19 +301,23 @@
       }
       function reflectGenre() {
         Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
-          t.classList.toggle('is-active', t.getAttribute('data-genre') === state.genre);
+          t.classList.toggle('is-active', state.genres.indexOf(t.getAttribute('data-genre')) !== -1);
         });
-        gBtn.textContent = labelFor(state.genre) + ' ▾';
+        gBtn.textContent = !state.genres.length ? 'All genres'
+          : labelFor(state.genres[0]) + (state.genres.length > 1 ? ' +' + (state.genres.length - 1) : '');
       }
 
       // ---- ONE genre control: dedup'd dropdown (canonical buckets absorb the
       // raw vendor tags; unbucketed tags listed after), popular-first, type-to-
       // search. Replaces the old duplicate chip row.
       var gWrap = D.el('div', 'loc-wrap');
-      var gBtn = D.el('button', 'chip', 'All genres ▾');
+      gWrap.style.cssText = 'display:block;width:100%;margin-top:8px;';
+      var gBtn = D.el('button', 'fb-select', 'All genres');
       gBtn.type = 'button';
+      gBtn.style.width = '100%';
       gBtn.setAttribute('aria-haspopup', 'listbox');
       var gPop = D.el('div', 'loc-pop');
+      gPop.style.cssText = 'left:0;right:0;'; // match the full-width trigger
       gPop.hidden = true;
       var gFilter = D.el('div', 'loc-filter');
       var gInput = D.el('input');
@@ -334,12 +339,18 @@
         var f = gInput.value.trim().toLowerCase();
         gAll.filter(function (g) { return !f || g.label.toLowerCase().indexOf(f) !== -1; })
           .slice(0, 50).forEach(function (g) {
+            var on = g.value ? state.genres.indexOf(g.value) !== -1 : !state.genres.length;
             var li = D.el('li');
-            var text = g.label + (g.n ? ' · ' + g.n : '');
-            var b = D.el('button', 'loc-opt' + (state.genre === g.value ? ' sel' : ''), text);
+            var text = (on ? '✓ ' : '') + g.label + (g.n ? ' · ' + g.n : '');
+            var b = D.el('button', 'loc-opt' + (on ? ' sel' : ''), text);
             b.type = 'button';
             b.setAttribute('role', 'option');
-            b.addEventListener('click', function () { gPop.hidden = true; setGenre(g.value); });
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            b.addEventListener('click', function () {
+              if (!g.value) { gPop.hidden = true; setGenres([]); return; } // All genres
+              toggleGenre(g.value); // multi-select — stays open for more picks
+              renderGenreList();
+            });
             li.appendChild(b);
             gUl.appendChild(li);
           });
@@ -375,9 +386,14 @@
         });
         tiles.forEach(function (t) { tilesHost.appendChild(t); });
       });
-      function setGenre(val) { state.genre = val; reflectGenre(); applyFilterChange(); }
+      function setGenres(arr) { state.genres = arr; reflectGenre(); applyFilterChange(); }
+      function toggleGenre(val) {
+        var i = state.genres.indexOf(val);
+        if (i === -1) state.genres.push(val); else state.genres.splice(i, 1);
+        reflectGenre(); applyFilterChange();
+      }
       Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
-        t.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
+        t.addEventListener('click', function () { toggleGenre(this.getAttribute('data-genre')); });
       });
       reflectGenre();
 
@@ -505,7 +521,7 @@
       paintPrice();
 
       document.getElementById('fb-clear').addEventListener('click', function () {
-        state.q = ''; state.genre = ''; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
+        state.q = ''; state.genres = []; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
         state.priceMin = 0; state.priceMax = 300;
         document.getElementById('events-q').value = '';
         venueSel.value = '';
@@ -551,9 +567,9 @@
       function buildOpts(off) {
         var range = whenRange(state.when);
         return {
-          city: state.city, q: state.q || undefined, genre: state.genre || undefined,
+          city: state.city, q: state.q || undefined, genre: state.genres.length ? state.genres.slice() : undefined,
           venue: state.venue || undefined,
-          festival: (state.festival || state.genre === 'Festivals') || undefined,
+          festival: (state.festival || (state.genres.length === 1 && state.genres[0] === 'Festivals')) || undefined,
           sort: state.sort === 'new' ? 'new' : undefined,
           from: range.from, to: range.to, limit: PAGE, offset: off
         };
@@ -563,7 +579,7 @@
         var p = new URLSearchParams();
         if (state.q) p.set('q', state.q);
         if (state.city) p.set('city', state.city);
-        if (state.genre) p.set('genre', state.genre);
+        if (state.genres.length) p.set('genre', state.genres.join(','));
         if (state.when) p.set('when', state.when);
         if (state.venue) p.set('venue', state.venue);
         if (state.festival) p.set('festival', '1');
@@ -590,7 +606,7 @@
       }
 
       function hasRefinements() {
-        return !!(state.q || state.genre || state.venue || state.festival || state.when ||
+        return !!(state.q || state.genres.length || state.venue || state.festival || state.when ||
           state.priceMin > PRICE_MIN || state.priceMax < PRICE_MAX);
       }
       function renderEmpty() {

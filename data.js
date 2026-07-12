@@ -109,14 +109,19 @@
     // client-side genre refinement; pagers should hide "of Y" while a genre is set).
     return get(url, { count: !!opts.count }).then(function (res) {
       var rows = (opts.count ? res.rows : res) || [];
-      if (opts.genre) {
-        var want = String(opts.genre).toLowerCase();
+      if (opts.genre && (!Array.isArray(opts.genre) || opts.genre.length)) {
+        // String or array (multi-select) — an event passes if it matches ANY pick.
+        var wants = (Array.isArray(opts.genre) ? opts.genre : [opts.genre])
+          .map(function (s) { return String(s).toLowerCase(); });
         rows = rows.filter(function (ev) {
-          if (Drop.genreOf(ev).toLowerCase() === want) return true;
-          // Raw tag from the any-genre dropdown — match the lineup's genre tags.
-          return (ev.event_artists || []).some(function (ea) {
-            var a = ea.artists;
-            return a && (a.genres || []).some(function (g) { return String(g).toLowerCase() === want; });
+          var bucket = Drop.genreOf(ev).toLowerCase();
+          return wants.some(function (want) {
+            if (bucket === want) return true;
+            // Raw tag from the any-genre dropdown — match the lineup's genre tags.
+            return (ev.event_artists || []).some(function (ea) {
+              var a = ea.artists;
+              return a && (a.genres || []).some(function (g) { return String(g).toLowerCase() === want; });
+            });
           });
         });
       }
