@@ -33,6 +33,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-07-11 session (latest) — filter polish rounds (LIVE, deploy `24184f17`, commits 40b3dbe + 3548f74)
+- Genre filter: MULTI-select (checkmark toggles, "House +2" label, URL `genre=csv`, tiles toggle into the same selection); genre trigger reclassed full-width `.fb-select`; City/Venue/Genre share one custom-chevron style; filter panel spacing sp-xl; tile gradients restored (pages.css `background:none` override removed) + `color: var(--text)` (labels were UA black).
+- Location + Distance merged into ONE section: "Use my location" pill + "Within X mi" select in a flex-wrap `.loc-dist-row` — side-by-side when wide, stacked full-width in the 260px desktop sidebar; distance chips deleted; helper notes merged. Distance still honestly UI-only (no venue lat/lon yet).
+- All rounds design-doc-first, founder QA'd, then synced live. Tests 70/70 each round.
+
 ## 2026-07-11 session (later) — design round-3 merge (LIVE, deploy `2c9f7423`, commit 2171790)
 - Design-first workflow now standing rule: iterate in the claude.ai design doc, founder QAs there, then sync live.
 - Public: 24/page Prev/Next pager + "Page X of Y" (count=exact) on home + events, walks entire 1.7K-event catalog; typeahead suggests all event cities; bare-city empty → "shows coming soon" + Suggest-an-event CTA (app ?suggest=1); any-genre dropdown (new `event_genres` view, popular-first with counts, type-to-search) + raw-tag matching in fetchEvents; Pick-your-night tiles ranked by volume; geolocation confirmed already-real.
