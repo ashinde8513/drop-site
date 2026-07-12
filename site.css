@@ -235,11 +235,19 @@ button { font: inherit; cursor: pointer; }
 .loc-wrap { position: relative; flex: 0 0 auto; }
 .loc-pop {
   position: absolute; top: calc(100% + 8px); left: 0; z-index: 120;
-  min-width: 200px; max-height: 320px; overflow-y: auto;
+  min-width: 240px; max-height: 320px; overflow-y: auto;
   background: var(--surface-alt); border: 1px solid var(--border-strong);
   border-radius: var(--r-md); padding: 6px; box-shadow: var(--overlay-shadow);
 }
 .loc-pop ul { list-style: none; }
+.loc-filter { position: sticky; top: 0; z-index: 1; padding: 2px 2px 8px; background: var(--surface-alt); }
+.loc-filter input {
+  width: 100%; padding: 9px 12px; border-radius: var(--r-sm);
+  background: var(--glass); border: 1px solid var(--glass-border);
+  color: var(--text); font-family: var(--font-body); font-size: 14.5px; outline: none;
+}
+.loc-filter input:focus { border-color: var(--brand-cyan); }
+.loc-filter input::placeholder { color: var(--text-muted); }
 .loc-opt {
   display: block; width: 100%; text-align: left;
   padding: 10px 12px; border-radius: var(--r-sm); background: transparent;

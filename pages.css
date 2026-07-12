@@ -30,6 +30,12 @@
 }
 .field-box input:focus { outline: none; }
 .field-box input::placeholder { color: var(--text-muted); }
+/* Mobile: full-width, taller tap target; 16px input also stops iOS focus-zoom. */
+@media (max-width: 720px) {
+  .field-box { padding: 14px 18px; }
+  .field-box input { font-size: 16px; }
+  #home-search { min-width: 100%; }
+}
 
 /* Genre-tile rail ("Pick your night") reused as an in-page filter — button
    variant of site.css's .tile so it can be a <button> instead of an <a>. */

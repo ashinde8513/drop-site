@@ -41,6 +41,17 @@
     return !!(event.image_url && !/s1\.ticketm\.net\/dam\/c\//i.test(event.image_url));
   };
 
+  // Best substitute art when the event has none: the first lineup artist with
+  // a real photo (97% of artists have one) — beats the generic prism block.
+  Drop.artistArt = function (event) {
+    var eas = event.event_artists || [];
+    for (var i = 0; i < eas.length; i++) {
+      var a = eas[i].artists;
+      if (a && a.image_url) return a.image_url;
+    }
+    return null;
+  };
+
   // ---- Prism art fallback -------------------------------------------------
   Drop.prismArt = function (event) {
     var art = el('div', 'art-prism ' + Drop.genreClass(event));
@@ -75,9 +86,11 @@
     a.dataset.eventId = event.id;
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
-    if (Drop.hasRealArt(event)) {
+    // Art chain: real event image → lineup-artist photo → prism block.
+    var artSrc = Drop.hasRealArt(event) ? event.image_url : Drop.artistArt(event);
+    if (artSrc) {
       var img = el('img', 'wsc__img');
-      img.src = event.image_url;
+      img.src = artSrc;
       img.alt = '';
       img.loading = 'lazy';
       img.referrerPolicy = 'no-referrer';
@@ -297,7 +310,10 @@
     if (!btn || !pop) return;
     buildCityList(pop);
     function closePop() { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
-    function openPop() { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+    function openPop() {
+      pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      if (pop._filter) { pop._filter.value = ''; pop._filter.dispatchEvent(new Event('input')); }
+    }
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (pop.hidden) openPop(); else closePop();
@@ -316,20 +332,58 @@
   }
 
   function buildCityList(pop) {
+    if (pop._built) return;
+    pop._built = true;
+
+    // Type-to-filter box — also accepts any free-typed city on Enter, so the
+    // picker isn't capped to the list.
+    var box = el('div', 'loc-filter');
+    var input = el('input');
+    input.type = 'text'; // not "search" — the global typeahead binds to those
+    input.placeholder = 'Type any city…';
+    input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'Filter cities or type your own');
+    box.appendChild(input);
+    pop.insertBefore(box, pop.firstChild);
+    pop._filter = input;
+
     var ul = pop.querySelector('ul') || pop.appendChild(el('ul'));
-    ul.innerHTML = '';
-    var cur = Drop.city();
-    var all = Drop.CITIES.concat([Drop.ALL_CITIES]);
-    for (var i = 0; i < all.length; i++) {
-      var li = el('li');
-      var b = el('button', 'loc-opt', all[i]);
-      b.type = 'button';
-      b.setAttribute('role', 'option');
-      b.setAttribute('data-city', all[i]);
-      if (all[i] === cur) { b.setAttribute('aria-selected', 'true'); b.classList.add('sel'); }
-      li.appendChild(b);
-      ul.appendChild(li);
+    var cities = Drop.CITIES; // instant paint; replaced by the live list below
+
+    function renderList() {
+      ul.innerHTML = '';
+      var cur = Drop.city();
+      var f = input.value.trim().toLowerCase();
+      var all = [Drop.ALL_CITIES].concat(cities).filter(function (c) {
+        return !f || c.toLowerCase().indexOf(f) !== -1;
+      });
+      for (var i = 0; i < all.length; i++) {
+        var li = el('li');
+        var b = el('button', 'loc-opt', all[i]);
+        b.type = 'button';
+        b.setAttribute('role', 'option');
+        b.setAttribute('data-city', all[i]);
+        if (all[i] === cur) { b.setAttribute('aria-selected', 'true'); b.classList.add('sel'); }
+        li.appendChild(b);
+        ul.appendChild(li);
+      }
     }
+
+    input.addEventListener('click', function (e) { e.stopPropagation(); });
+    input.addEventListener('input', renderList);
+    input.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      var first = ul.querySelector('[data-city]');
+      var typed = input.value.trim();
+      if (first) Drop.setCity(first.getAttribute('data-city'));
+      else if (typed) Drop.setCity(typed); // free text — any city
+      else return;
+      location.reload();
+    });
+
+    renderList();
+    Drop.fetchCities().then(function (list) { cities = list; renderList(); });
   }
 
   // ---- Search typeahead ----------------------------------------------------

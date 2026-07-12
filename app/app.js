@@ -871,7 +871,7 @@ class Component extends DCLogic {
   }
   loadArtistDetail(name, id){
     if (!supa) return;
-    const q = supa.from('artists').select('id,name,merch_url,website_url,claimed_by,verified');
+    const q = supa.from('artists').select('id,name,image_url,merch_url,website_url,claimed_by,verified');
     (id ? q.eq('id', id) : q.eq('name', name)).maybeSingle().then(({ data, error })=>{
       if (error) { console.error('[app] artist detail load failed:', error.message); return; }
       this.setState({ activeArtistRow: data || null, activeArtistId: (data && data.id) || id || null });
@@ -898,7 +898,7 @@ class Component extends DCLogic {
   }
   openClaimFor(artistId){
     if (!supa) return;
-    supa.from('artists').select('id,name,merch_url,website_url,claimed_by,verified').eq('id', artistId).maybeSingle().then(({ data, error })=>{
+    supa.from('artists').select('id,name,image_url,merch_url,website_url,claimed_by,verified').eq('id', artistId).maybeSingle().then(({ data, error })=>{
       if (error || !data) { this.flash('Could not find that artist'); return; }
       this.setState({ activeArtist:data.name, activeArtistId:data.id, activeArtistRow:data });
       this.startClaim();
@@ -1172,6 +1172,7 @@ class Component extends DCLogic {
     const artOwned = !!(artRow && s.userId && artRow.claimed_by === s.userId);
     const artMerchUrl = (artRow && Drop && Drop.safeUrl(artRow.merch_url)) || '';
     const artWebsiteUrl = (artRow && Drop && Drop.safeUrl(artRow.website_url)) || '';
+    const artImageUrl = (artRow && Drop && Drop.safeUrl(artRow.image_url)) || '';
     const artGrad = this.ARTIST_GRADS[(artName.length) % this.ARTIST_GRADS.length];
     const artShows = events.filter(e=>e.lineup.some(n=>n===artName));
     const artFollowing = !!s.following[artName];
@@ -1666,6 +1667,7 @@ class Component extends DCLogic {
         monthly:artMonthly, hasSeen:artSeenCount>0, seenCount:artSeenCount+'x',
         hasFriends:artFriendsSaw>0, friendsLabel:artFriendsSaw+' friends', rating:artRating, reviewCount:artReviewCount,
         verified: !!(artRow && artRow.verified), hasMerch: !!artMerchUrl, merchUrl: artMerchUrl, hasWebsite: !!artWebsiteUrl, websiteUrl: artWebsiteUrl,
+        hasImage: !!artImageUrl, noImage: !artImageUrl, imageUrl: artImageUrl,
         ownedByMe: artOwned, claimPending: s.claimStatus==='pending', canClaim: !artOwned && s.claimStatus!=='pending' },
       artShows, artHasShows: artShows.length>0, artSimilar, artReviews,
       artFollowLabel: artFollowing?'✓ Following':'＋ Follow', artFollowCls: artFollowing?'btn btn--secondary':'btn btn--primary',

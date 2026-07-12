@@ -56,7 +56,6 @@
     .v-row__name { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-md); color: var(--text); }
     .v-row__meta { font-size: var(--fs-sm); color: var(--text-secondary); }
     .v-badge { font-size: 10px; font-weight: 800; letter-spacing: var(--tr-wide); padding: 4px 10px; border-radius: var(--r-pill); flex: 0 0 auto; }
-    .v-badge--drop { background: var(--social-glass); border: 1px solid var(--social-glass-border); color: var(--accent); }
     .v-badge--axs { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); }
     .v-row__caret { color: var(--text-muted); flex: 0 0 auto; }
   </style>
@@ -174,10 +173,12 @@
       var fullGroups = []; // [{ state, venues: [...] }] sorted
 
       // Real, derived (not fabricated) source badge: a venue is "AXS" if any of
-      // its upcoming events ticket through axs.com; otherwise it's "In Drop".
+      // its upcoming events ticket through axs.com. Every venue on this page
+      // already has upcoming Drop events, so a per-row "In Drop" badge said
+      // nothing — only AXS gets called out.
       function badgeFor(v) {
         var isAxs = v.events.some(function (ev) { return /axs\.com/i.test(ev.ticket_url || ''); });
-        return isAxs ? { label: 'AXS', cls: 'v-badge--axs' } : { label: 'In Drop', cls: 'v-badge--drop' };
+        return isAxs ? { label: 'AXS', cls: 'v-badge--axs' } : null;
       }
 
       function renderRow(v) {
@@ -191,8 +192,7 @@
         body.appendChild(D.el('div', 'v-row__meta', metaBits.join(' · ')));
         row.appendChild(body);
         var badge = badgeFor(v);
-        var badgeEl = D.el('span', 'v-badge ' + badge.cls, badge.label);
-        row.appendChild(badgeEl);
+        if (badge) row.appendChild(D.el('span', 'v-badge ' + badge.cls, badge.label));
         row.appendChild(D.el('span', 'v-row__caret', '›'));
         return row;
       }

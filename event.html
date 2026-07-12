@@ -291,9 +291,11 @@
         var box = el('div');
         box.style.cssText = 'position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);';
         var media;
-        if (ev.image_url) {
+        // Art chain matches Drop.ecard: real event image → lineup-artist photo → prism.
+        var heroSrc = D.hasRealArt(ev) ? ev.image_url : D.artistArt(ev);
+        if (heroSrc) {
           media = el('img');
-          media.src = ev.image_url; media.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
+          media.src = heroSrc; media.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
           media.loading = 'eager'; media.referrerPolicy = 'no-referrer';
           media.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
           media.onerror = function () {

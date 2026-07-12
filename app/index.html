@@ -1034,7 +1034,8 @@
       <div style="position:relative;height:340px;overflow:hidden;{{ art.gradStyle }}">
         <div style="position:absolute;inset:0;background:var(--scrim);"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;max-width:1440px;margin:0 auto;padding:var(--sp-xl);display:flex;align-items:flex-end;gap:var(--sp-xl);flex-wrap:wrap;">
-          <span style="width:128px;height:128px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span>
+          <sc-if value="{{ art.hasImage }}"><img src="{{ art.imageUrl }}" alt="" referrerpolicy="no-referrer" style="width:128px;height:128px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;" /></sc-if>
+          <sc-if value="{{ art.noImage }}"><span style="width:128px;height:128px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span></sc-if>
           <div style="flex:1;min-width:240px;">
             <div class="wsc__date">{{ art.genre }}</div>
             <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(32px,5vw,52px);letter-spacing:var(--tr-tight);line-height:1;margin:4px 0 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">{{ art.name }}<sc-if value="{{ art.verified }}"><span title="Verified artist" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--grad-glow-fill);color:var(--ink);font-size:15px;font-weight:900;box-shadow:var(--shadow-glow);flex:0 0 auto;">✓</span></sc-if></h1>
@@ -1048,9 +1049,6 @@
       <div style="max-width:1440px;margin:0 auto;padding:var(--sp-xl);">
         <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to discover</a>
 
-        <sc-if value="{{ art.canClaim }}">
-          <div style="margin-bottom:var(--sp-lg);"><a href="#" onClick="{{ goClaim }}" style="font-size:var(--fs-sm);color:var(--text-muted);">Are you {{ art.name }}? <span style="color:var(--accent);font-weight:600;">Claim this profile →</span></a></div>
-        </sc-if>
         <sc-if value="{{ art.claimPending }}">
           <div style="margin-bottom:var(--sp-lg);display:inline-flex;align-items:center;gap:8px;padding:8px var(--sp-md);border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);font-size:var(--fs-sm);color:var(--text-secondary);"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);flex:0 0 auto;"></span>Claim under review — we'll email you within a few days.</div>
         </sc-if>
@@ -1126,6 +1124,10 @@
             </button>
           </sc-for>
         </div>
+
+        <sc-if value="{{ art.canClaim }}">
+          <div style="margin-top:var(--sp-xxl);padding-top:var(--sp-xl);border-top:1px solid var(--border);"><a href="#" onClick="{{ goClaim }}" style="font-size:var(--fs-sm);color:var(--text-muted);">Are you {{ art.name }}? <span style="color:var(--accent);font-weight:600;">Claim this profile →</span></a></div>
+        </sc-if>
       </div>
     </div>
   </main>

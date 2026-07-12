@@ -185,6 +185,20 @@ test.describe('landing site smoke', () => {
     }
   });
 
+  test('city picker has a type-any-city filter; home has a load-more button', async ({ page }) => {
+    await page.goto('/index.html');
+    // Load-more control ships in the static markup (revealed once a full page returns).
+    await expect(page.locator('#home-more')).toHaveCount(1);
+    // Opening the heading's city dropdown reveals the free-text filter input.
+    await page.locator('.city-head-btn').click();
+    const filter = page.locator('.loc-wrap:has(.city-head-btn) .loc-filter input');
+    await expect(filter).toBeVisible();
+    await filter.fill('Springfield');
+    await filter.press('Enter');
+    await page.waitForLoadState('domcontentloaded');
+    expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Springfield');
+  });
+
   test('About lives in the footer, not the nav', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('nav.wn a[href="/about.html"]')).toHaveCount(0);

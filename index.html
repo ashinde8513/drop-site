@@ -156,6 +156,9 @@
           </form>
         </div>
         <div class="grid-events" id="home-grid" aria-label="Upcoming shows"></div>
+        <div style="display:flex;justify-content:center;margin-top:var(--sp-xl);">
+          <button type="button" class="btn-ghost" id="home-more" hidden>More upcoming shows</button>
+        </div>
       </div>
     </section>
   </main>
@@ -214,23 +217,35 @@
         location.href = url;
       });
 
-      function loadGrid() {
+      var PAGE = 8, offset = 0, shown = [];
+      var moreBtn = document.getElementById('home-more');
+
+      function loadGrid(more) {
         var host = document.getElementById('home-grid');
-        D.skeletonGrid(host, 8);
-        D.fetchEvents({ city: city, limit: 8 })
+        if (!more) { offset = 0; shown = []; D.skeletonGrid(host, PAGE); }
+        moreBtn.disabled = true;
+        D.fetchEvents({ city: city, limit: PAGE, offset: offset })
           .then(function (evs) {
-            // Prefer cards with real artwork up front (stable sort, no extra fetch).
+            // Prefer cards with real artwork up front, within each page (stable
+            // sort per batch so load-more never reshuffles what's on screen).
             evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
-            D.renderEvents(host, evs, {
-              limit: 8, gate: true,
+            shown = shown.concat(evs);
+            D.renderEvents(host, shown, {
+              limit: shown.length, gate: true,
               emptyMsg: 'No shows in ' + city + ' yet. Try browsing all events.',
               emptyAction: 'Browse all events', emptyHref: '/events.html'
             });
+            moreBtn.hidden = evs.length < PAGE;
+            moreBtn.disabled = false;
           })
-          .catch(function () { D.stateError(host, loadGrid); });
+          .catch(function () {
+            moreBtn.disabled = false;
+            if (!more) D.stateError(host, function () { loadGrid(false); });
+          });
       }
 
-      loadGrid();
+      moreBtn.addEventListener('click', function () { offset += PAGE; loadGrid(true); });
+      loadGrid(false);
     })();
   </script>
 </body>

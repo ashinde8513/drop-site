@@ -24,6 +24,19 @@
     return c;
   };
 
+  // Every city with upcoming events (event_cities view, busiest first) —
+  // cached per page load. Falls back to the static shortlist offline.
+  var citiesCache = null;
+  Drop.fetchCities = function () {
+    if (citiesCache) return Promise.resolve(citiesCache);
+    return get('event_cities?select=city&order=n.desc,city.asc')
+      .then(function (rows) {
+        citiesCache = rows.map(function (r) { return r.city; });
+        return citiesCache;
+      })
+      .catch(function () { return CITIES; });
+  };
+
   // ---- REST helper --------------------------------------------------------
   function todayISO() {
     // Start-of-today so events later today still show.
