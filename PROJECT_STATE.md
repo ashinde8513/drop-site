@@ -26,12 +26,19 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `f9320e87`, commit 86c4261): sign in with a real account and exercise (a) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
+1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `2c9f7423`, commit 2171790): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
 2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
 3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-11 session (later) — design round-3 merge (LIVE, deploy `2c9f7423`, commit 2171790)
+- Design-first workflow now standing rule: iterate in the claude.ai design doc, founder QAs there, then sync live.
+- Public: 24/page Prev/Next pager + "Page X of Y" (count=exact) on home + events, walks entire 1.7K-event catalog; typeahead suggests all event cities; bare-city empty → "shows coming soon" + Suggest-an-event CTA (app ?suggest=1); any-genre dropdown (new `event_genres` view, popular-first with counts, type-to-search) + raw-tag matching in fetchEvents; Pick-your-night tiles ranked by volume; geolocation confirmed already-real.
+- SPA: log-past-shows flow REAL (archive picker multi-select → attendance upsert 'attended'; manual form → logged_shows; Wrapped merges logged_shows now); ?suggest=1 deep link; mobile centering audit (grids centered, lists left); Discover segmented + Wrapped share buttons centered mobile; genre rail arrows.
+- Design doc got the same 8 refinements + segmented centering; design ↔ live 1:1 (data/photos/geolocation differ by nature).
+- Tests 70/70. Logged-in writes (attendance bulk, logged_shows) shape-verified only — founder QA item 1.
 
 ## 2026-07-11 session — 6 UX fixes (LIVE, deploy `f9320e87`, commit 86c4261)
 - Venues: per-row "In Drop" badge removed (every listed venue is in Drop — badge said nothing); AXS badge kept.
