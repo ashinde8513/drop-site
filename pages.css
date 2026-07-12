@@ -44,7 +44,9 @@
 
 /* Genre-tile rail ("Pick your night") reused as an in-page filter — button
    variant of site.css's .tile so it can be a <button> instead of an <a>. */
-.tile-btn { border: 1px solid var(--border); background: none; text-align: left; cursor: pointer; font: inherit; }
+/* No background reset here — the g-* genre class supplies the prism gradient
+   (background:none was silently killing every tile's color). */
+.tile-btn { border: 1px solid var(--border); text-align: left; cursor: pointer; font: inherit; }
 .tile-btn.is-active { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* ===== events.html: two-column search + filter layout ===== */

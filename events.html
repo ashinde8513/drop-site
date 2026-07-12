@@ -284,38 +284,31 @@
       var tilesHost = document.getElementById('fb-genre-tiles');
       var genreChipsHost = document.getElementById('fb-genre');
       GENRES.forEach(function (g) {
-        if (g.genre) {
-          var tile = document.createElement('button');
-          tile.type = 'button';
-          tile.className = 'tile tile-btn ' + g.cls;
-          tile.setAttribute('data-genre', g.genre);
-          tile.innerHTML = '<span>' + g.label + '</span>';
-          tilesHost.appendChild(tile);
-        }
-        var chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'chip';
-        chip.setAttribute('data-genre', g.genre);
-        chip.setAttribute('aria-pressed', g.genre === state.genre ? 'true' : 'false');
-        chip.textContent = g.label;
-        genreChipsHost.appendChild(chip);
+        if (!g.genre) return;
+        var tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'tile tile-btn ' + g.cls;
+        tile.setAttribute('data-genre', g.genre);
+        tile.innerHTML = '<span>' + g.label + '</span>';
+        tilesHost.appendChild(tile);
       });
 
+      function labelFor(val) {
+        if (!val) return 'All genres';
+        for (var i = 0; i < GENRES.length; i++) if (GENRES[i].genre === val) return GENRES[i].label;
+        return val;
+      }
       function reflectGenre() {
         Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
           t.classList.toggle('is-active', t.getAttribute('data-genre') === state.genre);
         });
-        Array.prototype.forEach.call(genreChipsHost.querySelectorAll('.chip'), function (c) {
-          c.setAttribute('aria-pressed', c.getAttribute('data-genre') === state.genre ? 'true' : 'false');
-        });
-        // Any-genre dropdown label: shows the raw genre when it isn't one of the chips.
-        var isChip = GENRES.some(function (g) { return g.genre === state.genre; });
-        gBtn.textContent = (!isChip && state.genre) ? state.genre + ' ▾' : 'All genres ▾';
+        gBtn.textContent = labelFor(state.genre) + ' ▾';
       }
 
-      // ---- Any-genre dropdown — full catalog from event_genres, popular-first --
+      // ---- ONE genre control: dedup'd dropdown (canonical buckets absorb the
+      // raw vendor tags; unbucketed tags listed after), popular-first, type-to-
+      // search. Replaces the old duplicate chip row.
       var gWrap = D.el('div', 'loc-wrap');
-      gWrap.style.marginTop = '10px';
       var gBtn = D.el('button', 'chip', 'All genres ▾');
       gBtn.type = 'button';
       gBtn.setAttribute('aria-haspopup', 'listbox');
@@ -333,20 +326,20 @@
       gPop.appendChild(gUl);
       gWrap.appendChild(gBtn);
       gWrap.appendChild(gPop);
-      genreChipsHost.parentNode.insertBefore(gWrap, genreChipsHost.nextSibling);
+      genreChipsHost.appendChild(gWrap);
 
-      var gAll = [];
+      var gAll = [{ label: 'All genres', value: '', n: null }]; // usable pre-fetch
       function renderGenreList() {
         gUl.innerHTML = '';
         var f = gInput.value.trim().toLowerCase();
-        var cur = String(state.genre || '').toLowerCase();
-        gAll.filter(function (g) { return !f || g.genre.toLowerCase().indexOf(f) !== -1; })
+        gAll.filter(function (g) { return !f || g.label.toLowerCase().indexOf(f) !== -1; })
           .slice(0, 50).forEach(function (g) {
             var li = D.el('li');
-            var b = D.el('button', 'loc-opt' + (cur === g.genre.toLowerCase() ? ' sel' : ''), g.genre + ' · ' + g.n);
+            var text = g.label + (g.n ? ' · ' + g.n : '');
+            var b = D.el('button', 'loc-opt' + (state.genre === g.value ? ' sel' : ''), text);
             b.type = 'button';
             b.setAttribute('role', 'option');
-            b.addEventListener('click', function () { gPop.hidden = true; setGenre(g.genre); });
+            b.addEventListener('click', function () { gPop.hidden = true; setGenre(g.value); });
             li.appendChild(b);
             gUl.appendChild(li);
           });
@@ -360,11 +353,20 @@
       document.addEventListener('click', function () { gPop.hidden = true; });
       gInput.addEventListener('input', renderGenreList);
       D.fetchGenres().then(function (rows) {
-        gAll = rows;
-        renderGenreList();
-        // Rank the "Pick your night" tiles by real upcoming-show volume.
+        // Sum raw-tag counts into their canonical bucket (House raw + Deep House
+        // raw + ... all land on the House chip) — kills the duplicate entries.
         var byCls = {};
         rows.forEach(function (r) { var c = D.genreCls(r.genre); byCls[c] = (byCls[c] || 0) + r.n; });
+        var canon = GENRES.filter(function (g) { return g.genre; }).map(function (g) {
+          return { label: g.label, value: g.genre, n: byCls[g.cls] || null };
+        }).sort(function (a, b) { return (b.n || 0) - (a.n || 0); });
+        var seen = {};
+        var raw = rows.filter(function (r) { return D.genreCls(r.genre) === 'g-other'; })
+          .filter(function (r) { var k = r.genre.toLowerCase(); if (seen[k]) return false; seen[k] = true; return true; })
+          .map(function (r) { return { label: r.genre, value: r.genre, n: r.n }; });
+        gAll = [{ label: 'All genres', value: '', n: null }].concat(canon, raw);
+        renderGenreList();
+        // Rank the "Pick your night" tiles by real upcoming-show volume.
         var clsOf = {};
         GENRES.forEach(function (g) { if (g.genre) clsOf[g.genre] = g.cls; });
         var tiles = Array.prototype.slice.call(tilesHost.querySelectorAll('.tile-btn'));
@@ -376,9 +378,6 @@
       function setGenre(val) { state.genre = val; reflectGenre(); applyFilterChange(); }
       Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
         t.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
-      });
-      Array.prototype.forEach.call(genreChipsHost.querySelectorAll('.chip'), function (c) {
-        c.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
       });
       reflectGenre();
 
