@@ -58,6 +58,12 @@
   padding: var(--sp-xl) var(--sp-lg); display: flex; flex-direction: column; gap: var(--sp-xl);
 }
 .search-filter .filt-row, .search-filter .dual { margin-top: 10px; }
+/* Merged Location + Distance row: side-by-side when the panel is wide enough
+   (mobile full-width filter), wraps to stacked full-width controls in the
+   narrow desktop sidebar — flex-basis floors force the wrap, grow fills. */
+.loc-dist-row { display: flex; flex-wrap: wrap; gap: var(--sp-sm); margin-top: 10px; }
+.loc-dist-row .locchip { flex: 1 1 150px; justify-content: center; white-space: nowrap; }
+.loc-dist-row .fb-select { flex: 1 1 120px; width: auto; min-width: 0; }
 .search-filter .filt-label {
   font-size: var(--fs-xs); color: var(--text-muted); text-transform: uppercase;
   letter-spacing: var(--tr-wide); display: flex; justify-content: space-between; align-items: baseline;

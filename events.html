@@ -135,21 +135,18 @@
 
             <div>
               <div class="filt-label">Location</div>
-              <button type="button" id="use-loc" class="locchip" style="width:100%;justify-content:center;margin-top:8px;">
-                <span class="dot"></span><span id="use-loc-label">Use my current location</span>
-              </button>
-              <p class="filt-note">We use this only to suggest the nearest city — your location is never sent anywhere.</p>
-            </div>
-
-            <div>
-              <div class="filt-label">Distance</div>
-              <div class="filt-row" id="fb-distance">
-                <button type="button" class="chip" data-distance="5" aria-pressed="false">5 mi</button>
-                <button type="button" class="chip" data-distance="10" aria-pressed="false">10 mi</button>
-                <button type="button" class="chip" data-distance="25" aria-pressed="false">25 mi</button>
-                <button type="button" class="chip" data-distance="50" aria-pressed="false">50 mi</button>
+              <div class="loc-dist-row">
+                <button type="button" id="use-loc" class="locchip">
+                  <span class="dot"></span><span id="use-loc-label">Use my location</span>
+                </button>
+                <select class="fb-select" id="fb-distance" aria-label="Distance">
+                  <option value="5">Within 5 mi</option>
+                  <option value="10">Within 10 mi</option>
+                  <option value="25" selected>Within 25 mi</option>
+                  <option value="50">Within 50 mi</option>
+                </select>
               </div>
-              <p class="filt-note">Distance filtering is rolling out — results are matched by city for now.</p>
+              <p class="filt-note">We only use this to find your nearest city — distance filtering is rolling out.</p>
             </div>
 
             <div>
@@ -426,18 +423,9 @@
       setPressed('fb-when', 'when', state.when);
       setPressed('fb-sort', 'sort', state.sort);
 
-      // Distance chips — UI-only (no per-event coordinates in the data model yet;
-      // real radius filtering needs venue lat/lon, tracked separately). Single-
-      // select toggle so the control still feels real, with an honest caption
-      // above explaining today's behavior — never silently fakes a filter.
-      var distChips = document.getElementById('fb-distance').querySelectorAll('.chip');
-      Array.prototype.forEach.call(distChips, function (c) {
-        c.addEventListener('click', function () {
-          var already = c.getAttribute('aria-pressed') === 'true';
-          Array.prototype.forEach.call(distChips, function (o) { o.setAttribute('aria-pressed', 'false'); });
-          c.setAttribute('aria-pressed', already ? 'false' : 'true');
-        });
-      });
+      // Distance select — UI-only (no per-event coordinates in the data model yet;
+      // real radius filtering needs venue lat/lon, tracked separately). Honest
+      // caption below explains today's behavior — never silently fakes a filter.
 
       // ---- City / venue selects -------------------------------------------------
       var citySel = document.getElementById('fb-city');
@@ -491,7 +479,7 @@
           useLocBtn.disabled = false;
           applyFilterChange();
         }, function () {
-          useLocLabel.textContent = 'Use my current location';
+          useLocLabel.textContent = 'Use my location';
           useLocBtn.disabled = false;
         }, { timeout: 8000 });
       });
