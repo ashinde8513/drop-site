@@ -185,10 +185,12 @@ test.describe('landing site smoke', () => {
     }
   });
 
-  test('city picker has a type-any-city filter; home has a load-more button', async ({ page }) => {
+  test('city picker has a type-any-city filter; home has a pager', async ({ page }) => {
     await page.goto('/index.html');
-    // Load-more control ships in the static markup (revealed once a full page returns).
-    await expect(page.locator('#home-more')).toHaveCount(1);
+    // Pager controls ship in the static markup (revealed once the count returns).
+    await expect(page.locator('#home-pager')).toHaveCount(1);
+    await expect(page.locator('#home-prev')).toHaveCount(1);
+    await expect(page.locator('#home-next')).toHaveCount(1);
     // Opening the heading's city dropdown reveals the free-text filter input.
     await page.locator('.city-head-btn').click();
     const filter = page.locator('.loc-wrap:has(.city-head-btn) .loc-filter input');

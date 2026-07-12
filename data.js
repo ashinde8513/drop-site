@@ -54,13 +54,18 @@
     return parts.join('&');
   }
 
-  function get(path) {
-    return fetch(REST + path, {
-      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY },
-      referrerPolicy: 'no-referrer'
-    }).then(function (r) {
+  function get(path, opts) {
+    var headers = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY };
+    if (opts && opts.count) headers.Prefer = 'count=exact';
+    return fetch(REST + path, { headers: headers, referrerPolicy: 'no-referrer' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+      return r.json().then(function (rows) {
+        if (!(opts && opts.count)) return rows;
+        // Content-Range: "0-23/1234" — the /N tail is the exact total.
+        var cr = r.headers.get('content-range') || '';
+        var total = cr.indexOf('/') !== -1 ? parseInt(cr.split('/')[1], 10) : NaN;
+        return { rows: rows, total: isNaN(total) ? null : total };
+      });
     });
   }
 
@@ -100,14 +105,33 @@
 
     var url = 'events?' + q(params);
     // Genre isn't a column — filter client-side after fetch (genres live on artists).
-    return get(url).then(function (rows) {
-      rows = rows || [];
+    // opts.count: true → resolves { rows, total } (total = server count BEFORE the
+    // client-side genre refinement; pagers should hide "of Y" while a genre is set).
+    return get(url, { count: !!opts.count }).then(function (res) {
+      var rows = (opts.count ? res.rows : res) || [];
       if (opts.genre) {
         var want = String(opts.genre).toLowerCase();
-        rows = rows.filter(function (ev) { return Drop.genreOf(ev).toLowerCase() === want; });
+        rows = rows.filter(function (ev) {
+          if (Drop.genreOf(ev).toLowerCase() === want) return true;
+          // Raw tag from the any-genre dropdown — match the lineup's genre tags.
+          return (ev.event_artists || []).some(function (ea) {
+            var a = ea.artists;
+            return a && (a.genres || []).some(function (g) { return String(g).toLowerCase() === want; });
+          });
+        });
       }
-      return rows;
+      return opts.count ? { rows: rows, total: res.total } : rows;
     });
+  };
+
+  // Genre catalog with upcoming-show counts (event_genres view, busiest first) —
+  // cached per page load. Empty array on failure; callers keep their static set.
+  var genresCache = null;
+  Drop.fetchGenres = function () {
+    if (genresCache) return Promise.resolve(genresCache);
+    return get('event_genres?select=genre,n&order=n.desc,genre.asc')
+      .then(function (rows) { genresCache = rows || []; return genresCache; })
+      .catch(function () { return []; });
   };
 
   Drop.fetchEvent = function (id) {

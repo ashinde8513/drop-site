@@ -414,7 +414,7 @@
       active = (i + r.length) % r.length;
       for (var k = 0; k < r.length; k++) r[k].classList.toggle('is-active', k === active);
     }
-    function render(q, events, artists) {
+    function render(q, events, artists, cities) {
       pop.innerHTML = '';
       function row(href, primary, secondary) {
         var a = el('a', 'ta-row');
@@ -425,6 +425,9 @@
         a.addEventListener('mousedown', function (e) { e.preventDefault(); location.href = href; });
         pop.appendChild(a);
       }
+      (cities || []).slice(0, 3).forEach(function (c) {
+        row('/events.html?city=' + encodeURIComponent(c), c, 'City');
+      });
       (events || []).slice(0, 5).forEach(function (ev) {
         row('/event.html?id=' + encodeURIComponent(ev.id), ev.title,
           [Drop.fmtDate(ev.date, ev.time_tbd), ev.venue_name].filter(Boolean).join(' · '));
@@ -444,10 +447,13 @@
       var mySeq = ++seq;
       Promise.all([
         Drop.fetchEvents({ city: Drop.city(), q: q, limit: 5 }),
-        Drop.searchArtists(q, 4)
+        Drop.searchArtists(q, 4),
+        Drop.fetchCities()
       ]).then(function (r) {
         if (mySeq !== seq || input.value.trim() !== q) return; // stale response
-        render(q, r[0], r[1]);
+        var ql = q.toLowerCase();
+        var cities = (r[2] || []).filter(function (c) { return c.toLowerCase().indexOf(ql) !== -1; });
+        render(q, r[0], r[1], cities);
       }).catch(function () { close(); });
     }
 

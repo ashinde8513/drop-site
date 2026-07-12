@@ -189,9 +189,11 @@
               </div>
             </div>
             <div class="grid-events" id="grid"></div>
-            <div style="display:flex; justify-content:center; margin-top:32px;">
-              <button type="button" class="btn-ghost" id="load-more" hidden>Load more</button>
-            </div>
+            <nav class="pager" id="pager" aria-label="Events pages" hidden>
+              <button type="button" class="btn-ghost" id="page-prev" disabled>‹ Prev</button>
+              <span class="pager-label" id="page-label"></span>
+              <button type="button" class="btn-ghost" id="page-next">Next ›</button>
+            </nav>
           </div>
         </div>
       </section>
@@ -268,12 +270,15 @@
 
       var PAGE = 24;
       var PRICE_MIN = 0, PRICE_MAX = 300;
-      var offset = 0;
-      var loaded = []; // accumulated across "Load more" — feeds the venue select + price refinement
+      var page = 0, totalPages = 1;
+      var loaded = []; // current page — feeds the venue select + price refinement
 
       var gridEl = document.getElementById('grid');
       var countEl = document.getElementById('result-count');
-      var loadMoreBtn = document.getElementById('load-more');
+      var pagerEl = document.getElementById('pager');
+      var prevBtn = document.getElementById('page-prev');
+      var nextBtn = document.getElementById('page-next');
+      var pageLabel = document.getElementById('page-label');
 
       // ---- Genre tile rail + filter-panel chips (two entry points, one state) --
       var tilesHost = document.getElementById('fb-genre-tiles');
@@ -303,7 +308,71 @@
         Array.prototype.forEach.call(genreChipsHost.querySelectorAll('.chip'), function (c) {
           c.setAttribute('aria-pressed', c.getAttribute('data-genre') === state.genre ? 'true' : 'false');
         });
+        // Any-genre dropdown label: shows the raw genre when it isn't one of the chips.
+        var isChip = GENRES.some(function (g) { return g.genre === state.genre; });
+        gBtn.textContent = (!isChip && state.genre) ? state.genre + ' ▾' : 'All genres ▾';
       }
+
+      // ---- Any-genre dropdown — full catalog from event_genres, popular-first --
+      var gWrap = D.el('div', 'loc-wrap');
+      gWrap.style.marginTop = '10px';
+      var gBtn = D.el('button', 'chip', 'All genres ▾');
+      gBtn.type = 'button';
+      gBtn.setAttribute('aria-haspopup', 'listbox');
+      var gPop = D.el('div', 'loc-pop');
+      gPop.hidden = true;
+      var gFilter = D.el('div', 'loc-filter');
+      var gInput = D.el('input');
+      gInput.type = 'text';
+      gInput.placeholder = 'Type any genre…';
+      gInput.autocomplete = 'off';
+      gInput.setAttribute('aria-label', 'Filter genres');
+      gFilter.appendChild(gInput);
+      gPop.appendChild(gFilter);
+      var gUl = D.el('ul');
+      gPop.appendChild(gUl);
+      gWrap.appendChild(gBtn);
+      gWrap.appendChild(gPop);
+      genreChipsHost.parentNode.insertBefore(gWrap, genreChipsHost.nextSibling);
+
+      var gAll = [];
+      function renderGenreList() {
+        gUl.innerHTML = '';
+        var f = gInput.value.trim().toLowerCase();
+        var cur = String(state.genre || '').toLowerCase();
+        gAll.filter(function (g) { return !f || g.genre.toLowerCase().indexOf(f) !== -1; })
+          .slice(0, 50).forEach(function (g) {
+            var li = D.el('li');
+            var b = D.el('button', 'loc-opt' + (cur === g.genre.toLowerCase() ? ' sel' : ''), g.genre + ' · ' + g.n);
+            b.type = 'button';
+            b.setAttribute('role', 'option');
+            b.addEventListener('click', function () { gPop.hidden = true; setGenre(g.genre); });
+            li.appendChild(b);
+            gUl.appendChild(li);
+          });
+      }
+      gBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        gPop.hidden = !gPop.hidden;
+        if (!gPop.hidden) { gInput.value = ''; renderGenreList(); gInput.focus(); }
+      });
+      gPop.addEventListener('click', function (e) { e.stopPropagation(); });
+      document.addEventListener('click', function () { gPop.hidden = true; });
+      gInput.addEventListener('input', renderGenreList);
+      D.fetchGenres().then(function (rows) {
+        gAll = rows;
+        renderGenreList();
+        // Rank the "Pick your night" tiles by real upcoming-show volume.
+        var byCls = {};
+        rows.forEach(function (r) { var c = D.genreCls(r.genre); byCls[c] = (byCls[c] || 0) + r.n; });
+        var clsOf = {};
+        GENRES.forEach(function (g) { if (g.genre) clsOf[g.genre] = g.cls; });
+        var tiles = Array.prototype.slice.call(tilesHost.querySelectorAll('.tile-btn'));
+        tiles.sort(function (a, b) {
+          return (byCls[clsOf[b.getAttribute('data-genre')]] || 0) - (byCls[clsOf[a.getAttribute('data-genre')]] || 0);
+        });
+        tiles.forEach(function (t) { tilesHost.appendChild(t); });
+      });
       function setGenre(val) { state.genre = val; reflectGenre(); applyFilterChange(); }
       Array.prototype.forEach.call(tilesHost.querySelectorAll('.tile-btn'), function (t) {
         t.addEventListener('click', function () { setGenre(this.getAttribute('data-genre') || ''); });
@@ -521,16 +590,28 @@
         venueSel.value = names.indexOf(cur) !== -1 ? cur : (state.venue && names.indexOf(state.venue) !== -1 ? state.venue : '');
       }
 
+      function hasRefinements() {
+        return !!(state.q || state.genre || state.venue || state.festival || state.when ||
+          state.priceMin > PRICE_MIN || state.priceMax < PRICE_MAX);
+      }
       function renderEmpty() {
         gridEl.classList.remove('is-loading');
         gridEl.innerHTML = '';
         var box = D.el('div', 'state-empty');
         box.appendChild(D.el('span', 'state-icon', 'Drop'));
-        box.appendChild(D.el('p', 'state-msg', 'No shows match — clear a filter or switch city.'));
-        var btn = D.el('button', 'btn-ghost', 'Clear all filters');
-        btn.type = 'button';
-        btn.addEventListener('click', function () { document.getElementById('fb-clear').click(); });
-        box.appendChild(btn);
+        if (!hasRefinements() && state.city && state.city !== D.ALL_CITIES) {
+          // Bare city with nothing on the calendar — honest coming-soon + scout CTA.
+          box.appendChild(D.el('p', 'state-msg', 'No shows in ' + state.city + ' yet — shows coming soon.'));
+          var a = D.el('a', 'btn-ghost', 'Know of one? Suggest an event');
+          a.href = 'https://app.trydropapp.com/?suggest=1';
+          box.appendChild(a);
+        } else {
+          box.appendChild(D.el('p', 'state-msg', 'No shows match — clear a filter or switch city.'));
+          var btn = D.el('button', 'btn-ghost', 'Clear all filters');
+          btn.type = 'button';
+          btn.addEventListener('click', function () { document.getElementById('fb-clear').click(); });
+          box.appendChild(btn);
+        }
         gridEl.appendChild(box);
       }
 
@@ -557,24 +638,31 @@
       }
 
       function load(reset) {
-        if (reset) { offset = 0; loaded = []; syncUrl(); }
-        if (reset) D.skeletonGrid(gridEl, 8);
-        loadMoreBtn.disabled = true;
-        D.fetchEvents(buildOpts(offset)).then(function (evs) {
-          loaded = reset ? evs : loaded.concat(evs);
+        if (reset) { page = 0; syncUrl(); }
+        D.skeletonGrid(gridEl, 8);
+        prevBtn.disabled = nextBtn.disabled = true;
+        var opts = buildOpts(page * PAGE);
+        opts.count = true;
+        D.fetchEvents(opts).then(function (res) {
+          loaded = res.rows;
           refreshVenueOptions();
           renderGrid();
-          loadMoreBtn.hidden = evs.length < PAGE;
-          loadMoreBtn.disabled = false;
+          // Pages are server fetch-windows; with a genre set a window can render
+          // sparse (genre refines client-side) but Next still walks the catalog.
+          totalPages = Math.max(1, Math.ceil((res.total || loaded.length) / PAGE));
+          pagerEl.hidden = totalPages <= 1;
+          pageLabel.textContent = 'Page ' + (page + 1) + ' of ' + totalPages;
+          prevBtn.disabled = page === 0;
+          nextBtn.disabled = page >= totalPages - 1;
         }).catch(function () {
-          if (reset) D.stateError(gridEl, function () { load(true); });
-          loadMoreBtn.disabled = false;
+          D.stateError(gridEl, function () { load(false); });
         });
       }
 
       function applyFilterChange() { load(true); }
 
-      loadMoreBtn.addEventListener('click', function () { offset += PAGE; load(false); });
+      prevBtn.addEventListener('click', function () { if (page > 0) { page--; load(false); gridEl.scrollIntoView(true); } });
+      nextBtn.addEventListener('click', function () { if (page < totalPages - 1) { page++; load(false); gridEl.scrollIntoView(true); } });
 
       document.getElementById('events-q').value = state.q;
       load(true);

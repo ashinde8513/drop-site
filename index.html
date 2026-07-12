@@ -156,9 +156,11 @@
           </form>
         </div>
         <div class="grid-events" id="home-grid" aria-label="Upcoming shows"></div>
-        <div style="display:flex;justify-content:center;margin-top:var(--sp-xl);">
-          <button type="button" class="btn-ghost" id="home-more" hidden>More upcoming shows</button>
-        </div>
+        <nav class="pager" id="home-pager" aria-label="Events pages" hidden>
+          <button type="button" class="btn-ghost" id="home-prev" disabled>‹ Prev</button>
+          <span class="pager-label" id="home-page-label"></span>
+          <button type="button" class="btn-ghost" id="home-next">Next ›</button>
+        </nav>
       </div>
     </section>
   </main>
@@ -217,34 +219,39 @@
         location.href = url;
       });
 
-      var PAGE = 8, offset = 0, shown = [];
-      var moreBtn = document.getElementById('home-more');
+      // 24/page pager that can walk the whole catalog (server count=exact).
+      var PAGE = 24, page = 0, totalPages = 1;
+      var pager = document.getElementById('home-pager');
+      var prevBtn = document.getElementById('home-prev');
+      var nextBtn = document.getElementById('home-next');
+      var pageLabel = document.getElementById('home-page-label');
 
-      function loadGrid(more) {
+      function loadGrid(nav) {
         var host = document.getElementById('home-grid');
-        if (!more) { offset = 0; shown = []; D.skeletonGrid(host, PAGE); }
-        moreBtn.disabled = true;
-        D.fetchEvents({ city: city, limit: PAGE, offset: offset })
-          .then(function (evs) {
-            // Prefer cards with real artwork up front, within each page (stable
-            // sort per batch so load-more never reshuffles what's on screen).
+        D.skeletonGrid(host, 8);
+        prevBtn.disabled = nextBtn.disabled = true;
+        if (nav) host.scrollIntoView(true);
+        D.fetchEvents({ city: city, limit: PAGE, offset: page * PAGE, count: true })
+          .then(function (res) {
+            var evs = res.rows;
+            // Prefer cards with real artwork up front, within the page.
             evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
-            shown = shown.concat(evs);
-            D.renderEvents(host, shown, {
-              limit: shown.length, gate: true,
-              emptyMsg: 'No shows in ' + city + ' yet. Try browsing all events.',
-              emptyAction: 'Browse all events', emptyHref: '/events.html'
+            D.renderEvents(host, evs, {
+              limit: PAGE, gate: true,
+              emptyMsg: 'No shows in ' + city + ' yet — shows coming soon.',
+              emptyAction: 'Know of one? Suggest an event', emptyHref: 'https://app.trydropapp.com/?suggest=1'
             });
-            moreBtn.hidden = evs.length < PAGE;
-            moreBtn.disabled = false;
+            totalPages = Math.max(1, Math.ceil((res.total || evs.length) / PAGE));
+            pager.hidden = totalPages <= 1;
+            pageLabel.textContent = 'Page ' + (page + 1) + ' of ' + totalPages;
+            prevBtn.disabled = page === 0;
+            nextBtn.disabled = page >= totalPages - 1;
           })
-          .catch(function () {
-            moreBtn.disabled = false;
-            if (!more) D.stateError(host, function () { loadGrid(false); });
-          });
+          .catch(function () { D.stateError(host, function () { loadGrid(false); }); });
       }
 
-      moreBtn.addEventListener('click', function () { offset += PAGE; loadGrid(true); });
+      prevBtn.addEventListener('click', function () { if (page > 0) { page--; loadGrid(true); } });
+      nextBtn.addEventListener('click', function () { if (page < totalPages - 1) { page++; loadGrid(true); } });
       loadGrid(false);
     })();
   </script>

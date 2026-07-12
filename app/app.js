@@ -272,6 +272,26 @@
     }
   }
 
+  // Genre carousel (Discover "Pick your night") — the rail is a fresh DOM node
+  // after every full-tree re-render, so re-wire its scroll listener + arrow
+  // disabled-at-ends state on each mount. Arrow clicks scrollBy() the node
+  // directly (no setState), so a smooth scroll isn't reset mid-flight.
+  function syncGenreArrows() {
+    const rail = document.getElementById('genreRail');
+    const prev = document.getElementById('genrePrev');
+    const next = document.getElementById('genreNext');
+    if (!rail || !prev || !next) return;
+    const max = rail.scrollWidth - rail.clientWidth - 1;
+    prev.disabled = rail.scrollLeft <= 0;
+    next.disabled = max <= 0 || rail.scrollLeft >= max;
+  }
+  function wireGenreRail() {
+    const rail = document.getElementById('genreRail');
+    if (!rail) return;
+    rail.addEventListener('scroll', syncGenreArrows, { passive: true });
+    syncGenreArrows();
+  }
+
   // ---------------------------------------------------------------------
   // Minimal DCLogic base — state/setState/forceUpdate + a render hook. The
   // design's Component class extends this exactly like it extended the
@@ -461,8 +481,11 @@ class Component extends DCLogic {
     activePlan: 'p-odesza', planSpot: {}, planTab: 'plan',
     wrappedRange: 'This year',
     invited: {},
+    // log a past show — archive picker (multi-select) + manual form
+    logQuery: '', logYear: 'All', logResults: [], logSelected: {}, logSearching: false,
+    logArtist: '', logVenue: '', logCity: '', logState: '', logDate: '',
+    loggedShows: [],
     // memories / recap
-    logArtist: '', logVenue: '', logRating: 0,
     recapWasThere: null, recapPhotos: {},
     tagActioned: {},
     // drop+
@@ -831,6 +854,7 @@ class Component extends DCLogic {
       this.setState({ realShowsCount: showsRes.count || 0, realArtistsCount: artistsRes.count || 0 });
     }).catch(()=>{});
     this.loadMyShows(uid);
+    this.loadLoggedShows(uid);
   }
   // Dedicated My Shows read — a join, not derived from Discover's fetch, so
   // it's not limited by Discover's city/date-window pagination. Mirrors
@@ -846,6 +870,78 @@ class Component extends DCLogic {
         if (error) { console.error('[app] my shows load failed:', error.message); return; }
         this.setState({ myShowsRows: data || [] });
       });
+  }
+  // Free-text past shows the user logged manually (logged_shows) — separate
+  // from attendance⋈events; merged into Wrapped's all-time/year tallies.
+  loadLoggedShows(uid){
+    if (!supa) return;
+    supa.from('logged_shows')
+      .select('artist_name,venue_name,city,state,show_date')
+      .eq('user_id', uid)
+      .order('show_date', { ascending:false })
+      .limit(200)
+      .then(({ data, error })=>{
+        if (error) { console.error('[app] logged_shows load failed:', error.message); return; }
+        this.setState({ loggedShows: data || [] });
+      });
+  }
+  // ===== Log a past show — archive picker query + bulk/manual writes =====
+  // Recent PAST published events, optional title/venue search + year filter.
+  logSearch(){
+    if (!supa) return;
+    this.setState({ logSearching:true });
+    const nowIso = new Date().toISOString();
+    let q = supa.from('events')
+      .select('id,title,date,venue_name,city')
+      .eq('status', 'published')
+      .lt('date', nowIso)
+      .order('date', { ascending:false })
+      .limit(30);
+    // Strip chars that would break the PostgREST or=() filter syntax.
+    const term = (this.state.logQuery || '').replace(/[,()]/g, ' ').trim();
+    if (term) { const t = '%' + term + '%'; q = q.or('title.ilike.' + t + ',venue_name.ilike.' + t); }
+    const yr = this.state.logYear;
+    if (yr && yr !== 'All' && /^\d{4}$/.test(yr)) { q = q.gte('date', yr + '-01-01').lte('date', yr + '-12-31T23:59:59'); }
+    q.then(({ data, error })=>{
+      if (error) { console.error('[app] log archive search failed:', error.message); this.setState({ logSearching:false, logResults:[] }); return; }
+      this.setState({ logResults: data || [], logSearching:false });
+    });
+  }
+  // Bulk "I was there" → attendance(status:'attended'); duplicates ignored.
+  logAddSelected(){
+    const uid = this.state.userId, ids = Object.keys(this.state.logSelected || {});
+    if (!supa || !uid || ids.length === 0) return;
+    const rows = ids.map(id=>({ user_id:uid, event_id:id, status:'attended' }));
+    supa.from('attendance').upsert(rows, { onConflict:'user_id,event_id', ignoreDuplicates:true }).then(({ error })=>{
+      if (error && error.code !== '23505') { console.error('[app] log bulk add failed:', error.message); this.flash('Could not add — try again'); return; }
+      const n = ids.length;
+      this.setState({ logSelected:{} });
+      this.loadMyShows(uid);
+      this.flash('Added ' + n + ' show' + (n===1?'':'s') + ' to your history');
+      this.go('myshows');
+    });
+  }
+  // Manual entry → logged_shows (free-text; no matching catalog event).
+  logSubmitManual(){
+    const uid = this.state.userId;
+    if (!supa || !uid) { this.flash('Log in to add shows'); return; }
+    const artist = (this.state.logArtist || '').trim();
+    const date = (this.state.logDate || '').trim();
+    if (!artist || !date) { this.flash('Artist and date are required'); return; }
+    const row = {
+      user_id: uid, artist_id: null, artist_name: artist,
+      venue_name: (this.state.logVenue || '').trim() || null,
+      city: (this.state.logCity || '').trim() || null,
+      state: (this.state.logState || '').trim().toUpperCase() || null,
+      show_date: date, notes: fieldVal('log-notes').trim() || null,
+    };
+    supa.from('logged_shows').insert(row).then(({ error })=>{
+      if (error) { console.error('[app] logged_shows insert failed:', error.message); this.flash('Could not save — try again'); return; }
+      this.setState({ logArtist:'', logVenue:'', logCity:'', logState:'', logDate:'' });
+      this.loadLoggedShows(uid);
+      this.flash('Show added to your history');
+      this.go('myshows');
+    });
   }
   afterLogin(){
     if (!supa) return;
@@ -914,7 +1010,7 @@ class Component extends DCLogic {
   }
   logout(){
     if (supa) supa.auth.signOut().catch(()=>{});
-    this.setState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[] });
+    this.setState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
   oauth(provider){
     if (!supa) { this.setState({ authError:'Login is unavailable. Refresh and try again.' }); return; }
@@ -1326,10 +1422,20 @@ class Component extends DCLogic {
     // only counts shows that already happened.
     const wrappedYear = s.wrappedRange==='This year';
     const wrappedCurYear = new Date().getFullYear();
+    // Manually-logged shows (logged_shows) mapped into the same event shape so
+    // artist_name → top artists and show_date → months/years/first-show fold
+    // straight into the tallies below. ponytail: no genre on a free-text log,
+    // so genreOf() buckets them as "Live music" — a small skew, not fake data.
+    const loggedAsRows = (s.loggedShows||[]).map(ls=>({
+      date: ls.show_date, venue_name: ls.venue_name||'', city: ls.city||'',
+      title: ls.artist_name||'Show', time_tbd:false,
+      event_artists: ls.artist_name ? [{ artists:{ name: ls.artist_name } }] : [],
+    })).filter(ev=>ev.date);
     const wrappedPastRows = myRows
       .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))
       .map(x=>x.ev)
-      .filter(ev=>ev.date); // undated shows can't be placed on a timeline
+      .filter(ev=>ev.date) // undated shows can't be placed on a timeline
+      .concat(loggedAsRows);
     const wrappedRows = wrappedYear ? wrappedPastRows.filter(ev=>new Date(ev.date).getFullYear()===wrappedCurYear) : wrappedPastRows;
     const wrappedEmpty = wrappedPastRows.length===0;
     const tally = (list)=>{ const counts=new Map(); list.forEach(v=>{ if(v) counts.set(v,(counts.get(v)||0)+1); }); return [...counts.entries()].sort((a,b)=>b[1]-a[1]); };
@@ -1397,14 +1503,22 @@ class Component extends DCLogic {
     // ===== Edit artist links modal (owner-only artists.merch_url/website_url) =====
     const editArtistName = s.activeArtist;
 
-    // ===== Log a past show =====
-    const laq = s.logArtist.trim().toLowerCase();
-    const logArtistMatches = laq.length>0 ? this.ARTISTS_ALL.filter(a=>a.name.toLowerCase().includes(laq)).slice(0,5).map(a=>({ name:a.name, pick:()=>this.setState({logArtist:a.name}) })) : [];
-    const logArtistOpen = laq.length>0 && logArtistMatches.length>0 && s.logArtist!==(logArtistMatches[0]&&logArtistMatches[0].name);
-    const lvq = s.logVenue.trim().toLowerCase();
-    const logVenueMatches = lvq.length>0 ? this.VENUES_ALL.filter(v=>v.name.toLowerCase().includes(lvq)||v.city.toLowerCase().includes(lvq)).slice(0,5).map(v=>({ name:v.name, city:v.city+', '+v.state, pick:()=>this.setState({logVenue:v.name}) })) : [];
-    const logVenueOpen = lvq.length>0 && logVenueMatches.length>0 && s.logVenue!==(logVenueMatches[0]&&logVenueMatches[0].name);
-    const logStars = [1,2,3,4,5].map(n=>({ glyph: n<=s.logRating?'★':'☆', color: n<=s.logRating?'var(--gold)':'var(--text-muted)', set:()=>this.setState(x=>({ logRating: x.logRating===n?0:n })) }));
+    // ===== Log a past show — archive picker (multi-select) + manual form =====
+    const logSel = s.logSelected || {};
+    const logRows = (s.logResults||[]).map(ev=>({
+      id: ev.id, title: ev.title || 'Untitled show',
+      venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
+      dateShort: ((Drop && Drop.fmtDate(ev.date)) || 'Date TBD').toUpperCase(),
+      checked: !!logSel[ev.id],
+      boxStyle: logSel[ev.id] ? 'background:var(--accent);border-color:var(--accent);color:var(--ink);' : 'border-color:var(--border-strong);color:transparent;',
+      rowStyle: logSel[ev.id] ? 'border-color:var(--accent);background:rgba(77,226,255,0.06);' : 'border-color:var(--border);background:var(--surface);',
+      check: logSel[ev.id] ? '✓' : '',
+      toggle:()=>this.setState(x=>{ const n={...x.logSelected}; if(n[ev.id]) delete n[ev.id]; else n[ev.id]=true; return {logSelected:n}; }),
+    }));
+    const logSelCount = Object.keys(logSel).length;
+    const logCurYear = new Date().getFullYear();
+    const logYearChips = ['All', String(logCurYear), String(logCurYear-1), String(logCurYear-2), String(logCurYear-3)]
+      .map(y=>({ label:y, cls: (s.logYear||'All')===y?'is-active':'', pick:()=>{ this.setState({logYear:y}); this.logSearch(); } }));
 
     // ===== Memories =====
     const memorySlots = [1,2,3,4,5,6].map(n=>({ id:'mem-'+n }));
@@ -1709,8 +1823,11 @@ class Component extends DCLogic {
       // wrapped
       wrappedTabs, wr, wrappedStats, wrappedYear, wrappedAllTime: !wrappedYear, wrappedEmpty, wrappedHasData: !wrappedEmpty,
       wrappedTopArtists, wrappedTopVenues, wrappedTopGenres, wrappedMonths,
+      // log a past show — archive picker + manual form
+      logQuery: s.logQuery, logYearChips, logRows, logResultsEmpty: !s.logSearching && logRows.length===0, logSearching: s.logSearching,
+      logSelCount, logHasSelected: logSelCount>0, logAddLabel: 'Add '+logSelCount+' show'+(logSelCount===1?'':'s'),
+      logArtist: s.logArtist, logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
       // memories / recap / seen / tagged
-      logArtist: s.logArtist, logArtistMatches, logArtistOpen, logVenue: s.logVenue, logVenueMatches, logVenueOpen, logStars,
       memorySlots,
       recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel,
       seenYears,
@@ -1751,7 +1868,9 @@ class Component extends DCLogic {
       goInvite:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to invite friends'); return; } this.go('invite'); },
       goWrapped:(e)=>{ this.prevent(e); this.go('wrapped'); },
       goMemories:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to see your memories'); return; } this.go('memories'); },
-      goLogShow:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to log shows'); return; } this.go('logshow'); },
+      goLogShow:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to log shows'); return; } this.setState({logSelected:{}}); this.go('logshow'); this.logSearch(); },
+      genrePrev:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: -Math.round(r.clientWidth*0.9), behavior:'smooth' }); },
+      genreNext:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: Math.round(r.clientWidth*0.9), behavior:'smooth' }); },
       goRecap:(e)=>{ this.prevent(e); this.setState({recapWasThere:null}); this.go('recap'); },
       goSeen:(e)=>{ this.prevent(e); this.go('seen'); },
       goTagged:(e)=>{ this.prevent(e); this.go('tagged'); },
@@ -1820,9 +1939,15 @@ class Component extends DCLogic {
           this.flash('Reset link sent — check your email');
         });
       },
+      // log a past show — archive search (debounced) + manual field setters
+      setLogQuery:(e)=>{ this.setState({logQuery:e.target.value}); clearTimeout(this._logT); this._logT=setTimeout(()=>this.logSearch(), 250); },
       setLogArtist:(e)=>this.setState({logArtist:e.target.value}),
       setLogVenue:(e)=>this.setState({logVenue:e.target.value}),
-      saveLog:()=>{ this.setState({logArtist:'', logVenue:'', logRating:0}); this.go('seen'); this.flash('Show added to your history'); },
+      setLogCity:(e)=>this.setState({logCity:e.target.value}),
+      setLogState:(e)=>this.setState({logState:e.target.value}),
+      setLogDate:(e)=>this.setState({logDate:e.target.value}),
+      addSelectedShows:()=>this.logAddSelected(),
+      submitManualLog:()=>this.logSubmitManual(),
       recapYes:()=>this.setState({recapWasThere:true}),
       recapShare:()=>this.flash('Recap card copied to share'),
       recapDownload:()=>this.flash('Recap image (9:16) downloaded'),
@@ -2161,9 +2286,11 @@ class Component extends DCLogic {
       queueMicrotask(() => {
         pending = false;
         mount(container, render, instance.renderVals());
+        wireGenreRail();
       });
     };
     mount(container, render, instance.renderVals());
+    wireGenreRail();
 
     // PHASE 1: real events + session check, run once after first mount.
     // A Supabase password-reset email lands back here with
@@ -2176,6 +2303,9 @@ class Component extends DCLogic {
     if (typeof location !== 'undefined') {
       const claimId = new URLSearchParams(location.search).get('claim');
       if (claimId) instance.setState({ pendingClaimArtistId: claimId });
+      // Public-site "suggest an event" deep link → the suggest screen once the
+      // session settles (afterLogin below; writes there are auth-gated anyway).
+      if (new URLSearchParams(location.search).get('suggest') === '1') instance.setState({ screen: 'suggest' });
     }
     if (supa) {
       instance.afterLogin(); // checks for an existing/just-confirmed session

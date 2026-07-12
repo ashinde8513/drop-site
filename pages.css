@@ -30,6 +30,11 @@
 }
 .field-box input:focus { outline: none; }
 .field-box input::placeholder { color: var(--text-muted); }
+/* Pager (home + events): Prev / Page X of Y / Next */
+.pager { display: flex; align-items: center; justify-content: center; gap: var(--sp-lg); margin-top: var(--sp-xl); }
+.pager-label { color: var(--text-secondary); font-size: var(--fs-sm); min-width: 90px; text-align: center; }
+.pager .btn-ghost[disabled] { opacity: 0.4; pointer-events: none; }
+
 /* Mobile: full-width, taller tap target; 16px input also stops iOS focus-zoom. */
 @media (max-width: 720px) {
   .field-box { padding: 14px 18px; }

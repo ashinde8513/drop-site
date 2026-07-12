@@ -315,6 +315,16 @@
 /* AXS-style: cards flow from the LEFT so a sparse feed never orphans one card dead-center */
 .wsh__grid { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--sp-lg); }
 
+/* Discover "Pick your night" genre carousel — a horizontal-scroll rail flanked
+   by ghost arrow buttons on desktop; on mobile it falls back to the touch
+   scroll rail (.m-rail) and the arrows hide (see the 720px block). */
+.genre-carousel { display: flex; align-items: center; gap: var(--sp-sm); }
+.genre-rail { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; }
+.genre-rail::-webkit-scrollbar { display: none; }
+.genre-rail > button { flex: 0 0 168px; }
+.genre-arrow { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; transition: opacity 0.15s var(--ease); }
+.genre-arrow:disabled { opacity: 0.35; cursor: default; }
+
 /* Web show card — uniform 300×340 image-forward unit (identical signed-out/in) */
 .wsc { width: 300px; }
 .wsc__card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--border); text-decoration: none; }
@@ -380,10 +390,16 @@
     .mnav__scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); }
     .mnav__panel { position: absolute; top: 0; right: 0; bottom: 0; width: 82%; max-width: 320px; background: var(--surface-hi); border-left: 1px solid var(--border-strong); box-shadow: var(--overlay-shadow); padding: var(--sp-lg); overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
 
-    /* ===== CARDS single column full width ===== */
-    .wsh__grid { justify-content: stretch; gap: var(--sp-md); }
+    /* ===== CARDS single column, centered (lists stay left — see below) ===== */
+    .wsh__grid { justify-content: center; gap: var(--sp-md); }
     .wsc, .wsc__card { width: 100% !important; }
     .wsh__content { padding: var(--sp-md) var(--sp-md) var(--sp-xxxl); }
+
+    /* Discover segmented control + Wrapped share buttons center on mobile */
+    .disc-controls { justify-content: center; width: 100%; }
+    .wr-share-actions { align-items: center; }
+    /* Genre carousel: arrows hide on mobile — touch-scroll the rail instead */
+    .genre-arrow { display: none; }
 
     /* horizontal scroll rails (date chips, genre tiles, filters) */
     .m-rail { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; grid-template-columns: none !important; margin: 0 calc(-1 * var(--sp-md)); padding: 0 var(--sp-md) var(--sp-xs); }
