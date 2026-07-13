@@ -60,7 +60,7 @@
         <button type="button" class="wn__mobicon" onClick="{{ onSearchFocus }}" aria-label="Search">⌕</button>
         <button type="button" class="wn__mobicon" onClick="{{ toggleNav }}" aria-label="Menu">☰</button>
         <sc-if value="{{ authed }}">
-          <span class="wn__bell" style="cursor:pointer;" onClick="{{ goNotifications }}">🔔<span class="wn__badge">3</span></span>
+          <span class="wn__bell" style="cursor:pointer;" onClick="{{ goNotifications }}">🔔<sc-if value="{{ hasNotifBadge }}"><span class="wn__badge">{{ notifBadge }}</span></sc-if></span>
           <div style="position:relative;">
             <button type="button" class="wn__avatar" onClick="{{ toggleMenu }}" style="width:38px;height:38px;border-radius:50%;border:2px solid transparent;background:var(--grad-brand);cursor:pointer;padding:0;background-clip:padding-box;box-shadow:0 0 0 2px var(--accent);"></button>
             <sc-if value="{{ menuOpen }}">
@@ -274,7 +274,7 @@
 <!-- ============ DISCOVER (signed-in) ============ -->
 <sc-if value="{{ screenDiscover }}">
   <main class="wsh">
-    <div class="wsh__content">
+    <div class="wsh__content" style="max-width:none;">
       <div class="wsh__headrow">
         <div class="wsh__title">Discover</div>
         <div class="wsh__controls disc-controls">
@@ -489,7 +489,7 @@
                   </div>
                   <div style="display:flex;align-items:center;gap:var(--sp-md);">
                     <span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ p.price }}</span>
-                    <button type="button" class="btn btn--secondary btn--sm" onClick="{{ aeShare }}">Get tickets</button>
+                    <button type="button" class="btn btn--secondary btn--sm" onClick="{{ aeTickets }}">Get tickets</button>
                   </div>
                 </div>
               </sc-for>
@@ -530,7 +530,7 @@
               <span style="color:var(--text-muted);font-size:var(--fs-sm);">From</span>
               <span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);">{{ ae.price }}</span>
             </div>
-            <button type="button" class="btn btn--primary btn--block" style="margin-bottom:var(--sp-md);" onClick="{{ aeShare }}">Get tickets</button>
+            <button type="button" class="btn btn--primary btn--block" style="margin-bottom:var(--sp-md);" onClick="{{ aeTickets }}">Get tickets</button>
             <div style="display:flex;gap:var(--sp-sm);">
               <button type="button" class="{{ aeGoingCls }}" style="flex:1;" onClick="{{ aeGoing }}">✓ Going</button>
               <button type="button" class="{{ aeInterestedCls }}" style="flex:1;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }} Interested</button>
@@ -549,7 +549,7 @@
         <button type="button" onClick="{{ aeSave }}" class="{{ aeSaveCls }}" style="width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;">{{ aeSaveGlyph }}</button>
         <button type="button" class="{{ aeInterestedCls }}" style="flex:1;height:48px;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }}</button>
         <button type="button" class="{{ aeGoingCls }}" style="flex:1;height:48px;" onClick="{{ aeGoing }}">✓ Going</button>
-        <button type="button" class="btn btn--primary" style="flex:1.4;height:48px;" onClick="{{ aeShare }}">Get tickets · {{ ae.price }}</button>
+        <button type="button" class="btn btn--primary" style="flex:1.4;height:48px;" onClick="{{ aeTickets }}">Get tickets · {{ ae.price }}</button>
       </div>
     </sc-if>
   </main>
@@ -1365,7 +1365,7 @@
 <!-- ============ PICK ARTISTS ============ -->
 <sc-if value="{{ screenArtists }}">
   <main class="wsh">
-    <div style="max-width:1440px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
+    <div style="margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-md);">
         <div>
           <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Follow artists</h1>
@@ -1406,7 +1406,7 @@
 <!-- ============ BROWSE VENUES ============ -->
 <sc-if value="{{ screenVenues }}">
   <main class="wsh">
-    <div style="max-width:1000px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
+    <div style="margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-lg);">Venues</h1>
       <div style="position:relative;margin-bottom:var(--sp-xl);">
         <input type="text" value="{{ venueQuery }}" onInput="{{ setVenueQuery }}" placeholder="Search venues, cities, states" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
@@ -1429,7 +1429,6 @@
                   <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);color:var(--text);">{{ v.name }}</div>
                   <div style="font-size:var(--fs-sm);color:var(--text-secondary);">{{ v.city }}</div>
                 </div>
-                <span class="{{ v.badgeCls }}" style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);padding:4px 10px;border-radius:var(--r-pill);{{ v.badgeStyle }}">{{ v.badge }}</span>
                 <span style="color:var(--text-muted);">›</span>
               </button>
             </sc-for>

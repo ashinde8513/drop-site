@@ -366,14 +366,20 @@
   // Discover date-chip -> real from/to window for Drop.fetchEvents.
   function dateWindow(dchip) {
     var now = new Date();
-    var from = new Date(now); from.setHours(0, 0, 0, 0);
-    var to;
-    if (dchip === 'today') { to = new Date(from); to.setHours(23, 59, 59, 999); }
+    var today = new Date(now); today.setHours(0, 0, 0, 0);
+    var from = today, to;
+    if (dchip === 'today') { to = new Date(today); to.setHours(23, 59, 59, 999); }
     else if (dchip === 'weekend') {
-      var toFri = (5 - now.getDay() + 7) % 7;
-      var fri = new Date(from); fri.setDate(fri.getDate() + toFri);
+      // "This weekend" = the Fri–Sun containing today, or the upcoming one on
+      // Mon–Thu. from must be the LATER of Friday and today — the old version
+      // always started at today, so Mon–Thu leaked into the weekend window.
+      var day = now.getDay(); // 0=Sun
+      var fri = new Date(today);
+      fri.setDate(fri.getDate() + (day === 0 ? -2 : 5 - day));
+      from = fri > today ? fri : today;
       to = new Date(fri); to.setDate(to.getDate() + 2); to.setHours(23, 59, 59, 999);
-    } else { to = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999); }
+    } else if (dchip === '30') { to = new Date(today); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999); }
+    else { to = new Date(today); to.setDate(to.getDate() + 365); to.setHours(23, 59, 59, 999); } // 'all' upcoming
     return { from: from.toISOString(), to: to.toISOString() };
   }
 
@@ -411,6 +417,7 @@
       price: Drop ? Drop.fmtPrice(ev.price_min, ev.price_max) : 'See tickets',
       genre: Drop ? Drop.genreOf(ev) : 'Live music',
       grad: artFor(ev),
+      ticketUrl: (Drop && Drop.safeUrl(ev.ticket_url)) || '',
       friends: 0,
       goingCount: '—', interestedCount: '—',
       presaleLive: false, presaleCode: '', onsale: ev.status === 'published' ? 'On sale now' : 'Not yet on sale',
@@ -478,7 +485,7 @@ class Component extends DCLogic {
     myTab: 'Upcoming', ratings: {},
     gate: false, gateReturn: null, gateTitle: 'Join the crew',
     rsvp: {}, saved: {},
-    dtab: 'Happening', dchip: 'weekend', discPage: 0,
+    dtab: 'Happening', dchip: 'all', discPage: 0,
     city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
     username: '', descClamped: true, toast: null,
     genre: null,
@@ -654,6 +661,18 @@ class Component extends DCLogic {
 
   // ARTIST_GRADS: deterministic gradient palette (not user data) — kept.
   ARTIST_GRADS = ['linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22)','linear-gradient(120deg,#4d1c37,#52270d 55%,#22143a)','linear-gradient(120deg,#1c384d,#3b0d52 55%,#3a2b14)','linear-gradient(120deg,#3a1c4d,#0d5250 55%,#3a1414)'];
+
+  // Share = copy the event's public page URL (the SEO page works signed-out,
+  // so it's the right link to hand a friend). Same URL shape site.js uses.
+  shareEvent(id){
+    const url = 'https://trydropapp.com/event.html?id=' + encodeURIComponent(id || '');
+    if (!id) { this.flash('Nothing to share yet'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        ()=>this.flash('Link copied to clipboard'),
+        ()=>this.flash(url));
+    } else { this.flash(url); }
+  }
 
   go(s){
     // Authed users never land on the marketing hero — Discover is the
@@ -921,7 +940,7 @@ class Component extends DCLogic {
         open: (ev)=>{ this.prevent(ev); this.setState({screen:'event', activeId:e.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
         going: ()=>this.toggleRsvp(e.id,'going'),
         interested: ()=>this.toggleRsvp(e.id,'interested'),
-        share: ()=>this.flash('Link copied to clipboard'),
+        share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
         goingCls: 'wsc__act'+(st==='going'?' is-going':''),
         interestedCls: 'wsc__act'+(st==='interested'?' is-interested':''),
         interestedGlyph: st==='interested'?'★':'☆',
@@ -967,9 +986,9 @@ class Component extends DCLogic {
     const tabList = ['Happening','For You','Crew'].map(t=>({
       label:t, cls: s.dtab===t?'is-active':'', pick:()=>this.setState({dtab:t}),
     }));
-    const chipDefs = [['today','Today'],['weekend','This weekend'],['30','Next 30 days']];
+    const chipDefs = [['all','All upcoming'],['today','Today'],['weekend','This weekend'],['30','Next 30 days']];
     const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pick:()=>{ this.setState({dchip:k}); this.loadEvents(); } }));
-    const dateChipLabel = ({today:'Today',weekend:'This weekend','30':'Next 30 days'})[s.dchip];
+    const dateChipLabel = ({all:'All upcoming',today:'Today',weekend:'This weekend','30':'Next 30 days'})[s.dchip];
 
     // City picker dropdown — filterable, scrollable catalog; picking a city
     // reloads the grid from Supabase for that city. Dot marks the active one.
@@ -1041,12 +1060,20 @@ class Component extends DCLogic {
     // ===== Genre filter (discover) =====
     const genreActive = !!s.genre;
     const discoverSource = genreActive ? events.filter(e=>e.genre===s.genre) : events;
-    const genres = this.GENRES.map(g=>({
-      name: g.name,
-      gradStyle: g.grad,
-      tileStyle: g.grad + (s.genre===g.name ? 'box-shadow:0 0 0 2px var(--accent);' : ''),
-      pick: (e)=>{ this.prevent(e); this.setState(st=>({ genre: st.genre===g.name ? null : g.name, discPage: 0 })); },
-    }));
+    // Tiles = every genre with a loaded show, busiest first. GENRES is only
+    // the tint palette now; unknown genres get a stable hashed gradient.
+    const genreCounts = {};
+    events.forEach(e=>{ if (e.genre) genreCounts[e.genre] = (genreCounts[e.genre]||0)+1; });
+    const genres = Object.keys(genreCounts).sort((a,b)=>genreCounts[b]-genreCounts[a]).map(name=>{
+      const pal = this.GENRES.find(g=>g.name===name);
+      const grad = pal ? pal.grad : 'background:'+gradFor('genre:'+name)+';';
+      return {
+        name,
+        gradStyle: grad,
+        tileStyle: grad + (s.genre===name ? 'box-shadow:0 0 0 2px var(--accent);' : ''),
+        pick: (e)=>{ this.prevent(e); this.setState(st=>({ genre: st.genre===name ? null : name, discPage: 0 })); },
+      };
+    });
     const gridLabel = genreActive ? (s.genre+' shows') : dateChipLabel;
     const gridEmpty = discoverSource.length===0;
 
@@ -1066,15 +1093,18 @@ class Component extends DCLogic {
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
     const filterPrice = e => { const p = parseInt((e.price||'').replace(/\D/g,''),10); return isNaN(p) || (p >= lo && p <= hi); };
     const filterGenre = e => Object.keys(s.sGenres).filter(k=>s.sGenres[k]).length===0 || s.sGenres[e.genre];
+    // No query = the full Discover set; filters and the query only narrow it.
     const matched = events.filter(e =>
-      (e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
+      (searchEmpty || e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
       && filterPrice(e) && filterGenre(e)
       && (!s.sCity || e.city===s.sCity)
       && (!s.sVenue || e.venue===s.sVenue));
     const searchResults = matched;
-    const searchHasResults = !searchEmpty && matched.length>0;
-    const searchNoResults = !searchEmpty && matched.length===0;
-    const resultsLabel = matched.length + ' result' + (matched.length===1?'':'s') + ' for "' + s.query + '"';
+    const searchHasResults = matched.length>0;
+    const searchNoResults = matched.length===0;
+    const resultsLabel = searchEmpty
+      ? matched.length + ' show' + (matched.length===1?'':'s')
+      : matched.length + ' result' + (matched.length===1?'':'s') + ' for "' + s.query + '"';
     const searchGeoActive = s.searchGeo==='active';
     const searchGeoPending = s.searchGeo==='pending';
     const searchGeoIdle = s.searchGeo==='idle';
@@ -1297,7 +1327,7 @@ class Component extends DCLogic {
           statusStyle: x.row.status==='going' ? 'background:var(--going);color:var(--white);' : 'background:var(--interested);color:var(--ink);',
           open: (evn)=>{ this.prevent(evn); this.setState({screen:'event', activeId: ev.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
           ics: (evn)=>{ this.prevent(evn); this.flash('Added to calendar (.ics)'); },
-          share: (evn)=>{ this.prevent(evn); this.flash('Link copied to clipboard'); },
+          share: (evn)=>{ this.prevent(evn); this.shareEvent(ev.id); },
         };
       });
     // ponytail: "Saved" has no backing table — local-only bookmark, so it
@@ -1305,7 +1335,7 @@ class Component extends DCLogic {
     const mySaved = events.filter(e=>s.saved[e.id]).map(e=>({
       ...e,
       unsave: (evn)=>{ this.prevent(evn); this.toggleSave(e.id); },
-      share: (evn)=>{ this.prevent(evn); this.flash('Link copied to clipboard'); },
+      share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
     }));
     const myPast = myRows
       .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))
@@ -1350,7 +1380,6 @@ class Component extends DCLogic {
       const vs = venMatched.filter(v=>v.city===cty);
       return { state:cty || 'Other', count: vs.length+' venue'+(vs.length===1?'':'s'), venues: vs.map(v=>({
         name:v.name, city:v.city,
-        badge:'In Drop', badgeStyle:'background:var(--attended);color:var(--ink);',
         open:()=>{ this.setState({screen:'venue', activeVenue:v.name, venueCity:v.city}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       })) };
     });
@@ -1846,7 +1875,9 @@ class Component extends DCLogic {
       linkButtons,
 
       // profile / settings
-      prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0, settingsToggles, recapPrivacy: s.recapPrivacy,
+      prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0,
+      notifBadge: String(notifications.filter(n=>n.unread).length), hasNotifBadge: notifications.some(n=>n.unread),
+      settingsToggles, recapPrivacy: s.recapPrivacy,
       blocked, blockedEmpty: blocked.length===0,
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk,
       deleteBtnBg: deleteOk?'var(--danger)':'var(--surface-hi)', deleteBtnColor: deleteOk?'var(--white)':'var(--text-muted)', deleteCursor: deleteOk?'pointer':'not-allowed',
@@ -2211,7 +2242,8 @@ class Component extends DCLogic {
       aeGoing:()=>this.toggleRsvp(ae.id,'going'),
       aeInterested:()=>this.toggleRsvp(ae.id,'interested'),
       aeSave:()=>this.toggleSave(ae.id),
-      aeShare:()=>this.flash('Link copied to clipboard'),
+      aeTickets:()=>{ if (ae.ticketUrl) window.open(ae.ticketUrl, '_blank', 'noopener'); else this.flash('Tickets not on sale yet'); },
+      aeShare:()=>this.shareEvent(ae.id),
       aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue, venueCity:ae.city||''}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       aeCopyCode:()=>this.flash('Presale code copied'),
       aeIcs:()=>this.flash('Calendar file (.ics) downloaded'),
