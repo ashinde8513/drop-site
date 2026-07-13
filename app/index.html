@@ -292,6 +292,98 @@
         </sc-for>
       </div>
 
+      <div class="search-grid" style="display:grid;grid-template-columns:260px 1fr;gap:var(--sp-xxl);align-items:start;">
+        <!-- Filter panel -->
+        <aside class="search-filter" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);position:sticky;top:88px;">
+          <div class="sec__title" style="margin-bottom:var(--sp-md);">Filters</div>
+          <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Location</div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-sm);align-items:center;margin-bottom:var(--sp-sm);">
+            <div style="flex:100 1 170px;min-width:0;">
+              <sc-if value="{{ searchGeoActive }}">
+                <button type="button" onClick="{{ searchClearLocation }}" class="locchip" style="width:100%;height:48px;justify-content:space-between;border-color:var(--accent);color:var(--text);cursor:pointer;">
+                  <span style="display:inline-flex;align-items:center;gap:7px;"><span class="dot"></span>{{ searchLocPillLabel }}</span>
+                  <span style="color:var(--text-muted);font-size:12px;">Change ✕</span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ searchGeoInactive }}">
+                <button type="button" onClick="{{ searchUseLocation }}" disabled="{{ searchGeoPending }}" class="locchip" style="width:100%;height:48px;justify-content:center;cursor:pointer;white-space:nowrap;font-size:var(--fs-sm);padding-left:var(--sp-sm);padding-right:var(--sp-sm);">
+                  <sc-if value="{{ searchGeoPending }}"><span class="spinner"></span></sc-if>
+                  <sc-if value="{{ searchGeoIdle }}"><span class="dot"></span></sc-if>
+                  {{ searchGeoBtnLabel }}
+                </button>
+              </sc-if>
+            </div>
+            <div style="position:relative;flex:1 1 140px;min-width:0;">
+              <button type="button" onClick="{{ toggleSDist }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:var(--sp-sm);height:48px;padding:0 var(--sp-md);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;white-space:nowrap;">{{ distLabel }}<span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
+              <sc-if value="{{ sDistOpen }}">
+                <div style="position:absolute;top:calc(100% + 6px);right:0;z-index:33;min-width:160px;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
+                  <sc-for list="{{ distOptions }}" as="d" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ d.pick }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:0 0 auto;{{ d.checkStyle }}">{{ d.checkGlyph }}</span><span>{{ d.label }}</span></button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:var(--lh-base);margin-bottom:var(--sp-xl);">We only use this to find your nearest city</div>
+          <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);display:flex;justify-content:space-between;align-items:baseline;"><span>Price</span><span style="color:var(--accent);font-variant-numeric:tabular-nums;text-transform:none;">{{ priceRangeLabel }}</span></div>
+          <div class="dual" style="margin-bottom:var(--sp-lg);">
+            <div class="dual__track"></div>
+            <div class="dual__fill" style="{{ priceFillStyle }}"></div>
+            <input type="range" min="0" max="200" step="5" value="{{ priceMin }}" onInput="{{ setPriceMin }}" aria-label="Minimum price" />
+            <input type="range" min="0" max="200" step="5" value="{{ priceMax }}" onInput="{{ setPriceMax }}" aria-label="Maximum price" />
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Genre</div>
+          <div style="position:relative;margin-bottom:var(--sp-xl);">
+            <button type="button" onClick="{{ toggleSearchGenre }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchGenreLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
+            <sc-if value="{{ searchGenreOpen }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:32;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
+                <input type="text" value="{{ searchGenreFilter }}" onInput="{{ setSearchGenreFilter }}" placeholder="Search genres" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <div style="max-height:220px;overflow-y:auto;">
+                  <button type="button" onClick="{{ searchGenreAll }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--glass-border);flex:0 0 auto;"></span><span>All genres</span></button>
+                  <sc-for list="{{ searchGenreList }}" as="g" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ g.pick }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:0 0 auto;{{ g.checkStyle }}">{{ g.checkGlyph }}</span><span style="flex:1;">{{ g.name }}</span><span style="color:var(--text-muted);font-size:var(--fs-xs);">{{ g.count }}</span></button>
+                  </sc-for>
+                  <sc-if value="{{ searchGenreEmpty }}"><div style="padding:9px var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">No genres match</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">City</div>
+          <div style="position:relative;margin-bottom:var(--sp-xl);">
+            <button type="button" onClick="{{ toggleSCity }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchCityLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
+            <sc-if value="{{ searchCityOpen }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:31;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
+                <input type="text" value="{{ sCityFilter }}" onInput="{{ setSCityFilter }}" placeholder="Search cities" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <div style="max-height:220px;overflow-y:auto;">
+                  <button type="button" onClick="{{ sCityAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All cities</button>
+                  <sc-for list="{{ searchCityList }}" as="c" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ c.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;"><span>{{ c.label }}</span><span style="color:var(--text-muted);font-size:var(--fs-xs);">{{ c.count }}</span></button>
+                  </sc-for>
+                  <sc-if value="{{ searchCityEmptyList }}"><div style="padding:9px var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">No cities match</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Venue</div>
+          <div style="position:relative;margin-bottom:var(--sp-xl);">
+            <button type="button" onClick="{{ toggleSVenue }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchVenueLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
+            <sc-if value="{{ searchVenueOpen }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
+                <input type="text" value="{{ sVenueFilter }}" onInput="{{ setSVenueFilter }}" placeholder="Search venues" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <div style="max-height:220px;overflow-y:auto;">
+                  <button type="button" onClick="{{ sVenueAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All venues</button>
+                  <sc-for list="{{ searchVenueList }}" as="v" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ v.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;"><span style="overflow:hidden;text-overflow:ellipsis;">{{ v.name }}</span><span style="color:var(--text-muted);font-size:var(--fs-xs);flex:0 0 auto;">{{ v.count }}</span></button>
+                  </sc-for>
+                  <sc-if value="{{ searchVenueEmptyList }}"><div style="padding:9px var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">No venues match</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <button type="button" class="btn btn--ghost btn--block btn--sm" onClick="{{ clearFilters }}">Clear all</button>
+        </aside>
+        <div style="min-width:0;display:flex;flex-direction:column;gap:var(--sp-lg);">
+
       <!-- Pick your night (genre filter) -->
       <div class="sec" style="padding:var(--sp-md) 0 var(--sp-sm);">
         <div class="sec__title">Pick your night</div>
@@ -397,6 +489,8 @@
         </div>
       </sc-if>
       </sc-if>
+        </div>
+      </div>
     </div>
   </main>
 </sc-if>
@@ -614,8 +708,8 @@
           <div class="dual" style="margin-bottom:var(--sp-lg);">
             <div class="dual__track"></div>
             <div class="dual__fill" style="{{ priceFillStyle }}"></div>
-            <input type="range" min="20" max="200" step="5" value="{{ priceMin }}" onInput="{{ setPriceMin }}" aria-label="Minimum price" />
-            <input type="range" min="20" max="200" step="5" value="{{ priceMax }}" onInput="{{ setPriceMax }}" aria-label="Maximum price" />
+            <input type="range" min="0" max="200" step="5" value="{{ priceMin }}" onInput="{{ setPriceMin }}" aria-label="Minimum price" />
+            <input type="range" min="0" max="200" step="5" value="{{ priceMax }}" onInput="{{ setPriceMax }}" aria-label="Maximum price" />
           </div>
           <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Genre</div>
           <div style="position:relative;margin-bottom:var(--sp-xl);">

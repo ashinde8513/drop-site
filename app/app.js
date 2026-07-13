@@ -490,7 +490,7 @@ class Component extends DCLogic {
     username: '', descClamped: true, toast: null,
     genre: null,
     // search
-    query: '', distance: '25', priceMin: 20, priceMax: 120, sGenres: {}, searchGeo: 'idle',
+    query: '', distance: '25', priceMin: 0, priceMax: 200, sGenres: {}, searchGeo: 'idle',
     // search filter dropdowns (design round 4) — distance/genre/city/venue selects
     sDistOpen: false, searchGenreOpen: false, searchGenreFilter: '',
     sCity: '', sVenue: '', sCityOpen: false, sVenueOpen: false, sCityFilter: '', sVenueFilter: '',
@@ -1057,9 +1057,17 @@ class Component extends DCLogic {
       { seller:'StubHub', price:'$'+(aeBasePrice+31)+' all-in', best:false, border:'var(--border)' },
     ];
 
+    const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
+    // hi at the slider cap means "$200+" (unbounded above); lo 0 = free shows in
+    const filterPrice = e => { const p = parseInt((e.price||'').replace(/\D/g,''),10); return isNaN(p) || (p >= lo && (hi >= 200 || p <= hi)); };
+    const filterGenre = e => Object.keys(s.sGenres).filter(k=>s.sGenres[k]).length===0 || s.sGenres[e.genre];
+    // Facet filters (price/genre-set/city/venue) come from the shared filter
+    // panel and narrow BOTH the Discover grid and Search results.
+    const facetPass = e => filterPrice(e) && filterGenre(e) && (!s.sCity || e.city===s.sCity) && (!s.sVenue || e.venue===s.sVenue);
+
     // ===== Genre filter (discover) =====
     const genreActive = !!s.genre;
-    const discoverSource = genreActive ? events.filter(e=>e.genre===s.genre) : events;
+    const discoverSource = (genreActive ? events.filter(e=>e.genre===s.genre) : events).filter(facetPass);
     // Tiles = every genre with a loaded show, busiest first. GENRES is only
     // the tint palette now; unknown genres get a stable hashed gradient.
     const genreCounts = {};
@@ -1090,15 +1098,10 @@ class Component extends DCLogic {
     // ===== Search =====
     const q = s.query.trim().toLowerCase();
     const searchEmpty = q.length===0;
-    const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
-    const filterPrice = e => { const p = parseInt((e.price||'').replace(/\D/g,''),10); return isNaN(p) || (p >= lo && p <= hi); };
-    const filterGenre = e => Object.keys(s.sGenres).filter(k=>s.sGenres[k]).length===0 || s.sGenres[e.genre];
     // No query = the full Discover set; filters and the query only narrow it.
     const matched = events.filter(e =>
       (searchEmpty || e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
-      && filterPrice(e) && filterGenre(e)
-      && (!s.sCity || e.city===s.sCity)
-      && (!s.sVenue || e.venue===s.sVenue));
+      && facetPass(e));
     const searchResults = matched;
     const searchHasResults = matched.length>0;
     const searchNoResults = matched.length===0;
@@ -1792,7 +1795,7 @@ class Component extends DCLogic {
       searchGeoActive, searchGeoInactive: !searchGeoActive, searchGeoPending, searchGeoIdle,
       searchLocPillLabel, searchGeoBtnLabel,
       priceRangeLabel: '$'+lo+' – $'+hi+(hi>=200?'+':''),
-      priceFillStyle: 'left:'+((lo-20)/180*100)+'%;right:'+(100-(hi-20)/180*100)+'%;',
+      priceFillStyle: 'left:'+(lo/200*100)+'%;right:'+(100-hi/200*100)+'%;',
       searchEmpty, searchHasResults, searchNoResults, searchResults, resultsLabel,
       recentSearches, hasRecentSearches: recentSearches.length>0, trendingChips,
 
@@ -2255,7 +2258,7 @@ class Component extends DCLogic {
       setQuery:(e)=>this.setState({query:e.target.value}),
       setPriceMin:(e)=>this.setState({priceMin: parseInt(e.target.value)}),
       setPriceMax:(e)=>this.setState({priceMax: parseInt(e.target.value)}),
-      clearFilters:()=>this.setState({sGenres:{}, searchGenreOpen:false, searchGenreFilter:'', sCity:'', sVenue:'', sCityOpen:false, sVenueOpen:false, sCityFilter:'', sVenueFilter:'', sDistOpen:false, distance:'25', priceMin:20, priceMax:120, searchGeo:'idle'}),
+      clearFilters:()=>this.setState({sGenres:{}, searchGenreOpen:false, searchGenreFilter:'', sCity:'', sVenue:'', sCityOpen:false, sVenueOpen:false, sCityFilter:'', sVenueFilter:'', sDistOpen:false, distance:'25', priceMin:0, priceMax:200, searchGeo:'idle'}),
       searchUseLocation:()=>{
         if (typeof navigator==='undefined' || !navigator.geolocation) { this.setState({searchGeo:'denied', cityOpen:true}); this.flash('Location unavailable — pick a city'); return; }
         this.setState({searchGeo:'pending'});
