@@ -431,7 +431,7 @@
       <div class="ed-grid" style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-xxl);align-items:start;">
         <!-- LEFT -->
         <div>
-          <div style="position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);{{ ae.gradStyle }}">
+          <div style="position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);background-size:cover;background-position:center;{{ ae.gradStyle }}">
             <div style="position:absolute;inset:0;background:var(--scrim);"></div>
             <div style="position:absolute;top:var(--sp-lg);right:var(--sp-lg);display:flex;gap:var(--sp-sm);">
               <button type="button" onClick="{{ aeSave }}" class="{{ aeSaveCls }}" style="width:44px;height:44px;border-radius:50%;background:var(--glass-dark);border:1px solid var(--glass-border);color:var(--text);font-size:18px;cursor:pointer;backdrop-filter:blur(8px);">{{ aeSaveGlyph }}</button>
@@ -912,7 +912,7 @@
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.04;letter-spacing:var(--tr-tight);margin:0 0 var(--sp-sm);">Lock in your first show</h1>
       <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0 0 var(--sp-xl);">RSVP to one show now — your crew will see you're going.</p>
       <div style="text-align:left;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border-strong);box-shadow:var(--shadow-card);">
-        <div style="position:relative;height:220px;{{ rm.gradStyle }}">
+        <div style="position:relative;height:220px;background-size:cover;background-position:center;{{ rm.gradStyle }}">
           <div class="wsc__scrim"></div>
           <span style="position:absolute;top:var(--sp-md);left:var(--sp-md);background:var(--glass-dark);border:1px solid var(--glass-border);padding:5px var(--sp-md);border-radius:var(--r-pill);color:var(--text);font-size:var(--fs-xs);font-weight:var(--fw-bold);letter-spacing:0.1em;text-transform:uppercase;">{{ rm.genre }}</span>
           <div style="position:absolute;left:0;right:0;bottom:0;padding:var(--sp-lg);">

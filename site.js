@@ -35,22 +35,8 @@
     host.appendChild(frag);
   };
 
-  // Ticketmaster "category" art (/dam/c/) is a generic grayscale stock photo,
-  // not real event artwork — prism art looks designed, the stock photo doesn't.
-  Drop.hasRealArt = function (event) {
-    return !!(event.image_url && !/s1\.ticketm\.net\/dam\/c\//i.test(event.image_url));
-  };
-
-  // Best substitute art when the event has none: the first lineup artist with
-  // a real photo (97% of artists have one) — beats the generic prism block.
-  Drop.artistArt = function (event) {
-    var eas = event.event_artists || [];
-    for (var i = 0; i < eas.length; i++) {
-      var a = eas[i].artists;
-      if (a && a.image_url) return a.image_url;
-    }
-    return null;
-  };
+  // hasRealArt / artistArt moved to data.js — the app shell (app/) loads
+  // data.js but not site.js, and it needs the same art chain.
 
   // ---- Prism art fallback -------------------------------------------------
   Drop.prismArt = function (event) {

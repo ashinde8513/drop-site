@@ -377,6 +377,25 @@
     return { from: from.toISOString(), to: to.toISOString() };
   }
 
+  // DB url -> a CSS url() token safe to inject into an inline style attribute:
+  // safeUrl enforces http(s), then quote/paren/backslash/space are %-encoded so
+  // the value can't break out of url('…') (CSS injection via image_url).
+  function cssUrl(u) {
+    u = Drop && Drop.safeUrl(u);
+    if (!u) return null;
+    return "url('" + u.replace(/['"()\\\s]/g, function (c) { return encodeURIComponent(c); }) + "')";
+  }
+
+  // Same art chain as the public site cards (site rule since 2026-07-11):
+  // real event image -> lineup artist photo -> prism gradient. The photo is
+  // layered OVER the gradient so the gradient shows while it loads/fails.
+  function artFor(ev) {
+    var photo = (Drop && Drop.hasRealArt(ev)) ? ev.image_url : (Drop && Drop.artistArt(ev));
+    var url = photo && cssUrl(photo);
+    var grad = gradFor(ev.id);
+    return url ? url + ', ' + grad : grad;
+  }
+
   // Real Supabase event row -> the view-model shape the ported markup expects.
   // `friends`/goingCount stay at 0/'—' — there is no real friend-attendance
   // signal wired yet (out of Phase 1 scope), so no fake social proof is shown.
@@ -391,7 +410,7 @@
       dateLong: (Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD',
       price: Drop ? Drop.fmtPrice(ev.price_min, ev.price_max) : 'See tickets',
       genre: Drop ? Drop.genreOf(ev) : 'Live music',
-      grad: gradFor(ev.id),
+      grad: artFor(ev),
       friends: 0,
       goingCount: '—', interestedCount: '—',
       presaleLive: false, presaleCode: '', onsale: ev.status === 'published' ? 'On sale now' : 'Not yet on sale',
