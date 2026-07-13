@@ -40,6 +40,16 @@
   .field-box { padding: 14px 18px; }
   .field-box input { font-size: 16px; }
   #home-search { min-width: 100%; }
+
+  /* compact vertical rhythm — desktop clamp() paddings read as dead space
+     on a phone; !important beats events.html's inline .sec padding */
+  .browse-head { gap: var(--sp-sm); }
+  .section--tight { padding-bottom: var(--sp-lg); }
+  .wsh__content > .sec { padding: var(--sp-md) 0 var(--sp-xs) !important; }
+
+  /* consolidated filter card: half the internal air */
+  .search-filter { gap: var(--sp-md); padding: var(--sp-md); }
+  .search-filter .filt-row, .search-filter .dual, .loc-dist-row { margin-top: 6px; }
 }
 
 /* Genre-tile rail ("Pick your night") reused as an in-page filter — button
@@ -68,7 +78,6 @@
   font-size: var(--fs-xs); color: var(--text-muted); text-transform: uppercase;
   letter-spacing: var(--tr-wide); display: flex; justify-content: space-between; align-items: baseline;
 }
-.search-filter .filt-note { font-size: 11px; color: var(--text-muted); line-height: var(--lh-base); }
 .price-range-label { color: var(--accent); font-variant-numeric: tabular-nums; text-transform: none; }
 .filt-row { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
 
