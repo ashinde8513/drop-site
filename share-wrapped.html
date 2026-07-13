@@ -46,7 +46,7 @@
         </div>
       </div>
       <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md); color:var(--text);">How does your year compare?</div>
-      <a class="btn btn--primary btn--block" id="wr-join" href="/account.html">Get your Drop Wrapped</a>
+      <a class="btn btn--primary btn--block" id="wr-join" href="https://app.trydropapp.com/?mode=login">Get your Drop Wrapped</a>
       <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
     </div>
   </main>
@@ -73,7 +73,7 @@
       document.getElementById('wr-percentile-label').textContent = 'Top ' + (100 - percentile) + '% of ' + city + ' ravers';
       document.getElementById('wr-percentile-num').textContent = percentile + (percentile === 1 ? 'st' : percentile === 2 ? 'nd' : percentile === 3 ? 'rd' : 'th');
       document.getElementById('wr-bar').style.width = percentile + '%';
-      document.getElementById('wr-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+      document.getElementById('wr-join').href = 'https://app.trydropapp.com/?mode=signup&ref=' + encodeURIComponent(friendHandle);
     })();
   </script>
 </body>

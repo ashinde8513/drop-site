@@ -64,8 +64,8 @@
       <div class="wn__right">
         <button type="button" class="wn__mobicon" data-nav-search aria-label="Search" aria-expanded="false">⌕</button>
         <button type="button" class="wn__mobicon" data-nav-menu aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">☰</button>
-        <a class="wn__link" href="/account.html">Log in</a>
-        <a class="btn btn--primary btn--sm" href="/account.html?mode=signup">Get started</a>
+        <a class="wn__link" href="https://app.trydropapp.com/?mode=login">Log in</a>
+        <a class="btn btn--primary btn--sm" href="https://app.trydropapp.com/?mode=signup">Get started</a>
       </div>
     </div>
   </nav>
@@ -80,8 +80,8 @@
       <a href="/venues.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Venues</a>
       <a href="/artists.html" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;">Artists</a>
       <div style="height:1px;background:var(--border);margin:var(--sp-sm) 0;"></div>
-      <a class="btn btn--primary btn--block" style="margin-top:var(--sp-sm);" href="/account.html?mode=signup">Get started</a>
-      <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/account.html">Log in</a>
+      <a class="btn btn--primary btn--block" style="margin-top:var(--sp-sm);" href="https://app.trydropapp.com/?mode=signup">Get started</a>
+      <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="https://app.trydropapp.com/?mode=login">Log in</a>
     </div>
   </div>
 
@@ -156,7 +156,7 @@
     // lineup + description + price compare + tool row + sticky buy box
     // (desktop) / bottom action bar (mobile, via shell.css .ed-bottombar).
     // Signed-in-only actions (Going/Interested/Save/Follow) are login-gated —
-    // this static site has no session, so they link to /account.html.
+    // this static site has no session, so they link to the app-shell login.
     (function () {
       var D = window.Drop;
       var el = D.el;
@@ -230,7 +230,7 @@
       // of faking local toggle state. ------------------------------------------
       function gateLink(cls, label, title) {
         var a = el('a', cls, label);
-        a.href = '/account.html';
+        a.href = 'https://app.trydropapp.com/?mode=login';
         a.title = title || 'Log in on Drop';
         return a;
       }

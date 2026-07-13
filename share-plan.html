@@ -45,7 +45,7 @@
             <span id="plan-social">Maya + 4 friends are going</span>
           </div>
           <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md);" id="plan-headline">Join Maya's plan on Drop</div>
-          <a class="btn btn--primary btn--block" id="plan-join" href="/account.html">Join on Drop — it's free</a>
+          <a class="btn btn--primary btn--block" id="plan-join" href="https://app.trydropapp.com/?mode=login">Join on Drop — it's free</a>
           <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
         </div>
       </div>
@@ -77,8 +77,8 @@
             new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
         } catch (e) { /* keep default */ }
       }
-      // Carry the referral through — account.html renders a referrer card for ?ref=.
-      document.getElementById('plan-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+      // Carry the referral through — the app shell reads ?ref= at signup.
+      document.getElementById('plan-join').href = 'https://app.trydropapp.com/?mode=signup&ref=' + encodeURIComponent(friendHandle);
     })();
   </script>
 </body>

@@ -13,7 +13,13 @@ export default {
     if (url.hostname === APP_HOST) {
       const upstream = new URL(SITE_ORIGIN);
       const isAsset = url.pathname.indexOf('.') !== -1;
-      upstream.pathname = isAsset ? '/app' + url.pathname : '/app/';
+      // Root-level assets shared with the public site (the SPA loads
+      // /vendor/supabase.js and /data.js root-absolute) only exist at the
+      // Pages root — never prefix them into /app/.
+      const isSharedRoot = url.pathname.startsWith('/vendor/')
+        || url.pathname === '/data.js'
+        || url.pathname === '/favicon.ico';
+      upstream.pathname = isSharedRoot ? url.pathname : isAsset ? '/app' + url.pathname : '/app/';
       upstream.search = url.search;
       const response = await fetch(new Request(upstream.toString(), request));
       const headers = new Headers(response.headers);

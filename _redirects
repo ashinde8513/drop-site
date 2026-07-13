@@ -5,10 +5,16 @@
 # App share/deep-link paths (deepLinks.ts contract). When the app is installed
 # the OS intercepts these via Universal/App Links; on the web they land here.
 /event/*  /event  200
-/plan/:id   /download.html  302
+/plan/:id   /share-plan.html  302
 /onboarding /download.html  302
-/app*       /account.html  302
 
-# Browser account shell lives on app.trydropapp.com; the public site stays browse-first.
-/login      /account.html  302
-/login.html /account.html  302
+# /app* redirect removed — the standalone post-login web app (ported Prism
+# design SPA) is served natively by Pages from /app/.
+
+# Login/account live in the post-login SPA on app.trydropapp.com; the old
+# static /account.html shell is retired. 302s keep old bookmarks + pending
+# Supabase email links working (auth tokens ride the #hash, which browsers
+# carry across redirects).
+/login        https://app.trydropapp.com/?mode=login  302
+/login.html   https://app.trydropapp.com/?mode=login  302
+/account.html https://app.trydropapp.com/  302

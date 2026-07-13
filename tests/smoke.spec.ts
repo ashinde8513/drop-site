@@ -33,7 +33,6 @@ const PAGES = [
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
   { path: '/link.html', title: /Drop — Get the app/ },
-  { path: '/account.html', title: /Log In \| Drop/ },
   { path: '/city.html', title: /EDM Shows in .+\| Drop/ },
   { path: '/404.html', title: /404 — Page not found \| Drop/ },
   { path: '/genre.html', title: /Events Near .+\| Drop/ },
@@ -207,26 +206,16 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('footer a[href="/about.html"]')).toHaveCount(1);
   });
 
-  test('website nav points login to the static browser account shell', async ({ page }) => {
-    // Browser login now points to the static account shell on this static domain.
-    // "Get the app" is gone from the nav (design replaces it with Log in / Get
-    // started) — get-the-app now lives only at /download in the footer.
+  test('website nav points login to the app shell on app.trydropapp.com', async ({ page }) => {
+    // The old static /account.html shell is retired — Log in / Get started go
+    // to the post-login SPA (?mode=login|signup). "Get the app" stays only at
+    // /download in the footer.
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
-      await expect(page.locator('nav.wn a[href^="/app"]')).toHaveCount(0);
-      await expect(page.locator('nav.wn a[href="/account.html"]').first()).toHaveCount(1);
+      await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=login"]').first()).toHaveCount(1);
       await expect(page.locator('nav.wn a[href="/download.html"]')).toHaveCount(0);
       await expect(page.locator('footer a[href="/download.html"]').first()).toHaveCount(1);
     }
-  });
-
-  test('account page renders the browser login screen', async ({ page }) => {
-    await page.goto('/account.html');
-    await expect(page.locator('h1')).toContainText("Who's going.");
-    await expect(page.locator('#auth-title')).toHaveText('Welcome back');
-    await expect(page.locator('#auth-login')).toBeVisible();
-    await expect(page.locator('#auth-password')).toBeVisible();
-    await expect(page.locator('#auth-submit')).toHaveText('Log in');
   });
 
   test('nav parity: .wn browse links + Log in/Get started corner, no For Promoters', async ({ page }) => {
@@ -236,9 +225,8 @@ test.describe('landing site smoke', () => {
     }
     await expect(page.locator('nav.wn a[href="/promoters.html"]')).toHaveCount(0);
     await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
-    await expect(page.locator('nav.wn a[href^="/app"]')).toHaveCount(0);
-    await expect(page.locator('nav.wn a[href="/account.html"]').first()).toHaveCount(1);
-    await expect(page.locator('nav.wn a[href="/account.html?mode=signup"]').first()).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=login"]').first()).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
 
   test('mobile: hamburger opens the .mnav drawer at 390px', async ({ page }) => {

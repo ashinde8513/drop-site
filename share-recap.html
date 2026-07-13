@@ -43,7 +43,7 @@
         <div class="wsc__date" id="recap-eyebrow">RECAP · RED ROCKS AMPHITHEATRE</div>
         <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(26px,4vw,40px); letter-spacing:var(--tr-tight); line-height:1.05; margin:6px 0 var(--sp-sm); color:var(--text);" id="recap-headline">Maya's night at ODESZA</h1>
         <p style="color:var(--text-secondary); font-size:var(--fs-md); margin:0 0 var(--sp-xl);">See the shows your friends are hitting and build recaps of your own.</p>
-        <a class="btn btn--primary btn--block" id="recap-join" href="/account.html">Join Maya on Drop</a>
+        <a class="btn btn--primary btn--block" id="recap-join" href="https://app.trydropapp.com/?mode=login">Join Maya on Drop</a>
         <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
       </div>
     </div>
@@ -74,7 +74,7 @@
       document.getElementById('recap-eyebrow').textContent = 'RECAP · ' + venue.toUpperCase();
       document.getElementById('recap-headline').textContent = friend + "'s night at " + artist;
       document.getElementById('recap-join').textContent = 'Join ' + friend + ' on Drop';
-      document.getElementById('recap-join').href = '/account.html?ref=' + encodeURIComponent(friendHandle);
+      document.getElementById('recap-join').href = 'https://app.trydropapp.com/?mode=signup&ref=' + encodeURIComponent(friendHandle);
     })();
   </script>
 </body>

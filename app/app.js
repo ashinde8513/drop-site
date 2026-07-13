@@ -949,6 +949,10 @@ class Component extends DCLogic {
       const session = data && data.session;
       if (!session) { if (this.state.pendingClaimArtistId) this.openGate('Log in to claim your profile'); return; }
       this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
+      // Authed users never sit on the marketing hero or an auth form —
+      // Discover is the logged-in home (design: doLogin/doVerify → discover).
+      const scr = this.state.screen;
+      if (scr === 'home' || scr === 'login' || scr === 'signup') this.go('discover');
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
       this.maybeResumeClaimDeepLink();
@@ -2301,6 +2305,12 @@ class Component extends DCLogic {
       instance.setState({ screen: 'reset' });
     }
     if (typeof location !== 'undefined') {
+      // Public-site "Log in / Get started" links land here (?mode=login|signup)
+      // now that the old static /account.html shell is retired. afterLogin()
+      // hops an already-authed session past these to Discover.
+      const mode = new URLSearchParams(location.search).get('mode');
+      if (mode === 'login') instance.setState({ screen: 'login' });
+      if (mode === 'signup') instance.setState({ screen: 'signup' });
       const claimId = new URLSearchParams(location.search).get('claim');
       if (claimId) instance.setState({ pendingClaimArtistId: claimId });
       // Public-site "suggest an event" deep link → the suggest screen once the
