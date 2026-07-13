@@ -16,6 +16,12 @@
     try { ownVerifier = Object.keys(localStorage).some(function (k) { return /^sb-.*-code-verifier$/.test(k); }); } catch (e) {}
     location.replace((ownVerifier ? '/app/' : 'https://app.trydropapp.com/') + location.search + location.hash);
   })();
+  // Signed-in visitors skip the marketing hero — Discover is the logged-in
+  // main. Same-origin sessions only (app.trydropapp.com storage is invisible
+  // here); the SPA validates/refreshes the token itself after the hop.
+  (function () {
+    try { if (localStorage.getItem('sb-ebccwnkmsnhbljxxxdej-auth-token')) location.replace('/app/'); } catch (e) {}
+  })();
   </script>
   <title>Drop — Discover live shows near you</title>
   <meta name="description" content="Browse concerts, raves, festivals, and club nights near you on Drop. Search by artist, venue, or date, see who's going, and get tickets — the social way to discover live music." />

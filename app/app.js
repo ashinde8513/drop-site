@@ -656,6 +656,9 @@ class Component extends DCLogic {
   ARTIST_GRADS = ['linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22)','linear-gradient(120deg,#4d1c37,#52270d 55%,#22143a)','linear-gradient(120deg,#1c384d,#3b0d52 55%,#3a2b14)','linear-gradient(120deg,#3a1c4d,#0d5250 55%,#3a1414)'];
 
   go(s){
+    // Authed users never land on the marketing hero — Discover is the
+    // logged-in main (design contract; hero is a signed-out surface).
+    if (s === 'home' && this.state.authed) s = 'discover';
     const withSkel = (s==='discover'||s==='event'||s==='search'||s==='myshows');
     this.setState({ screen: s, cityOpen:false, menuOpen:false, navOpen:false, loading: withSkel });
     if(typeof window!=='undefined') window.scrollTo(0,0);
