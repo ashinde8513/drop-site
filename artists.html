@@ -41,7 +41,10 @@
 
   <style>
     /* Page-specific — artists grid tile + genre chip row. Token-vars only. */
-    .a-chiprow { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+    .a-filterrow { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+    .a-filterrow .loc-wrap { position: relative; flex: 1 1 160px; max-width: 260px; }
+    .a-filterrow .fb-select { width: 100%; text-align: left; }
+    .a-filterrow .loc-pop { left: 0; right: 0; }
     .a-legend { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--fs-xs); }
     .a-legend-dot, .atile-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--attended); box-shadow: 0 0 8px var(--attended); flex: 0 0 auto; }
     .a-sub { color: var(--text-secondary); font-size: var(--fs-sm); margin: 4px 0 0; }
@@ -112,16 +115,16 @@
           </div>
           <div class="wsh__controls">
             <a class="btn btn--secondary btn--sm" id="a-bulk" href="https://app.trydropapp.com/?mode=login" hidden></a>
-            <div class="sp-field" style="max-width:200px;">
-              <label for="a-city">City</label>
-              <div class="field-box">
-                <select id="a-city"></select>
-              </div>
-            </div>
           </div>
         </div>
 
-        <div class="a-chiprow" id="a-genres" role="group" aria-label="Filter by genre"></div>
+        <div class="a-filterrow">
+          <div id="a-genres" class="loc-wrap"></div>
+          <div class="loc-wrap">
+            <button type="button" id="a-city-btn" class="fb-select city-head-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change city">City</button>
+            <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+          </div>
+        </div>
 
         <div class="a-legend"><span class="a-legend-dot" aria-hidden="true"></span> Has a show in the next 2 weeks</div>
 
@@ -178,18 +181,9 @@
       document.title = 'Artists playing ' + city + ' — Drop';
       document.getElementById('a-h1').textContent = 'Artists playing ' + city;
 
-      var citySel = document.getElementById('a-city');
-      var all = D.CITIES.concat([D.ALL_CITIES]);
-      all.forEach(function (c) {
-        var o = document.createElement('option');
-        o.value = c; o.textContent = c;
-        if (c === city) o.selected = true;
-        citySel.appendChild(o);
-      });
-      citySel.addEventListener('change', function () {
-        D.setCity(citySel.value);
-        location.reload();
-      });
+      // City combobox: site.js auto-binds the .loc-wrap/.city-head-btn pair —
+      // full live city list, type-to-filter, free-text Enter, reload on pick.
+      document.getElementById('a-city-btn').textContent = city;
 
       var host = document.getElementById('grid-artists');
       var moreBtn = document.getElementById('a-more');
@@ -276,7 +270,7 @@
           });
           var fullList = Object.keys(map).map(function (k) { return map[k]; })
             .filter(function (item) { return item.artist && (item.artist.name || '').trim(); })
-            .sort(function (a, b) { return b.count - a.count; });
+            .sort(function (a, b) { return (a.artist.name || '').localeCompare(b.artist.name || ''); });
 
           host.classList.remove('is-loading');
           host.innerHTML = '';
@@ -295,20 +289,65 @@
             genreCounts[g] = (genreCounts[g] || 0) + 1;
           });
           var genres = Object.keys(genreCounts).sort(function (a, b) { return genreCounts[b] - genreCounts[a]; });
-          function renderChips() {
-            genreRow.innerHTML = '';
-            var all = D.el('button', 'chip' + (activeGenre === '' ? ' is-active' : ''), 'All');
-            all.type = 'button';
-            all.setAttribute('aria-pressed', activeGenre === '' ? 'true' : 'false');
-            all.addEventListener('click', function () { activeGenre = ''; renderChips(); applyFilter(); });
-            genreRow.appendChild(all);
-            genres.forEach(function (g) {
-              var chip = D.el('button', 'chip' + (activeGenre === g ? ' is-active' : ''), g);
-              chip.type = 'button';
-              chip.setAttribute('aria-pressed', activeGenre === g ? 'true' : 'false');
-              chip.addEventListener('click', function () { activeGenre = (activeGenre === g ? '' : g); renderChips(); applyFilter(); });
-              genreRow.appendChild(chip);
+
+          // Genre combobox — same typeable .loc-pop pattern as events.html's
+          // filter panel; single-select, options carry live counts.
+          var gBtn = document.getElementById('a-genre-btn');
+          var gPop, gInput, gUl;
+          if (!gBtn) {
+            gBtn = D.el('button', 'fb-select', 'All genres');
+            gBtn.type = 'button';
+            gBtn.id = 'a-genre-btn';
+            gBtn.setAttribute('aria-haspopup', 'listbox');
+            gPop = D.el('div', 'loc-pop');
+            gPop.hidden = true;
+            var gFilter = D.el('div', 'loc-filter');
+            gInput = D.el('input');
+            gInput.type = 'text';
+            gInput.placeholder = 'Type any genre…';
+            gInput.autocomplete = 'off';
+            gInput.setAttribute('aria-label', 'Filter genres');
+            gFilter.appendChild(gInput);
+            gPop.appendChild(gFilter);
+            gUl = D.el('ul');
+            gPop.appendChild(gUl);
+            genreRow.appendChild(gBtn);
+            genreRow.appendChild(gPop);
+            gBtn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              gPop.hidden = !gPop.hidden;
+              if (!gPop.hidden) { gInput.value = ''; renderGenreList(); gInput.focus(); }
             });
+            gPop.addEventListener('click', function (e) { e.stopPropagation(); });
+            document.addEventListener('click', function () { gPop.hidden = true; });
+            gInput.addEventListener('input', function () { renderGenreList(); });
+            genreRow._pop = gPop; genreRow._input = gInput; genreRow._ul = gUl;
+          } else {
+            gPop = genreRow._pop; gInput = genreRow._input; gUl = genreRow._ul;
+          }
+          function renderGenreList() {
+            gUl.innerHTML = '';
+            var f = gInput.value.trim().toLowerCase();
+            var opts = [{ label: 'All genres', value: '' }].concat(genres.map(function (g) {
+              return { label: g + ' · ' + genreCounts[g], value: g };
+            }));
+            opts.filter(function (o) { return !f || o.label.toLowerCase().indexOf(f) !== -1; })
+              .forEach(function (o) {
+                var on = o.value === activeGenre;
+                var li = D.el('li');
+                var b = D.el('button', 'loc-opt' + (on ? ' sel' : ''), (on ? '✓ ' : '') + o.label);
+                b.type = 'button';
+                b.setAttribute('role', 'option');
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+                b.addEventListener('click', function () {
+                  activeGenre = o.value;
+                  gBtn.textContent = o.value || 'All genres';
+                  gPop.hidden = true;
+                  applyFilter();
+                });
+                li.appendChild(b);
+                gUl.appendChild(li);
+              });
           }
 
           function updateBulk() {
@@ -338,7 +377,7 @@
             renderChunk();
           }
           moreBtn.onclick = renderChunk;
-          renderChips();
+          renderGenreList();
           applyFilter();
 
           // ponytail: live type-to-filter on the header search; reuses the fetched list.

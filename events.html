@@ -98,29 +98,29 @@
   <main id="main" class="wsh">
     <div class="wsh__content">
 
-      <!-- ==================== CENTERED HEADING + SEARCH ==================== -->
-      <section class="section--tight section--flush-top">
-        <div class="browse-head">
-          <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
-          <h1 class="sec-h2">Shows near you</h1>
-          <form class="field-box" id="events-search" role="search" aria-label="Search events">
+      <!-- ============ HEADING + SEARCH + DATE CHIPS (left-aligned, one block) ============ -->
+      <section class="section--tight section--flush-top" style="padding-top:0;padding-bottom:var(--sp-lg);">
+        <div class="wsh__headrow">
+          <div>
+            <span class="eyebrow"><span class="dot"></span>Near <span class="loc-city">Denver</span></span>
+            <h1 class="wsh__title">Shows near you</h1>
+          </div>
+          <form class="field-box" id="events-search" role="search" aria-label="Search events" style="flex:1 1 280px;max-width:440px;">
             <span class="search-icon" aria-hidden="true">⌕</span>
             <label for="events-q" class="sr-only">Search artists, venues, shows</label>
             <input id="events-q" name="q" type="search" placeholder="Search artists, venues, shows…" autocomplete="off" data-page-search />
           </form>
         </div>
+        <div class="m-rail" id="fb-when" aria-label="Filter by date" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--sp-md);">
+          <button type="button" class="chip is-active" data-when="" aria-pressed="true"><span class="chip__dot"></span>Any date</button>
+          <button type="button" class="chip" data-when="tonight" aria-pressed="false"><span class="chip__dot"></span>Tonight</button>
+          <button type="button" class="chip" data-when="weekend" aria-pressed="false"><span class="chip__dot"></span>This weekend</button>
+          <button type="button" class="chip" data-when="month" aria-pressed="false"><span class="chip__dot"></span>This month</button>
+        </div>
       </section>
 
-      <!-- ==================== DATE CHIPS ==================== -->
-      <div class="m-rail" id="fb-when" aria-label="Filter by date" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
-        <button type="button" class="chip is-active" data-when="" aria-pressed="true"><span class="chip__dot"></span>Any date</button>
-        <button type="button" class="chip" data-when="tonight" aria-pressed="false"><span class="chip__dot"></span>Tonight</button>
-        <button type="button" class="chip" data-when="weekend" aria-pressed="false"><span class="chip__dot"></span>This weekend</button>
-        <button type="button" class="chip" data-when="month" aria-pressed="false"><span class="chip__dot"></span>This month</button>
-      </div>
-
       <!-- ==================== GENRE TILE RAIL ("pick your night") ==================== -->
-      <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-sm);">
+      <div class="sec" style="padding:var(--sp-lg) 0 var(--sp-xs);">
         <div class="eyebrow"><span class="dot"></span>Browse by scene</div>
         <h2 class="sec-h2" style="margin-top:6px;">Pick your night.</h2>
       </div>
@@ -164,12 +164,18 @@
             </div>
 
             <div>
-              <label class="filt-label" for="fb-city">City</label>
-              <select class="fb-select" id="fb-city" style="width:100%;margin-top:8px;"></select>
+              <div class="filt-label" id="fb-city-label">City</div>
+              <div class="loc-wrap" style="position:relative;display:block;margin-top:8px;">
+                <button type="button" class="fb-select" id="fb-city-btn" style="width:100%;text-align:left;" aria-haspopup="listbox" aria-labelledby="fb-city-label">City</button>
+                <div class="loc-pop" id="fb-city-pop" hidden style="left:0;right:0;"><ul></ul></div>
+              </div>
             </div>
             <div>
-              <label class="filt-label" for="fb-venue">Venue</label>
-              <select class="fb-select" id="fb-venue" style="width:100%;margin-top:8px;"><option value="">All venues</option></select>
+              <div class="filt-label" id="fb-venue-label">Venue</div>
+              <div class="loc-wrap" style="position:relative;display:block;margin-top:8px;">
+                <button type="button" class="fb-select" id="fb-venue-btn" style="width:100%;text-align:left;" aria-haspopup="listbox" aria-labelledby="fb-venue-label">All venues</button>
+                <div class="loc-pop" id="fb-venue-pop" hidden style="left:0;right:0;"><ul></ul></div>
+              </div>
             </div>
 
             <button type="button" class="btn-ghost btn-block" id="fb-clear">Clear all</button>
@@ -426,22 +432,85 @@
       // real radius filtering needs venue lat/lon, tracked separately). Honest
       // caption below explains today's behavior — never silently fakes a filter.
 
-      // ---- City / venue selects -------------------------------------------------
-      var citySel = document.getElementById('fb-city');
-      D.CITIES.concat([D.ALL_CITIES]).forEach(function (c) {
-        var o = document.createElement('option');
-        o.value = c; o.textContent = c;
-        if (c === state.city) o.selected = true;
-        citySel.appendChild(o);
-      });
-      citySel.addEventListener('change', function () {
-        state.city = citySel.value;
-        D.setCity(state.city);
-        applyFilterChange();
-      });
+      // ---- City / venue comboboxes ---------------------------------------------
+      // Typeable single-select on a .loc-wrap (same pattern as the genre control):
+      // full option list, type-to-filter, Enter picks first match or the raw text.
+      function combo(btnId, popId, getOpts, onPick, placeholder) {
+        var btn = document.getElementById(btnId);
+        var pop = document.getElementById(popId);
+        var ul = pop.querySelector('ul');
+        var box = D.el('div', 'loc-filter');
+        var input = D.el('input');
+        input.type = 'text';
+        input.placeholder = placeholder;
+        input.autocomplete = 'off';
+        input.setAttribute('aria-label', placeholder);
+        box.appendChild(input);
+        pop.insertBefore(box, ul);
+        function matches() {
+          var f = input.value.trim().toLowerCase();
+          return getOpts().filter(function (o) { return !f || o.label.toLowerCase().indexOf(f) !== -1; });
+        }
+        function render() {
+          ul.innerHTML = '';
+          matches().forEach(function (o) {
+            var li = D.el('li');
+            var b = D.el('button', 'loc-opt' + (o.sel ? ' sel' : ''), (o.sel ? '✓ ' : '') + o.label);
+            b.type = 'button';
+            b.setAttribute('role', 'option');
+            b.setAttribute('aria-selected', o.sel ? 'true' : 'false');
+            b.addEventListener('click', function () { pop.hidden = true; onPick(o.value); });
+            li.appendChild(b);
+            ul.appendChild(li);
+          });
+        }
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          pop.hidden = !pop.hidden;
+          if (!pop.hidden) { input.value = ''; render(); input.focus(); }
+        });
+        pop.addEventListener('click', function (e) { e.stopPropagation(); });
+        document.addEventListener('click', function () { pop.hidden = true; });
+        input.addEventListener('input', render);
+        input.addEventListener('keydown', function (e) {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          var m = matches();
+          var typed = input.value.trim();
+          pop.hidden = true;
+          if (m.length) onPick(m[0].value);
+          else if (typed) onPick(typed); // free text — filter takes any value
+        });
+        return { btn: btn };
+      }
 
-      var venueSel = document.getElementById('fb-venue');
-      venueSel.addEventListener('change', function () { state.venue = venueSel.value; applyFilterChange(); });
+      var cityList = D.CITIES.slice(); // instant paint; replaced by the live list
+      D.fetchCities().then(function (list) { cityList = list; });
+      var cityCombo = combo('fb-city-btn', 'fb-city-pop', function () {
+        return [{ label: D.ALL_CITIES, value: D.ALL_CITIES, sel: state.city === D.ALL_CITIES }]
+          .concat(cityList.map(function (c) { return { label: c, value: c, sel: c === state.city }; }));
+      }, function (c) {
+        state.city = c; D.setCity(c);
+        cityCombo.btn.textContent = c;
+        refreshVenues();
+        applyFilterChange();
+      }, 'Type any city…');
+      cityCombo.btn.textContent = state.city || D.ALL_CITIES;
+
+      var venueNames = [];
+      function refreshVenues() {
+        D.fetchVenues(state.city).then(function (names) { venueNames = names; });
+      }
+      var venueCombo = combo('fb-venue-btn', 'fb-venue-pop', function () {
+        return [{ label: 'All venues', value: '', sel: !state.venue }]
+          .concat(venueNames.map(function (n) { return { label: n, value: n, sel: n === state.venue }; }));
+      }, function (v) {
+        state.venue = v;
+        venueCombo.btn.textContent = v || 'All venues';
+        applyFilterChange();
+      }, 'Type any venue…');
+      if (state.venue) venueCombo.btn.textContent = state.venue;
+      refreshVenues();
 
       // ---- Geolocation → nearest known city (real math, no geocoding API/key) --
       var CITY_COORDS = {
@@ -473,7 +542,8 @@
         useLocLabel.textContent = 'Locating…';
         navigator.geolocation.getCurrentPosition(function (pos) {
           var c = nearestCity(pos.coords.latitude, pos.coords.longitude);
-          state.city = c; D.setCity(c); citySel.value = c;
+          state.city = c; D.setCity(c); cityCombo.btn.textContent = c;
+          refreshVenues();
           useLocLabel.textContent = 'Near ' + c;
           useLocBtn.disabled = false;
           applyFilterChange();
@@ -511,11 +581,10 @@
         state.q = ''; state.genres = []; state.when = ''; state.venue = ''; state.festival = false; state.sort = 'date';
         state.priceMin = 0; state.priceMax = 300;
         document.getElementById('events-q').value = '';
-        venueSel.value = '';
+        venueCombo.btn.textContent = 'All venues';
         setPressed('fb-when', 'when', '');
         setPressed('fb-sort', 'sort', 'date');
         reflectGenre();
-        Array.prototype.forEach.call(distChips, function (o) { o.setAttribute('aria-pressed', 'false'); });
         paintPrice();
         applyFilterChange();
       });
@@ -575,23 +644,6 @@
         history.replaceState(null, '', '/events.html' + (str ? '?' + str : ''));
       }
 
-      function refreshVenueOptions() {
-        var cur = venueSel.value;
-        var seen = {};
-        var names = [];
-        loaded.forEach(function (ev) {
-          if (ev.venue_name && !seen[ev.venue_name]) { seen[ev.venue_name] = true; names.push(ev.venue_name); }
-        });
-        names.sort();
-        venueSel.innerHTML = '<option value="">All venues</option>';
-        names.forEach(function (n) {
-          var o = document.createElement('option');
-          o.value = n; o.textContent = n;
-          venueSel.appendChild(o);
-        });
-        venueSel.value = names.indexOf(cur) !== -1 ? cur : (state.venue && names.indexOf(state.venue) !== -1 ? state.venue : '');
-      }
-
       function hasRefinements() {
         return !!(state.q || state.genres.length || state.venue || state.festival || state.when ||
           state.priceMin > PRICE_MIN || state.priceMax < PRICE_MAX);
@@ -647,7 +699,6 @@
         opts.count = true;
         D.fetchEvents(opts).then(function (res) {
           loaded = res.rows;
-          refreshVenueOptions();
           renderGrid();
           // Pages are server fetch-windows; with a genre set a window can render
           // sparse (genre refines client-side) but Next still walks the catalog.

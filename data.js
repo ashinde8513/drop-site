@@ -129,6 +129,20 @@
     });
   };
 
+  // Distinct venues with upcoming shows, optionally city-scoped — feeds the
+  // filter comboboxes so "every option" really is every option, not one page's.
+  Drop.fetchVenues = function (city) {
+    var params = { select: 'venue_name', status: 'eq.published', date: 'gte.' + todayISO(), limit: 1000 };
+    if (city && city !== Drop.ALL_CITIES) params.city = 'ilike.' + city;
+    return get('events?' + q(params)).then(function (rows) {
+      var seen = {}, names = [];
+      (rows || []).forEach(function (r) {
+        if (r.venue_name && !seen[r.venue_name]) { seen[r.venue_name] = true; names.push(r.venue_name); }
+      });
+      return names.sort();
+    }).catch(function () { return []; });
+  };
+
   // Genre catalog with upcoming-show counts (event_genres view, busiest first) —
   // cached per page load. Empty array on failure; callers keep their static set.
   var genresCache = null;
