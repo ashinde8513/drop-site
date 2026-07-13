@@ -43,6 +43,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Download-the-app button (NEW feature — design-FIRST flow per the fresh direction rule)**: pushed to the "Website design prompt" design before implementing (hero CTA row). Live: app-shell home hero (downloadApp handler) + public hero + public mobile drawer (`[data-app-download]`). Device detection wired (iOS→APP_STORE_URL, Android→PLAY_STORE_URL constants in app/app.js + site.js) — constants EMPTY until the app ships, so all buttons route to trydropapp.com/download.html (waitlist) today; filling the two constants is the only go-live change.
 - Design mirror: waves 3+4 pushed (download button, artists Show more + legend), sc-if 195/195, `design-drop/` re-pulled byte-exact after.
 - Verified: 66/66 smoke + 11-check Playwright drive (gap 84px, search w=362 typed visible, artists 48→144 append, 144/144 avatars photographed, zero console errors).
+- Follow-up (deploy `ea7ee6d8`, commit 94d8c03): the fixed search overlay covered the Venues heading — pages with their own search (`[data-page-search]` on venues #v-q) now route the nav search icon to scroll+focus that field; other pages keep the overlay. Verified via Playwright.
+- Founder "not seeing changes in claude design": fork visually verified the canvas AFTER a fresh load — download button renders in the design hero, no staleness; his open tab was cached. Canvas takes 10–20s to paint (blank gray meanwhile) — easy to misread as missing content.
 
 ## 2026-07-12 late-night session — mobile QA + full-catalog rework, design synced (LIVE, Pages `3178fc56`, commit 8970228)
 ### 2026-07-12 — Claude (Fable) — 10-item founder mobile-QA batch; catalog goes client-side
