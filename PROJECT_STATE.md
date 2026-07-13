@@ -137,13 +137,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
-### ⏳ DRAFT — confirm & correct (2026-07-12)
-- **Changed:** workers/app-path/worker.js
-- **Tested:** _<what you ran + result>_
-- **Remaining:** _<what's left>_
+### 2026-07-12 — Claude (Fable) — account.html retired; logged-in web = Prism SPA (commits bc86295 + 62b6f7a, NOT yet deployed)
+- **Changed:** `workers/app-path/worker.js` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed — they 404'd as text/html on app.trydropapp.com, killing auth/data there); all 18 landing pages' Log in / Get started → `https://app.trydropapp.com/?mode=login|signup` (`?ref=` → signup, `?next=` inert); `app/app.js` boot handles `?mode=login|signup` + authed session on home/login/signup hops to Discover; `_redirects` `/login|/login.html|/account.html` → app shell (root copy reconciled with dist — stale `/app*→/account.html` rule dropped); `account.html/.css/.js` DELETED; `tests/smoke.spec.ts` rewritten for new hrefs; dist/ mirrored.
+- **Tested:** `npm test` 66/66 (desktop + mobile-safari); local python http.server + Playwright: `/app/?mode=login` renders split-panel login, `?mode=signup` renders signup, zero console errors. **Unverified:** authed→Discover boot (needs prod deploy — localhost has no session); Supabase OAuth redirect allowlist for app.trydropapp.com.
+- **Remaining:** production deploy (classifier-blocked — founder must name it); round-4 design delta port (agent in flight at session end): 782 changed lines in the "Website design prompt" design (project 5b6f000f-c206-44b6-ab8a-5981e36f2af9) vs `design-drop/Drop Website.dc.html` — filter-panel rework, scrollable city dropdowns, "Know of one?" CTAs, `cityToDenver`, log-form month labels; `<link rel="icon" href="/favicon.svg">` still missing from `app/index.html` head.
 - **Next steps (ranked):**
-  1. _<top priority — exact action, name the file/command/PR so the next agent starts immediately>_
-  2. _<second priority, if any>_
+  1. Deploy: `npx wrangler pages deploy dist --project-name=drop-site --branch=main` + `cd workers/app-path && npx wrangler deploy` (founder names the deploy in-session). Verify: `curl -sI https://app.trydropapp.com/vendor/supabase.js` → 200 JS; founder's logged-in Chrome tab at `trydropapp.com/app/` boots to Discover.
+  2. Land the round-4 design port into `app/index.html` + `app/app.js` (markers to grep when done: 'Know of one', 'Back to Denver', 'overflow-y:auto', "moL=['Jan'", 'cityToDenver'); add the favicon link to `app/index.html` head; `npm test` 66/66; sync `dist/app/`; deploy. Refetch design if needed: POST `/design/anthropic.omelette.api.v1alpha.OmeletteService/GetFile` `{projectId:"5b6f000f-c206-44b6-ab8a-5981e36f2af9", path:"Drop Website.dc.html"}` in a claude.ai tab → `{content: base64}`.
+  3. Founder QA of logged-in write paths on app.trydropapp.com (see Exact next step 3 above).
 
 ### 2026-07-09 — Claude — Full Prism web-shell redesign ingest (IN PROGRESS, branch `redesign/prism-web-shell`)
 - **Changed:** Whole-site replacement per founder directive ("literally everything") from the finished claude.ai design (design-drop/"Drop Website.dc.html", 49 screens, desktop+mobile). Committed so far: `design-drop/INGEST_PLAN.md` (scope/entity-split: website standalone on Supabase, Expo mobile-only), `shell.css` (web-shell component layer, token-pure, aa490da), legal/link/404/tests (6e93492). IN FLIGHT via 4 parallel subagents: `app/` (post-login web app ported from the design SPA — index/app.js/app.css/tokens.css, mock state), core browse (index/events/event), artist+venue pages, auth+acquisition (account states, city/genre SEO templates, share-plan/recap/wrapped, download/about/promoters). account.html keeps the Codex Supabase shell wiring (login/dashboard via RLS).
