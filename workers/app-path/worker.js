@@ -18,7 +18,7 @@ export default {
       // Pages root — never prefix them into /app/.
       const isSharedRoot = url.pathname.startsWith('/vendor/')
         || url.pathname === '/data.js'
-        || url.pathname === '/favicon.ico';
+        || url.pathname.startsWith('/favicon');
       upstream.pathname = isSharedRoot ? url.pathname : isAsset ? '/app' + url.pathname : '/app/';
       upstream.search = url.search;
       const response = await fetch(new Request(upstream.toString(), request));

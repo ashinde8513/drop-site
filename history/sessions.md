@@ -15,3 +15,10 @@ Newest first.
 - **Changed:** `workers/app-path/worker.js` now serves `app.trydropapp.com` login/sign-up/account shell routes from `/account.html` (explicit, non-extensionless route) and stamps shell responses with `Cache-Control: no-store, no-cache, max-age=0` to avoid stale login UI from CDN/browser cache.
 - **Changed:** `/_headers` now enforces same no-cache headers for `/account.html`, `/account.css`, and `/account.js`.
 - **Tested:** local path-rewrite checks and project diff review; Playwright suite cannot run in this environment because local test server binding is blocked by sandbox networking policy.
+
+### 2026-07-08 — Codex — Login route cleanup + auth redirect normalization
+- **Changed:** switched website auth links to `/account.html`; updated `workers/app-path/worker.js` so `/`, `/app*`, `/login`, and `/account.html` on `app.trydropapp.com` all serve the static account shell from `/account.html` with no-cache response handling.
+- **Changed:** normalized `account.js` auth callbacks from `/login` to `/account.html` for `AUTH_REDIRECT`, including password-reset return paths.
+- **Tested:** `npm test` (46/46 pass, desktop + mobile-safari) in this environment.
+- **Remaining:** deploy with `CLOUDFLARE_API_TOKEN` and founder-level QA of live auth callback return flow.
+- **Next:** see Exact next step above.

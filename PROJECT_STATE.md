@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-11
+Last updated: 2026-07-12
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -26,14 +26,25 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `2c9f7423`, commit 2171790): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
-2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
-3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
-4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
-5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
-6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+1. **Deploy the account-shell retirement + worker asset fix** (commit bc86295, already pushed): `npx wrangler pages deploy dist --project-name=drop-site --branch=main` then `cd workers/app-path && npx wrangler deploy`. The 2026-07-12 session's deploy was classifier-blocked — founder must name the deploy in-session ("deploy drop-site Pages + app-path worker"). Then verify live: `curl -sI https://app.trydropapp.com/vendor/supabase.js` + `/data.js` → 200 JS, and in the founder's logged-in Chrome tab `trydropapp.com/app/` boots to Discover (not the marketing hero).
+2. **Land the round-4 design port** (agent was porting at session end): delta = filter-panel rework, scrollable city dropdowns, "Know of one?" CTAs, cityToDenver, log-form month labels from `design-drop/Drop Website.dc.html` (refreshed copy) into `app/index.html`+`app/app.js`; verify npm test 66/66 + `/app/` zero console errors, add `<link rel="icon" href="/favicon.svg">` to app/index.html head, sync dist/app/, deploy. If the refreshed reference copy is missing, refetch: in a claude.ai design tab, POST `/design/anthropic.omelette.api.v1alpha.OmeletteService/GetFile` `{projectId:"5b6f000f-c206-44b6-ab8a-5981e36f2af9", path:"Drop Website.dc.html"}` → `{content: base64}`.
+3. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `2c9f7423`, commit 2171790): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
+4. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
+5. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
+6. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
+7. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
+8. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-11 session (latest) — filter polish rounds (LIVE, deploy `24184f17`, commits 40b3dbe + 3548f74)
+## 2026-07-12 session (latest) — account.html retired: logged-in web = Prism SPA (COMMITTED bc86295, deploy pending founder word)
+### 2026-07-12 — Claude (Fable) — old account shell retired + app-subdomain asset fix + round-4 design delta found
+- Root cause of founder report "logged-in site shows the old account page, not the Claude design": (1) all 18 landing pages' Log in / Get started still pointed at old static `/account.html`; (2) app.trydropapp.com was broken — Worker prefixed `/app` onto root-shared assets so `/vendor/supabase.js` + `/data.js` 404'd as text/html (auth/data dead); (3) the "Website design prompt" design (project 5b6f000f-c206-44b6-ab8a-5981e36f2af9) got a round-4 edit ~Jul 11 22:00 that was never ported.
+- Changed: Worker shared-root passthrough (`/vendor/`, `/data.js`, `/favicon*`); every landing link → `https://app.trydropapp.com/?mode=login|signup` (`?ref=` carried into signup, `?next=` left inert); app.js boot handles `?mode=login|signup` and an authed session sitting on home/login/signup hops to Discover (design contract: doLogin/doVerify → discover); `_redirects` `/login`, `/login.html`, `/account.html` → app shell + root `_redirects` reconciled with dist (stale `/app*→/account.html` rule dropped — root copy had drifted BEHIND dist); `account.html/.css/.js` deleted; smoke tests rewritten for new nav hrefs.
+- Tested: `npm test` 66/66 (desktop + mobile-safari); local `http.server` + Playwright — `/app/?mode=login` renders the split-panel login, `?mode=signup` renders signup, zero console errors. **Unverified:** authed→Discover boot needs the prod deploy (localhost origin has no session); Supabase OAuth redirect allowlist for app.trydropapp.com unchecked (password/username login is origin-independent).
+- Deploy: classifier-blocked (founder must name it) — see Exact next step 1.
+- Design-file recipe (DesignSync get_file caps at 256KiB; this file is 444KB): in a claude.ai design tab, `POST /design/anthropic.omelette.api.v1alpha.OmeletteService/GetFile` with `{projectId, path}` returns `{content: base64}`; ship it to disk via a localhost POST catcher (clipboard writeText freezes the renderer — don't).
+- Round-4 delta (782 changed lines: filter-panel rework, scrollable city dropdowns `overflow-y:auto`, "Know of one?" suggest CTAs, `cityToDenver`, log-form month labels) handed to a port agent at session end — landing state in next steps 2.
+
+## 2026-07-11 session — filter polish rounds (LIVE, deploy `24184f17`, commits 40b3dbe + 3548f74)
 - Genre filter: MULTI-select (checkmark toggles, "House +2" label, URL `genre=csv`, tiles toggle into the same selection); genre trigger reclassed full-width `.fb-select`; City/Venue/Genre share one custom-chevron style; filter panel spacing sp-xl; tile gradients restored (pages.css `background:none` override removed) + `color: var(--text)` (labels were UA black).
 - Location + Distance merged into ONE section: "Use my location" pill + "Within X mi" select in a flex-wrap `.loc-dist-row` — side-by-side when wide, stacked full-width in the 260px desktop sidebar; distance chips deleted; helper notes merged. Distance still honestly UI-only (no venue lat/lon yet).
 - All rounds design-doc-first, founder QA'd, then synced live. Tests 70/70 each round.
@@ -63,7 +74,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## CUTOVER RECORD (2026-07-06 — LIVE)
 - trydropapp.com + www → CF Pages project **drop-site** (this repo's `dist/`; deploy = `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, account ba8c4fed…, no git integration — deploy manually after changes; `npm test` first).
-- `trydropapp.com/app*` and `app.trydropapp.com/*` → Worker **drop-app-path**. Apex `/app` and `/app/...` redirect to `/account.html`; `app.trydropapp.com` serves the static browser account shell from this repo. No Expo web proxy is active on public routes.
+- `trydropapp.com/app*` and `app.trydropapp.com/*` → Worker **drop-app-path**. ~~Apex `/app` and `/app/...` redirect to `/account.html`; `app.trydropapp.com` serves the static browser account shell from this repo.~~ (Superseded: since 2026-07-09 the Worker serves the ported Prism SPA from `/app/`; 2026-07-12 the account shell was deleted outright.) No Expo web proxy is active on public routes.
 - DNS (zone 5ac5024f…): apex+www CNAME → drop-site.pages.dev; app host remains proxied so the Worker route can catch legacy links.
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
@@ -126,6 +137,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### ⏳ DRAFT — confirm & correct (2026-07-12)
+- **Changed:** workers/app-path/worker.js
+- **Tested:** _<what you ran + result>_
+- **Remaining:** _<what's left>_
+- **Next steps (ranked):**
+  1. _<top priority — exact action, name the file/command/PR so the next agent starts immediately>_
+  2. _<second priority, if any>_
+
 ### 2026-07-09 — Claude — Full Prism web-shell redesign ingest (IN PROGRESS, branch `redesign/prism-web-shell`)
 - **Changed:** Whole-site replacement per founder directive ("literally everything") from the finished claude.ai design (design-drop/"Drop Website.dc.html", 49 screens, desktop+mobile). Committed so far: `design-drop/INGEST_PLAN.md` (scope/entity-split: website standalone on Supabase, Expo mobile-only), `shell.css` (web-shell component layer, token-pure, aa490da), legal/link/404/tests (6e93492). IN FLIGHT via 4 parallel subagents: `app/` (post-login web app ported from the design SPA — index/app.js/app.css/tokens.css, mock state), core browse (index/events/event), artist+venue pages, auth+acquisition (account states, city/genre SEO templates, share-plan/recap/wrapped, download/about/promoters). account.html keeps the Codex Supabase shell wiring (login/dashboard via RLS).
 - **Tested:** shell.css verified token-pure (0 hexes, 0 undefined vars); track-4 pages Playwright-checked on a scratch server (7/7, console-clean); full `npm test` NOT yet run (pages in flux) — everything in flight is **unverified** until tracks land.
@@ -143,10 +162,3 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Next steps (ranked):**
   1. Deploy hero effects to trydropapp.com (Exact next step #1) + live-verify.
   2. Drop-App PR #146: wire `<RecapCelebration>` into the recap screen root View, device-QA burst + reduce-motion skip, then merge.
-
-### 2026-07-08 — Codex — Login route cleanup + auth redirect normalization
-- **Changed:** switched website auth links to `/account.html`; updated `workers/app-path/worker.js` so `/`, `/app*`, `/login`, and `/account.html` on `app.trydropapp.com` all serve the static account shell from `/account.html` with no-cache response handling.
-- **Changed:** normalized `account.js` auth callbacks from `/login` to `/account.html` for `AUTH_REDIRECT`, including password-reset return paths.
-- **Tested:** `npm test` (46/46 pass, desktop + mobile-safari) in this environment.
-- **Remaining:** deploy with `CLOUDFLARE_API_TOKEN` and founder-level QA of live auth callback return flow.
-- **Next:** see Exact next step above.

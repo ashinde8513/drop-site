@@ -3,7 +3,7 @@
 ## Design Context
 Before any UI work, read `PRODUCT.md` (strategy/voice) and `DESIGN.md` (visual tokens) in this repo. They are the impeccable design context.
 
-- **Register:** product — the **browse-first discovery website** (AXS-style; see `AXS_MODEL.md`), NOT a marketing landing. Content is the hero; browser login/account access lives on `app.trydropapp.com` as a static Supabase-backed shell, not Expo web.
+- **Register:** product — the **browse-first discovery website** (AXS-style; see `AXS_MODEL.md`), NOT a marketing landing. Content is the hero; the post-login app is the Prism SPA at `app.trydropapp.com` (`app/index.html` + `app/app.js`, ported from the "Website design prompt" claude.ai design), not Expo web. Design-first: iterate in the design project, founder QAs there, then port.
 - **Identity:** the Prism iridescent system (cyan→magenta→lime on deep navy `#0B0D12`). Shared with `~/Developer/Drop/drop-design` (the source-of-truth design system) — pull tokens from there; never fork the look.
 - **Principles:** one Prism everywhere · motion is music · social proof ("who's going") is the hook · funnel clarity over cleverness · premium through restraint.
 - **Anti-references:** generic SaaS/template, corporate navy fintech, crypto/web3 hype, Linktree-default blandness.
