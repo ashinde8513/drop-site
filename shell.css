@@ -281,7 +281,8 @@
   /* ponytail: dc.html's onSearchFocus opens a dedicated search screen (SPA-only);
      the static site has no screen router, so the mobile search icon instead
      reveals this same inline field as a full-width row (site.js toggles .search-open). */
-  .wn.search-open .wn__search-inline { display: flex !important; position: fixed; top: 64px; left: 0; right: 0; z-index: 55; padding: 10px 14px; background: var(--glass-dark); border-bottom: 1px solid var(--border-strong); }
+  /* !important beats the form's inline position:relative/max-width:360px — without it the field renders as a tiny bubble squeezed into the nav row */
+  .wn.search-open .wn__search-inline { display: flex !important; position: fixed !important; top: 64px; left: 0; right: 0; z-index: 55; max-width: none !important; padding: 10px 14px; background: var(--glass-dark); border-bottom: 1px solid var(--border-strong); }
   .wn__right .btn, .wn__right > .wn__link { display: none !important; }
   .wn__avatar, .wn__bell { display: none !important; }
   .wn__mobicon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text); font-size: 19px; cursor: pointer; flex: 0 0 auto; padding: 0; }

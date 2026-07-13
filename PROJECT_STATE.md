@@ -35,7 +35,16 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-12 late-night session (latest) — mobile QA + full-catalog rework, design synced (LIVE, Pages `3178fc56`, commit 8970228)
+## 2026-07-12 late-night session round 2 (latest) — 4 more mobile fixes + download-app button (LIVE, Pages `b24ed2a8`)
+### 2026-07-12 — Claude (Fable) — hero gap, nav-search bubble, 771-artist grid, device-aware download button
+- Public home mobile: hero→"Happening in" gap 150px→84px (`.hero` pb 36px + `.home-shows` pt 20px in the 720 block); stat line updated to the true numbers ("1,600+ shows across 200+ cities" — was 11 cities); guard test in smoke.spec.ts updated to match.
+- Public nav search tiny-bubble bug: `.wn.search-open .wn__search-inline` sets `position:fixed` but the form's INLINE `position:relative;max-width:360px` won → field rendered squeezed in the nav row, typing invisible. Fixed with `!important` on position + `max-width:none!important` (shell.css, all public pages). Verified: full-width input, typed text visible.
+- App-shell Artists tab: derives from the FULL catalog now — 771 artists (= exact DB count of distinct artists on upcoming published events), busiest-first, 48/page + "Show more (N left)" (resets on genre pick); avatars use DB photos; legend copy "near you" dropped (grid is global now).
+- **Download-the-app button (NEW feature — design-FIRST flow per the fresh direction rule)**: pushed to the "Website design prompt" design before implementing (hero CTA row). Live: app-shell home hero (downloadApp handler) + public hero + public mobile drawer (`[data-app-download]`). Device detection wired (iOS→APP_STORE_URL, Android→PLAY_STORE_URL constants in app/app.js + site.js) — constants EMPTY until the app ships, so all buttons route to trydropapp.com/download.html (waitlist) today; filling the two constants is the only go-live change.
+- Design mirror: waves 3+4 pushed (download button, artists Show more + legend), sc-if 195/195, `design-drop/` re-pulled byte-exact after.
+- Verified: 66/66 smoke + 11-check Playwright drive (gap 84px, search w=362 typed visible, artists 48→144 append, 144/144 avatars photographed, zero console errors).
+
+## 2026-07-12 late-night session — mobile QA + full-catalog rework, design synced (LIVE, Pages `3178fc56`, commit 8970228)
 ### 2026-07-12 — Claude (Fable) — 10-item founder mobile-QA batch; catalog goes client-side
 - **Full DB catalog**: `loadCatalog()` pages past PostgREST's 1000-row cap (1655 published upcoming), fetched once/session; Discover city/date filtering now client-side. City picker DERIVED from data (212 cities + All cities entry; was 11 hardcoded) with state lookups ("CO"/"Colorado" both work, `STATE_NAMES` map). Search: any query OR facet searches the whole catalog (state names match events too — "texas" → 93 results from Denver); facet option lists (genre/city/venue) are catalog-wide, `_catMapped` cached.
 - **Filters**: Discover aside REMOVED (search-only, founder call — reverts half of 2f1b69d); location disclaimer deleted; mobile compact (`.fsel` pills 42px, sp-sm gaps, sp-md padding via 720px overrides). City/venue dropdown typing verified focus-safe (engine already preserves caret; live-verified typeable).

@@ -432,6 +432,16 @@
   const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming' };
   const stateName = st => STATE_NAMES[st] || st || '';
 
+  // ponytail: store URLs stay '' until the app ships — the button routes to
+  // the public download/waitlist page; fill these in and nothing else changes.
+  const APP_STORE_URL = '', PLAY_STORE_URL = '';
+  function appDownloadHref() {
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    if (/iPhone|iPad|iPod/i.test(ua) && APP_STORE_URL) return APP_STORE_URL;
+    if (/Android/i.test(ua) && PLAY_STORE_URL) return PLAY_STORE_URL;
+    return 'https://trydropapp.com/download.html';
+  }
+
   // Canvas render of the Wrapped 9:16 share card — a from-scratch redraw
   // (not a DOM screenshot; no html2canvas dependency) good enough for
   // "Download image". Native share (wrappedShare handler) covers "post to
@@ -509,7 +519,7 @@ class Component extends DCLogic {
     // notifications (unread ids)
     notifRead: {},
     // pick artists / venues / crew / plans / wrapped
-    artGenre: 'All', followArt: {}, followVen: {},
+    artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
     crewTab: 'Friends', reqActioned: {}, addedPeople: {},
     activePlan: 'p-odesza', planSpot: {}, planTab: 'plan',
@@ -988,15 +998,18 @@ class Component extends DCLogic {
     // genre buckets reuse Drop.genreOf's real bucketing so it matches the
     // GENRES filter chips; there's no real follower/capacity count wired
     // this phase, so those fields are just left off rather than invented.
+    // Artists from the FULL catalog (every artist with an upcoming show
+    // anywhere — 700+), busiest first; the grid pages via artShown.
     const realArtists = (()=>{
       const seen = new Map();
-      events.forEach(e=>(e.lineupArtists||[]).forEach(a=>{
-        if (a && a.name && !seen.has(a.name)) {
-          const genre = (a.genres && a.genres.length && Drop) ? Drop.genreOf({ event_artists:[{ artists:{ genres:a.genres } }] }) : '';
-          seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.safeUrl(a.image_url)) || '', upcoming:true });
-        }
+      (this.CATALOG || s.realEvents || []).forEach(r=>(r.event_artists||[]).forEach(x=>{
+        const a = x && x.artists; if (!a || !a.name) return;
+        const e = seen.get(a.name);
+        if (e) { e.shows++; return; }
+        const genre = (a.genres && a.genres.length && Drop) ? Drop.genreOf({ event_artists:[{ artists:{ genres:a.genres } }] }) : '';
+        seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.safeUrl(a.image_url)) || '', upcoming:true, shows:1 });
       }));
-      return [...seen.values()];
+      return [...seen.values()].sort((a,b)=> b.shows-a.shows || a.name.localeCompare(b.name));
     })();
     // Venues from the FULL catalog (not the city-scoped Discover window) so
     // Browse Venues covers every venue in the DB, with real state + counts.
@@ -1400,9 +1413,9 @@ class Component extends DCLogic {
     const artGenreCounts = {};
     realArtists.forEach(a=>{ if(a.genre) artGenreCounts[a.genre]=(artGenreCounts[a.genre]||0)+1; });
     const artGenreNames = ['All', ...Object.keys(artGenreCounts).sort((a,b)=>artGenreCounts[b]-artGenreCounts[a])];
-    const artGenreChips = artGenreNames.map(g=>({ label:g, cls: s.artGenre===g?'is-active':'', pick:()=>this.setState({artGenre:g}) }));
+    const artGenreChips = artGenreNames.map(g=>({ label:g, cls: s.artGenre===g?'is-active':'', pick:()=>this.setState({artGenre:g, artShown:48}) }));
     const artFiltered = s.artGenre==='All' ? realArtists : realArtists.filter(a=>a.genre===s.artGenre);
-    const artistGrid = artFiltered.map(a=>{
+    const artistGrid = artFiltered.slice(0, s.artShown).map(a=>{
       const on = !!s.followArt[a.name];
       const aUrl = a.img && cssUrl(a.img);
       return { name:a.name, genre:a.genre, upcoming:a.upcoming,
@@ -1415,6 +1428,8 @@ class Component extends DCLogic {
     const artBulkShow = s.artGenre!=='All';
     const artAllFollowed = artFiltered.length>0 && artFiltered.every(a=>s.followArt[a.name]);
     const artBulkLabel = (artAllFollowed?'Unfollow all ':'Follow all ')+s.artGenre;
+    const artMoreShow = artFiltered.length > s.artShown;
+    const artMoreLabel = 'Show more ('+(artFiltered.length - s.artShown)+' left)';
 
     // ===== Browse Venues — full-catalog venues grouped by STATE (design
     // format): sticky state header, card = name + "city · N upcoming shows".
@@ -1887,7 +1902,8 @@ class Component extends DCLogic {
       myPast, myPastEmpty: myPast.length===0,
 
       // pick artists
-      artGenreChips, artistGrid, artistGridEmpty, artBulkShow, artBulkLabel,
+      artGenreChips, artistGrid, artistGridEmpty, artBulkShow, artBulkLabel, artMoreShow, artMoreLabel,
+      artMore:()=>this.setState(x=>({ artShown: x.artShown + 96 })),
       // browse venues
       venueQuery: s.venueQuery, venueGroups, venuesEmpty: venMatched.length===0,
       // crew
@@ -2280,6 +2296,7 @@ class Component extends DCLogic {
       oauthGoogle:()=>this.oauth('google'),
       oauthApple:()=>this.oauth('apple'),
       oauthFacebook:()=>this.oauth('facebook'),
+      downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       closeGate:()=>this.setState({gate:false}),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),

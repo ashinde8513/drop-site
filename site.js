@@ -487,8 +487,19 @@
     update();
   }
 
+  // ---- download-the-app buttons -------------------------------------------
+  // ponytail: store URLs stay '' until the app ships — buttons keep their
+  // /download.html href; fill these in and nothing else changes.
+  var APP_STORE_URL = '', PLAY_STORE_URL = '';
+  function initDownloadBtns() {
+    var ua = navigator.userAgent || '';
+    var store = /iPhone|iPad|iPod/i.test(ua) ? APP_STORE_URL : (/Android/i.test(ua) ? PLAY_STORE_URL : '');
+    if (!store) return;
+    doc.querySelectorAll('[data-app-download]').forEach(function (a) { a.href = store; });
+  }
+
   // ---- boot ---------------------------------------------------------------
-  function boot() { initNav(); initRails(); }
+  function boot() { initNav(); initRails(); initDownloadBtns(); }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
   Drop.initRails = initRails; // pages that inject rails later can re-bind

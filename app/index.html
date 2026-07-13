@@ -119,6 +119,7 @@
           <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;align-items:center;">
             <button type="button" class="btn btn--primary" onClick="{{ goSignup }}">Get started — it's free</button>
             <button type="button" class="btn btn--ghost" onClick="{{ goLogin }}">Log in</button>
+            <button type="button" class="btn btn--secondary" onClick="{{ downloadApp }}">⤓ Download the app</button>
           </div>
           <div style="display:flex;align-items:center;gap:var(--sp-md);margin-top:var(--sp-xl);color:var(--text-muted);font-size:var(--fs-sm);">
             <div class="avstack">
@@ -1373,7 +1374,7 @@
         </sc-for>
       </div>
       <div style="display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:var(--fs-xs);margin-bottom:var(--sp-xl);">
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--attended);box-shadow:0 0 8px var(--attended);"></span> Has upcoming shows near you
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--attended);box-shadow:0 0 8px var(--attended);"></span> Has upcoming shows
       </div>
       <sc-if value="{{ artistGridEmpty }}">
         <div class="empty"><div class="empty__ico">🎧</div><div class="empty__title">No artists yet</div><div class="empty__body">Once shows are live in your city, artists will show up here.</div></div>
@@ -1393,6 +1394,11 @@
           </div>
         </sc-for>
       </div>
+      <sc-if value="{{ artMoreShow }}">
+        <div style="display:flex;justify-content:center;margin-top:var(--sp-xl);">
+          <button type="button" class="btn btn--ghost" onClick="{{ artMore }}">{{ artMoreLabel }}</button>
+        </div>
+      </sc-if>
     </div>
   </main>
 </sc-if>

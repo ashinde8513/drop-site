@@ -903,6 +903,9 @@ button { font: inherit; cursor: pointer; }
 @media (max-width: 720px) {
   .artist-hero { grid-template-columns: 1fr; gap: 20px; }
   .artist-hero .artist-hero-media { max-width: 240px; }
+  /* mobile: hero proof line and "Happening in {city}" sat ~150px apart */
+  .hero { padding-bottom: 36px; }
+  .home-shows { padding-top: 20px; }
 }
 @media (max-width: 520px) {
   .artist-hero .btn-primary { width: 100%; }

@@ -90,8 +90,8 @@ test.describe('landing site smoke', () => {
   test('hero proof line is the honest tracking stat, not a fabricated user count', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
-    await expect(page.locator('.hero-proof')).toContainText('1,500+');
-    await expect(page.locator('.hero-proof')).toContainText('11 cities');
+    await expect(page.locator('.hero-proof')).toContainText('1,600+');
+    await expect(page.locator('.hero-proof')).toContainText('200+ cities');
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
