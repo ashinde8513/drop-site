@@ -3,6 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+  // Supabase OAuth/email callbacks fall back to the Site URL (this page) when
+  // the redirect target isn't allowlisted, stranding the auth code on the
+  // marketing home. Forward it to the app shell. PKCE needs the code_verifier
+  // written at sign-in time: if THIS origin holds one the flow started on
+  // /app/ here; otherwise it started on app.trydropapp.com.
+  (function () {
+    var qh = location.search + location.hash;
+    if (!/[?#&](code|access_token|error_description)=/.test(qh)) return;
+    var ownVerifier = false;
+    try { ownVerifier = Object.keys(localStorage).some(function (k) { return /^sb-.*-code-verifier$/.test(k); }); } catch (e) {}
+    location.replace((ownVerifier ? '/app/' : 'https://app.trydropapp.com/') + location.search + location.hash);
+  })();
+  </script>
   <title>Drop — Discover live shows near you</title>
   <meta name="description" content="Browse concerts, raves, festivals, and club nights near you on Drop. Search by artist, venue, or date, see who's going, and get tickets — the social way to discover live music." />
   <meta name="theme-color" content="#0B0D12" />
