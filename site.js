@@ -281,6 +281,14 @@
     var searchToggle = nav.querySelector('[data-nav-search]');
     if (searchToggle) {
       searchToggle.addEventListener('click', function () {
+        // Pages with their own search (venues) route the icon there instead of
+        // opening the overlay row, which would cover the page heading.
+        var pageSearch = doc.querySelector('[data-page-search]');
+        if (pageSearch) {
+          pageSearch.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          pageSearch.focus({ preventScroll: true });
+          return;
+        }
         var open = nav.classList.toggle('search-open');
         searchToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) { var f = nav.querySelector('.wn__search-inline input'); if (f) f.focus(); }
