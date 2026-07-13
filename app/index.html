@@ -292,17 +292,6 @@
         </sc-for>
       </div>
 
-      <!-- Festival promo banner -->
-      <a href="#" onClick="{{ goFestival }}" style="position:relative;overflow:hidden;display:flex;align-items:center;gap:var(--sp-lg);border-radius:var(--r-lg);border:1px solid var(--border-strong);padding:var(--sp-lg) var(--sp-xl);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);flex-wrap:wrap;">
-        <div style="position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(226,77,255,0.35),transparent 62%);top:-100px;right:-40px;filter:blur(24px);"></div>
-        <div style="position:relative;flex:1;min-width:220px;">
-          <div class="wsc__date">SAT–SUN · JUL 26–27</div>
-          <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);letter-spacing:var(--tr-snug);">Global Dance Festival 2026</div>
-          <div style="color:var(--text-secondary);font-size:var(--fs-sm);">4 stages · 38 sets · build your set-time schedule</div>
-        </div>
-        <span class="btn btn--primary btn--sm" style="position:relative;">View schedule</span>
-      </a>
-
       <!-- Pick your night (genre filter) -->
       <div class="sec" style="padding:var(--sp-md) 0 var(--sp-sm);">
         <div class="sec__title">Pick your night</div>
@@ -329,12 +318,6 @@
           <a href="#" class="sec__more" onClick="{{ goCrew }}">Find friends</a>
         </div>
         <div style="display:flex;gap:var(--sp-lg);overflow-x:auto;padding-bottom:var(--sp-xs);">
-          <sc-for list="{{ crew }}" as="f" hint-placeholder-count="6">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;width:68px;">
-              <span style="width:56px;height:56px;border-radius:50%;background:var(--grad-brand);border:2px solid var(--surface);box-shadow:0 0 0 2px {{ f.ring }};"></span>
-              <span style="font-size:var(--fs-xs);color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;">{{ f.name }}</span>
-            </div>
-          </sc-for>
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;width:68px;cursor:pointer;" onClick="{{ goInvite }}">
             <span style="width:56px;height:56px;border-radius:50%;background:var(--glass);border:1px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:24px;">+</span>
             <span style="font-size:var(--fs-xs);color:var(--text-muted);">Invite</span>
@@ -393,6 +376,14 @@
           </div>
         </sc-for>
       </div>
+
+      <sc-if value="{{ discShowPager }}">
+        <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-md);margin-top:var(--sp-xl);">
+          <button type="button" class="btn btn--ghost btn--sm" onClick="{{ discPrev }}" disabled="{{ discPrevDisabled }}">← Prev</button>
+          <span style="font-size:var(--fs-sm);color:var(--text-secondary);font-variant-numeric:tabular-nums;min-width:96px;text-align:center;">{{ discPageLabel }}</span>
+          <button type="button" class="btn btn--ghost btn--sm" onClick="{{ discNext }}" disabled="{{ discNextDisabled }}">Next →</button>
+        </div>
+      </sc-if>
 
       <sc-if value="{{ gridEmpty }}">
         <div class="empty">
@@ -520,6 +511,9 @@
               <input type="text" placeholder="Add a comment…" onFocus="{{ requireComment }}" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
               <button type="button" class="btn btn--secondary btn--sm" onClick="{{ requireComment }}">Post</button>
             </div>
+            <sc-if value="{{ commentsEmpty }}">
+              <div class="empty"><div class="empty__ico">💬</div><div class="empty__title">No comments yet</div><div class="empty__body">Be the first.</div></div>
+            </sc-if>
             <sc-for list="{{ comments }}" as="c" hint-placeholder-count="2">
               <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
                 <span style="width:38px;height:38px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;"></span>
@@ -687,12 +681,14 @@
           <sc-if value="{{ contentReady }}">
           <sc-if value="{{ searchEmpty }}">
             <div style="margin-bottom:var(--sp-xxl);">
+              <sc-if value="{{ hasRecentSearches }}">
               <div class="sec__title" style="margin-bottom:var(--sp-md);">Recent searches</div>
               <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
                 <sc-for list="{{ recentSearches }}" as="r" hint-placeholder-count="4">
                   <button type="button" class="chip" onClick="{{ r.pick }}">↺ {{ r.label }}</button>
                 </sc-for>
               </div>
+              </sc-if>
               <div class="sec__title" style="margin-bottom:var(--sp-md);">Trending genres</div>
               <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
                 <sc-for list="{{ trendingChips }}" as="t" hint-placeholder-count="6">
@@ -911,6 +907,7 @@
       <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-lg);">✦ &nbsp;You're all set, {{ rmName }}</div>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.04;letter-spacing:var(--tr-tight);margin:0 0 var(--sp-sm);">Lock in your first show</h1>
       <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0 0 var(--sp-xl);">RSVP to one show now — your crew will see you're going.</p>
+      <sc-if value="{{ rmHasEvent }}">
       <div style="text-align:left;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border-strong);box-shadow:var(--shadow-card);">
         <div style="position:relative;height:220px;background-size:cover;background-position:center;{{ rm.gradStyle }}">
           <div class="wsc__scrim"></div>
@@ -926,6 +923,10 @@
           <button type="button" class="btn btn--primary btn--block" onClick="{{ rmGoing }}">✓ I'm going</button>
         </div>
       </div>
+      </sc-if>
+      <sc-if value="{{ rmNoEvent }}">
+        <div class="empty"><div class="empty__ico">🎟️</div><div class="empty__title">No shows loaded yet</div><div class="empty__body">Head to Discover to find your first show.</div></div>
+      </sc-if>
       <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-md);" onClick="{{ rmSkip }}">Maybe later — take me to Discover</button>
     </div>
   </main>
@@ -940,7 +941,7 @@
         <div style="flex:1;min-width:220px;">
           <div style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
             <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">{{ prof.name }}</h1>
-            <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--surface-hi);color:var(--text-muted);padding:4px 10px;border-radius:var(--r-pill);">DEMO — DROP+</span>
+            <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--surface-hi);color:var(--text-muted);padding:4px 10px;border-radius:var(--r-pill);">DROP+ — COMING SOON</span>
           </div>
           <div style="color:var(--text-secondary);margin:2px 0 var(--sp-sm);">{{ prof.handleCity }}</div>
           <p style="color:var(--text-secondary);font-size:var(--fs-sm);max-width:480px;margin:0;">{{ prof.bio }}</p>
@@ -1010,7 +1011,7 @@
   <main class="wsh">
     <div style="max-width:640px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Notifications <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Notifications</h1>
         <div style="display:flex;gap:var(--sp-sm);">
           <button type="button" class="btn btn--ghost btn--sm" onClick="{{ markAllRead }}">Mark all read</button>
           <button type="button" class="btn btn--ghost btn--sm" onClick="{{ clearNotifs }}">Clear all</button>
@@ -1115,7 +1116,7 @@
           <sc-if value="{{ art.hasImage }}"><img src="{{ art.imageUrl }}" alt="" referrerpolicy="no-referrer" style="width:128px;height:128px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;" /></sc-if>
           <sc-if value="{{ art.noImage }}"><span style="width:128px;height:128px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span></sc-if>
           <div style="flex:1;min-width:240px;">
-            <div class="wsc__date">{{ art.genre }}</div>
+            <sc-if value="{{ art.hasGenre }}"><div class="wsc__date">{{ art.genre }}</div></sc-if>
             <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(32px,5vw,52px);letter-spacing:var(--tr-tight);line-height:1;margin:4px 0 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">{{ art.name }}<sc-if value="{{ art.verified }}"><span title="Verified artist" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--grad-glow-fill);color:var(--ink);font-size:15px;font-weight:900;box-shadow:var(--shadow-glow);flex:0 0 auto;">✓</span></sc-if></h1>
             <div style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
               <sc-if value="{{ art.hasSeen }}"><button type="button" onClick="{{ goSeen }}" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:5px 12px;border-radius:var(--r-pill);border:0;cursor:pointer;">★ SEEN {{ art.seenCount }} · view history</button></sc-if><sc-if value="{{ art.hasWebsite }}"><a href="{{ art.websiteUrl }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-size:var(--fs-sm);font-weight:600;">🔗 Website</a></sc-if><sc-if value="{{ art.hasMerch }}"><a href="{{ art.merchUrl }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-size:var(--fs-sm);font-weight:600;">🛒 Merch</a></sc-if>
@@ -1136,13 +1137,6 @@
             <button type="button" class="btn btn--secondary btn--sm" onClick="{{ openEditLinks }}">Edit links</button>
           </div>
         </sc-if>
-
-        <!-- stat row -->
-        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-xl);padding-bottom:var(--sp-xl);border-bottom:1px solid var(--border);margin-bottom:var(--sp-xl);">
-          <div class="metric"><span class="metric__label">Monthly listeners</span><span class="metric__value" style="font-size:var(--fs-xl);">{{ art.monthly }}</span></div>
-          <div class="metric"><span class="metric__label">Followers on Drop</span><span class="metric__value" style="font-size:var(--fs-xl);color:var(--interested);">{{ art.followers }}</span></div>
-          <div class="metric"><span class="metric__label">Home base</span><span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ art.hometown }}</span></div>
-        </div>
 
         <!-- friends who saw wedge -->
         <sc-if value="{{ art.hasFriends }}">
@@ -1177,8 +1171,10 @@
         <div style="padding-bottom:var(--sp-xl);border-bottom:1px solid var(--border);margin-bottom:var(--sp-xl);">
           <div class="sec" style="padding:0 0 var(--sp-md);">
             <div class="sec__title">Fan reviews</div>
-            <span style="font-size:var(--fs-sm);color:var(--text-secondary);"><span style="color:var(--gold);">★</span> <b style="color:var(--text);">{{ art.rating }}</b> · {{ art.reviewCount }} reviews</span>
           </div>
+          <sc-if value="{{ artReviewsEmpty }}">
+            <div class="empty"><div class="empty__ico">★</div><div class="empty__title">No reviews yet</div><div class="empty__body">Be the first.</div></div>
+          </sc-if>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--sp-md);">
             <sc-for list="{{ artReviews }}" as="r" hint-placeholder-count="3">
               <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -1219,28 +1215,14 @@
         <div style="position:absolute;inset:0;background:var(--scrim);"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;max-width:1440px;margin:0 auto;padding:var(--sp-xl);display:flex;align-items:flex-end;gap:var(--sp-lg);flex-wrap:wrap;">
           <div style="flex:1;min-width:240px;">
-            <div class="wsc__date">📍 {{ ven.location }}</div>
+            <sc-if value="{{ ven.hasLocation }}"><div class="wsc__date">📍 {{ ven.location }}</div></sc-if>
             <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4.5vw,48px);letter-spacing:var(--tr-tight);line-height:1.02;margin:4px 0 8px;">{{ ven.name }}</h1>
-            <div style="display:flex;gap:var(--sp-lg);color:var(--text-secondary);font-size:var(--fs-sm);flex-wrap:wrap;">
-              <span><span style="color:var(--gold);">★</span> <b style="color:var(--text);">{{ ven.rating }}</b> · {{ ven.reviews }} reviews</span>
-              <span>Capacity {{ ven.capacity }}</span>
-            </div>
           </div>
           <button type="button" class="{{ venFollowCls }}" onClick="{{ venFollow }}">{{ venFollowLabel }}</button>
         </div>
       </div>
       <div style="max-width:1440px;margin:0 auto;padding:var(--sp-xl);">
         <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-xl);">← Back to discover</a>
-        <div style="padding-bottom:var(--sp-xl);border-bottom:1px solid var(--border);margin-bottom:var(--sp-xl);">
-          <div class="sec__title" style="margin-bottom:var(--sp-md);">About this venue</div>
-          <p style="color:var(--text-secondary);font-size:var(--fs-md);line-height:var(--lh-base);max-width:760px;margin:0 0 var(--sp-lg);">{{ ven.about }}</p>
-          <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
-            <span class="chip">🅿 Paid lots + rideshare</span>
-            <span class="chip">🎒 Clear-bag policy</span>
-            <span class="chip">♿ Accessible entry</span>
-            <span class="chip">🔞 All ages</span>
-          </div>
-        </div>
         <sc-if value="{{ venHasShows }}">
           <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">Upcoming at {{ ven.name }}</div></div>
           <div class="wsh__grid" style="justify-content:center;">
@@ -1386,8 +1368,8 @@
     <div style="max-width:1440px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-md);">
         <div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Follow artists <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
-          <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Get an alert the moment they announce a show near you. (This browse list is a fixed sample — follow the artists in a show's real lineup on the event page to save for real.)</p>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Follow artists</h1>
+          <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Get an alert the moment they announce a show near you.</p>
         </div>
         <sc-if value="{{ artBulkShow }}"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ artBulkFollow }}">{{ artBulkLabel }}</button></sc-if>
       </div>
@@ -1399,6 +1381,9 @@
       <div style="display:flex;align-items:center;gap:6px;color:var(--text-muted);font-size:var(--fs-xs);margin-bottom:var(--sp-xl);">
         <span style="width:8px;height:8px;border-radius:50%;background:var(--attended);box-shadow:0 0 8px var(--attended);"></span> Has upcoming shows near you
       </div>
+      <sc-if value="{{ artistGridEmpty }}">
+        <div class="empty"><div class="empty__ico">🎧</div><div class="empty__title">No artists yet</div><div class="empty__body">Once shows are live in your city, artists will show up here.</div></div>
+      </sc-if>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-md);">
         <sc-for list="{{ artistGrid }}" as="a" hint-placeholder-count="12">
           <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -1408,7 +1393,7 @@
                 <sc-if value="{{ a.upcoming }}"><span style="position:absolute;bottom:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--attended);border:2px solid var(--surface);box-shadow:0 0 8px var(--attended);"></span></sc-if>
               </div>
               <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-sm);text-align:center;color:var(--text);">{{ a.name }}</div>
-              <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ a.genre }} · {{ a.followers }}</div>
+              <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ a.genre }}</div>
             </button>
             <button type="button" class="{{ a.cls }}" onClick="{{ a.toggle }}" style="width:100%;padding:8px;border-radius:var(--r-pill);border:1px solid var(--glass-border);font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);cursor:pointer;">{{ a.label }}</button>
           </div>
@@ -1442,7 +1427,7 @@
                 <span style="width:48px;height:48px;border-radius:var(--r-md);background:var(--grad-brand);flex:0 0 auto;"></span>
                 <div style="flex:1;min-width:0;">
                   <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);color:var(--text);">{{ v.name }}</div>
-                  <div style="font-size:var(--fs-sm);color:var(--text-secondary);">{{ v.city }} · Cap. {{ v.capacity }}</div>
+                  <div style="font-size:var(--fs-sm);color:var(--text-secondary);">{{ v.city }}</div>
                 </div>
                 <span class="{{ v.badgeCls }}" style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);padding:4px 10px;border-radius:var(--r-pill);{{ v.badgeStyle }}">{{ v.badge }}</span>
                 <span style="color:var(--text-muted);">›</span>
@@ -1460,7 +1445,7 @@
   <main class="wsh">
     <div style="max-width:820px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Crew <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Crew</h1>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goInvite }}">↗ Invite friends</button>
       </div>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
@@ -1471,6 +1456,7 @@
 
       <!-- Friends -->
       <sc-if value="{{ crewFriends }}">
+        <sc-if value="{{ friendsEmpty }}"><div class="empty"><div class="empty__ico">👥</div><div class="empty__title">No friends yet</div><div class="empty__body">Invite your crew.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ friendsList }}" as="f" hint-placeholder-count="4">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
@@ -1515,6 +1501,7 @@
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
         </div>
         <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Suggested — based on your taste</div>
+        <sc-if value="{{ findEmpty }}"><div class="empty"><div class="empty__ico">🔎</div><div class="empty__title">No suggestions yet</div><div class="empty__body">Invite friends by link instead.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ findList }}" as="p" hint-placeholder-count="3">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
@@ -1534,6 +1521,7 @@
 
       <!-- Plans -->
       <sc-if value="{{ crewPlans }}">
+        <sc-if value="{{ plansListEmpty }}"><div class="empty"><div class="empty__ico">🎉</div><div class="empty__title">No plans yet</div><div class="empty__body">Start one from any show.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
           <sc-for list="{{ plansList }}" as="p" hint-placeholder-count="2">
             <button type="button" onClick="{{ p.open }}" style="display:flex;align-items:center;gap:var(--sp-lg);padding:var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:left;cursor:pointer;flex-wrap:wrap;">
@@ -1566,7 +1554,7 @@
         <div class="wsc__scrim"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:var(--sp-xl);">
           <div class="wsc__date">{{ pd.dateShort }}</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:var(--tr-tight);margin:4px 0 2px;">{{ pd.title }} <span class="chip" style="pointer-events:none;vertical-align:middle;">Demo data</span></h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:var(--tr-tight);margin:4px 0 2px;">{{ pd.title }}</h1>
           <div style="color:var(--text-secondary);font-size:var(--fs-sm);">{{ pd.venueCity }}</div>
         </div>
       </div>
@@ -1633,11 +1621,12 @@
     <div style="position:relative;width:100%;max-width:480px;">
       <div style="text-align:center;margin-bottom:var(--sp-xl);">
         <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-md);">✓ &nbsp;You're going to {{ cbTitle }}</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-sm);">Who are you going with? <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-sm);">Who are you going with?</h1>
         <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0;">Start a plan and we'll keep everyone in sync.</p>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-xl);padding:var(--sp-lg);box-shadow:var(--shadow-card);">
         <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-md);">Friends also interested</div>
+        <sc-if value="{{ cbFriendsEmpty }}"><div class="empty" style="margin-bottom:var(--sp-lg);"><div class="empty__ico">👥</div><div class="empty__title">No mutual interest yet</div><div class="empty__body">Invite friends to see who's in.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);margin-bottom:var(--sp-lg);">
           <sc-for list="{{ cbFriends }}" as="f" hint-placeholder-count="3">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-sm) var(--sp-md);background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -1659,7 +1648,7 @@
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goCrew }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to crew</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends, earn Drop+ <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends, earn Drop+</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Every friend who joins gets you closer to a free month of Drop+.</p>
 
       <!-- reward meter -->
@@ -1683,12 +1672,13 @@
       <!-- share link -->
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Your invite link</label>
       <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-xl);">
-        <input type="text" value="drop.fm/join/alexraves" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="drop.fm/join/{{ inviteHandle }}" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <button type="button" class="btn btn--primary" onClick="{{ inviteCopy }}">Copy</button>
       </div>
 
       <!-- invite rows -->
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Invite from your crew suggestions</div>
+      <sc-if value="{{ inviteListEmpty }}"><div class="empty"><div class="empty__ico">👥</div><div class="empty__title">No suggestions yet</div><div class="empty__body">Share your link above instead.</div></div></sc-if>
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
         <sc-for list="{{ inviteList }}" as="p" hint-placeholder-count="3">
           <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -2023,18 +2013,13 @@
     <div style="max-width:1000px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
         <div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Memories <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Memories</h1>
           <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:4px 0 0;">Photos from your nights out. Only you can see these until you post a recap.</p>
         </div>
         <div style="display:flex;gap:var(--sp-sm);">
           <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goLogShow }}">＋ Log a show</button>
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ goRecap }}">Create recap</button>
         </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--social-glass);border:1px solid var(--social-glass-border);border-radius:var(--r-md);margin-bottom:var(--sp-xl);">
-        <span style="width:44px;height:44px;border-radius:var(--r-md);flex:0 0 auto;background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);"></span>
-        <div style="flex:1;"><div style="font-weight:600;font-size:var(--fs-sm);">ODESZA — The Last Goodbye</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Jun 20 · Red Rocks Amphitheatre</div></div>
-        <span style="font-size:var(--fs-xs);color:var(--text-muted);">Drop photos below ↓</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--sp-md);">
         <sc-for list="{{ memorySlots }}" as="m" hint-placeholder-count="6">
@@ -2058,8 +2043,7 @@
       <sc-if value="{{ recapGate }}">
         <div style="max-width:460px;margin:8vh auto 0;text-align:center;">
           <div style="width:120px;height:120px;border-radius:var(--r-xl);margin:0 auto var(--sp-lg);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);"></div>
-          <div class="wsc__date">FRI, JUN 20 · RED ROCKS</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);margin:6px 0 var(--sp-xs);">Were you at ODESZA? <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);margin:6px 0 var(--sp-xs);">Were you there?</h1>
           <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Confirm you attended to build a recap. Recaps are only for shows you were actually at.</p>
           <div style="display:flex;gap:var(--sp-md);justify-content:center;">
             <button type="button" class="btn btn--primary" onClick="{{ recapYes }}">Yes, I was there</button>
@@ -2120,9 +2104,12 @@
   <main class="wsh">
     <div style="max-width:720px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-xl);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Shows you've seen <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Shows you've seen</h1>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goLogShow }}">＋ Log a show</button>
       </div>
+      <sc-if value="{{ seenEmpty }}">
+        <div class="empty"><div class="empty__ico">🕘</div><div class="empty__title">No shows logged yet</div><div class="empty__body">Log a past show to build your history.</div></div>
+      </sc-if>
       <sc-for list="{{ seenYears }}" as="yr" hint-placeholder-count="2">
         <div style="margin-bottom:var(--sp-xxl);">
           <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--accent);margin-bottom:var(--sp-md);">{{ yr.year }}</div>
@@ -2148,7 +2135,7 @@
 <sc-if value="{{ screenTagged }}">
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Tagged in shows <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Tagged in shows</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Friends tagged you as attending. Accept to add it to your history — nothing shows up without your OK.</p>
       <sc-if value="{{ taggedEmpty }}">
         <div class="empty"><div class="empty__ico">🏷️</div><div class="empty__title">You're all caught up</div><div class="empty__body">No pending tags right now.</div></div>
@@ -2175,27 +2162,15 @@
     <div style="max-width:720px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <div style="position:relative;overflow:hidden;border-radius:var(--r-xl);border:1px solid var(--border-strong);padding:var(--sp-xl);margin-bottom:var(--sp-xl);background:linear-gradient(120deg,#4d1c4a,#1c274d 55%,#0d3b52);">
         <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(182,255,106,0.24),transparent 62%);top:-120px;right:-40px;filter:blur(28px);"></div>
-        <div style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-lg);">
-          <div>
-            <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:var(--sp-md);"><span style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:4px 10px;border-radius:var(--r-pill);">DROP+ MEMBER</span><span class="chip" style="pointer-events:none;">Demo data</span></div>
-            <div class="metric__label" style="color:var(--text-secondary);">Renews in</div>
-            <div style="font-family:var(--font-display);font-weight:700;font-size:clamp(36px,6vw,56px);line-height:1;">218 days</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="metric__label" style="color:var(--text-secondary);">Banked free time</div>
-            <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);line-height:1.05;background:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;">3 weeks<br>of Drop+</div>
-            <button type="button" class="btn btn--secondary btn--sm" style="margin-top:var(--sp-sm);" onClick="{{ walletRedeem }}">Apply to renewal</button>
-          </div>
+        <div style="position:relative;">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:4px 10px;border-radius:var(--r-pill);margin-bottom:var(--sp-md);">DROP+ — COMING SOON</span>
+          <div style="color:var(--text-secondary);font-size:var(--fs-sm);">Not subscribed yet — presale codes, cashback and earned free time land here once Drop+ ships.</div>
+          <button type="button" class="btn btn--secondary btn--sm" style="margin-top:var(--sp-md);" onClick="{{ goPaywall }}">See Drop+ plans</button>
         </div>
       </div>
 
-      <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-xl);flex-wrap:wrap;">
-        <div style="flex:1;min-width:140px;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:center;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--attended);">+1 mo 3 days</div><div class="metric__label">Confirmed</div></div>
-        <div style="flex:1;min-width:140px;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:center;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--gold);">+1 week</div><div class="metric__label">Pending</div></div>
-        <div style="flex:1;min-width:140px;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:center;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--interested);">+1 month</div><div class="metric__label">Under review</div></div>
-      </div>
-
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Earn history</div>
+      <sc-if value="{{ ledgerEmpty }}"><div class="empty"><div class="empty__ico">✦</div><div class="empty__title">No Drop+ activity yet</div><div class="empty__body">Earned time will show up here.</div></div></sc-if>
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
         <sc-for list="{{ ledger }}" as="l" hint-placeholder-count="5">
           <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -2218,14 +2193,9 @@
       <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Not now</a>
       <div style="text-align:center;margin-bottom:var(--sp-xl);">
         <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:5px 12px;border-radius:var(--r-pill);margin-bottom:var(--sp-md);">✦ DROP+</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-sm);">Presale alerts, early RSVPs, and cashback — earn free months back by referring friends.</p>
         <p style="font-size:var(--fs-sm);color:var(--accent);margin:0;font-weight:600;">Members keep earning free Drop+ time every month.</p>
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-md);margin-bottom:var(--sp-xl);">
-        <div class="avstack"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></div>
-        <span style="font-size:var(--fs-sm);color:var(--text-secondary);"><b style="color:var(--text);">9 of your crew</b> are on Drop+</span>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);margin-bottom:var(--sp-xl);">
@@ -2493,7 +2463,7 @@
           <sc-for list="{{ cityVenues }}" as="v" hint-placeholder-count="3">
             <button type="button" onClick="{{ v.open }}" style="display:flex;align-items:center;gap:var(--sp-lg);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:left;cursor:pointer;">
               <span style="width:48px;height:48px;border-radius:var(--r-md);background:var(--grad-brand);flex:0 0 auto;"></span>
-              <div style="flex:1;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ v.name }}</div><div style="font-size:var(--fs-sm);color:var(--text-secondary);">{{ v.city }} · Cap. {{ v.capacity }}</div></div>
+              <div style="flex:1;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ v.name }}</div><div style="font-size:var(--fs-sm);color:var(--text-secondary);">{{ v.city }}</div></div>
               <span style="color:var(--text-muted);">›</span>
             </button>
           </sc-for>
@@ -2581,11 +2551,7 @@
           </div>
         </div>
         <div style="padding:var(--sp-lg);background:var(--surface);">
-          <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
-            <div class="avstack"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></div>
-            <span style="color:var(--accent);font-weight:700;font-size:var(--fs-sm);">Maya + 4 friends are going</span>
-          </div>
-          <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);margin-bottom:var(--sp-md);">Join Maya's plan on Drop</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);margin-bottom:var(--sp-md);">Join this plan on Drop</div>
           <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Join on Drop — it's free</button>
           <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ appToast }}">Get the app</button>
         </div>
@@ -2739,7 +2705,7 @@
 <sc-if value="{{ screenSuggest }}">
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Suggest an event <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Suggest an event</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Spot a show we're missing? Add it and earn scout rewards when it goes live.</p>
 
       <!-- reward meter -->
@@ -2788,6 +2754,7 @@
       </div>
 
       <div class="sec__title" style="margin-bottom:var(--sp-md);">My submissions</div>
+      <sc-if value="{{ submissionsEmpty }}"><div class="empty"><div class="empty__ico">📣</div><div class="empty__title">No submissions yet</div><div class="empty__body">Suggest a show above.</div></div></sc-if>
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
         <sc-for list="{{ submissions }}" as="sub" hint-placeholder-count="3">
           <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -2807,19 +2774,20 @@
       <sc-if value="{{ isPromoter }}">
         <div class="wsh__headrow" style="margin-bottom:var(--sp-xl);">
           <div>
-            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Promoter dashboard <span class="chip" style="pointer-events:none;">Demo data</span></h1>
+            <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 4px;">Promoter dashboard</h1>
             <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0;">Manage your shows, guest lists, and presale codes.</p>
           </div>
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoNewEvent }}">+ New event</button>
         </div>
-        <!-- summary stats -->
+        <!-- summary stats — no analytics backend this phase; Events is real (promoEvents.length), the rest are honest zeroes until events exist -->
         <div class="m-2col" style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-md);margin-bottom:var(--sp-xl);">
-          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);">3</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Events</div></div>
-          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);">19.1K</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Total views</div></div>
-          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--going);">522</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Going</div></div>
-          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--accent);">129</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Code redemptions</div></div>
+          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);">{{ promoEventCount }}</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Events</div></div>
+          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);">0</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Total views</div></div>
+          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--going);">0</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Going</div></div>
+          <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--accent);">0</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Code redemptions</div></div>
         </div>
         <div class="sec__title" style="margin-bottom:var(--sp-md);">Your events</div>
+        <sc-if value="{{ promoEventsEmpty }}"><div class="empty"><div class="empty__ico">🎟️</div><div class="empty__title">No events yet</div><div class="empty__body">Create your first listing.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ promoEvents }}" as="ev" hint-placeholder-count="3">
             <div style="display:flex;align-items:center;gap:var(--sp-lg);padding:var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
@@ -2866,7 +2834,7 @@
   <main class="wsh">
     <div style="max-width:760px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goPromoter }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to dashboard</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ pm.title }} <span class="chip" style="pointer-events:none;vertical-align:middle;font-size:14px;">Demo data</span></h1>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ pm.title }}</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-lg);">{{ pm.date }}</p>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
         <sc-for list="{{ promoTabs }}" as="t" hint-placeholder-count="3"><div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div></sc-for>
@@ -2880,8 +2848,8 @@
             <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
             <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Doors</label><input type="time" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
           </div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" value="Red Rocks Amphitheatre" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="https://axs.com/odesza-rr" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" placeholder="Venue name" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
           <button type="button" class="btn btn--primary btn--sm" style="align-self:flex-start;" onClick="{{ promoSaveDetails }}">Save changes</button>
         </div>
         <div style="padding:var(--sp-lg);border:1px solid var(--danger-border);border-radius:var(--r-md);background:rgba(255,77,109,0.06);">
@@ -2904,6 +2872,7 @@
           <input type="number" min="0" value="0" style="width:88px;height:46px;padding:0 var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddGuest }}">Add</button>
         </div>
+        <sc-if value="{{ guestsEmpty }}"><div class="empty"><div class="empty__ico">📋</div><div class="empty__title">No guests yet</div><div class="empty__body">Add a name above.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ guests }}" as="g" hint-placeholder-count="5">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:{{ g.bg }};border:1px solid var(--border);border-radius:var(--r-md);">
@@ -2921,6 +2890,7 @@
           <input type="text" placeholder="NEWCODE20" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddCode }}">Create code</button>
         </div>
+        <sc-if value="{{ codesEmpty }}"><div class="empty"><div class="empty__ico">◆</div><div class="empty__title">No codes yet</div><div class="empty__body">Create one above.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ codes }}" as="c" hint-placeholder-count="2">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
@@ -2942,7 +2912,6 @@
       <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Admin</h1>
         <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--gold);padding:4px 10px;border-radius:var(--r-pill);">STAFF ONLY</span>
-        <span class="chip" style="pointer-events:none;">Demo data</span>
       </div>
       <div class="seg" style="margin-bottom:var(--sp-xl);">
         <sc-for list="{{ adminTabs }}" as="t" hint-placeholder-count="3"><div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div></sc-for>
@@ -2972,6 +2941,7 @@
       <!-- REPORTS -->
       <sc-if value="{{ adminTabReports }}">
         <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">Content reports</div></div>
+        <sc-if value="{{ reportsEmpty }}"><div class="empty"><div class="empty__ico">✅</div><div class="empty__title">No reports</div><div class="empty__body">Nothing flagged right now.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ reports }}" as="r" hint-placeholder-count="3">
             <div style="display:flex;align-items:flex-start;gap:var(--sp-lg);padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
