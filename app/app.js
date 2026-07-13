@@ -139,7 +139,7 @@
   // to a function and get addEventListener'd; boolean attr values (from a
   // whole {{ }} match) follow native HTML boolean-attribute semantics.
   // ---------------------------------------------------------------------
-  const EVENT_MAP = { onclick: 'click', onchange: 'change', oninput: 'input', onfocus: 'focus', onblur: 'blur', onsubmit: 'submit' };
+  const EVENT_MAP = { onclick: 'click', onchange: 'change', oninput: 'input', onfocus: 'focus', onblur: 'blur', onsubmit: 'submit', onkeydown: 'keydown' };
 
   function walkText(node) {
     const txt = node.nodeValue || '';
@@ -460,11 +460,14 @@ class Component extends DCLogic {
     gate: false, gateReturn: null, gateTitle: 'Join the crew',
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'weekend',
-    city: 'Denver, CO', cityOpen: false, menuOpen: false,
+    city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
     username: '', descClamped: true, toast: null,
     genre: null,
     // search
     query: '', distance: '25', priceMin: 20, priceMax: 120, sGenres: {}, searchGeo: 'idle',
+    // search filter dropdowns (design round 4) — distance/genre/city/venue selects
+    sDistOpen: false, searchGenreOpen: false, searchGenreFilter: '',
+    sCity: '', sVenue: '', sCityOpen: false, sVenueOpen: false, sCityFilter: '', sVenueFilter: '',
     // festival
     festTab: 'All', stars: { 'main-2':true },
     // activation wizard
@@ -523,6 +526,24 @@ class Component extends DCLogic {
     claimSubmitted: false, claimBusy: false, claimError: '',
     editLinksOpen: false, editMerch: '', editWebsite: '',
   };
+
+  // City picker catalog — the cities Drop covers, for the nav dropdown's
+  // filter/scroll list. ponytail: seed counts are decorative (the actual grid
+  // still loads live from Supabase on pick); Denver leads because it's the
+  // launch market. Free-typed cities are honored via cityKey (Enter).
+  CITIES = [
+    { label:'Denver, CO', count:14 },
+    { label:'Cambridge, MA', count:6 },
+    { label:'Los Angeles, CA', count:5 },
+    { label:'New York, NY', count:5 },
+    { label:'Brooklyn, NY', count:4 },
+    { label:'San Francisco, CA', count:3 },
+    { label:'Chicago, IL', count:3 },
+    { label:'Austin, TX', count:2 },
+    { label:'Miami, FL', count:2 },
+    { label:'Seattle, WA', count:2 },
+    { label:'Portland, OR', count:1 },
+  ];
 
   EVENTS = [
     { genre:'Melodic', id:'odesza', title:'ODESZA — The Last Goodbye', venue:'Red Rocks Amphitheatre', venueCity:'Red Rocks Amphitheatre · Morrison, CO', dateShort:'FRI, JUN 20 · 7:00 PM', dateLong:'Fri, Jun 20 · 7:00 PM', price:'$45+', friends:3, grad:'linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22)', goingCount:'1.2k', interestedCount:'3.4k', presaleLive:true, presaleCode:'ODZA2026', onsale:'On sale now · presale live', lineup:['ODESZA','Elderbrook','Yeah Yeah Yeahs'] },
@@ -1059,9 +1080,18 @@ class Component extends DCLogic {
     const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pick:()=>{ this.setState({dchip:k}); this.loadEvents(); } }));
     const dateChipLabel = ({today:'Today',weekend:'This weekend','30':'Next 30 days'})[s.dchip];
 
-    const cities = ['Denver, CO','Los Angeles, CA','New York, NY','Near me'].map(c=>({
-      label:c, pick:()=>{ this.setState({city: c==='Near me'?'Denver, CO':c, cityOpen:false}); this.loadEvents(); },
-    }));
+    // City picker dropdown — filterable, scrollable catalog; picking a city
+    // reloads the grid from Supabase for that city. Dot marks the active one.
+    const cf = (s.cityFilter||'').trim().toLowerCase();
+    const cityList = this.CITIES
+      .filter(c=>!cf || c.label.toLowerCase().includes(cf))
+      .map(c=>({
+        label: c.label,
+        count: c.count + (c.count===1?' show':' shows'),
+        dotStyle: c.label===s.city ? 'background:var(--accent);' : 'background:transparent;',
+        pick:()=>{ this.setState({city:c.label, cityOpen:false, cityFilter:''}); this.loadEvents(); },
+      }));
+    const cityFilterEmpty = cityList.length===0;
 
     const menuRoute = {
       'Profile':'profile', 'My Shows':'myshows', 'Crew':'crew', 'Notifications':'notifications', 'Settings':'settings', 'Drop+':'wallet',
@@ -1137,19 +1167,63 @@ class Component extends DCLogic {
     const filterGenre = e => Object.keys(s.sGenres).filter(k=>s.sGenres[k]).length===0 || s.sGenres[e.genre];
     const matched = events.filter(e =>
       (e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
-      && filterPrice(e) && filterGenre(e));
+      && filterPrice(e) && filterGenre(e)
+      && (!s.sCity || e.city===s.sCity)
+      && (!s.sVenue || e.venue===s.sVenue));
     const searchResults = matched;
     const searchHasResults = !searchEmpty && matched.length>0;
     const searchNoResults = !searchEmpty && matched.length===0;
     const resultsLabel = matched.length + ' result' + (matched.length===1?'':'s') + ' for "' + s.query + '"';
-    const distanceChips = ['10','25','50','100'].map(d=>({ label: d+' mi', cls: s.distance===d?'is-active':'', pick:()=>this.setState({distance:d}) }));
     const searchGeoActive = s.searchGeo==='active';
     const searchGeoPending = s.searchGeo==='pending';
-    const searchLocName = searchGeoActive ? 'your location' : s.city;
+    const searchGeoIdle = s.searchGeo==='idle';
     const searchLocPillLabel = 'Near me · ' + s.distance + ' mi';
-    const searchGeoBtnLabel = searchGeoPending ? 'Locating…' : 'Use my current location';
-    const searchLocContext = 'Showing shows within ' + s.distance + ' mi of ' + searchLocName;
-    const searchGenreChips = this.GENRES.map(g=>({ label:g.name, cls: s.sGenres[g.name]?'is-active':'', pick:()=>this.setState(st=>({ sGenres:{...st.sGenres, [g.name]: !st.sGenres[g.name]} })) }));
+    const searchGeoBtnLabel = searchGeoPending ? 'Locating…' : 'Use my location';
+    // ===== Search filter dropdowns (design round 4) =====
+    // Distance dropdown — cosmetic radius (same as the old chips; real geo
+    // narrowing isn't wired server-side yet).
+    const distOptions = ['5','10','25','50'].map(d=>({
+      label:'Within '+d+' mi', selected: s.distance===d,
+      checkGlyph: s.distance===d?'✓':'',
+      checkStyle: s.distance===d ? 'background:var(--grad-glow-fill);color:var(--ink);border-color:transparent;' : 'background:var(--glass);color:transparent;',
+      pick:()=>this.setState({distance:d, sDistOpen:false}),
+    }));
+    const distLabel = 'Within '+s.distance+' mi';
+    // Genre / city / venue facets — built from the loaded events (client-side
+    // filters over what Discover fetched for the current city).
+    const sGenreCounts = {};
+    events.forEach(e=>{ if(e.genre) sGenreCounts[e.genre]=(sGenreCounts[e.genre]||0)+1; });
+    const sgf = (s.searchGenreFilter||'').trim().toLowerCase();
+    const searchGenreList = this.GENRES
+      .filter(g=>!sgf || g.name.toLowerCase().includes(sgf))
+      .map(g=>{ const on=!!s.sGenres[g.name]; const n=sGenreCounts[g.name]||0; return {
+        name:g.name, count:n+(n===1?' show':' shows'),
+        checkGlyph: on?'✓':'', checkStyle: on?'background:var(--grad-glow-fill);color:var(--ink);border-color:transparent;':'background:var(--glass);color:transparent;',
+        pick:()=>this.setState(st=>({ sGenres:{...st.sGenres, [g.name]: !st.sGenres[g.name]} })),
+      }; });
+    const searchGenreEmpty = searchGenreList.length===0;
+    const sGenSel = Object.keys(s.sGenres).filter(k=>s.sGenres[k]);
+    const searchGenreLabel = sGenSel.length===0 ? 'All genres' : sGenSel.length===1 ? sGenSel[0] : (sGenSel[0]+' +'+(sGenSel.length-1));
+    const sCityCounts = {};
+    events.forEach(e=>{ if(e.city) sCityCounts[e.city]=(sCityCounts[e.city]||0)+1; });
+    const sCityCat = Object.keys(sCityCounts).map(c=>({name:c,n:sCityCounts[c]})).sort((a,b)=> b.n-a.n || a.name.localeCompare(b.name));
+    const scf = (s.sCityFilter||'').trim().toLowerCase();
+    const searchCityList = sCityCat.filter(c=>!scf || c.name.toLowerCase().includes(scf)).map(c=>({
+      label:c.name, count:c.n+(c.n===1?' show':' shows'),
+      pick:()=>this.setState({sCity:c.name, sCityOpen:false, sCityFilter:''}),
+    }));
+    const searchCityEmptyList = searchCityList.length===0;
+    const searchCityLabel = s.sCity || 'All cities';
+    const sVenueCounts = {};
+    events.forEach(e=>{ if(e.venue) sVenueCounts[e.venue]=(sVenueCounts[e.venue]||0)+1; });
+    const sVenueCat = Object.keys(sVenueCounts).map(v=>({name:v,n:sVenueCounts[v]})).sort((a,b)=> b.n-a.n || a.name.localeCompare(b.name));
+    const svf = (s.sVenueFilter||'').trim().toLowerCase();
+    const searchVenueList = sVenueCat.filter(v=>!svf || v.name.toLowerCase().includes(svf)).map(v=>({
+      name:v.name, count:v.n+(v.n===1?' show':' shows'),
+      pick:()=>this.setState({sVenue:v.name, sVenueOpen:false, sVenueFilter:''}),
+    }));
+    const searchVenueEmptyList = searchVenueList.length===0;
+    const searchVenueLabel = s.sVenue || 'All venues';
     const trending = ['Melodic','House','Dubstep','Techno','Bass','Trance'];
     const trendingChips = trending.map(t=>({ label:t, pick:()=>this.setState({query:t}) }));
     const recent = ['ODESZA','Red Rocks','Skrillex','Mission Ballroom'];
@@ -1509,10 +1583,14 @@ class Component extends DCLogic {
 
     // ===== Log a past show — archive picker (multi-select) + manual form =====
     const logSel = s.logSelected || {};
+    // Month-abbrev labels for past-show archive dates (design round 4's moL
+    // helper) — renders real Supabase event dates as "Mon D, YYYY".
+    const moL=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const archiveDate = iso => { const d = iso ? new Date(iso) : null; return (d && !isNaN(d.getTime())) ? (moL[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()) : ((Drop && Drop.fmtDate(iso)) || 'Date TBD'); };
     const logRows = (s.logResults||[]).map(ev=>({
       id: ev.id, title: ev.title || 'Untitled show',
       venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
-      dateShort: ((Drop && Drop.fmtDate(ev.date)) || 'Date TBD').toUpperCase(),
+      dateShort: archiveDate(ev.date),
       checked: !!logSel[ev.id],
       boxStyle: logSel[ev.id] ? 'background:var(--accent);border-color:var(--accent);color:var(--ink);' : 'border-color:var(--border-strong);color:transparent;',
       rowStyle: logSel[ev.id] ? 'border-color:var(--accent);background:rgba(77,226,255,0.06);' : 'border-color:var(--border);background:var(--surface);',
@@ -1750,8 +1828,9 @@ class Component extends DCLogic {
       loginBtnLabel: s.authBusy ? 'Working…' : 'Log in',
       signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
-      city: s.city, cityOpen: s.cityOpen, cities, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
+      city: s.city, cityOpen: s.cityOpen, cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents: discoverSource, genreActive, gridLabel, gridEmpty, genreName: s.genre, crew: this.CREW,
+      homeEmpty: !s.eventsLoading && events.length===0,
       eventsLoading: s.eventsLoading, eventsError: s.eventsError,
       tabs: tabList, dateChips, dateChipLabel,
       comments: this.COMMENTS,
@@ -1759,9 +1838,12 @@ class Component extends DCLogic {
 
       // search
       query: s.query, typeahead: typeaheadGroups, typeaheadOpen,
-      distanceChips, searchGenreChips, priceMin: s.priceMin, priceMax: s.priceMax,
-      searchGeoActive, searchGeoInactive: !searchGeoActive, searchGeoPending,
-      searchLocPillLabel, searchGeoBtnLabel, searchLocContext,
+      distOptions, distLabel, sDistOpen: s.sDistOpen, priceMin: s.priceMin, priceMax: s.priceMax,
+      searchGenreList, searchGenreEmpty, searchGenreLabel, searchGenreOpen: s.searchGenreOpen, searchGenreFilter: s.searchGenreFilter,
+      searchCityList, searchCityEmptyList, searchCityLabel, searchCityOpen: s.sCityOpen, sCityFilter: s.sCityFilter,
+      searchVenueList, searchVenueEmptyList, searchVenueLabel, searchVenueOpen: s.sVenueOpen, sVenueFilter: s.sVenueFilter,
+      searchGeoActive, searchGeoInactive: !searchGeoActive, searchGeoPending, searchGeoIdle,
+      searchLocPillLabel, searchGeoBtnLabel,
       priceRangeLabel: '$'+lo+' – $'+hi+(hi>=200?'+':''),
       priceFillStyle: 'left:'+((lo-20)/180*100)+'%;right:'+(100-(hi-20)/180*100)+'%;',
       searchEmpty, searchHasResults, searchNoResults, searchResults, resultsLabel,
@@ -2105,6 +2187,21 @@ class Component extends DCLogic {
       bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
       onSearchFocus:()=>this.go('search'),
       toggleCity:(e)=>{ this.prevent(e); this.setState(st=>({cityOpen:!st.cityOpen, menuOpen:false})); },
+      // City picker (design round 4) — filter/type + "Back to Denver"
+      cityToDenver:(e)=>{ this.prevent(e); this.setState({city:'Denver, CO', cityOpen:false, cityFilter:''}); this.loadEvents(); },
+      setCityFilter:(e)=>this.setState({cityFilter:e.target.value}),
+      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq.toLowerCase()) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq.toLowerCase())); this.setState({city: m?m.label:qq, cityOpen:false, cityFilter:''}); this.loadEvents(); } },
+      // Search filter dropdowns (design round 4)
+      toggleSDist:(e)=>{ this.prevent(e); this.setState(st=>({sDistOpen:!st.sDistOpen, searchGenreOpen:false, sCityOpen:false, sVenueOpen:false})); },
+      toggleSearchGenre:(e)=>{ this.prevent(e); this.setState(st=>({searchGenreOpen:!st.searchGenreOpen, sDistOpen:false, sCityOpen:false, sVenueOpen:false})); },
+      setSearchGenreFilter:(e)=>this.setState({searchGenreFilter:e.target.value}),
+      searchGenreAll:()=>this.setState({sGenres:{}, searchGenreFilter:''}),
+      toggleSCity:(e)=>{ this.prevent(e); this.setState(st=>({sCityOpen:!st.sCityOpen, searchGenreOpen:false, sDistOpen:false, sVenueOpen:false})); },
+      setSCityFilter:(e)=>this.setState({sCityFilter:e.target.value}),
+      sCityAll:()=>this.setState({sCity:'', sCityOpen:false, sCityFilter:''}),
+      toggleSVenue:(e)=>{ this.prevent(e); this.setState(st=>({sVenueOpen:!st.sVenueOpen, searchGenreOpen:false, sDistOpen:false, sCityOpen:false})); },
+      setSVenueFilter:(e)=>this.setState({sVenueFilter:e.target.value}),
+      sVenueAll:()=>this.setState({sVenue:'', sVenueOpen:false, sVenueFilter:''}),
       toggleMenu:(e)=>{ this.prevent(e); this.setState(st=>({menuOpen:!st.menuOpen, cityOpen:false})); },
       toggleNav:(e)=>{ this.prevent(e); this.setState(st=>({navOpen:!st.navOpen, cityOpen:false, menuOpen:false})); },
       closeNav:(e)=>{ this.prevent(e); this.setState({navOpen:false}); },
@@ -2202,7 +2299,7 @@ class Component extends DCLogic {
       setQuery:(e)=>this.setState({query:e.target.value}),
       setPriceMin:(e)=>this.setState({priceMin: parseInt(e.target.value)}),
       setPriceMax:(e)=>this.setState({priceMax: parseInt(e.target.value)}),
-      clearFilters:()=>this.setState({sGenres:{}, distance:'25', priceMin:20, priceMax:120, searchGeo:'idle'}),
+      clearFilters:()=>this.setState({sGenres:{}, searchGenreOpen:false, searchGenreFilter:'', sCity:'', sVenue:'', sCityOpen:false, sVenueOpen:false, sCityFilter:'', sVenueFilter:'', sDistOpen:false, distance:'25', priceMin:20, priceMax:120, searchGeo:'idle'}),
       searchUseLocation:()=>{
         if (typeof navigator==='undefined' || !navigator.geolocation) { this.setState({searchGeo:'denied', cityOpen:true}); this.flash('Location unavailable — pick a city'); return; }
         this.setState({searchGeo:'pending'});

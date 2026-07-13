@@ -93,6 +93,10 @@
 .btn--secondary.is-loading::after, .btn--ghost.is-loading::after { color: var(--text); }
 @keyframes btn-spin { to { transform: rotate(360deg); } }
 
+/* Inline spinner — geolocation "Locating…" state (design round 4) */
+@keyframes spin360 { to { transform: rotate(360deg); } }
+.spinner { display: inline-block; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--glass-border); border-top-color: var(--accent); animation: spin360 0.7s linear infinite; }
+
 /* ===== Status chips (RSVP / attendance) =====
    A11y: state is conveyed by SHAPE (::before glyph), not hue alone — a colorblind user
    reads filled-dot = Going, hollow-ring = Interested, check = Attended without color.
@@ -398,6 +402,9 @@
     /* Discover segmented control + Wrapped share buttons center on mobile */
     .disc-controls { justify-content: center; width: 100%; }
     .wr-share-actions { align-items: center; }
+    /* Home "Happening in {city}" search goes full-width on compact */
+    .home-search { flex: 1 1 100% !important; max-width: 100% !important; }
+    .home-search input { height: 52px !important; font-size: 16px !important; }
     /* Genre carousel: arrows hide on mobile — touch-scroll the rail instead */
     .genre-arrow { display: none; }
 
