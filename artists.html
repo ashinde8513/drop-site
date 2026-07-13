@@ -287,12 +287,14 @@
             return;
           }
 
-          // ---- Genre chips (built from what's actually in this city's data) ----
-          var genres = [];
+          // ---- Genre chips (built from what's actually in this city's data,
+          // frequency-sorted — same derivation rule as the events genre rail) ----
+          var genreCounts = {};
           fullList.forEach(function (item) {
             var g = artistGenre(item.artist);
-            if (genres.indexOf(g) === -1) genres.push(g);
+            genreCounts[g] = (genreCounts[g] || 0) + 1;
           });
+          var genres = Object.keys(genreCounts).sort(function (a, b) { return genreCounts[b] - genreCounts[a]; });
           function renderChips() {
             genreRow.innerHTML = '';
             var all = D.el('button', 'chip' + (activeGenre === '' ? ' is-active' : ''), 'All');

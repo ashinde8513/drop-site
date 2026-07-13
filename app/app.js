@@ -424,8 +424,13 @@
       lineup: artists.map(function (a) { return a.name; }),
       lineupArtists: artists, // [{id,name,genres,image_url}] — real artist ids, used to wire follow writes
       city: ev.city || '',
+      state: ev.state || '',
     };
   }
+
+  // USPS code -> full name, for state lookups in city/venue/event search.
+  const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming' };
+  const stateName = st => STATE_NAMES[st] || st || '';
 
   // Canvas render of the Wrapped 9:16 share card — a from-scratch redraw
   // (not a DOM screenshot; no html2canvas dependency) good enough for
@@ -487,7 +492,7 @@ class Component extends DCLogic {
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'all', discPage: 0,
     city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
-    username: '', descClamped: true, toast: null,
+    descClamped: true, toast: null,
     genre: null,
     // search
     query: '', distance: '25', priceMin: 0, priceMax: 200, sGenres: {}, searchGeo: 'idle',
@@ -557,19 +562,9 @@ class Component extends DCLogic {
   // filter/scroll list. ponytail: seed counts are decorative (the actual grid
   // still loads live from Supabase on pick); Denver leads because it's the
   // launch market. Free-typed cities are honored via cityKey (Enter).
-  CITIES = [
-    { label:'Denver, CO', count:14 },
-    { label:'Cambridge, MA', count:6 },
-    { label:'Los Angeles, CA', count:5 },
-    { label:'New York, NY', count:5 },
-    { label:'Brooklyn, NY', count:4 },
-    { label:'San Francisco, CA', count:3 },
-    { label:'Chicago, IL', count:3 },
-    { label:'Austin, TX', count:2 },
-    { label:'Miami, FL', count:2 },
-    { label:'Seattle, WA', count:2 },
-    { label:'Portland, OR', count:1 },
-  ];
+  // Real city catalog — derived from the full event catalog by loadCatalog()
+  // (deriveCities): every city with an upcoming show, counts included.
+  CITIES = [];
 
   // Renamed to match data.js's real genre buckets (Drop.genreOf) instead of
   // the design's invented labels — Dubstep/Melodic/Trance had no real
@@ -713,15 +708,46 @@ class Component extends DCLogic {
   }
 
   // ===== PHASE 1: real data loaders =====================================
+  // Full upcoming catalog — EVERY published show, paged past PostgREST's
+  // 1000-row cap, fetched once per session. City/date narrowing is client-
+  // side so the city picker (all ~200 cities), venues browse and search
+  // cover the whole DB instead of one 240-row page.
+  loadCatalog(){
+    if (this._catalogP) return this._catalogP;
+    const page = (offset, acc) => Drop.fetchEvents({ limit: 1000, offset })
+      .then(rows => { acc.push(...(rows||[])); return (rows && rows.length === 1000) ? page(offset+1000, acc) : acc; });
+    this._catalogP = page(0, []).then(rows => {
+      this.CATALOG = rows;
+      this.CITIES = this.deriveCities(rows);
+      return rows;
+    }).catch(err => { this._catalogP = null; throw err; });
+    return this._catalogP;
+  }
+  deriveCities(rows){
+    const seen = new Map();
+    rows.forEach(r => {
+      if (!r.city) return;
+      const label = r.city + (r.state ? ', ' + r.state : '');
+      const e = seen.get(label) || { label, city: r.city, state: r.state || '', count: 0 };
+      e.count++; seen.set(label, e);
+    });
+    return [...seen.values()].sort((a,b)=> b.count-a.count || a.label.localeCompare(b.label));
+  }
   loadEvents(){
     this.setState({ eventsLoading:true, eventsError:null, discPage: 0 });
     if (!Drop) { this.setState({ eventsLoading:false, eventsError:'Event catalog unavailable.' }); return; }
-    const cityName = (this.state.city || '').split(',')[0].trim();
-    const win = dateWindow(this.state.dchip);
-    // ponytail: client pages (24/page) over one 240-row fetch; server offset paging if a city outgrows this
-    Drop.fetchEvents({ city: cityName || undefined, from: win.from, to: win.to, limit: 240 })
-      .then(rows=>this.setState({ realEvents: rows || [], eventsLoading:false }))
-      .catch(err=>{ console.error('[app] events fetch failed:', err.message); this.setState({ eventsLoading:false, eventsError:'Could not load shows — try again.' }); });
+    this.loadCatalog().then(()=>{
+      const label = this.state.city || '';
+      const cityName = label === 'All cities' ? '' : label.split(',')[0].trim().toLowerCase();
+      const win = dateWindow(this.state.dchip);
+      const fromT = Date.parse(win.from), toT = Date.parse(win.to);
+      const rows = this.CATALOG.filter(r => {
+        if (cityName && (r.city||'').toLowerCase() !== cityName) return false;
+        const t = Date.parse(r.date);
+        return !isNaN(t) && t >= fromT && t <= toT;
+      });
+      this.setState({ realEvents: rows, eventsLoading:false });
+    }).catch(err=>{ console.error('[app] events fetch failed:', err.message); this.setState({ eventsLoading:false, eventsError:'Could not load shows — try again.' }); });
   }
   loadProfile(uid){
     if (!supa) return;
@@ -930,7 +956,7 @@ class Component extends DCLogic {
     // reference it (Plans, crew builder, share cards, first-RSVP moment) now
     // falls back to a real loaded event (or a safe empty stand-in — never a
     // fabricated one) when nothing is loaded yet.
-    const events = (s.realEvents||[]).map(mapRealEvent).map(e=>{
+    const decorate = e => {
       const st = s.rsvp[e.id];
       return {
         ...e,
@@ -945,7 +971,8 @@ class Component extends DCLogic {
         interestedCls: 'wsc__act'+(st==='interested'?' is-interested':''),
         interestedGlyph: st==='interested'?'★':'☆',
       };
-    });
+    };
+    const events = (s.realEvents||[]).map(mapRealEvent).map(decorate);
     const ae = events.find(e=>e.id===s.activeId) || events[0] || {
       id:null, title:'', venue:'', venueCity:'', dateShort:'', dateLong:'', price:'See tickets', genre:'',
       grad:EVENT_GRADS[0], gradStyle:'background-image:'+EVENT_GRADS[0], friends:0, goingCount:'—', interestedCount:'—',
@@ -966,14 +993,20 @@ class Component extends DCLogic {
       events.forEach(e=>(e.lineupArtists||[]).forEach(a=>{
         if (a && a.name && !seen.has(a.name)) {
           const genre = (a.genres && a.genres.length && Drop) ? Drop.genreOf({ event_artists:[{ artists:{ genres:a.genres } }] }) : '';
-          seen.set(a.name, { name:a.name, genre, upcoming:true });
+          seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.safeUrl(a.image_url)) || '', upcoming:true });
         }
       }));
       return [...seen.values()];
     })();
+    // Venues from the FULL catalog (not the city-scoped Discover window) so
+    // Browse Venues covers every venue in the DB, with real state + counts.
     const realVenues = (()=>{
       const seen = new Map();
-      events.forEach(e=>{ if (e.venue && !seen.has(e.venue)) seen.set(e.venue, { name:e.venue, city:e.city||'' }); });
+      (this.CATALOG || s.realEvents || []).forEach(r=>{
+        if (!r.venue_name) return;
+        const v = seen.get(r.venue_name) || { name:r.venue_name, city:r.city||'', state:r.state||'', count:0 };
+        v.count++; seen.set(r.venue_name, v);
+      });
       return [...seen.values()];
     })();
 
@@ -993,8 +1026,10 @@ class Component extends DCLogic {
     // City picker dropdown — filterable, scrollable catalog; picking a city
     // reloads the grid from Supabase for that city. Dot marks the active one.
     const cf = (s.cityFilter||'').trim().toLowerCase();
-    const cityList = this.CITIES
-      .filter(c=>!cf || c.label.toLowerCase().includes(cf))
+    // "All cities" heads the list; typing a state code or full state name
+    // ("CO" / "Colorado") narrows to that state's cities.
+    const cityList = [{ label:'All cities', state:'', count:(this.CATALOG||[]).length }, ...this.CITIES]
+      .filter(c=>!cf || c.label.toLowerCase().includes(cf) || stateName(c.state).toLowerCase().includes(cf))
       .map(c=>({
         label: c.label,
         count: c.count + (c.count===1?' show':' shows'),
@@ -1027,13 +1062,6 @@ class Component extends DCLogic {
       if(label==='Log out'){ this.setState({navOpen:false}); this.logout(); this.go('home'); }
       else { this.go(route); }
     } }));
-    const un = s.username.trim().toLowerCase();
-    const taken = ['raver','dropfan','maya','admin'];
-    let unameIcon='', unameBorder='var(--border)', unameMsg='', unameMsgColor='';
-    if(un.length>=3){
-      if(taken.includes(un)){ unameIcon='✕'; unameBorder='var(--danger)'; unameMsg='That username is taken'; unameMsgColor='var(--danger)'; }
-      else { unameIcon='✓'; unameBorder='var(--attended)'; unameMsg='@'+un+' is available'; unameMsgColor='var(--attended)'; }
-    } else if(un.length>0){ unameBorder='var(--border-strong)'; unameMsg='At least 3 characters'; unameMsgColor='var(--text-muted)'; }
 
     const waveBars = Array.from({length:44}).map((_,i)=>({
       style:'animation-delay:'+(-(i%11)*0.12)+'s;opacity:'+(0.45+0.55*Math.abs(Math.sin(i*0.7))),
@@ -1098,9 +1126,14 @@ class Component extends DCLogic {
     // ===== Search =====
     const q = s.query.trim().toLowerCase();
     const searchEmpty = q.length===0;
-    // No query = the full Discover set; filters and the query only narrow it.
-    const matched = events.filter(e =>
-      (searchEmpty || e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
+    // No query and no facet = the full Discover set (his rule). A query OR
+    // any facet searches the WHOLE catalog (every city/state), so "Miami",
+    // "Texas" or the Austin city facet work from any city.
+    const facetActive = !!(s.sCity || s.sVenue || s.priceMin>0 || s.priceMax<200 || Object.keys(s.sGenres).some(k=>s.sGenres[k]));
+    this._catMapped = this.CATALOG ? (this._catMapped || this.CATALOG.map(mapRealEvent)) : null;
+    const searchPool = ((searchEmpty && !facetActive) || !this._catMapped) ? events : this._catMapped.map(decorate);
+    const matched = searchPool.filter(e =>
+      (searchEmpty || e.title.toLowerCase().includes(q) || e.venueCity.toLowerCase().includes(q) || e.genre.toLowerCase().includes(q) || (e.state||'').toLowerCase()===q || stateName(e.state).toLowerCase().includes(q) || e.lineup.join(' ').toLowerCase().includes(q))
       && facetPass(e));
     const searchResults = matched;
     const searchHasResults = matched.length>0;
@@ -1125,8 +1158,11 @@ class Component extends DCLogic {
     const distLabel = 'Within '+s.distance+' mi';
     // Genre / city / venue facets — built from the loaded events (client-side
     // filters over what Discover fetched for the current city).
+    // Facet OPTION lists always cover the whole catalog (so any city/venue/
+    // genre is pickable from anywhere); the facet FILTERS then narrow the pool.
+    const facetSrc = this._catMapped || searchPool;
     const sGenreCounts = {};
-    events.forEach(e=>{ if(e.genre) sGenreCounts[e.genre]=(sGenreCounts[e.genre]||0)+1; });
+    facetSrc.forEach(e=>{ if(e.genre) sGenreCounts[e.genre]=(sGenreCounts[e.genre]||0)+1; });
     const sgf = (s.searchGenreFilter||'').trim().toLowerCase();
     const searchGenreList = this.GENRES
       .filter(g=>!sgf || g.name.toLowerCase().includes(sgf))
@@ -1139,7 +1175,7 @@ class Component extends DCLogic {
     const sGenSel = Object.keys(s.sGenres).filter(k=>s.sGenres[k]);
     const searchGenreLabel = sGenSel.length===0 ? 'All genres' : sGenSel.length===1 ? sGenSel[0] : (sGenSel[0]+' +'+(sGenSel.length-1));
     const sCityCounts = {};
-    events.forEach(e=>{ if(e.city) sCityCounts[e.city]=(sCityCounts[e.city]||0)+1; });
+    facetSrc.forEach(e=>{ if(e.city) sCityCounts[e.city]=(sCityCounts[e.city]||0)+1; });
     const sCityCat = Object.keys(sCityCounts).map(c=>({name:c,n:sCityCounts[c]})).sort((a,b)=> b.n-a.n || a.name.localeCompare(b.name));
     const scf = (s.sCityFilter||'').trim().toLowerCase();
     const searchCityList = sCityCat.filter(c=>!scf || c.name.toLowerCase().includes(scf)).map(c=>({
@@ -1149,7 +1185,7 @@ class Component extends DCLogic {
     const searchCityEmptyList = searchCityList.length===0;
     const searchCityLabel = s.sCity || 'All cities';
     const sVenueCounts = {};
-    events.forEach(e=>{ if(e.venue) sVenueCounts[e.venue]=(sVenueCounts[e.venue]||0)+1; });
+    facetSrc.forEach(e=>{ if(e.venue) sVenueCounts[e.venue]=(sVenueCounts[e.venue]||0)+1; });
     const sVenueCat = Object.keys(sVenueCounts).map(v=>({name:v,n:sVenueCounts[v]})).sort((a,b)=> b.n-a.n || a.name.localeCompare(b.name));
     const svf = (s.sVenueFilter||'').trim().toLowerCase();
     const searchVenueList = sVenueCat.filter(v=>!svf || v.name.toLowerCase().includes(svf)).map(v=>({
@@ -1359,12 +1395,18 @@ class Component extends DCLogic {
     const myTabs = ['Upcoming','Saved','Past'].map(t=>({ label:t, cls: s.myTab===t?'is-active':'', pick:()=>this.setState({myTab:t}) }));
 
     // ===== Pick Artists — real artists (realArtists, derived above) =====
-    const artGenreNames = ['All', ...this.GENRES.map(g=>g.name)];
+    // Genre chips derived from the artists actually present (same honest-
+    // derivation rule as Discover's genre rail), not the static palette.
+    const artGenreCounts = {};
+    realArtists.forEach(a=>{ if(a.genre) artGenreCounts[a.genre]=(artGenreCounts[a.genre]||0)+1; });
+    const artGenreNames = ['All', ...Object.keys(artGenreCounts).sort((a,b)=>artGenreCounts[b]-artGenreCounts[a])];
     const artGenreChips = artGenreNames.map(g=>({ label:g, cls: s.artGenre===g?'is-active':'', pick:()=>this.setState({artGenre:g}) }));
     const artFiltered = s.artGenre==='All' ? realArtists : realArtists.filter(a=>a.genre===s.artGenre);
     const artistGrid = artFiltered.map(a=>{
       const on = !!s.followArt[a.name];
+      const aUrl = a.img && cssUrl(a.img);
       return { name:a.name, genre:a.genre, upcoming:a.upcoming,
+        artStyle: aUrl ? 'background-image:'+aUrl+';background-size:cover;background-position:center;' : 'background:var(--grad-brand);',
         open:()=>this.openArtist(a.name, null),
         label: on?'✓ Following':'＋ Follow', cls: on?'wsc__act is-going':'wsc__act',
         toggle:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>({ followArt:{...x.followArt, [a.name]: !x.followArt[a.name]} })); } };
@@ -1374,15 +1416,16 @@ class Component extends DCLogic {
     const artAllFollowed = artFiltered.length>0 && artFiltered.every(a=>s.followArt[a.name]);
     const artBulkLabel = (artAllFollowed?'Unfollow all ':'Follow all ')+s.artGenre;
 
-    // ===== Browse Venues — real venues (realVenues, derived above), grouped
-    // by city (no state column exists on a plain venue_name/city pair) =====
+    // ===== Browse Venues — full-catalog venues grouped by STATE (design
+    // format): sticky state header, card = name + "city · N upcoming shows".
+    // Search matches venue, city, state code and full state name.
     const vq = s.venueQuery.trim().toLowerCase();
-    const venMatched = realVenues.filter(v=> !vq || v.name.toLowerCase().includes(vq) || v.city.toLowerCase().includes(vq));
-    const cityOrder = [...new Set(venMatched.map(v=>v.city))];
-    const venueGroups = cityOrder.map(cty=>{
-      const vs = venMatched.filter(v=>v.city===cty);
-      return { state:cty || 'Other', count: vs.length+' venue'+(vs.length===1?'':'s'), venues: vs.map(v=>({
-        name:v.name, city:v.city,
+    const venMatched = realVenues.filter(v=> !vq || v.name.toLowerCase().includes(vq) || v.city.toLowerCase().includes(vq) || (v.state||'').toLowerCase()===vq || stateName(v.state).toLowerCase().includes(vq));
+    const stateOrder = [...new Set(venMatched.map(v=>v.state||''))].sort((a,b)=> (stateName(a)||'ZZ').localeCompare(stateName(b)||'ZZ'));
+    const venueGroups = stateOrder.map(st=>{
+      const vs = venMatched.filter(v=>(v.state||'')===st).sort((a,b)=> b.count-a.count || a.name.localeCompare(b.name));
+      return { state: stateName(st) || 'Other', count: vs.length+' venue'+(vs.length===1?'':'s'), venues: vs.map(v=>({
+        name:v.name, city: v.city + ' · ' + v.count + ' upcoming show' + (v.count===1?'':'s'),
         open:()=>{ this.setState({screen:'venue', activeVenue:v.name, venueCity:v.city}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       })) };
     });
@@ -1884,7 +1927,6 @@ class Component extends DCLogic {
       blocked, blockedEmpty: blocked.length===0,
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk,
       deleteBtnBg: deleteOk?'var(--danger)':'var(--surface-hi)', deleteBtnColor: deleteOk?'var(--white)':'var(--text-muted)', deleteCursor: deleteOk?'pointer':'not-allowed',
-      username: s.username, unameIcon, unameBorder, unameMsg, unameMsgColor,
       gate: s.gate, gateTitle: s.gateTitle, toast: s.toast,
 
       // event detail
@@ -2148,7 +2190,7 @@ class Component extends DCLogic {
       discNext:(e)=>{ this.prevent(e); this.setState(st=>({discPage: st.discPage+1})); },
       cityToDenver:(e)=>{ this.prevent(e); this.setState({city:'Denver, CO', cityOpen:false, cityFilter:''}); this.loadEvents(); },
       setCityFilter:(e)=>this.setState({cityFilter:e.target.value}),
-      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq.toLowerCase()) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq.toLowerCase())); this.setState({city: m?m.label:qq, cityOpen:false, cityFilter:''}); this.loadEvents(); } },
+      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); } },
       // Search filter dropdowns (design round 4)
       toggleSDist:(e)=>{ this.prevent(e); this.setState(st=>({sDistOpen:!st.sDistOpen, searchGenreOpen:false, sCityOpen:false, sVenueOpen:false})); },
       toggleSearchGenre:(e)=>{ this.prevent(e); this.setState(st=>({searchGenreOpen:!st.searchGenreOpen, sDistOpen:false, sCityOpen:false, sVenueOpen:false})); },
@@ -2205,7 +2247,6 @@ class Component extends DCLogic {
       doSignup:()=>{
         if (!supa) { this.setState({authError:'Signup is unavailable. Refresh and try again.'}); return; }
         const email = fieldVal('signup-email').trim();
-        const username = cleanUsername(this.state.username);
         const password = fieldVal('signup-password');
         const dobValue = fieldVal('signup-dob');
         const consented = fieldChecked('signup-consent');
@@ -2215,8 +2256,9 @@ class Component extends DCLogic {
         if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
         if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
         this.setState({authBusy:true, authError:''});
+        // ponytail: username field cut from signup (Arya 2026-07-12) — users
+        // pick one later in profile edit; login-with-username still works.
         const data = { dob: dobValue, consented_at: new Date().toISOString() };
-        if (username) data.username = username;
         // ponytail: referral is cosmetic (no crew-join backend yet) — same
         // note as account.js's signUp(); the raw ref token still rides along
         // as user metadata for a future crew-join job.
@@ -2238,7 +2280,6 @@ class Component extends DCLogic {
       oauthGoogle:()=>this.oauth('google'),
       oauthApple:()=>this.oauth('apple'),
       oauthFacebook:()=>this.oauth('facebook'),
-      setUsername:(e)=>this.setState({username: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),

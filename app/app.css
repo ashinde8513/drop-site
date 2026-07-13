@@ -377,6 +377,12 @@
   .skel { background: var(--surface-hi); background-image: linear-gradient(90deg, transparent 0, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 60%, transparent 100%); background-size: 800px 100%; background-repeat: no-repeat; animation: shimmer 1.4s var(--ease) infinite; border-radius: var(--r-sm); }
   .is-active-legal { background: var(--surface-hi); color: var(--text) !important; }
   .drop-scroll { min-height: 100vh; }
+  /* Page must never scroll sideways — rails scroll inside their own boxes. */
+  html, body { overflow-x: clip; }
+  /* iOS renders date inputs with intrinsic chrome + centered value — flatten
+     so they match the other 52px text pills. */
+  input[type="date"] { -webkit-appearance: none; appearance: none; }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
   /* Mobile-only icon buttons in nav — hidden on desktop */
   .wn__mobicon { display: none; }
   .ed-bottombar { display: none; }
@@ -428,9 +434,13 @@
     .ed-wrap { padding-bottom: 96px !important; }
     .ed-bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; gap: var(--sp-sm); align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--glass-dark); backdrop-filter: blur(12px); border-top: 1px solid var(--border-strong); }
 
-    /* ===== SEARCH: stack filter above results ===== */
+    /* ===== SEARCH: stack filter above results, compact panel ===== */
     .search-grid { grid-template-columns: 1fr !important; }
-    .search-filter { position: static !important; top: auto !important; }
+    .search-filter { position: static !important; top: auto !important; padding: var(--sp-md) !important; }
+    /* compact: uniform tight gaps + shorter selector pills (inline styles need !important) */
+    .search-filter > div { margin-bottom: var(--sp-sm) !important; }
+    .search-filter .fsel, .search-filter .locchip { height: 42px !important; }
+    .search-filter .dual { margin-bottom: var(--sp-sm) !important; }
 
     /* ===== generic multi-col grids ===== */
     .m-stack { grid-template-columns: 1fr !important; }
