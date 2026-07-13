@@ -55,6 +55,7 @@
         <a class="wn__link wn__navlink" href="#" onClick="{{ goDiscover }}">Events</a>
         <a class="wn__link wn__navlink" href="#" onClick="{{ goVenues }}">Venues</a>
         <a class="wn__link wn__navlink" href="#" onClick="{{ goArtists }}">Artists</a>
+        <sc-if value="{{ authed }}"><a class="wn__link wn__navlink" href="#" onClick="{{ downloadApp }}">⤓ Get the app</a></sc-if>
       </div>
       <div class="wn__right">
         <button type="button" class="wn__mobicon" onClick="{{ onSearchFocus }}" aria-label="Search">⌕</button>
@@ -90,6 +91,7 @@
         <a href="#" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;" onClick="{{ navGoDiscover }}">Events</a>
         <a href="#" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;" onClick="{{ navGoVenues }}">Venues</a>
         <a href="#" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;" onClick="{{ navGoArtists }}">Artists</a>
+        <sc-if value="{{ authed }}"><a href="#" class="wn__link" style="color:var(--text);font-size:var(--fs-md);padding:12px 8px;" onClick="{{ downloadApp }}">⤓ Get the app</a></sc-if>
         <div style="height:1px;background:var(--border);margin:var(--sp-sm) 0;"></div>
         <sc-if value="{{ authed }}">
           <sc-for list="{{ mobileMenu }}" as="m" hint-placeholder-count="6">
@@ -241,6 +243,8 @@
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Free forever. 16+ only.</p>
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email</label>
         <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
+        <input type="text" value="{{ username }}" onInput="{{ setUsername }}" placeholder="username" autocomplete="username" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date of birth</label>
         <input id="signup-dob" type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Password</label>
