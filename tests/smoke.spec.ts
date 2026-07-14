@@ -81,7 +81,8 @@ test.describe('landing site smoke', () => {
     // ponytail: stale since the 2026-07-09 Prism design rebuild — index.html is
     // now the design's signed-out home screen (static hero, no flip-words).
     await page.goto('/index.html');
-    await expect(page.locator('h1')).toContainText("Who's going.");
+    await expect(page.locator('h1')).toContainText('Never miss');
+    await expect(page.locator('h1')).toContainText('a drop.');
     await expect(page.locator('h1')).not.toContainText('Discover live shows near you');
     await expect(page.locator('#home-search')).toHaveCount(1);
     await expect(page.locator('#home-grid')).toHaveCount(1);
