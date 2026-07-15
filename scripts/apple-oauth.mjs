@@ -22,8 +22,8 @@ const PROJECT_REF = 'ebccwnkmsnhbljxxxdej';               // Supabase "Drop App"
 const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
 const MGMT_API = 'https://api.supabase.com';
 const TEAM_ID = 'S6H8PA7TUH';                             // Apple Developer Team
-const BUNDLE_ID = 'app.drop.mobile';                      // native app (ID-token flow)
-const SERVICES_ID = 'app.drop.mobile.web';                // web Services ID (create in portal)
+const BUNDLE_ID = 'app.resonanceventures.drop';                      // native app (ID-token flow)
+const SERVICES_ID = 'app.resonanceventures.drop.web';                // web Services ID (create in portal)
 const APPLE_AUD = 'https://appleid.apple.com';
 // Supabase validates the token audience against this comma-separated list:
 // Services ID first (web OAuth code flow), bundle ID second (native ID-token flow).

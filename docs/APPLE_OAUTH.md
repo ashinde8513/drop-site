@@ -16,21 +16,21 @@ needs no Apple portal work: `npm run apple-oauth -- apply --allowlist-only`.
 - The SPA login/signup screens call `supabase.auth.signInWithOAuth({ provider: 'apple' })`
   (`app/app.js` — `oauthApple`); no front-end changes are needed.
 - `.well-known/apple-app-site-association` carries the real appID
-  `S6H8PA7TUH.app.drop.mobile` (commit 328d2b9) for the app's universal links.
+  `S6H8PA7TUH.app.resonanceventures.drop` (commit 328d2b9) for the app's universal links.
 
 ## 1. Apple Developer portal (founder, ~10 min, developer.apple.com)
 
 1. **App ID** — Certificates, Identifiers & Profiles → Identifiers →
-   `app.drop.mobile`: enable the **Sign in with Apple** capability (set as
+   `app.resonanceventures.drop`: enable the **Sign in with Apple** capability (set as
    primary App ID). Create the App ID first if it doesn't exist yet.
 2. **Services ID** (the web "client") — Identifiers → **+** → Services IDs →
-   identifier **`app.drop.mobile.web`** (the CLI's default; any reverse-DNS id
+   identifier **`app.resonanceventures.drop.web`** (the CLI's default; any reverse-DNS id
    works if you pass `--client-id`). Enable Sign in with Apple → Configure:
-   - Primary App ID: `app.drop.mobile`
+   - Primary App ID: `app.resonanceventures.drop`
    - Domain: `ebccwnkmsnhbljxxxdej.supabase.co`
    - Return URL: `https://ebccwnkmsnhbljxxxdej.supabase.co/auth/v1/callback`
 3. **Key** — Keys → **+** → enable Sign in with Apple, choose primary App ID
-   `app.drop.mobile` → register → **download `AuthKey_XXXXXXXXXX.p8`**
+   `app.resonanceventures.drop` → register → **download `AuthKey_XXXXXXXXXX.p8`**
    (downloadable exactly once — keep it in a password manager, never in git)
    and note the 10-character **Key ID**.
 
@@ -45,7 +45,7 @@ That single command:
 - generates the Apple **client secret** (an ES256 JWT signed with the .p8 key,
   `sub` = Services ID, 180-day lifetime — Apple caps at 6 months),
 - PATCHes the project auth config: Apple provider on, client IDs
-  `app.drop.mobile.web,app.drop.mobile` (web Services ID + native bundle ID so
+  `app.resonanceventures.drop.web,app.resonanceventures.drop` (web Services ID + native bundle ID so
   the app's ID-token flow validates too), the secret,
 - merges the two `trydropapp.com` redirect URLs into the allowlist.
 
@@ -80,7 +80,7 @@ Same key/Key ID, fresh JWT — nothing else changes. Set a calendar reminder for
 
 The native app should use the platform Sign in with Apple sheet →
 `supabase.auth.signInWithIdToken({ provider: 'apple', token })` (bundle ID
-`app.drop.mobile` is already in the client-ID list). The web OAuth flow above is
+`app.resonanceventures.drop` is already in the client-ID list). The web OAuth flow above is
 independent of app-store review requirements but Apple requires "Sign in with
 Apple" in the app if it ships any third-party login (Google/Facebook) — the
 mobile repo (`../drop-mobile-app`) tracks that work.
