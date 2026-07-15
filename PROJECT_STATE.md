@@ -14,6 +14,13 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### Active session (if any)
 - Owner: — · Started: — · Working on: fresh — no sessions yet
 
+## 2026-07-15 session — Apple login/OAuth connector CLI (branch `claude/apple-login-oauth-cli-jdqvz2`)
+### 2026-07-15 — Claude (Fable) — scripts/apple-oauth.mjs + docs/APPLE_OAUTH.md
+- **NEW CLI `scripts/apple-oauth.mjs`** (`npm run apple-oauth -- <cmd>`, zero-dep Node): `secret` generates the Apple client-secret JWT (ES256 via node:crypto `ieee-p1363`, sub=Services ID `app.drop.mobile.web`, 180d default / 6-month Apple cap); `apply` PATCHes the Supabase Management API (`/v1/projects/ebccwnkmsnhbljxxxdej/config/auth`) — Apple provider on, client_id list `app.drop.mobile.web,app.drop.mobile` (web + native ID-token flow), secret, AND merges the two standing redirect-allowlist URLs (`https://app.trydropapp.com/**`, `https://trydropapp.com/app/**` — "Exact next step" 0 can now be done via `apply --allowlist-only` with a `SUPABASE_ACCESS_TOKEN` instead of the dashboard); `status` prints provider + allowlist; `verify` is a token-free probe (AASA appID + authorize→appleid.apple.com redirect_uri check). `--dry-run` works tokenless.
+- **docs/APPLE_OAUTH.md**: founder walkthrough — Apple portal steps (App ID capability, Services ID `app.drop.mobile.web` with return URL `https://ebccwnkmsnhbljxxxdej.supabase.co/auth/v1/callback`, .p8 key), one-shot `apply`, rotation reminder (expired secret ⇒ Apple-only `invalid_client`), native `signInWithIdToken` note.
+- Tested: JWT round-trip verified against the public key (throwaway P-256 key; header/claims/lifetime correct), all dry-run/error/help paths exercised. Smoke suite in the remote sandbox: 12 passed, 54 failed on `ERR_CONNECTION_RESET` only — egress proxy blocks `*.supabase.co` (env limitation, no page code touched). Live `verify`/`apply` NOT run (same egress block + needs founder's `sbp_` token).
+- Remaining (founder): create Services ID + key in the Apple portal, then `export SUPABASE_ACCESS_TOKEN=... && npm run apple-oauth -- apply --key AuthKey_XXXX.p8 --key-id XXXX`; or just `apply --allowlist-only` to clear next-step 0 today.
+
 ## Current status
 ### What works
 - FULL 12-page public event-discovery website LIVE at trydropapp.com (cutover 2026-07-06, see CUTOVER RECORD): AXS-style IA, Prism tokens, live Supabase public catalog (anon key, 1.5K events), 32/32 Playwright smoke green.
