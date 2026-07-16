@@ -37,6 +37,25 @@ npm test
 npx playwright test
 ```
 
+## Deploying (read before touching Cloudflare)
+
+Deploys are **automatic**: pushing to `main` runs `.github/workflows/deploy.yml`
+(full Playwright suite → `scripts/build-dist.sh` → `wrangler pages deploy dist`),
+authenticated by the repo Actions secrets `CLOUDFLARE_API_TOKEN` +
+`CLOUDFLARE_ACCOUNT_ID`. The token already lives in GitHub — **do NOT ask the
+founder for a Cloudflare token to deploy the site.** Notes:
+
+- Commits touching only `**.md`, `docs/`, or `history/` skip the deploy step.
+- To redeploy current `main` without a code change: GitHub → Actions →
+  "Test & Deploy" → Run workflow (workflow_dispatch).
+- The deploy job only runs after the test job is green — a red suite blocks the
+  site, which is the intended gate.
+- Manual `npx wrangler pages deploy dist --project-name=drop-site --branch=main`
+  is a break-glass fallback for when Actions itself is down, and only then does
+  a token need to come from the founder.
+- The `workers/app-path` Worker is NOT covered by this workflow — `cd
+  workers/app-path && npx wrangler deploy` still needs credentials.
+
 ## Multi-Agent Handoff Protocol
 Worked on by multiple agents (Claude, Codex, Hermes), possibly concurrently.
 ### Start
