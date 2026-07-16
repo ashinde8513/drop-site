@@ -210,7 +210,7 @@
         <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
           <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthGoogle }}">Continue with Google</button>
           <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthApple }}">Continue with Apple</button>
-          <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthFacebook }}">Continue with Facebook</button>
+          <button type="button" class="btn btn--secondary btn--block" disabled aria-disabled="true">Facebook — coming soon</button>
         </div>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">New to Drop? <a href="#" onClick="{{ goSignup }}">Create an account</a></p>
       </div>
@@ -262,7 +262,7 @@
         <div style="display:flex;gap:var(--sp-md);">
           <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthGoogle }}">Google</button>
           <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthApple }}">Apple</button>
-          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthFacebook }}">Facebook</button>
+          <button type="button" class="btn btn--secondary" style="flex:1;" disabled aria-disabled="true">Facebook — coming soon</button>
         </div>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">Already have an account? <a href="#" onClick="{{ goLogin }}">Log in</a></p>
       </div>

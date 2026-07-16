@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-12
+Last updated: 2026-07-15
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -17,7 +17,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ## Current status
 ### What works
 - FULL 12-page public event-discovery website LIVE at trydropapp.com (cutover 2026-07-06, see CUTOVER RECORD): AXS-style IA, Prism tokens, live Supabase public catalog (anon key, 1.5K events), 32/32 Playwright smoke green.
-- Post-login web app = the Prism SPA, LIVE on `app.trydropapp.com` + `trydropapp.com/app/` (2026-07-12): old static `account.html` shell DELETED; all landing Log in / Get started → `app.trydropapp.com/?mode=login|signup`; authed sessions boot to Discover; full auth (password, username via `login-with-username`, signup, reset, Google/Apple/Facebook OAuth triggers) lives in the SPA login/signup screens. Design round-4 (filterable scrollable city dropdown, empty-state CTAs, search filter-panel dropdowns) ported + live. Worker `drop-app-path` version `c650cc64-6c51-4f28-b1a4-7a18fa800bb2` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed).
+- Post-login web app = the Prism SPA, LIVE on `app.trydropapp.com` + `trydropapp.com/app/` (2026-07-12): old static `account.html` shell DELETED; all landing Log in / Get started → `app.trydropapp.com/?mode=login|signup`; authed sessions boot to Discover; full auth (password, username via `login-with-username`, signup, reset, Google/Apple OAuth triggers) lives in the SPA login/signup screens. Facebook is a disabled “coming soon” control until it is wired. Design round-4 (filterable scrollable city dropdown, empty-state CTAs, search filter-panel dropdowns) ported + live. Worker `drop-app-path` version `c650cc64-6c51-4f28-b1a4-7a18fa800bb2` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed).
 - SPA is DEMO-DATA FREE + shows real event photos (2026-07-12 evening, commits bce9a46+ad103e6, Pages `c5999d42`→`44031553`, live-verified authed): art chain (real event image → lineup artist photo → prism gradient; helpers moved site.js→data.js since the app shell only loads data.js) on cards + event hero; all 23 fake datasets purged — deleted where real Supabase wiring exists (events seed, artists/venues pickers, past shows, artist/venue meta), emptied + honest empty states where no backend yet (friends/plans/chat/wallet/notifications/tagged/submissions/blocked/promoter/admin); fake Global Dance Festival banner removed; discover ← Prev / Next → pager (24/page over one 240-row fetch). Changes mirrored BACK into the claude.ai design ("Website design prompt") via the OmeletteService/EditFile endpoint (banner/CREW/COMMENTS) — bidirectional design↔site sync is now the standing rule.
 - Expo web proxy is retired (2026-07-08, Codex): trydropapp.com remains the standalone public website; nothing Expo serves on the web.
 - 19-rule UI best-practices audit PASSED + fixes deployed (2026-07-06, commit 7308468, live-verified): undefined `--r-card` radius bug fixed, chip selected-state = solid cyan (gradient reserved for .btn-primary), events sort select → toggle chips, event-page nav CTA ghosted, legal numerals cyan, venue/artist card value-hierarchy, header search live-filters venues/artists grids, `.btn-primary` fill desaturated ~18% (`--grad-glow-fill`, AA contrast 5.06:1 worst stop; waveform/text/glow keep full sat).
@@ -34,6 +34,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-15 — Codex — Facebook web login deferred
+- Changed: replaced active Facebook OAuth controls in the SPA login and signup screens with disabled “Facebook — coming soon” buttons; removed the now-unused `oauthFacebook` binding. Google and Apple remain active.
+- Verified: local Chrome render checks at `app/?mode=login` and `app/?mode=signup` found one disabled Facebook control each with zero console warnings/errors. `npm test`: 64/66 passed; two pre-existing city-picker assertions selected `West Springfield` instead of expected `Springfield` on desktop and mobile.
 
 ## 2026-07-12 late-night session round 2 (latest) — 4 more mobile fixes + download-app button (LIVE, Pages `b24ed2a8`)
 ### 2026-07-12 — Claude (Fable) — hero gap, nav-search bubble, 771-artist grid, device-aware download button
