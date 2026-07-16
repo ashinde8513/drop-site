@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["S6H8PA7TUH.app.drop.mobile"],
+        "appIDs": ["S6H8PA7TUH.app.resonanceventures.drop"],
         "components": [
           { "/": "/event/*", "comment": "Event detail deep link / share target" },
           { "/": "/plan/*", "comment": "Plan detail deep link / share target" },
