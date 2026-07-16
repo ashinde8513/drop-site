@@ -319,7 +319,10 @@
     'dice.fm': 'DICE', 'tixr.com': 'Tixr', 'frontgatetickets.com': 'Front Gate Tickets',
     'seetickets.us': 'See Tickets', 'seetickets.com': 'See Tickets', 'etix.com': 'Etix',
     'venuepilot.co': 'Venue Pilot', 'ticketweb.com': 'Ticketweb', 'stubhub.com': 'StubHub',
-    'seatgeek.com': 'SeatGeek'
+    'seatgeek.com': 'SeatGeek',
+    // Affiliate/vanity hosts seen in the live catalog that would otherwise
+    // produce a junk label ("Prf") from the hostname fallback.
+    'etix.prf.hn': 'Etix', 'tickets.meowwolf.com': 'Meow Wolf'
   };
   Drop.sellerName = function (url) {
     try {

@@ -287,6 +287,29 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('.ed-single-note')).toContainText('only site currently selling tickets');
   });
 
+  test('event page labels an affiliate-wrapped etix.prf.hn ticket link as Etix', async ({ page }) => {
+    // ~226 live events carry etix.prf.hn (Partnerize) hosts — the hostname
+    // fallback would label them "Prf" without the explicit map entry.
+    const fakeId = '9c1d22bb-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const fakeEvent = {
+      id: fakeId, title: 'Affiliate Etix Show', description: '',
+      date: '2027-02-01T02:00:00', end_date: null, venue_name: 'Test Lounge',
+      city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: 'https://etix.prf.hn/click/camref:TEST/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2FTEST',
+      price_min: null, price_max: null, currency: 'USD',
+      is_festival: false, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00', event_artists: [],
+    };
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) }));
+    await page.route('**/rest/v1/rpc/event_going_counts', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/event.html?id=${fakeId}`);
+    await expect(page.locator('.ed-price-row')).toContainText('Etix');
+    await expect(page.locator('.ed-price-row')).not.toContainText('Prf');
+  });
+
   test('mobile: hamburger opens the .mnav drawer at 390px', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/index.html');
