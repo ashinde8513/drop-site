@@ -36,8 +36,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
 ## 2026-07-15 — Codex — Facebook web login deferred
-- Changed: replaced active Facebook OAuth controls in the SPA login and signup screens with disabled “Facebook — coming soon” buttons; removed the now-unused `oauthFacebook` binding. Google and Apple remain active.
-- Verified: local Chrome render checks at `app/?mode=login` and `app/?mode=signup` found one disabled Facebook control each with zero console warnings/errors. `npm test`: 64/66 passed; two pre-existing city-picker assertions selected `West Springfield` instead of expected `Springfield` on desktop and mobile.
+- Changed: replaced active Facebook OAuth controls in the SPA login and signup screens with disabled “Facebook — coming soon” buttons; removed the now-unused `oauthFacebook` binding. Google and Apple remain active. Mirrored the files into `dist/app/`.
+- Verified: local Chrome render checks at `app/?mode=login` and `app/?mode=signup` found one disabled Facebook control each with zero console warnings/errors. `npm test`: 64/66 passed; two pre-existing city-picker assertions selected `West Springfield` instead of expected `Springfield` on desktop and mobile. Deployed Cloudflare Pages `1e27f8c0.drop-site.pages.dev`; live `app.trydropapp.com` source confirms both disabled controls.
 
 ## 2026-07-12 late-night session round 2 (latest) — 4 more mobile fixes + download-app button (LIVE, Pages `b24ed2a8`)
 ### 2026-07-12 — Claude (Fable) — hero gap, nav-search bubble, 771-artist grid, device-aware download button
