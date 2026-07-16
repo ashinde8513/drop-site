@@ -805,17 +805,19 @@ button { font: inherit; cursor: pointer; }
    ======================================================================== */
 @media (max-width: 560px) {
   body { font-size: 16px; }
-  /* 12px page gutter — matches the app SPA's --sp-md mobile gutter so the
-     website and app.trydropapp.com read as one surface on phones. */
-  .wrap { padding: 0 12px; }
-  /* Near bezel-to-bezel event cards (parity with the app's signed-in
-     Discover). Grid cards only — rail cards keep their 300px flex-basis. */
+  .wrap { padding: 0 18px; }
+  /* Event cards only: match the app's signed-in card width (12px from the
+     screen edge) — grid cards stretch full-width and the grid bleeds past
+     the 18px page gutter by the 6px difference. Every other element keeps
+     the normal gutter; rail cards keep their 300px flex-basis. */
+  .grid-events { margin: 0 -6px; }
   .grid-events > .wsc-card { width: 100%; }
   .hero-cta .btn { flex: 1 1 auto; }
   .section-head--row { align-items: flex-start; }
 }
 @media (max-width: 360px) {
-  .wrap { padding: 0 12px; }
+  .wrap { padding: 0 14px; }
+  .grid-events { margin: 0 -2px; }
 }
 
 /* ========================================================================
