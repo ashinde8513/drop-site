@@ -37,6 +37,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-07-16 — Claude (Fable, remote) — SPA signed-out home cards bezel-to-bezel on mobile (founder-reported)
+- **Why:** founder compared the signed-out app.trydropapp.com home feed vs the signed-in Discover on a phone: signed-in cards run near bezel-to-bezel (Discover's `.wsh__content` mobile override = 12px sides) but the signed-out "Happening in {city}" section kept its inline desktop padding (`var(--sp-xl)` = 24px sides) on mobile.
+- **Changed:** `app/index.html` home shows section gains class `home-shows`; `app/app.css` ≤720px block adds `.home-shows { padding-left/right: var(--sp-md) !important; }` (matches `.wsh__content`; `!important` needed to beat the inline style). Desktop unchanged.
+- **Tested:** local 393px-viewport Chromium drive — `.home-shows` computes 12px/12px and an injected `.wsc__card` measures 12px from each viewport edge (identical to signed-in Discover); page renders with zero pageerrors. Desktop smoke suite in-container: 21/43 pass, all 22 failures = the documented environmental `ERR_CONNECTION_RESET` baseline (verified identical with the change stashed).
+- **Deploy:** NOT yet — pushed on branch `claude/mobile-logged-out-card-layout-06ue2h` (remote agent session; no local pw-local.config). Merge to main to auto-deploy via Actions once founder eyeballs it.
+
 ## 2026-07-16 — Claude (Fable, remote) — "Only seller" exclusivity claim removed from event pages (founder call)
 - **Why:** founder flagged the single-listing "Only seller" badge + "only site currently selling tickets" note as misleading — resale marketplaces (StubHub, Vivid Seats, etc.) usually also carry the show, so "only" overclaims. Same session also produced the Tixr partnership outreach draft (lives in drop-mobile-app `docs/launch/tixr-partnership-outreach.md` + founder queue row).
 - **Changed:** `event.html` renderPriceCompare no longer renders the `.ed-best` "Only seller" badge or the `.ed-single-note` notice (row keeps seller name + price + Get tickets); dead `.ed-best`/`.ed-single-note` rules removed from `pages.css`; smoke test renamed + now asserts both elements are ABSENT (`tests/smoke.spec.ts`).

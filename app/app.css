@@ -406,6 +406,9 @@
     .wsh__grid { justify-content: center; gap: var(--sp-md); }
     .wsc, .wsc__card { width: 100% !important; }
     .wsh__content { padding: var(--sp-md) var(--sp-md) var(--sp-xxxl); }
+    /* Signed-out home "Happening in {city}" section matches Discover's near
+       bezel-to-bezel cards (inline padding needs !important to override) */
+    .home-shows { padding-left: var(--sp-md) !important; padding-right: var(--sp-md) !important; }
 
     /* Discover segmented control + Wrapped share buttons center on mobile */
     .disc-controls { justify-content: center; width: 100%; }
