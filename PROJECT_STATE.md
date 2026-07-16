@@ -35,6 +35,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-07-16 — Claude (Fable) — AASA bundle ID updated for the iOS launch rename
+- Context (from the drop-mobile-app session on the Mac mini, 2026-07-15): iOS launch arc landed there — enrollment approved, bundle RENAMED `app.drop.mobile` → `app.resonanceventures.drop` (old one taken on App Store Connect), ascAppId `6790662825`, Apple Music code-enabled, signed .ipa exists; remaining mobile steps = founder's MusicKit .p8 → rebuild → device QA → EAS submit.
+- Changed here: `.well-known/apple-app-site-association` appID `S6H8PA7TUH.app.drop.mobile` → `S6H8PA7TUH.app.resonanceventures.drop` (universal links would have pointed at the dead bundle). Needs a Pages deploy to go live (branch push only — not deployed from this session).
+- Still stale on purpose: `.well-known/assetlinks.json` keeps `app.drop.mobile` + TODO cert fingerprint — Android isn't launching yet; update package name + release SHA256 when it does. `APP_STORE_URL` constants (site.js/app.js/link.html) stay empty until the app is live; when it ships, fill with `https://apps.apple.com/app/id6790662825`.
+
 ## 2026-07-15 — Codex — Facebook web login deferred
 - Changed: replaced active Facebook OAuth controls in the SPA login and signup screens with a muted “Facebook sign-in coming soon” status note; removed the now-unused `oauthFacebook` binding. Google and Apple remain active. This removes the crowded third social button on mobile. Mirrored the files into `dist/app/`.
 - Verified: local 390×844 signup render shows two readable provider buttons and a one-line Facebook status note, with zero console warnings/errors; the Log in route still works. `npm test`: 64/66 passed; two pre-existing city-picker assertions selected `West Springfield` instead of expected `Springfield` on desktop and mobile. Deployed Cloudflare Pages `a6ccce2f.drop-site.pages.dev`; live `app.trydropapp.com` confirms the new status note.
