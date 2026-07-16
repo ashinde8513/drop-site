@@ -5,7 +5,7 @@
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -27,7 +27,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
-0. **Add the Supabase OAuth redirect allowlist entries** (founder, 30s, dashboard → Auth → URL Configuration → Redirect URLs, project Drop App): `https://app.trydropapp.com/**` and `https://trydropapp.com/app/**`. The live callback forwarder makes login work today, but allowlisting removes the extra hop + covers email-confirm/reset links cleanly.
+0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
 1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
 2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
 3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
@@ -35,10 +35,19 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-07-16 (round 4, same session) — Claude (Fable) — WEB APPLE SIGN-IN VERIFIED (runbook Part 2 complete)
+- **"Continue with Apple" on the website WORKS end-to-end** — founder browser-tested (runbook 2d): Apple login succeeded and **linked to the existing Google-created account** (same verified email) — Supabase automatic identity linking behaving as designed, one account / multiple providers. No code changed; this closes runbook Part 2.
+- **Discovery**: Part 2 config (Services ID `app.resonanceventures.drop.web`, web-OAuth secret, redirect allow-list) was ALREADY set on Supabase — verified live via Management API (`external_apple_enabled: true`, client_id list `.web` first + bundle id, secret present). Presumably a prior Mac session; nobody had recorded or browser-verified it. Also verified the SPA's `redirectTo` (`location.origin + location.pathname`, app.js:955) is covered by the live allow-list → "Exact next step 0" above closed.
+- **Future caveats** (recorded in the drop-app runbook, commits 05913da + 2d1b6f0): Apple "Hide My Email" users won't email-match → separate fresh account (expected, support-question fodder); web client secret expires ≤6 months — regenerate + PATCH `external_apple_secret` on expiry or at the planned post-submission rotation of key `876993RG4Q`.
+
 ## 2026-07-16 — Claude (Fable, remote) — impact.com site verification (content snippet) for Vivid Seats affiliate enrollment
 - **Changed:** `index.html` footer `.foot-fine` gains one visible line — `Impact-Site-Verification: b8ea96cd-5715-48d9-97ab-76b4110b441c` — Impact's "verify by editing content on my website" method, chosen after the July meta-tag attempt failed (root cause in drop-mobile-app `docs/launch/impact-vivid-seats-enrollment.md`: the old meta lived in the Expo web export this site replaced, and Impact wants metas first-in-head). Founder is enrolling in the **Vivid Seats** affiliate program (impact.com); this string must stay in server-rendered homepage content until the property shows Verified (harmless to keep after).
 - **Tested:** container suite 24/66 pass = exactly the documented environmental baseline (blocked runtime hosts + no WebKit; session-local `pw-local.config.ts` untracked) → zero new failures. Built dist diffed against live: only source delta = the new footer line (site.js byte-identical; AASA `S6H8PA7TUH.app.resonanceventures.drop` preserved in dist).
 - **Deploy:** PENDING — no CF credentials in this remote env (morning session's token wasn't persisted). Needs founder token → `npx wrangler pages deploy dist --project-name=drop-site --branch=main`, then `curl -s https://trydropapp.com/ | grep Impact-Site-Verification`, then founder clicks Verify in Impact.
+## 2026-07-16 (round 4, same session) — Claude (Fable) — WEB APPLE SIGN-IN VERIFIED (runbook Part 2 complete)
+- **"Continue with Apple" on the website WORKS end-to-end** — founder browser-tested (runbook 2d): Apple login succeeded and **linked to the existing Google-created account** (same verified email) — Supabase automatic identity linking behaving as designed, one account / multiple providers. No code changed; this closes runbook Part 2.
+- **Discovery**: Part 2 config (Services ID `app.resonanceventures.drop.web`, web-OAuth secret, redirect allow-list) was ALREADY set on Supabase — verified live via Management API (`external_apple_enabled: true`, client_id list `.web` first + bundle id, secret present). Presumably a prior Mac session; nobody had recorded or browser-verified it. Also verified the SPA's `redirectTo` (`location.origin + location.pathname`, app.js:955) is covered by the live allow-list → "Exact next step 0" above closed.
+- **Future caveats** (recorded in the drop-app runbook, commits 05913da + 2d1b6f0): Apple "Hide My Email" users won't email-match → separate fresh account (expected, support-question fodder); web client secret expires ≤6 months — regenerate + PATCH `external_apple_secret` on expiry or at the planned post-submission rotation of key `876993RG4Q`.
 
 ## 2026-07-16 (round 3, same session) — Claude (Fable) — rebase onto de14389, redeploy, MERGED to main
 - **Deploy-regression caught + fixed**: the AASA deploy `48ae0dd1` was built from this branch BEFORE `de14389` (Facebook muted status note, pushed to main 07-15 19:27 + deployed `a6ccce2f`) existed on it — so it briefly reverted live app/index.html to the disabled-Facebook-buttons variant. Rebased the branch onto origin/main, rebuilt dist (verified: status note + real AASA both present), redeployed production; live re-verified. Lesson: ALWAYS `git fetch origin main` + rebase before building dist for a production deploy from a branch.
