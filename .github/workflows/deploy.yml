@@ -1,0 +1,47 @@
+name: deploy
+# Auto-deploy the static site to Cloudflare Pages (project drop-site,
+# trydropapp.com) on every push to main. Replaces the manual
+# `npx wrangler pages deploy dist` + token-in-chat round-trip.
+on:
+  workflow_dispatch: {} # manual "redeploy current main" button
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md' # docs-only commits (PROJECT_STATE, etc.) don't redeploy
+      - 'tests/**'
+      - 'docs/**'
+      - 'history/**'
+concurrency:
+  group: deploy
+  cancel-in-progress: true # only the newest main matters
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble dist (site files only — repo docs/tests/config excluded)
+        run: |
+          rsync -a --delete \
+            --exclude '.git' --exclude '.gitignore' --exclude '.gitleaks.toml' \
+            --exclude '.impeccable' --exclude '.project-os.json' --exclude '.github' \
+            --exclude 'node_modules' --exclude 'tests' --exclude 'test-results' \
+            --exclude 'playwright-report' --exclude 'playwright.config.ts' \
+            --exclude 'pw-local.config.ts' --exclude 'package.json' --exclude 'package-lock.json' \
+            --exclude '*.md' --exclude 'docs' --exclude 'history' --exclude 'design-drop' \
+            --exclude 'workers' --exclude 'supabase' --exclude 'dist' \
+            ./ dist/
+      - name: Sanity-check dist before deploy
+        run: |
+          test -f dist/index.html || { echo "::error::dist/index.html missing"; exit 1; }
+          test -f dist/_redirects && test -f dist/_headers || { echo "::error::_redirects/_headers missing"; exit 1; }
+          grep -q 'app.resonanceventures.drop' dist/.well-known/apple-app-site-association \
+            || { echo "::error::AASA lost or stale — refusing to deploy a universal-links regression"; exit 1; }
+      - name: Deploy to Cloudflare Pages (production)
+        # Pinned to a commit SHA (not the mutable @v3 tag): this third-party action
+        # receives the production CLOUDFLARE_API_TOKEN, so a retagged @v3 must not be
+        # able to swap in malicious code. Same SHA pin as drop-mobile-app. v3.15.0.
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=drop-site --branch=main
