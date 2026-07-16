@@ -37,6 +37,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-07-16 (follow-up, same session) — Claude (Fable, remote) — WEBSITE home cards bezel-to-bezel on mobile too
+- **Why:** after the SPA fix deployed, founder screenshot showed the OLD spacing — because they were on **trydropapp.com** (the website), not app.trydropapp.com. The website home "Happening in {city}" grid caps `.wsc-card` at 300px centered inside 18px `.wrap` gutters → ~46px dead space per side on a 393pt phone.
+- **Changed:** `site.css` ≤560px block — `.wrap` gutter 18px→12px (14→12 at ≤360px; matches the app SPA --sp-md so both surfaces read identically on phones) + `.grid-events > .wsc-card { width: 100%; }` (grid cards only; rail cards keep their 300px flex-basis). Also `app/index.html` stylesheet links got `?v=cf4d0dc` cache-busters (commit 2fd26e6) after the founder device kept stale app.css.
+- **Tested:** local 393px Chromium drive of index.html — injected `.wsc-card` measures 12px from each viewport edge, width 369px (same as app SPA). No smoke test asserts card geometry.
+- **Deploy:** pushed to main → CI Test & Deploy (fonts render as fallback only in-container — Google Fonts unreachable from sandbox, not a site issue).
+
 ## 2026-07-16 — Claude (Fable, remote) — SPA signed-out home cards bezel-to-bezel on mobile (founder-reported)
 - **Why:** founder compared the signed-out app.trydropapp.com home feed vs the signed-in Discover on a phone: signed-in cards run near bezel-to-bezel (Discover's `.wsh__content` mobile override = 12px sides) but the signed-out "Happening in {city}" section kept its inline desktop padding (`var(--sp-xl)` = 24px sides) on mobile.
 - **Changed:** `app/index.html` home shows section gains class `home-shows`; `app/app.css` ≤720px block adds `.home-shows { padding-left/right: var(--sp-md) !important; }` (matches `.wsh__content`; `!important` needed to beat the inline style). Desktop unchanged.
