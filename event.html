@@ -151,6 +151,7 @@
 
   <script src="/data.js"></script>
   <script src="/site.js"></script>
+  <script src="/consent.js" defer></script>
   <script>
     // Event detail page — fetch by ?id=, render Prism web-shell hero + facts +
     // lineup + description + price compare + tool row + sticky buy box
@@ -263,27 +264,11 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
       }
 
-      // ---- Seller name from the ticket URL's hostname. One real listing today
-      // (Drop links a single ticket source per event) — a true multi-seller
-      // compare table needs the price-compare data feed (separate project,
-      // not merged); this degrades to one honest, real row instead of a
-      // fabricated "beats 3 competitors" table. ---------------------------------
-      var SELLERS = {
-        'ticketmaster.com': 'Ticketmaster', 'axs.com': 'AXS', 'eventbrite.com': 'Eventbrite',
-        'dice.fm': 'DICE', 'tixr.com': 'Tixr', 'frontgatetickets.com': 'Front Gate Tickets',
-        'seetickets.us': 'See Tickets', 'seetickets.com': 'See Tickets', 'etix.com': 'Etix',
-        'venuepilot.co': 'Venue Pilot', 'ticketweb.com': 'Ticketweb', 'stubhub.com': 'StubHub',
-        'seatgeek.com': 'SeatGeek'
-      };
-      function sellerName(url) {
-        try {
-          var host = new URL(url).hostname.replace(/^www\./, '');
-          if (SELLERS[host]) return SELLERS[host];
-          var parts = host.split('.');
-          var base = parts.length > 1 ? parts[parts.length - 2] : host;
-          return base.charAt(0).toUpperCase() + base.slice(1);
-        } catch (e) { return 'Tickets'; }
-      }
+      // ---- One real listing today (Drop links a single ticket source per
+      // event) — a true multi-seller compare table needs the price-compare
+      // data feed (separate project, not merged); until then the section shows
+      // the one honest row (Drop.sellerName labels it from the URL's hostname)
+      // plus a notice that it's the only seller right now. ----------------------
 
       function renderHero(ev) {
         var wrap = el('div');
@@ -436,17 +421,13 @@
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (!ticketUrl) return null;
         var section = el('div', 'ed-section');
-        var head = el('div', 'sec-h2', 'Compare tickets');
-        var note = el('span', null, ' · all-in, fees included');
-        note.style.cssText = 'font-weight:400;font-size:var(--fs-xs);color:var(--text-muted);';
-        head.appendChild(note);
-        section.appendChild(head);
+        section.appendChild(el('div', 'sec-h2', 'Tickets'));
         var row = el('div', 'ed-price-row');
         row.style.marginTop = 'var(--sp-md)';
         var left = el('div');
         left.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
-        left.appendChild(el('span', null, sellerName(ticketUrl)));
-        left.appendChild(el('span', 'ed-best', 'Best price'));
+        left.appendChild(el('span', null, D.sellerName(ticketUrl)));
+        left.appendChild(el('span', 'ed-best', 'Only seller'));
         row.appendChild(left);
         var right = el('div');
         right.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
@@ -458,6 +439,9 @@
         right.appendChild(buy);
         row.appendChild(right);
         section.appendChild(row);
+        var single = el('p', 'ed-single-note',
+          'Heads up: this is the only site currently selling tickets for this show — more sellers will appear here as they list it.');
+        section.appendChild(single);
         return section;
       }
 

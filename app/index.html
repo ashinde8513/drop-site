@@ -479,9 +479,9 @@
 
           <!-- price comparison -->
           <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
-            <div class="sec__title" style="margin-bottom:var(--sp-md);">Compare tickets <span style="font-weight:400;font-size:var(--fs-xs);color:var(--text-muted);">· all-in, fees included</span></div>
+            <div class="sec__title" style="margin-bottom:var(--sp-md);">Tickets</div>
             <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-              <sc-for list="{{ ae.priceRows }}" as="p" hint-placeholder-count="3">
+              <sc-for list="{{ ae.priceRows }}" as="p" hint-placeholder-count="1">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid {{ p.border }};border-radius:var(--r-md);">
                   <div style="display:flex;align-items:center;gap:var(--sp-md);">
                     <span style="font-weight:600;">{{ p.seller }}</span>
@@ -493,6 +493,9 @@
                   </div>
                 </div>
               </sc-for>
+              <sc-if value="{{ aeSingleSeller }}">
+                <p style="margin:0;font-size:var(--fs-xs);color:var(--text-muted);">Heads up: this is the only site currently selling tickets for this show — more sellers will appear here as they list it.</p>
+              </sc-if>
             </div>
           </div>
 
@@ -3138,6 +3141,7 @@
 <div id="app"></div>
 <script src="/vendor/supabase.js"></script>
 <script src="/data.js"></script>
+<script src="/consent.js" defer></script>
 <script src="./app.js"></script>
 </body>
 </html>

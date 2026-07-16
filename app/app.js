@@ -1087,16 +1087,15 @@ class Component extends DCLogic {
     const lineup = lineupArtists.length
       ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(a.name, a.id) }))
       : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(name, null) }));
-    // ponytail: no real seller-comparison feed wired (that's the separate
-    // price-comparison project) — these rows are a synthetic estimate off
-    // the one real price, same as the original mock. Guarded against events
-    // with no price ("See tickets") so it doesn't render "$NaN all-in".
-    const aeBasePrice = parseInt((ae.price||'').replace(/\D/g,''), 10);
-    const priceRows = isNaN(aeBasePrice) ? [] : [
-      { seller:'Drop (AXS)', price:ae.price.replace('+','').replace(' all-in',''), best:true, border:'var(--attended)' },
-      { seller:'Ticketmaster', price:'$'+(aeBasePrice+14)+' all-in', best:false, border:'var(--border)' },
-      { seller:'StubHub', price:'$'+(aeBasePrice+31)+' all-in', best:false, border:'var(--border)' },
-    ];
+    // One honest row: the event's real ticket link, labeled with the real
+    // seller from its hostname. The old mock synthesized Ticketmaster/StubHub
+    // rows off the one real price, so every "Get tickets" button opened the
+    // same link under different vendor names — removed until the real
+    // seller-comparison feed (separate project) is wired in.
+    const priceRows = ae.ticketUrl ? [
+      { seller:(Drop && Drop.sellerName(ae.ticketUrl)) || 'Tickets', price:ae.price, best:false, border:'var(--attended)' },
+    ] : [];
+    const aeSingleSeller = priceRows.length === 1;
 
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
     // hi at the slider cap means "$200+" (unbounded above); lo 0 = free shows in
@@ -1688,7 +1687,7 @@ class Component extends DCLogic {
       { q:'What EDM shows are in '+seoCity+' this weekend?', a:'Drop lists every electronic show in '+seoCity+' with all-in prices. Top picks this weekend include ODESZA at Red Rocks and Subtronics at Mission Ballroom.' },
       { q:'Where are the best rave venues in '+seoCity+'?', a:'Red Rocks Amphitheatre, Mission Ballroom, and The Church are the most-followed electronic venues in '+seoCity+' on Drop.' },
       { q:'How do I find friends going to the same show?', a:'Create a free Drop account, sync your contacts, and you\u2019ll see which friends are going to every show near you.' },
-      { q:'Are tickets cheaper on Drop?', a:'Drop compares all-in prices across sellers so you always see the true total — fees included — before you buy.' },
+      { q:'Are tickets cheaper on Drop?', a:'Drop links you straight to the official seller for every show — no markup from us. Some links are affiliate links, at no extra cost to you.' },
     ];
 
     const seoGenre = s.activeGenre || 'Techno';
@@ -1949,6 +1948,7 @@ class Component extends DCLogic {
       // event detail
       ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:ae.friends>0, friendsLabel:fl(ae.friends), lineup, priceRows,
         description: ae.title.split(' — ')[0]+' brings a full production to '+ae.venue+' — expect a headline set built around the new album, immersive lighting and a stacked support bill. Doors open one hour before showtime. This is an 18+ event; a valid ID is required at the door. Times are subject to change, so keep an eye on your Drop reminders for set-time updates and any presale drops.' },
+      aeSingleSeller,
       descCls: s.descClamped?'is-clamped':'', descToggle: s.descClamped?'Read more':'Show less',
       aeGoingCls: 'wsc__act'+(aeSt==='going'?' is-going':''),
       aeInterestedCls: 'wsc__act'+(aeSt==='interested'?' is-interested':''),

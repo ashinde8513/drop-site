@@ -75,11 +75,11 @@
         <!-- PRIMARY: smart routes iOS → App Store at launch, otherwise → launch list.
              Text + destination are set by the script below from the LAUNCHED flag.
              No-JS fallback points to the launch list. -->
-        <a class="lh-link primary" id="getApp" href="/index.html#notify">
+        <a class="lh-link primary" id="getApp" href="/download.html#waitlist">
           <span class="lh-ico" aria-hidden="true">📲</span><span class="lh-label">Get launch access</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
 
-        <a class="lh-link" id="joinList" href="/index.html#notify">
+        <a class="lh-link" id="joinList" href="/download.html#waitlist">
           <span class="lh-ico" aria-hidden="true">🔔</span><span class="lh-label">Join the launch list</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
         <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener noreferrer">
@@ -116,7 +116,9 @@
     (function () {
       var LAUNCHED = false;                 // ← flip to true on launch day
       var APP_STORE_URL = "";               // ← e.g. "https://apps.apple.com/us/app/drop/id000000000"
-      var WAITLIST_URL = "index.html#notify";
+      // The launch-access form lives on /download.html (id="waitlist") — the
+      // old index.html#notify anchor was removed in the browse-first rebuild.
+      var WAITLIST_URL = "/download.html#waitlist";
 
       var btn = document.getElementById('getApp');
       if (!btn) return;
@@ -129,7 +131,7 @@
 
       // Carry ?src= into the secondary "Join the launch list" link too.
       var jl = document.getElementById('joinList');
-      if (jl && src) jl.setAttribute('href', '/index.html?src=' + encodeURIComponent(src) + '#notify');
+      if (jl && src) jl.setAttribute('href', '/download.html?src=' + encodeURIComponent(src) + '#waitlist');
 
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
