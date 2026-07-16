@@ -30,7 +30,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />
-  <link rel="preconnect" href="https://app.convertkit.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site.css" />
   <link rel="stylesheet" href="/shell.css" />
@@ -102,9 +101,9 @@
             <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(34px,5vw,56px); letter-spacing:-0.8px; line-height:1.03; margin:0 0 var(--sp-md);">Drop in your pocket</h1>
             <p class="hero-sub" style="max-width:52ch;">Push alerts the second presale drops, contacts sync to find your crew, and your ticket wallet on the go.</p>
 
-            <!-- Waitlist → Kit (ConvertKit). Paste your Form ID into KIT_FORM_ID in the
-                 script at the bottom of this file. Without Kit, JS opens a mailto
-                 fallback on submit without putting mailto in the form action. -->
+            <!-- Waitlist → our own Supabase `waitlist` table (write-only for the
+                 public key; see Drop.joinWaitlist in data.js). The action/method
+                 are a harmless no-JS fallback — JS always submits in place. -->
             <form class="wl-form" id="waitlist"
                   action="/download.html"
                   method="get" novalidate style="margin-top:var(--sp-xl); max-width:440px;">
@@ -115,7 +114,6 @@
                        placeholder="you@email.com" aria-label="Email address" />
                 <button class="btn-primary wl-submit" type="submit">Get launch access →</button>
               </div>
-              <input type="hidden" name="fields[source]" value="" />
               <p class="wl-consent">No spam — just one email when Drop launches. Unsubscribe anytime.</p>
               <p class="wl-msg" role="status" aria-live="polite"></p>
             </form>
@@ -236,34 +234,17 @@
   <script src="/site.js"></script>
   <script src="/consent.js" defer></script>
   <script>
-    // Waitlist capture → Kit (ConvertKit), keyless client-side. Ported verbatim
-    // from the old landing page (see git history) — only class names touched.
-    // ── SET THIS: paste your Kit Form ID (the number in the form's edit URL).
+    // Waitlist capture → our own Supabase `waitlist` table via Drop.joinWaitlist
+    // (data.js). Replaced the Kit (ConvertKit) wiring 2026-07-16 — founder opted
+    // to own the list in Supabase; the table is write-only for the public key.
     (function () {
-      var KIT_FORM_ID = "REPLACE_WITH_KIT_FORM_ID";
-
       var form = document.getElementById('waitlist');
       if (!form) return;
       var input = form.querySelector('.wl-input');
       var msg   = form.querySelector('.wl-msg');
-      var srcEl = form.querySelector('input[name="fields[source]"]');
-      var MAILTO = 'mailto:trydropapp@gmail.com?subject=Notify%20me%20at%20launch'
-                 + '&body=Add%20me%20to%20the%20Drop%20launch%20list.';
 
       // Carry the ?src= (ig_bio / tiktok_bio) through for attribution.
       var src = new URLSearchParams(window.location.search).get('src') || '';
-      if (srcEl) srcEl.value = src;
-
-      var configured = KIT_FORM_ID.indexOf('REPLACE_') === -1;
-      if (configured) {
-        form.setAttribute('action', 'https://app.convertkit.com/forms/' + KIT_FORM_ID + '/subscriptions');
-        form.setAttribute('method', 'post'); // HTML defaults to get for no-JS mailto fallback
-      } else {
-        // Not wired to Kit yet — keep a JS fallback so the form is never broken,
-        // but do not use mailto as the form action because browsers warn on load.
-        form.setAttribute('action', '/download.html');
-        form.setAttribute('method', 'get');
-      }
 
       function show(t, ok) { msg.textContent = t; msg.className = 'wl-msg ' + (ok ? 'ok' : 'err'); }
       function setInvalid(on) {
@@ -280,29 +261,17 @@
         // Always submit in-place — a native submit reloads the page with no
         // feedback, which reads as "nothing happened" (founder-reported bug).
         e.preventDefault();
-        var email = (input.value || '').trim();
+        var email = (input.value || '').trim().toLowerCase();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           setInvalid(true); show('Enter a valid email address.', false); input.focus(); return;
         }
         setInvalid(false);
-        if (!configured) {
-          // Kit not wired yet — open a pre-filled email instead, and say so
-          // on the page so the tap always gets a visible response.
-          show("Almost in — we've opened an email to trydropapp@gmail.com. Hit send and you're on the list. Nothing opened? Email us at trydropapp@gmail.com.", true);
-          location.href = MAILTO + encodeURIComponent('\n\nMy email: ' + email);
-          return;
-        }
         show('Adding you…', true);
-        var body = new URLSearchParams();
-        body.set('email_address', email);
-        if (src) body.set('fields[source]', src);
-        fetch(form.getAttribute('action'), {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString()
-        }).then(function () {
+        Drop.joinWaitlist(email, src).then(function (res) {
           form.reset();
-          show("You're on the list 🎛️ Check your email to confirm.", true);
+          show(res.duplicate
+            ? "You're already on the list 🎛️ We'll email you the day Drop launches."
+            : "You're on the list 🎛️ We'll email you the day Drop launches.", true);
         }).catch(function () {
           show("That didn't go through — tap again, or email trydropapp@gmail.com.", false);
         });
