@@ -311,6 +311,29 @@
     return /^https?:\/\//i.test(u || '') ? u : null;
   };
 
+  // Human seller name from a ticket URL's hostname ("www.ticketmaster.com" →
+  // "Ticketmaster"). Shared by the site's event page and the app shell so the
+  // ticket listing is always labeled with the real seller, never a made-up one.
+  var SELLERS = {
+    'ticketmaster.com': 'Ticketmaster', 'axs.com': 'AXS', 'eventbrite.com': 'Eventbrite',
+    'dice.fm': 'DICE', 'tixr.com': 'Tixr', 'frontgatetickets.com': 'Front Gate Tickets',
+    'seetickets.us': 'See Tickets', 'seetickets.com': 'See Tickets', 'etix.com': 'Etix',
+    'venuepilot.co': 'Venue Pilot', 'ticketweb.com': 'Ticketweb', 'stubhub.com': 'StubHub',
+    'seatgeek.com': 'SeatGeek',
+    // Affiliate/vanity hosts seen in the live catalog that would otherwise
+    // produce a junk label ("Prf") from the hostname fallback.
+    'etix.prf.hn': 'Etix', 'tickets.meowwolf.com': 'Meow Wolf'
+  };
+  Drop.sellerName = function (url) {
+    try {
+      var host = new URL(url).hostname.replace(/^www\./, '');
+      if (SELLERS[host]) return SELLERS[host];
+      var parts = host.split('.');
+      var base = parts.length > 1 ? parts[parts.length - 2] : host;
+      return base.charAt(0).toUpperCase() + base.slice(1);
+    } catch (e) { return 'Tickets'; }
+  };
+
   // Ticketmaster "category" art (/dam/c/) is a generic grayscale stock photo,
   // not real event artwork — prism art looks designed, the stock photo doesn't.
   Drop.hasRealArt = function (event) {

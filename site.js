@@ -368,11 +368,23 @@
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      var first = ul.querySelector('[data-city]');
+      // Exact match in the list wins (normalizes case), else the typed text
+      // verbatim — "Springfield" must never silently become "West Springfield"
+      // just because a substring match sorts first. Empty input keeps the old
+      // first-suggestion behavior.
       var typed = input.value.trim();
-      if (first) Drop.setCity(first.getAttribute('data-city'));
-      else if (typed) Drop.setCity(typed); // free text — any city
-      else return;
+      var opts = ul.querySelectorAll('[data-city]');
+      var exact = null;
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].getAttribute('data-city').toLowerCase() === typed.toLowerCase()) { exact = opts[i]; break; }
+      }
+      if (exact) Drop.setCity(exact.getAttribute('data-city'));
+      else if (typed) Drop.setCity(typed); // free text — any city, even unlisted
+      else {
+        var first = ul.querySelector('[data-city]');
+        if (!first) return;
+        Drop.setCity(first.getAttribute('data-city'));
+      }
       location.reload();
     });
 

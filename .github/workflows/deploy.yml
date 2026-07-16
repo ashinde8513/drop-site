@@ -1,35 +1,52 @@
-name: deploy
-# Auto-deploy the static site to Cloudflare Pages (project drop-site,
-# trydropapp.com) on every push to main. Replaces the manual
+# Test on every PR and push; deploy to the existing Cloudflare Pages project
+# (drop-site, trydropapp.com) on merge to main. Replaces the manual
 # `npx wrangler pages deploy dist` + token-in-chat round-trip.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — API token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID — the account ID shown on the Workers & Pages overview
+name: Test & Deploy
+
 on:
   workflow_dispatch: {} # manual "redeploy current main" button
+  pull_request:
   push:
     branches: [main]
     paths-ignore:
       - '**.md' # docs-only commits (PROJECT_STATE, etc.) don't redeploy
-      - 'tests/**'
       - 'docs/**'
       - 'history/**'
-concurrency:
-  group: deploy
-  cancel-in-progress: true # only the newest main matters
+
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble dist (site files only — repo docs/tests/config excluded)
-        run: |
-          rsync -a --delete \
-            --exclude '.git' --exclude '.gitignore' --exclude '.gitleaks.toml' \
-            --exclude '.impeccable' --exclude '.project-os.json' --exclude '.github' \
-            --exclude 'node_modules' --exclude 'tests' --exclude 'test-results' \
-            --exclude 'playwright-report' --exclude 'playwright.config.ts' \
-            --exclude 'pw-local.config.ts' --exclude 'package.json' --exclude 'package-lock.json' \
-            --exclude '*.md' --exclude 'docs' --exclude 'history' --exclude 'design-drop' \
-            --exclude 'workers' --exclude 'supabase' --exclude 'dist' \
-            ./ dist/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: true # only the newest main matters
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build dist (whitelist — repo docs/tests/config never ship)
+        run: bash scripts/build-dist.sh
       - name: Sanity-check dist before deploy
         run: |
           test -f dist/index.html || { echo "::error::dist/index.html missing"; exit 1; }

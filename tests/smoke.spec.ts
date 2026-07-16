@@ -53,6 +53,14 @@ const DETAIL_PAGES = [
 ];
 
 test.describe('landing site smoke', () => {
+  // Pre-dismiss the cookie banner so it can't sit over unrelated click
+  // targets; the dedicated 'cookie consent' suite below exercises the banner.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.setItem('drop.cookie-consent', 'essential'); } catch {}
+    });
+  });
+
   for (const { path, title } of PAGES) {
     test(`${path} loads with correct title and no console errors`, async ({ page }) => {
       const errors = trackPageErrors(page);
@@ -230,6 +238,78 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
 
+  test('launch-access submit answers inline instead of silently reloading', async ({ page }) => {
+    await page.goto('/download.html');
+    await page.locator('#wl-email').fill('raver@example.com');
+    await page.locator('.wl-submit').click();
+    // Whether Kit is wired or not, the tap must produce visible feedback that
+    // mentions email — never a bare page reload.
+    await expect(page.locator('.wl-msg')).toContainText(/email/i);
+    expect(page.url()).not.toContain('email_address=');
+  });
+
+  test('launch-access submit flags an invalid email inline', async ({ page }) => {
+    await page.goto('/download.html');
+    await page.locator('#wl-email').fill('not-an-email');
+    await page.locator('.wl-submit').click();
+    await expect(page.locator('.wl-msg')).toContainText('valid email');
+    await expect(page.locator('#wl-email')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  test('link-in-bio launch buttons point at the real waitlist form', async ({ page }) => {
+    await page.goto('/link.html');
+    await expect(page.locator('#getApp')).toHaveAttribute('href', '/download.html#waitlist');
+    await expect(page.locator('#joinList')).toHaveAttribute('href', '/download.html#waitlist');
+  });
+
+  test('event page marks its single ticket listing as the only seller', async ({ page }) => {
+    const fakeId = '7b6f66aa-2f6d-4f6e-9d55-1c2b3a4d5e6f';
+    const fakeEvent = {
+      id: fakeId, title: 'Test Rave', description: 'A test show.',
+      date: '2027-01-15T20:00:00', end_date: null, venue_name: 'Test Hall',
+      city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: 'https://www.ticketmaster.com/e/123',
+      price_min: 45, price_max: null, currency: 'USD',
+      is_festival: false, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00', event_artists: [],
+    };
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) }));
+    await page.route('**/rest/v1/rpc/event_going_counts', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/event.html?id=${fakeId}`);
+    // One honest row — real seller name from the URL, no fabricated competitors.
+    await expect(page.locator('.ed-price-row')).toHaveCount(1);
+    await expect(page.locator('.ed-price-row')).toContainText('Ticketmaster');
+    await expect(page.locator('.ed-best')).toHaveText('Only seller');
+    await expect(page.locator('.ed-best')).not.toContainText('Best price');
+    await expect(page.locator('.ed-single-note')).toContainText('only site currently selling tickets');
+  });
+
+  test('event page labels an affiliate-wrapped etix.prf.hn ticket link as Etix', async ({ page }) => {
+    // ~226 live events carry etix.prf.hn (Partnerize) hosts — the hostname
+    // fallback would label them "Prf" without the explicit map entry.
+    const fakeId = '9c1d22bb-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const fakeEvent = {
+      id: fakeId, title: 'Affiliate Etix Show', description: '',
+      date: '2027-02-01T02:00:00', end_date: null, venue_name: 'Test Lounge',
+      city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: 'https://etix.prf.hn/click/camref:TEST/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2FTEST',
+      price_min: null, price_max: null, currency: 'USD',
+      is_festival: false, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00', event_artists: [],
+    };
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) }));
+    await page.route('**/rest/v1/rpc/event_going_counts', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/event.html?id=${fakeId}`);
+    await expect(page.locator('.ed-price-row')).toContainText('Etix');
+    await expect(page.locator('.ed-price-row')).not.toContainText('Prf');
+  });
+
   test('mobile: hamburger opens the .mnav drawer at 390px', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/index.html');
@@ -244,4 +324,37 @@ test.describe('landing site smoke', () => {
     await expect(drawer).toBeHidden();
   });
 
+});
+
+test.describe('cookie consent', () => {
+  test('banner shows on first visit and Accept all persists', async ({ page }) => {
+    const errors = trackPageErrors(page);
+    await page.goto('/index.html');
+    const banner = page.locator('.ck-banner');
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('Cookies on Drop');
+    await banner.getByRole('button', { name: 'Accept all' }).click();
+    await expect(page.locator('.ck-banner')).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('.ck-banner')).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('drop.cookie-consent'))).toBe('accepted');
+    expect(errors, 'no console errors with the banner present').toEqual([]);
+  });
+
+  test('Essential only persists, and the privacy page reopens the banner on demand', async ({ page }) => {
+    await page.goto('/privacy.html');
+    await page.locator('.ck-banner .ck-essential').click();
+    await expect(page.locator('.ck-banner')).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('drop.cookie-consent'))).toBe('essential');
+    // The policy's "Manage cookie preferences" button brings it back.
+    await page.locator('[data-cookie-prefs]').click();
+    await expect(page.locator('.ck-banner')).toBeVisible();
+  });
+
+  test('privacy policy has the cookies section the banner links to', async ({ page }) => {
+    await page.goto('/privacy.html#cookies');
+    await expect(page.locator('#cookies')).toContainText('Cookies and similar technologies');
+    await expect(page.locator('.legal-nav a[href="#cookies"]')).toHaveCount(1);
+    await expect(page.locator('[data-cookie-prefs]')).toHaveCount(1);
+  });
 });

@@ -234,6 +234,7 @@
 
   <script src="/data.js"></script>
   <script src="/site.js"></script>
+  <script src="/consent.js" defer></script>
   <script>
     // Waitlist capture → Kit (ConvertKit), keyless client-side. Ported verbatim
     // from the old landing page (see git history) — only class names touched.
@@ -276,13 +277,21 @@
       });
 
       form.addEventListener('submit', function (e) {
+        // Always submit in-place — a native submit reloads the page with no
+        // feedback, which reads as "nothing happened" (founder-reported bug).
+        e.preventDefault();
         var email = (input.value || '').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          e.preventDefault(); setInvalid(true); show('Enter a valid email address.', false); input.focus(); return;
+          setInvalid(true); show('Enter a valid email address.', false); input.focus(); return;
         }
         setInvalid(false);
-        if (!configured) return;          // let the mailto fallback proceed natively
-        e.preventDefault();               // configured: submit in-place, stay on the page
+        if (!configured) {
+          // Kit not wired yet — open a pre-filled email instead, and say so
+          // on the page so the tap always gets a visible response.
+          show("Almost in — we've opened an email to trydropapp@gmail.com. Hit send and you're on the list. Nothing opened? Email us at trydropapp@gmail.com.", true);
+          location.href = MAILTO + encodeURIComponent('\n\nMy email: ' + email);
+          return;
+        }
         show('Adding you…', true);
         var body = new URLSearchParams();
         body.set('email_address', email);
