@@ -267,8 +267,9 @@
       // ---- One real listing today (Drop links a single ticket source per
       // event) — a true multi-seller compare table needs the price-compare
       // data feed (separate project, not merged); until then the section shows
-      // the one honest row (Drop.sellerName labels it from the URL's hostname)
-      // plus a notice that it's the only seller right now. ----------------------
+      // the one honest row (Drop.sellerName labels it from the URL's hostname).
+      // No "Only seller" badge/notice: it read as an exclusivity claim, but
+      // resale markets usually also carry the show (founder call 2026-07-16). --
 
       function renderHero(ev) {
         var wrap = el('div');
@@ -427,7 +428,6 @@
         var left = el('div');
         left.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
         left.appendChild(el('span', null, D.sellerName(ticketUrl)));
-        left.appendChild(el('span', 'ed-best', 'Only seller'));
         row.appendChild(left);
         var right = el('div');
         right.style.cssText = 'display:flex;align-items:center;gap:var(--sp-md);';
@@ -439,9 +439,6 @@
         right.appendChild(buy);
         row.appendChild(right);
         section.appendChild(row);
-        var single = el('p', 'ed-single-note',
-          'Heads up: this is the only site currently selling tickets for this show — more sellers will appear here as they list it.');
-        section.appendChild(single);
         return section;
       }
 

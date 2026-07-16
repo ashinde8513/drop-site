@@ -262,7 +262,7 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('#joinList')).toHaveAttribute('href', '/download.html#waitlist');
   });
 
-  test('event page marks its single ticket listing as the only seller', async ({ page }) => {
+  test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {
     const fakeId = '7b6f66aa-2f6d-4f6e-9d55-1c2b3a4d5e6f';
     const fakeEvent = {
       id: fakeId, title: 'Test Rave', description: 'A test show.',
@@ -279,12 +279,14 @@ test.describe('landing site smoke', () => {
       route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
 
     await page.goto(`/event.html?id=${fakeId}`);
-    // One honest row — real seller name from the URL, no fabricated competitors.
+    // One honest row — real seller name from the URL, no fabricated competitors,
+    // and no "Only seller" badge/notice (it implied exclusivity, but resale
+    // markets usually also carry the show — removed 2026-07-16, founder call).
     await expect(page.locator('.ed-price-row')).toHaveCount(1);
     await expect(page.locator('.ed-price-row')).toContainText('Ticketmaster');
-    await expect(page.locator('.ed-best')).toHaveText('Only seller');
-    await expect(page.locator('.ed-best')).not.toContainText('Best price');
-    await expect(page.locator('.ed-single-note')).toContainText('only site currently selling tickets');
+    await expect(page.locator('.ed-best')).toHaveCount(0);
+    await expect(page.locator('.ed-single-note')).toHaveCount(0);
+    await expect(page.locator('.ed-section', { hasText: 'Tickets' })).not.toContainText('only');
   });
 
   test('event page labels an affiliate-wrapped etix.prf.hn ticket link as Etix', async ({ page }) => {

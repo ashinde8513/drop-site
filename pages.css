@@ -101,13 +101,6 @@
   padding: var(--sp-md) var(--sp-lg); background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: var(--r-md); flex-wrap: wrap;
 }
-.ed-best {
-  font-size: 10px; font-weight: 800; letter-spacing: var(--tr-wide); color: var(--ink);
-  background: var(--attended); padding: 3px 8px; border-radius: var(--r-pill); text-transform: uppercase;
-}
-/* Single-seller notice under the ticket listing — shown while events carry
-   one ticket source, so a lone row reads as intentional, not broken. */
-.ed-single-note { margin: var(--sp-sm) 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
 .ed-tools { display: flex; flex-wrap: wrap; gap: var(--sp-sm); padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
 .ed-onsale { display: flex; align-items: center; gap: var(--sp-sm); color: var(--text-secondary); font-size: var(--fs-xs); padding-top: var(--sp-md); border-top: 1px solid var(--border); }
 .ed-onsale .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--attended); box-shadow: 0 0 8px var(--attended); }
