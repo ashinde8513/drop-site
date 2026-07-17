@@ -84,7 +84,13 @@ test.describe('website smoke', () => {
 
     const appJs = await (await request.get('/app/app.js')).text();
     expect(appJs).not.toContain("supa.rpc('match_artist_by_name'");
-    expect(appJs).toContain('row.artist_id = match.id');
+    expect(appJs).toContain("supa.rpc('record_past_show'");
+    expect(appJs).toContain("data.status === 'confirmation_required'");
+    expect(appJs).toContain("this.logSubmitManual('merge'");
+    expect(appJs).toContain("this.logSubmitManual('separate'");
+    expect(appJs).toContain('p_lineup:lineupNames.map');
+    expect(html).toContain('Show / event title');
+    expect(html).toContain('Other artists on the lineup');
   });
 
   for (const { path, title } of PAGES) {

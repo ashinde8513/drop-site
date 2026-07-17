@@ -2035,8 +2035,17 @@
       <!-- ===== Section 3: not in the archive? add it manually ===== -->
       <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-md);border-top:1px solid var(--border);margin-top:var(--sp-lg);"><div class="sec__title">Not listed? Add it manually</div></div>
 
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Show / event title</label>
+      <input type="text" value="{{ logTitle }}" onInput="{{ setLogTitle }}" placeholder="Defaults to the headliner" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Description / tour name</label>
+      <input type="text" value="{{ logDescription }}" onInput="{{ setLogDescription }}" placeholder="Optional — helps match the right show" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner *</label>
       <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Other artists on the lineup</label>
+      <input type="text" value="{{ logLineupText }}" onInput="{{ setLogLineupText }}" placeholder="Comma-separated, e.g. Barry Can't Swim, BUNT." style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
       <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
@@ -2058,7 +2067,7 @@
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Notes</label>
       <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:vertical;"></textarea>
 
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}">Add to my history</button>
+      <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}" disabled="{{ logSavePending }}">{{ logSaveLabel }}</button>
     </div>
   </main>
 </sc-if>

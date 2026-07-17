@@ -596,8 +596,9 @@ class Component extends DCLogic {
     invited: {},
     // log a past show — archive picker (multi-select) + manual form
     logQuery: '', logYear: 'All', logResults: [], logSelected: {}, logSearching: false,
-    logArtist: '', logVenue: '', logCity: '', logState: '', logDate: '',
+    logTitle: '', logDescription: '', logArtist: '', logLineupText: '', logVenue: '', logCity: '', logState: '', logDate: '',
     logTicketSubject: '', logTicketBody: '', logTicketReady: false,
+    logSavePending: false,
     loggedShows: [],
     // memories / recap
     recapWasThere: null, recapPhotos: {},
@@ -930,7 +931,7 @@ class Component extends DCLogic {
       .select('status, created_at, events(id,title,date,venue_name,city,ticket_url,time_tbd,is_festival,event_artists(artists(id,name,genres)))')
       .eq('user_id', uid)
       .order('created_at', { ascending:false })
-      .limit(100)
+      .limit(1000)
       .then(({ data, error })=>{
         if (error) { console.error('[app] my shows load failed:', error.message); return; }
         this.setState({ myShowsRows: data || [] });
@@ -941,7 +942,7 @@ class Component extends DCLogic {
   loadLoggedShows(uid){
     if (!supa) return;
     supa.from('logged_shows')
-      .select('artist_name,venue_name,city,state,show_date')
+      .select('event_id,artist_name,venue_name,city,state,show_date')
       .eq('user_id', uid)
       .order('show_date', { ascending:false })
       .limit(200)
@@ -1000,7 +1001,9 @@ class Component extends DCLogic {
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     if (parsed.date && parsed.date > today) { this.flash('That show has not happened yet'); return; }
     this.setState({
+      logTitle: parsed.eventName || artist || this.state.logTitle,
       logArtist: artist || this.state.logArtist,
+      logLineupText: parsed.artists.slice(1).join(', '),
       logVenue: parsed.venueName || this.state.logVenue,
       logCity: parsed.city || this.state.logCity,
       logState: parsed.state || this.state.logState,
@@ -1009,34 +1012,75 @@ class Component extends DCLogic {
     });
     this.flash(parsed.date ? 'Ticket details ready to review' : 'Add the missing date before saving');
   }
-  // Manual entry → logged_shows (free-text; no matching catalog event).
-  logSubmitManual(){
+  // Manual entry → one shared canonical event + this user's private memory.
+  // The RPC returns before writing if the same show identity has a conflicting
+  // lineup, so the fan explicitly chooses combine vs separate.
+  logSubmitManual(resolution, candidateEventId){
     const uid = this.state.userId;
     if (!supa || !uid) { this.flash('Log in to add shows'); return; }
     const artist = (this.state.logArtist || '').trim();
     const date = (this.state.logDate || '').trim();
     if (!artist || !date) { this.flash('Artist and date are required'); return; }
-    const row = {
-      user_id: uid, artist_id: null, artist_name: artist,
-      venue_name: (this.state.logVenue || '').trim() || null,
-      city: (this.state.logCity || '').trim() || null,
-      state: (this.state.logState || '').trim().toUpperCase() || null,
-      show_date: date, notes: fieldVal('log-notes').trim() || null,
-    };
-    // match_artist_by_name is service-role-only by design. The browser uses
-    // the already-loaded public catalog for a conservative exact match;
-    // unmatched artists safely remain name-only.
+    const title = (this.state.logTitle || '').trim() || artist;
+    const description = (this.state.logDescription || '').trim() || null;
+    const lineupNames = (this.state.logLineupText || '').split(/[,;\n]+/)
+      .map(name=>name.trim()).filter(name=>name && name.toLowerCase()!==artist.toLowerCase());
+    let artistId = null;
     const artistKey = artist.toLowerCase();
     for (const event of (this.CATALOG || [])) {
       const match = (event.event_artists || []).map(x=>x && x.artists)
         .find(a=>a && a.id && String(a.name || '').trim().toLowerCase()===artistKey);
-      if (match) { row.artist_id = match.id; break; }
+      if (match) { artistId = match.id; break; }
     }
-    supa.from('logged_shows').insert(row).then(({ error })=>{
-      if (error) { console.error('[app] logged_shows insert failed:', error.message); this.flash('Could not save — try again'); return; }
-      this.setState({ logArtist:'', logVenue:'', logCity:'', logState:'', logDate:'', logTicketReady:false });
+    this.setState({ logSavePending:true });
+    supa.rpc('record_past_show', {
+      p_title:title, p_description:description, p_show_date:date,
+      p_venue_name:(this.state.logVenue || '').trim() || null,
+      p_city:(this.state.logCity || '').trim() || null,
+      p_state:(this.state.logState || '').trim().toUpperCase() || null,
+      p_artist_id:artistId, p_artist_name:artist,
+      p_lineup:lineupNames.map(artist_name=>({ artist_id:null, artist_name })),
+      p_notes:fieldVal('log-notes').trim() || null,
+      p_candidate_event_id:candidateEventId || null,
+      p_resolution:resolution || null,
+    }).then(({ data, error })=>{
+      if (error) {
+        console.error('[app] record_past_show failed:', error.message);
+        this.setState({ logSavePending:false });
+        this.flash('Could not save — try again');
+        return;
+      }
+      if (data && data.status === 'confirmation_required') {
+        this.setState({ logSavePending:false });
+        const oldLineup = (data.existing_lineup || []).join(', ') || 'No lineup recorded';
+        const newLineup = (data.incoming_lineup || []).join(', ');
+        const where = [data.candidate_date, data.candidate_venue, data.candidate_city].filter(Boolean).join(' · ');
+        const descriptionContext = data.candidate_description || description
+          ? '\nRecorded description: ' + (data.candidate_description || 'None') + '\nYou entered: ' + (description || 'None')
+          : '';
+        const combine = window.confirm(
+          (data.candidate_title || title) + (where ? '\n' + where : '') + descriptionContext + '\n\n' +
+          'Drop found a matching show, but the lineups differ.\n\n' +
+          'Already recorded: ' + oldLineup + '\nYou entered: ' + newLineup + '\n\n' +
+          'Press OK to combine the lineups. Press Cancel for more options.'
+        );
+        if (combine) {
+          this.logSubmitManual('merge', data.candidate_event_id);
+          return;
+        }
+        const separate = window.confirm(
+          'Keep these as different shows?\n\nPress OK to save a separate event. Press Cancel to return to the form without saving.'
+        );
+        if (separate) this.logSubmitManual('separate', data.candidate_event_id);
+        return;
+      }
+      this.setState({
+        logTitle:'', logDescription:'', logArtist:'', logLineupText:'', logVenue:'', logCity:'', logState:'', logDate:'',
+        logTicketReady:false, logSavePending:false,
+      });
       this.loadLoggedShows(uid);
-      this.flash('Show added to your history');
+      this.loadMyShows(uid);
+      this.flash(data && data.status === 'already_logged' ? 'That show is already in your history' : 'Show added to the shared archive');
       this.go('myshows');
     });
   }
@@ -1709,11 +1753,12 @@ class Component extends DCLogic {
     // only counts shows that already happened.
     const wrappedYear = s.wrappedRange==='This year';
     const wrappedCurYear = new Date().getFullYear();
-    // Manually-logged shows (logged_shows) mapped into the same event shape so
+    // Only legacy/unlinked logs need this fallback. Canonical logs already
+    // arrive through attendance⋈events and must not be counted twice.
     // artist_name → top artists and show_date → months/years/first-show fold
     // straight into the tallies below. ponytail: no genre on a free-text log,
     // so genreOf() buckets them as "Live music" — a small skew, not fake data.
-    const loggedAsRows = (s.loggedShows||[]).map(ls=>({
+    const loggedAsRows = (s.loggedShows||[]).filter(ls=>!ls.event_id).map(ls=>({
       date: ls.show_date, venue_name: ls.venue_name||'', city: ls.city||'',
       title: ls.artist_name||'Show', time_tbd:false,
       event_artists: ls.artist_name ? [{ artists:{ name: ls.artist_name } }] : [],
@@ -2122,8 +2167,10 @@ class Component extends DCLogic {
       // log a past show — archive picker + manual form
       logQuery: s.logQuery, logYearChips, logRows, logResultsEmpty: !s.logSearching && logRows.length===0, logSearching: s.logSearching,
       logSelCount, logHasSelected: logSelCount>0, logAddLabel: 'Add '+logSelCount+' show'+(logSelCount===1?'':'s'),
-      logArtist: s.logArtist, logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
+      logTitle: s.logTitle, logDescription: s.logDescription, logArtist: s.logArtist, logLineupText: s.logLineupText,
+      logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
       logTicketSubject: s.logTicketSubject, logTicketBody: s.logTicketBody, logTicketReady: s.logTicketReady,
+      logSavePending: s.logSavePending, logSaveLabel: s.logSavePending ? 'Saving…' : 'Add to my history',
       // memories / recap / seen / tagged
       memorySlots,
       recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel,
@@ -2235,7 +2282,10 @@ class Component extends DCLogic {
       },
       // log a past show — archive search (debounced) + manual field setters
       setLogQuery:(e)=>{ this.setState({logQuery:e.target.value}); clearTimeout(this._logT); this._logT=setTimeout(()=>this.logSearch(), 250); },
+      setLogTitle:(e)=>this.setState({logTitle:e.target.value}),
+      setLogDescription:(e)=>this.setState({logDescription:e.target.value}),
       setLogArtist:(e)=>this.setState({logArtist:e.target.value}),
+      setLogLineupText:(e)=>this.setState({logLineupText:e.target.value}),
       setLogVenue:(e)=>this.setState({logVenue:e.target.value}),
       setLogCity:(e)=>this.setState({logCity:e.target.value}),
       setLogState:(e)=>this.setState({logState:e.target.value}),

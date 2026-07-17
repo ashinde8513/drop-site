@@ -9,11 +9,11 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-19
+Last updated: 2026-07-22
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — desktop event metadata and long-lineup containment are verified and ready for the standard PR/deploy path
+**Status:** UNLOCKED — draft PR #16 is rebased onto current main; production migration is live, but signed-in website write QA remains separately gated
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: — · Started: — · Working on: none
@@ -53,7 +53,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   backend manifest command instead of inventing rows.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
-0. **QA and land draft PR #16 (`feat/past-show-ticket-import`):** sign in locally, open My Shows → Log a past show, paste a real confirmation, verify/correct the prefilled artist/date/venue/city, save, and confirm the row counts in My Shows + Wrapped. Then merge; push to `main` auto-deploys after tests pass.
+0. **QA and land draft PR #16 (`feat/past-show-ticket-import`) only after the shared migration is reviewed/applied:** sign in locally; test new show, reuse, conflicting-lineup combine, conflicting-lineup separate, and cancel; then confirm My Shows + Wrapped. Merge only after founder QA; push to `main` auto-deploys after tests pass.
 1. **Founder QA remaining logged-in write paths on app.trydropapp.com:** artist claim, owner Edit-links, Wrapped, RSVP, and follow. Ticket-paste QA is step 0.
 2. **Review/merge artist-claims app PR #150** after device QA.
 3. **Retire the obsolete drop-web CF Pages project** and remove mobile web-deploy workflow.
@@ -61,10 +61,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** + Bing import.
 6. **Drop-App PR #146:** wire recap celebration, device-QA, merge.
 
-## 2026-07-17 — Codex — Review-first ticket-confirmation paste MVP (draft PR #16)
-- Changed: the logged-in `Log a past show` screen accepts one Ticketmaster/AXS/DICE/Eventbrite/SeatGeek confirmation, parses it locally in a new dependency-free browser parser, rejects future shows, and prefills the existing editable form. Raw email text is cleared and never saved. Manual/imported logs exact-match artists against the already-loaded public event catalog before the owner-RLS insert; the service-role-only fuzzy matcher remains inaccessible to browsers.
-- Verified: JavaScript syntax checks; Playwright 70/70 on desktop + mobile Safari, including parser extraction and app-shell control checks; source/dist mirrors are byte-identical; `git diff --check` clean. Signed-in production write QA and deployment are intentionally pending.
-- Remaining: real-account QA before merge/deploy; add first-run activation entry after this MVP is proven; scoped Gmail/Outlook one-time import remains a later opt-in phase.
+## 2026-07-17 — Codex — Canonical shared past-show flow (draft PR #16)
+- Changed: the logged-in ticket/manual form now sends show title, optional description, headliner, and the full remaining lineup to `record_past_show`. The backend reuses one shared event. A differing lineup returns without writing; the website shows matching-event context, then lets the fan combine lineups, explicitly keep separate shows, or return to the form. Canonical attendance feeds My Shows and Wrapped without double-counting linked private logs.
+- Verified: JavaScript syntax checks; Playwright 90/90 on desktop + mobile Safari; source/dist mirrors are byte-identical; `git diff --check` clean. The paired migration passed rollback-only database contract tests and remains unapplied.
+- Remaining: migration review/apply and signed-in founder QA before merge/deploy; first-run activation and scoped Gmail/Outlook import remain later phases.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
 - **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.
