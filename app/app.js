@@ -597,6 +597,7 @@ class Component extends DCLogic {
     // log a past show — archive picker (multi-select) + manual form
     logQuery: '', logYear: 'All', logResults: [], logSelected: {}, logSearching: false,
     logArtist: '', logVenue: '', logCity: '', logState: '', logDate: '',
+    logTicketSubject: '', logTicketBody: '', logTicketReady: false,
     loggedShows: [],
     // memories / recap
     recapWasThere: null, recapPhotos: {},
@@ -985,6 +986,29 @@ class Component extends DCLogic {
       this.go('myshows');
     });
   }
+  // Ticket confirmation text only prefills the existing manual form. User
+  // reviews every field before the existing owner-RLS insert runs.
+  logPreviewTicket(){
+    const subject = (this.state.logTicketSubject || '').trim();
+    const body = (this.state.logTicketBody || '').trim();
+    if (!subject || !body) { this.flash('Add the email subject and confirmation details'); return; }
+    if (!window.DropTicketEmail) { this.flash('Ticket import is unavailable — refresh and try again'); return; }
+    const parsed = window.DropTicketEmail.parseTicketEmail({ subject, body });
+    const artist = parsed.artists[0] || parsed.eventName || '';
+    if (!artist && !parsed.date) { this.flash('Could not read that confirmation'); return; }
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (parsed.date && parsed.date > today) { this.flash('That show has not happened yet'); return; }
+    this.setState({
+      logArtist: artist || this.state.logArtist,
+      logVenue: parsed.venueName || this.state.logVenue,
+      logCity: parsed.city || this.state.logCity,
+      logState: parsed.state || this.state.logState,
+      logDate: parsed.date || this.state.logDate,
+      logTicketSubject: '', logTicketBody: '', logTicketReady: true,
+    });
+    this.flash(parsed.date ? 'Ticket details ready to review' : 'Add the missing date before saving');
+  }
   // Manual entry → logged_shows (free-text; no matching catalog event).
   logSubmitManual(){
     const uid = this.state.userId;
@@ -999,9 +1023,18 @@ class Component extends DCLogic {
       state: (this.state.logState || '').trim().toUpperCase() || null,
       show_date: date, notes: fieldVal('log-notes').trim() || null,
     };
+    // match_artist_by_name is service-role-only by design. The browser uses
+    // the already-loaded public catalog for a conservative exact match;
+    // unmatched artists safely remain name-only.
+    const artistKey = artist.toLowerCase();
+    for (const event of (this.CATALOG || [])) {
+      const match = (event.event_artists || []).map(x=>x && x.artists)
+        .find(a=>a && a.id && String(a.name || '').trim().toLowerCase()===artistKey);
+      if (match) { row.artist_id = match.id; break; }
+    }
     supa.from('logged_shows').insert(row).then(({ error })=>{
       if (error) { console.error('[app] logged_shows insert failed:', error.message); this.flash('Could not save — try again'); return; }
-      this.setState({ logArtist:'', logVenue:'', logCity:'', logState:'', logDate:'' });
+      this.setState({ logArtist:'', logVenue:'', logCity:'', logState:'', logDate:'', logTicketReady:false });
       this.loadLoggedShows(uid);
       this.flash('Show added to your history');
       this.go('myshows');
@@ -2090,6 +2123,7 @@ class Component extends DCLogic {
       logQuery: s.logQuery, logYearChips, logRows, logResultsEmpty: !s.logSearching && logRows.length===0, logSearching: s.logSearching,
       logSelCount, logHasSelected: logSelCount>0, logAddLabel: 'Add '+logSelCount+' show'+(logSelCount===1?'':'s'),
       logArtist: s.logArtist, logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
+      logTicketSubject: s.logTicketSubject, logTicketBody: s.logTicketBody, logTicketReady: s.logTicketReady,
       // memories / recap / seen / tagged
       memorySlots,
       recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel,
@@ -2206,6 +2240,9 @@ class Component extends DCLogic {
       setLogCity:(e)=>this.setState({logCity:e.target.value}),
       setLogState:(e)=>this.setState({logState:e.target.value}),
       setLogDate:(e)=>this.setState({logDate:e.target.value}),
+      setLogTicketSubject:(e)=>this.setState({logTicketSubject:e.target.value,logTicketReady:false}),
+      setLogTicketBody:(e)=>this.setState({logTicketBody:e.target.value,logTicketReady:false}),
+      previewTicketLog:()=>this.logPreviewTicket(),
       addSelectedShows:()=>this.logAddSelected(),
       submitManualLog:()=>this.logSubmitManual(),
       recapYes:()=>this.setState({recapWasThere:true}),

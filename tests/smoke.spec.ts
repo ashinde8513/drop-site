@@ -61,6 +61,32 @@ test.describe('website smoke', () => {
     });
   });
 
+  test('ticket confirmation parser extracts reviewable past-show details', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.addScriptTag({ url: '/app/ticket-email-parser.js' });
+    const parsed = await page.evaluate(() => (window as any).DropTicketEmail.parseTicketEmail({
+      subject: 'Your Ticketmaster Order Confirmation - John Summit',
+      body: '<p>Sat &bull; Aug 09, 2025</p><p>Brooklyn Mirage</p><p>Brooklyn, NY</p>',
+    }));
+    expect(parsed).toMatchObject({
+      source: 'ticketmaster', eventName: 'John Summit', artists: ['John Summit'],
+      date: '2025-08-09', venueName: 'Brooklyn Mirage', city: 'Brooklyn', state: 'NY',
+    });
+  });
+
+  test('logged-in app shell includes review-first ticket import controls', async ({ request }) => {
+    const response = await request.get('/app/index.html');
+    expect(response.status()).toBeLessThan(400);
+    const html = await response.text();
+    expect(html).toContain('Import a ticket confirmation');
+    expect(html).toContain('Preview and fill details');
+    expect(html).toContain('./ticket-email-parser.js');
+
+    const appJs = await (await request.get('/app/app.js')).text();
+    expect(appJs).not.toContain("supa.rpc('match_artist_by_name'");
+    expect(appJs).toContain('row.artist_id = match.id');
+  });
+
   for (const { path, title } of PAGES) {
     test(`${path} loads with correct title and no console errors`, async ({ page }) => {
       const errors = trackPageErrors(page);
@@ -335,10 +361,12 @@ test.describe('website smoke', () => {
     await page.locator('.city-head-btn').click();
     const filter = page.locator('.loc-wrap:has(.city-head-btn) .loc-filter input');
     await expect(filter).toBeVisible();
-    await filter.fill('Springfield');
+    // Use a value absent from live city suggestions so Enter exercises the
+    // custom-city path instead of choosing a newly-added matching city.
+    await filter.fill('Codex Test City');
     await filter.press('Enter');
     await page.waitForLoadState('domcontentloaded');
-    expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Springfield');
+    expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Codex Test City');
   });
 
   test('About lives in the footer, not the nav', async ({ page }) => {

@@ -53,12 +53,18 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   backend manifest command instead of inventing rows.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
-1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
-2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
-3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
-4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
-5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
-6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+0. **QA and land `feat/past-show-ticket-import`:** sign in locally, open My Shows → Log a past show, paste a real confirmation, verify/correct the prefilled artist/date/venue/city, save, and confirm the row counts in My Shows + Wrapped. Then merge and run the normal manual Pages deploy only when the founder names the deploy.
+1. **Founder QA remaining logged-in write paths on app.trydropapp.com:** artist claim, owner Edit-links, Wrapped, RSVP, and follow. Ticket-paste QA is step 0.
+2. **Review/merge artist-claims app PR #150** after device QA.
+3. **Retire the obsolete drop-web CF Pages project** and remove mobile web-deploy workflow.
+4. **Schema remaining social features** only after founder picks one.
+5. **Resubmit sitemap in GSC** + Bing import.
+6. **Drop-App PR #146:** wire recap celebration, device-QA, merge.
+
+## 2026-07-17 — Codex — Review-first ticket-confirmation paste MVP (feature branch)
+- Changed: the logged-in `Log a past show` screen accepts one Ticketmaster/AXS/DICE/Eventbrite/SeatGeek confirmation, parses it locally in a new dependency-free browser parser, rejects future shows, and prefills the existing editable form. Raw email text is cleared and never saved. Manual/imported logs exact-match artists against the already-loaded public event catalog before the owner-RLS insert; the service-role-only fuzzy matcher remains inaccessible to browsers.
+- Verified: JavaScript syntax checks; Playwright 70/70 on desktop + mobile Safari, including parser extraction and app-shell control checks; source/dist mirrors are byte-identical; `git diff --check` clean. Signed-in production write QA and deployment are intentionally pending.
+- Remaining: real-account QA before merge/deploy; add first-run activation entry after this MVP is proven; scoped Gmail/Outlook one-time import remains a later opt-in phase.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
 - **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.

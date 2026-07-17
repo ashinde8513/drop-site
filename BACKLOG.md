@@ -15,6 +15,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Next
 
+- [ ] After the ticket-paste MVP is live-validated, add a first-run "Build your history" entry and evaluate optional one-time Gmail/Outlook import with least-privilege scopes, explicit review, and no raw-email retention.
 - [ ] Richer JSON-LD: add `FAQPage` schema once an FAQ section exists; add `offers`/App Store `url` to the SoftwareApplication schema once Drop is listed.
 
 > Design ideas to pull from: see `prism-tokens/DESIGN_RESOURCES.md` (refero / Aceternity / Componentry — reimplement natively, Prism-token, reduced-motion).
