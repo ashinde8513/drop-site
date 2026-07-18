@@ -1,4 +1,4 @@
-# drop-landing Backlog
+# drop-site Backlog
 
 Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md closeout rules).
 
@@ -21,5 +21,5 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 ## Later
 
 - [ ] `WebSite` schema + `sitelinks searchbox` markup if/when on-site search exists.
-- [ ] Per-city or per-festival landing pages (programmatic SEO) once event data is live in the app — highest-leverage AI-SEO play once there's real content to point at.
+- [ ] Per-city or per-festival SEO pages (programmatic) once event data is live in the app — highest-leverage AI-SEO play once there's real content to point at.
 - [ ] llms-full.txt (expanded version of llms.txt) if AI crawler traffic in analytics justifies it.

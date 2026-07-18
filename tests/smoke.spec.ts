@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Smoke + regression tests for the Drop landing site.
+ * Smoke + regression tests for the Drop website (signed-out view).
  * Goal: catch broken pages, broken links, missing critical content,
  * and JS console errors before they reach trydropapp.com.
  */
@@ -52,7 +52,7 @@ const DETAIL_PAGES = [
   { path: '/artist.html', backHref: '/artists.html' },
 ];
 
-test.describe('landing site smoke', () => {
+test.describe('website smoke', () => {
   // Pre-dismiss the cookie banner so it can't sit over unrelated click
   // targets; the dedicated 'cookie consent' suite below exercises the banner.
   test.beforeEach(async ({ page }) => {

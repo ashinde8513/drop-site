@@ -2,16 +2,17 @@
 
 **Decision (updated 2026-07-08, founder):** trydropapp.com is **NOT a marketing page**. It is Drop's
 **browse-first discovery website**, modeled on how **axs.com** lets signed-out visitors browse.
-Content is the hero — not a pitch. This doc is the spec to copy; the visual system is `../drop-design`
-(the canonical web shell) and the signed-in/account surface is the native app, not an Expo web shell.
+Content is the hero — not a pitch. One website, two views: the **signed-out view** (open browse,
+this spec) and the **signed-in view** (the Prism SPA at `app.trydropapp.com` / `/app`). This doc is
+the spec to copy; the visual system is `../drop-design` (the canonical web shell). Not an Expo web shell.
 
 Investigated live on axs.com (Fable, 2026-07-06): homepage, event-detail, search bar, login gates.
 
 ## AXS before login (what a signed-out visitor gets — copy this)
 
 Everything is browsable with **no account**. AXS has a **"Sign In"** pill because AXS also operates
-web ticketing/account flows. Drop does not need to copy that browser-login affordance while the
-native app owns accounts. Login gates **purchase/account only**, never browsing.
+web ticketing/account flows. Drop's equivalent is the **Log in / Get started** pills, which route to
+the signed-in view at `app.trydropapp.com`. Login gates **account features only**, never browsing.
 
 1. **Header** — logo left; right side = language + **Sign In** pill. That's it. No marketing nav.
 2. **Unified search bar, pinned under the header** — three segments in one pill:
@@ -37,8 +38,8 @@ native app owns accounts. Login gates **purchase/account only**, never browsing.
 The **Sign In** pill becomes an **account menu**; the browse experience is unchanged, plus:
 - Saved / favorited events, "My Events", ticket wallet (mobile tickets), transfer-to-friends,
   purchase history, personalized recommendations.
-For Drop this is the **native app** — which already exists and already
-carries Drop's differentiator: the **social wedge** ("who's going", crew, Going/Interested).
+For Drop this is the **signed-in view** (`app.trydropapp.com`) and the **native app** — which already
+carry Drop's differentiator: the **social wedge** ("who's going", crew, Going/Interested).
 
 ## Drop = AXS browse pattern + the social layer
 

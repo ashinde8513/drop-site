@@ -1,10 +1,10 @@
 # Design
 
-> Brand landing for Drop. Mirrors the Prism identity defined in the `drop-design` system — pull from there; do not fork the look.
+> Design for the Drop website. Mirrors the Prism identity defined in the `drop-design` system — pull from there; do not fork the look.
 
 ## Theme
 
-Dark, nightlife-premium, iridescent — the marketing expression of Prism. Deep navy base, controlled cyan→magenta→lime spectrum as the signature, glassmorphic header, animated frequency visualization. Reads as a club at night: dark room, bright signal.
+Dark, nightlife-premium, iridescent — the web expression of Prism. Deep navy base, controlled cyan→magenta→lime spectrum as the signature, glassmorphic header, animated frequency visualization. Reads as a club at night: dark room, bright signal.
 
 Color strategy: **Restrained base, committed accent** — deep-navy surfaces, iridescence reserved for the hero signature, wordmark, and emphasis.
 

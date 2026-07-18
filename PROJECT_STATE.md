@@ -4,8 +4,12 @@
 > (trydropapp.com) — one of two front-end surfaces over the shared backend; the other is
 > the **mobile app** (`../drop-mobile-app`). Same content, different access. Historical
 > entries below may still say "drop-landing".
+>
+> **Framing (founder, 2026-07-18): never call this a marketing page / landing page.** It is one
+> website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
+> (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-16
+Last updated: 2026-07-18
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -36,6 +40,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-18 — Claude (remote) — hero badge removed + "one website, two views" framing
+- Removed the "✦ The EDM show discovery app" chip from both signed-out heroes (`index.html`, `app/index.html`) per founder request; merged to `main` (7a41f93), live-verified gone on trydropapp.com + app.trydropapp.com.
+- Founder decision recorded (DECISIONS.md): the site is never a "marketing page"/"landing page" — one website, signed-out view + signed-in view. Terminology aligned across CLAUDE.md, PRODUCT.md, AXS_MODEL.md, README.md, DESIGN.md, BACKLOG.md, tests (`landing site smoke` → `website smoke`), playwright.config.ts, package.json; vault wiki pages updated to match.
 
 ## 2026-07-16 (follow-up, same session) — Claude (Fable, remote) — WEBSITE home cards bezel-to-bezel on mobile too
 - **Why:** after the SPA fix deployed, founder screenshot showed the OLD spacing — because they were on **trydropapp.com** (the website), not app.trydropapp.com. The website home "Happening in {city}" grid caps `.wsc-card` at 300px centered inside 18px `.wrap` gutters → ~46px dead space per side on a 393pt phone.

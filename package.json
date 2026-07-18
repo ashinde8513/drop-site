@@ -2,7 +2,7 @@
   "name": "drop-site-tests",
   "version": "1.0.0",
   "private": true,
-  "description": "Playwright E2E/smoke tests for the Drop landing site",
+  "description": "Playwright E2E/smoke tests for the Drop website",
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",

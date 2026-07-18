@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Drop landing site — static HTML served locally for tests.
+ * Drop website — static HTML served locally for tests.
  * Reusable template: copy this file + tests/ into any static site repo,
  * change `PORT` if it clashes, and you're done.
  */

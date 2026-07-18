@@ -6,20 +6,20 @@ the **mobile app** (`../drop-mobile-app`) — and both show the same content bec
 same backend (Supabase project `ebccwnkmsnhbljxxxdej`, versioned in `../drop-backend`). The only
 difference is how users access it: native app vs. website.
 
-The **browse-first discovery website** (modeled on axs.com — see `AXS_MODEL.md`), NOT a
-marketing landing: a unified search+dates+location bar over open discovery rails from the live
-Supabase catalog, plus event/artist/venue pages, the link-in-bio hub, privacy/terms, and a
-static browser account shell on `app.trydropapp.com`. Plain HTML/CSS/JS, zero build step.
+The **browse-first discovery website** (modeled on axs.com — see `AXS_MODEL.md`). It is not a
+marketing page: it is one website with two views. The **signed-out view** is a unified
+search+dates+location bar over open discovery rails from the live Supabase catalog, plus
+event/artist/venue pages, the link-in-bio hub, and privacy/terms. The **signed-in view** is the
+Prism SPA served at `app.trydropapp.com` (and `/app`). Plain HTML/CSS/JS, zero build step.
 
 ```
-index.html      Discovery home (search bar + featured + Happening + genre rails — AXS-style)
+index.html      Discovery home, signed-out view (search bar + featured + Happening + genre rails — AXS-style)
 events/artists/venues + event/artist/venue detail pages (open, no login)
-account.html    Browser login/account shell (served at app.trydropapp.com/login by Worker)
+app/            Signed-in view — Prism SPA (app/index.html + app/app.js), served at app.trydropapp.com and /app
 link.html       Link-in-bio hub for the Instagram/TikTok bios
 privacy.html    Privacy Policy  ← also your Apple "Privacy Policy URL"
 terms.html      Terms of Service / EULA  ← also your Apple "EULA URL"
 site.css        Shared styling (pulls drop-design shell tokens)
-account.css/js  Browser auth/account flow (Supabase Auth + RLS-protected account data)
 ```
 
 ## What this unblocks
