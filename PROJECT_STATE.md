@@ -43,7 +43,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Review and land `codex/soundcloud-privacy-20260718` with the paired backend/mobile SoundCloud artist-art release.** The branch is local-only and must stay undeployed until the server-only integration and attribution UI share the same release gate; merging to `main` will run the 98-test website gate and auto-deploy.
+- **Finish the paired SoundCloud canary; website disclosure is already live.** Cloudflare Pages deploy `4516bb97` serves the reviewed July 18 disclosure at trydropapp.com/privacy. Keep the recurring SoundCloud refresh disabled until one manually reviewed profile is promoted/refreshed and the founder confirms its attribution/backlink in TestFlight. Land branch `codex/soundcloud-privacy-20260718` into `main` after the coordinated release record is complete.
 - **Run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
   health, and proper-art fallback against live data. If festival set times remain
@@ -58,10 +58,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-18 — Codex — SoundCloud fallback privacy disclosure ready locally
+## 2026-07-18 — Codex — SoundCloud fallback privacy disclosure live
 - **Changed:** the public privacy policy and signed-in website legal view now disclose the narrow artist-avatar fallback: selected public SoundCloud profile identifier, profile URL, username, and avatar; fallback-only use; SoundCloud attribution/backlink; session-only in-memory client image caching; periodic reviewed refresh; unavailable-image removal; and purge on revocation or a valid removal request. Policy dates now read July 18, 2026.
 - **Security boundary:** no SoundCloud credential, API URL, fetch, or frontend integration was added. Regression coverage rejects SoundCloud API endpoints and `SOUNDCLOUD_CLIENT_ID` / `SOUNDCLOUD_CLIENT_SECRET` in the signed-in website bundle.
-- **Verified, not shipped:** `npm test` passed 98/98 across desktop Chromium and mobile Safari emulation; `node --check`, generated `dist/` source parity, deployable-tree secret/API scan, and `git diff --check` passed. Branch `codex/soundcloud-privacy-20260718`; no push or deployment.
+- **Verified and shipped:** exact commit `c18faf8` previously passed 98/98 across desktop Chromium and mobile Safari emulation plus `node --check`, source/dist parity, deployable-tree secret/API scan, and `git diff --check`. A fresh 45-file production build passed disclosure/secret/syntax gates and deployed manually to Cloudflare Pages as `4516bb97`; live `https://trydropapp.com/privacy` returns 200 and contains the July 18 SoundCloud fallback, attribution, memory-cache, refresh, and purge disclosure. Branch remains isolated/pushed; no `main` merge or unrelated workflow was touched.
 
 ## 2026-07-18 — Codex — proper event art and real multi-day festivals live
 - **Event art:** every public and SPA event surface now cycles only safe, non-generic candidates: proper event art first, then lineup artist images, then the intentional Prism fallback. Ticketmaster category stock is rejected only on exact Ticketmaster hosts; broken candidates advance instead of leaving an empty card.
