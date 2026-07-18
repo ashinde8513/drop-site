@@ -13,13 +13,14 @@ Last updated: 2026-07-18
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED
+**Status:** UNLOCKED — Codex completed password-recovery AASA coverage on the reviewed v1.0.1 hosted legal alignment branch; no deployment occurred
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: — · Started: — · Working on: fresh — no active session
+- Owner: — · Started: — · Working on: none
 
 ## Current status
 ### What works
+- **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT REVIEWED, NOT DEPLOYED (2026-07-18, draft PR #19):** isolated branch `chore/v1.0.1-legal-alignment` updates canonical Privacy/Terms to July 18, scopes 16+ to accounts/social features while public event browsing remains open, documents audited data paths, removes stale embedded SPA legal copy, routes the SPA to canonical `/privacy` and `/terms`, and adds the native `/reset-password` callback to AASA. `dist/` matches source; Playwright is 100/100 across desktop/mobile Safari, including exact AASA route coverage. No merge or production deploy occurred.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
   `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
   `29639887776`. Live QA at `trydropapp.com` rendered the homepage, the global
@@ -43,7 +44,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Run the first post-release catalog monitor after the next scheduled ingest:**
+- **After explicit hosted-legal production approval, review and merge draft PR #19 from `chore/v1.0.1-legal-alignment`, then verify the live `/privacy` and `/terms` copy, redirects, SPA signup/footer links, mobile rendering, console health, and apex AASA `/reset-password` component. On the resulting 1.0.1 TestFlight build, tap an emailed recovery link on a physical iPhone and complete the password reset. Do not merge or deploy before approval.**
+- **Then run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
   health, and proper-art fallback against live data. If festival set times remain
   zero, leave schedule live-QA in waiting and point the next agent to the reviewed
@@ -209,6 +211,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-18 — Codex — v1.0.1 hosted legal alignment prepared, not deployed
+- **Changed:** updated canonical Privacy/Terms to July 18, 2026; aligned the 16+ account/social gate and audited data disclosures; removed the SPA's stale embedded 18+ policy and dead bindings; pointed signup/footer and hosted-document links at canonical `/privacy` and `/terms`; added regression coverage for OAuth's no-DOB path, signup consent ordering, stale copy, canonical links, audited disclosures, and the exact AASA route set. Follow-up adversarial review found the live/draft AASA lacked `/reset-password`; this branch now includes that native recovery callback.
+- **Verified:** `dist/` rebuilt byte-for-byte from source; `npm test` passed 100/100 across desktop and mobile Safari; desktop and 390×844 browser review showed no console/page errors; live canonical URLs return 200 while `.html` variants redirect once; the mobile and website AASA sources are byte-identical and parse to event, plan, recovery, and root routes; separate cross-repo `/verify` passed all five criteria before the focused recovery correction.
+- **Remaining:** draft PR #19 is open. No merge or deploy occurred; the live hosted documents and AASA recovery route remain unchanged until explicit production approval. Legal text should still receive counsel review before launch, and password recovery needs physical TestFlight proof after deployment.
+
 ### 2026-07-08 — Codex — Browser login visual fidelity fix deployed
 - Changed: corrected `account.css` to use the website's actual Prism text/border tokens (`--text`, `--border`, etc.) instead of undefined/dark aliases, reduced the desktop auth form to the target compact 244px layout, lowered the split-layout breakpoint to 720px so 770px desktop captures match the supplied reference, hid the desktop wordmark/Account eyebrow, tightened input/button/social geometry, and kept the wider mobile form.
 - Tested: local Playwright screenshot QA at 770x618 and 390x844 with zero console/page errors; final live Playwright QA on `https://app.trydropapp.com/login` at 770x618 with hero x/y and form x/y/width matching the reference; `npm test` 46/46 passed; `rsync -ani --checksum ... dist/` clean; deployed Pages `c3a6e0e4.drop-site.pages.dev`; live CSS marker check confirmed the 244px form and 720px breakpoint on `app.trydropapp.com`.

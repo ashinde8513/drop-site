@@ -202,6 +202,102 @@ test.describe('website smoke', () => {
     }
   });
 
+  test('AASA covers every native universal-link route including password recovery', async ({ request }) => {
+    const response = await request.get('/.well-known/apple-app-site-association');
+    expect(response.status()).toBe(200);
+
+    const association = await response.json() as {
+      applinks: {
+        details: Array<{
+          appIDs: string[];
+          components: Array<{ '/': string }>;
+        }>;
+      };
+    };
+    expect(association.applinks.details).toHaveLength(1);
+    expect(association.applinks.details[0].appIDs).toContain(
+      'S6H8PA7TUH.app.resonanceventures.drop',
+    );
+    expect(association.applinks.details[0].components.map((component) => component['/'])).toEqual([
+      '/event/*',
+      '/plan/*',
+      '/reset-password',
+      '/',
+    ]);
+  });
+
+  test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
+    await page.goto('/terms.html');
+    const terms = page.locator('.doc-inner');
+    const termsCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(termsCanonical).toBe('https://trydropapp.com/terms');
+    await expect(terms).toContainText('at least 16 years old to create or use a Drop account');
+    await expect(terms).toContainText('date of birth when requested');
+    await expect(terms).not.toContainText(/under 13|at least 13/i);
+
+    await page.goto('/privacy.html');
+    const privacy = page.locator('.doc-inner');
+    const privacyCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(privacyCanonical).toBe('https://trydropapp.com/privacy');
+    await expect(privacy).toContainText('one-way hash');
+    await expect(privacy).toContainText('processed on your device');
+    await expect(privacy).toContainText('not transmitted to or retained by Drop');
+    await expect(privacy).toContainText('ticket-wallet records');
+    await expect(privacy).toContainText('Expo push token');
+    await expect(privacy).toContainText(
+      'In the mobile app, we collect product interactions and search or filter history, including selected genre, city, and date filters'
+    );
+    await expect(privacy).toContainText('accounts and social features are for people who are at least 16 years old');
+    await expect(privacy).not.toContainText(/under 13|at least 13|finding your crew at a venue/i);
+
+    const hostedTerms = await (await page.request.get('/terms.html')).text();
+    const hostedPrivacy = await (await page.request.get('/privacy.html')).text();
+    for (const hostedLegalDocument of [hostedTerms, hostedPrivacy]) {
+      expect(hostedLegalDocument).toContain('href="/privacy"');
+      expect(hostedLegalDocument).toContain('href="/terms"');
+      expect(hostedLegalDocument).not.toMatch(/href="\/(?:privacy|terms)\.html"/);
+    }
+
+    const appTemplateResponse = await page.request.get('/app/index.html');
+    const appScriptResponse = await page.request.get('/app/app.js');
+    expect(appTemplateResponse.status()).toBeLessThan(400);
+    expect(appScriptResponse.status()).toBeLessThan(400);
+    const appTemplate = await appTemplateResponse.text();
+    const appScript = await appScriptResponse.text();
+    const signupConsentMarkup = appTemplate.match(/<input id="signup-consent"[\s\S]*?<\/label>/)?.[0];
+    expect(signupConsentMarkup, 'signup consent links are present').toBeDefined();
+    expect(signupConsentMarkup).toContain(`href="${privacyCanonical}"`);
+    expect(signupConsentMarkup).toContain(`href="${termsCanonical}"`);
+    expect(appTemplate).toContain(`href="${privacyCanonical}"`);
+    expect(appTemplate).toContain(`href="${termsCanonical}"`);
+    expect(appTemplate).not.toContain('https://trydropapp.com/privacy.html');
+    expect(appTemplate).not.toContain('https://trydropapp.com/terms.html');
+
+    const signupImplementation = appScript.match(/doSignup:\(\)=>\{([\s\S]*?)\n      \},\n      oauthGoogle:/)?.[1];
+    expect(signupImplementation, 'signup implementation is present').toBeDefined();
+    const consentGuardIndex = signupImplementation?.indexOf('if (!consented)') ?? -1;
+    const signUpIndex = signupImplementation?.indexOf('supa.auth.signUp') ?? -1;
+    expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
+    expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
+    const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
+    expect(oauthImplementation, 'OAuth implementation is present').not.toBeNull();
+    expect(oauthImplementation?.[1]).toContain('signInWithOAuth');
+    expect(oauthImplementation?.[1]).not.toMatch(/\bdob\b|date.of.birth/i);
+
+    const appAssets = `${appTemplate}\n${appScript}`;
+    for (const staleLegalMarker of [
+      'screenLegal',
+      'legalDoc',
+      'const LEGAL',
+      'LEGAL · PRIVACY',
+      'LEGAL · TERMS',
+      'privacy@drop.fm',
+      'You must be 18 or older',
+    ]) {
+      expect(appAssets).not.toContain(staleLegalMarker);
+    }
+  });
+
   test('contact email link is present and well-formed', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('a[href^="mailto:"]').first()).toHaveAttribute(
