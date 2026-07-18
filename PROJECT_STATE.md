@@ -13,14 +13,14 @@ Last updated: 2026-07-18
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — Codex completed password-recovery AASA coverage on the reviewed v1.0.1 hosted legal alignment branch; no deployment occurred
+**Status:** UNLOCKED — v1.0.1 hosted legal/AASA alignment is merged, deployed, and production-verified
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: — · Started: — · Working on: none
 
 ## Current status
 ### What works
-- **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT REVIEWED, NOT DEPLOYED (2026-07-18, draft PR #19):** isolated branch `chore/v1.0.1-legal-alignment` updates canonical Privacy/Terms to July 18, scopes 16+ to accounts/social features while public event browsing remains open, documents audited data paths, removes stale embedded SPA legal copy, routes the SPA to canonical `/privacy` and `/terms`, and adds the native `/reset-password` callback to AASA. `dist/` matches source; Playwright is 100/100 across desktop/mobile Safari, including exact AASA route coverage. No merge or production deploy occurred.
+- **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
   `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
   `29639887776`. Live QA at `trydropapp.com` rendered the homepage, the global
@@ -44,7 +44,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After explicit hosted-legal production approval, review and merge draft PR #19 from `chore/v1.0.1-legal-alignment`, then verify the live `/privacy` and `/terms` copy, redirects, SPA signup/footer links, mobile rendering, console health, and apex AASA `/reset-password` component. On the resulting 1.0.1 TestFlight build, tap an emailed recovery link on a physical iPhone and complete the password reset. Do not merge or deploy before approval.**
+- **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the app and complete the reset. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
   health, and proper-art fallback against live data. If festival set times remain
@@ -58,6 +58,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-18 — Codex — v1.0.1 hosted legal and password-recovery AASA live
+- **Merged/deployed:** PR #19 merged as `9399fad`; GitHub workflow `29663058803` passed and deployed.
+- **Verified live:** canonical July 18 Privacy/Terms, 16+ account rule, legacy redirects, apex JSON content type, current app id, and `/reset-password` AASA component. `www` redirects to apex as expected for website traffic.
+- **Paired release state:** production migration `20260718221827 social_signup_legal_20260718` passed live compatibility checks; mobile 1.0.1 Build 10 is VALID in internal TestFlight.
+- **Remaining:** physical-iPhone canonical-apex event/recovery Universal-Link proof. No further website code is required for the TestFlight feedback start.
 
 ## 2026-07-18 — Codex — proper event art and real multi-day festivals live
 - **Event art:** every public and SPA event surface now cycles only safe, non-generic candidates: proper event art first, then lineup artist images, then the intentional Prism fallback. Ticketmaster category stock is rejected only on exact Ticketmaster hosts; broken candidates advance instead of leaving an empty card.
