@@ -202,6 +202,30 @@ test.describe('website smoke', () => {
     }
   });
 
+  test('AASA covers every native universal-link route including password recovery', async ({ request }) => {
+    const response = await request.get('/.well-known/apple-app-site-association');
+    expect(response.status()).toBe(200);
+
+    const association = await response.json() as {
+      applinks: {
+        details: Array<{
+          appIDs: string[];
+          components: Array<{ '/': string }>;
+        }>;
+      };
+    };
+    expect(association.applinks.details).toHaveLength(1);
+    expect(association.applinks.details[0].appIDs).toContain(
+      'S6H8PA7TUH.app.resonanceventures.drop',
+    );
+    expect(association.applinks.details[0].components.map((component) => component['/'])).toEqual([
+      '/event/*',
+      '/plan/*',
+      '/reset-password',
+      '/',
+    ]);
+  });
+
   test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
