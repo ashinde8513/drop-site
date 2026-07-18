@@ -20,7 +20,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
-- **v1.0.1 HOSTED LEGAL ALIGNMENT REVIEWED, NOT DEPLOYED (2026-07-18):** isolated branch `chore/v1.0.1-legal-alignment` updates the canonical Privacy/Terms to July 18, scopes 16+ to accounts/social features while public event browsing remains open, documents the audited mobile/contact/location/ticket/music/push/filter data paths, removes stale embedded SPA legal copy, and routes the SPA to canonical `/privacy` and `/terms`. `dist/` matches source; Playwright is 98/98 across desktop/mobile Safari; independent code review and `/verify` are clean. No merge or production deploy occurred.
+- **v1.0.1 HOSTED LEGAL ALIGNMENT REVIEWED, NOT DEPLOYED (2026-07-18, draft PR #19):** isolated branch `chore/v1.0.1-legal-alignment` updates the canonical Privacy/Terms to July 18, scopes 16+ to accounts/social features while public event browsing remains open, documents the audited mobile/contact/location/ticket/music/push/filter data paths, removes stale embedded SPA legal copy, and routes the SPA to canonical `/privacy` and `/terms`. `dist/` matches source; Playwright is 98/98 across desktop/mobile Safari; independent code review and `/verify` are clean. No merge or production deploy occurred.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
   `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
   `29639887776`. Live QA at `trydropapp.com` rendered the homepage, the global
@@ -44,7 +44,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After explicit hosted-legal production approval, review and merge the draft PR from `chore/v1.0.1-legal-alignment`, then verify the live `/privacy` and `/terms` copy, redirects, SPA signup/footer links, mobile rendering, and console health. Do not merge or deploy before approval.**
+- **After explicit hosted-legal production approval, review and merge draft PR #19 from `chore/v1.0.1-legal-alignment`, then verify the live `/privacy` and `/terms` copy, redirects, SPA signup/footer links, mobile rendering, and console health. Do not merge or deploy before approval.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
   health, and proper-art fallback against live data. If festival set times remain
@@ -214,7 +214,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### 2026-07-18 — Codex — v1.0.1 hosted legal alignment prepared, not deployed
 - **Changed:** updated canonical Privacy/Terms to July 18, 2026; aligned the 16+ account/social gate and audited data disclosures; removed the SPA's stale embedded 18+ policy and dead bindings; pointed signup/footer and hosted-document links at canonical `/privacy` and `/terms`; added regression coverage for OAuth's no-DOB path, signup consent ordering, stale copy, canonical links, and audited disclosures.
 - **Verified:** `dist/` rebuilt byte-for-byte from source; `npm test` passed 98/98 across desktop and mobile Safari; desktop and 390×844 browser review showed no console/page errors; live canonical URLs return 200 while `.html` variants redirect once; independent adversarial review is clean; separate cross-repo `/verify` passed all five criteria.
-- **Remaining:** draft branch only. No merge or deploy occurred; the live hosted documents remain unchanged until explicit production approval. Legal text should still receive counsel review before launch.
+- **Remaining:** draft PR #19 is open. No merge or deploy occurred; the live hosted documents remain unchanged until explicit production approval. Legal text should still receive counsel review before launch.
 
 ### 2026-07-08 — Codex — Browser login visual fidelity fix deployed
 - Changed: corrected `account.css` to use the website's actual Prism text/border tokens (`--text`, `--border`, etc.) instead of undefined/dark aliases, reduced the desktop auth form to the target compact 244px layout, lowered the split-layout breakpoint to 720px so 770px desktop captures match the supplied reference, hid the desktop wordmark/Account eyebrow, tightened input/button/social geometry, and kept the wider mobile form.
