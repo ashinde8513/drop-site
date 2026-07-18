@@ -575,4 +575,27 @@ test.describe('cookie consent', () => {
     await expect(page.locator('.legal-nav a[href="#cookies"]')).toHaveCount(1);
     await expect(page.locator('[data-cookie-prefs]')).toHaveCount(1);
   });
+
+  test('SoundCloud artist fallback is disclosed without frontend credentials or API calls', async ({ page }) => {
+    await page.goto('/privacy.html');
+    const publicArtistData = page.getByText('Public artist data.').locator('..');
+    await expect(publicArtistData).toContainText('profile identifier, profile URL, username, and avatar');
+    await expect(publicArtistData).toContainText('fallback art');
+    await expect(publicArtistData).toContainText('credited and linked to the source profile');
+    await expect(publicArtistData).toContainText('only in memory for the current session');
+    await expect(publicArtistData).toContainText('periodically refreshes reviewed mappings');
+    await expect(publicArtistData).toContainText('when access is revoked');
+
+    const appScript = await (await page.request.get('/app/app.js')).text();
+    expect(appScript).toContain("{h:'Public artist data'");
+    expect(appScript).toContain('profile identifier, profile URL, username, and avatar');
+    for (const forbidden of [
+      'api.soundcloud.com',
+      'secure.soundcloud.com',
+      'SOUNDCLOUD_CLIENT_ID',
+      'SOUNDCLOUD_CLIENT_SECRET',
+    ]) {
+      expect(appScript).not.toContain(forbidden);
+    }
+  });
 });
