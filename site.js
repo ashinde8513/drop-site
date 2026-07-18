@@ -35,7 +35,7 @@
     host.appendChild(frag);
   };
 
-  // hasRealArt / artistArt moved to data.js — the app shell (app/) loads
+  // Event-art quality helpers moved to data.js — the app shell (app/) loads
   // data.js but not site.js, and it needs the same art chain.
 
   // ---- Prism art fallback -------------------------------------------------
@@ -73,7 +73,9 @@
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
     // Art chain: real event image → lineup-artist photo → prism block.
-    var artSrc = Drop.hasRealArt(event) ? event.image_url : Drop.artistArt(event);
+    var artCandidates = Drop.eventArtCandidates(event);
+    var artIndex = 0;
+    var artSrc = artCandidates[artIndex];
     if (artSrc) {
       var img = el('img', 'wsc__img');
       img.src = artSrc;
@@ -81,8 +83,9 @@
       img.loading = 'lazy';
       img.referrerPolicy = 'no-referrer';
       img.onerror = function () {
-        // Swap the broken image for the CSS prism-art block.
-        if (img.parentNode) { img.parentNode.replaceChild(Drop.prismArt(event), img); }
+        artIndex++;
+        if (artCandidates[artIndex]) img.src = artCandidates[artIndex];
+        else if (img.parentNode) img.parentNode.replaceChild(Drop.prismArt(event), img);
       };
       a.appendChild(img);
     } else {
@@ -146,7 +149,7 @@
       art.appendChild(el('span', 'art-mark', (a.name || '•').charAt(0).toUpperCase()));
       return art;
     }
-    if (a.image_url) {
+    if (Drop.isRealArtUrl(a.image_url)) {
       var img = el('img', 'acard-img');
       img.src = a.image_url;
       img.alt = esc(a.name);

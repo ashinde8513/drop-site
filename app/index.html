@@ -500,6 +500,7 @@
 
           <!-- tool row -->
           <div style="display:flex;flex-wrap:wrap;gap:var(--sp-sm);padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
+            <sc-if value="{{ ae.isFestival }}"><button type="button" class="chip" onClick="{{ goFestival }}">🗓 View set times</button></sc-if>
             <button type="button" class="chip" onClick="{{ requirePlan }}">👥 Plan with friends</button>
             <button type="button" class="chip" onClick="{{ aeIcs }}">📅 Download .ics</button>
             <button type="button" class="chip" onClick="{{ noop }}">＋ Follow venue</button>
@@ -741,19 +742,48 @@
   <main class="wsh">
     <div style="max-width:1440px;margin:0 auto;padding:var(--sp-lg) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to discover</a>
+      <sc-if value="{{ festivalHasEvent }}">
       <div style="position:relative;overflow:hidden;border-radius:var(--r-xl);border:1px solid var(--border);padding:var(--sp-xxl) var(--sp-xl);margin-bottom:var(--sp-xl);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);">
         <div style="position:absolute;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(226,77,255,0.4),transparent 62%);top:-140px;right:-60px;filter:blur(30px);"></div>
         <div style="position:relative;">
-          <div class="wsc__date">SAT–SUN · JUL 26–27 · COMMERCE CITY, CO <span class="chip" style="pointer-events:none;vertical-align:middle;">Demo data</span></div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4vw,48px);letter-spacing:var(--tr-tight);margin:6px 0 4px;">Global Dance Festival 2026</h1>
-          <div style="color:var(--text-secondary);">Dick's Sporting Goods Park · 4 stages · 38 sets</div>
+          <div class="wsc__date">{{ festivalKicker }}</div>
+          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4vw,48px);letter-spacing:var(--tr-tight);margin:6px 0 4px;">{{ festivalTitle }}</h1>
+          <div style="color:var(--text-secondary);">{{ festivalVenueMeta }}</div>
+          <sc-if value="{{ festivalTimeZone }}"><div style="color:var(--text-muted);font-size:var(--fs-xs);margin-top:6px;">Times shown in {{ festivalTimeZone }}</div></sc-if>
         </div>
       </div>
+      </sc-if>
 
+      <sc-if value="{{ festivalLoading }}">
+        <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
+          <div class="skel" style="height:72px;border-radius:var(--r-md);"></div>
+          <div class="skel" style="height:72px;border-radius:var(--r-md);"></div>
+          <div class="skel" style="height:72px;border-radius:var(--r-md);"></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ festivalError }}">
+        <div class="empty">
+          <div class="empty__ico">⚠️</div>
+          <div class="empty__title">Couldn’t load set times</div>
+          <div class="empty__body">{{ festivalError }}</div>
+          <button type="button" class="btn btn--primary btn--sm" onClick="{{ retryFestival }}">Retry</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ festivalEmpty }}">
+        <div class="empty">
+          <div class="empty__ico">🗓</div>
+          <div class="empty__title">Set times not published yet</div>
+          <div class="empty__body">The schedule will appear here after an official source is reviewed and published.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ festivalHasSchedule }}">
       <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <div class="seg">
+        <div class="seg" role="group" aria-label="Festival schedule view">
           <sc-for list="{{ festTabs }}" as="t" hint-placeholder-count="3">
-            <div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div>
+            <button type="button" class="seg__item {{ t.cls }}" aria-pressed="{{ t.selected }}" onClick="{{ t.pick }}">{{ t.label }}</button>
           </sc-for>
         </div>
         <div style="display:flex;gap:var(--sp-sm);align-items:center;color:var(--text-muted);font-size:var(--fs-sm);">
@@ -768,12 +798,23 @@
         </div>
       </sc-if>
 
+      <sc-if value="{{ festivalTabEmpty }}">
+        <div class="empty">
+          <div class="empty__ico">☆</div>
+          <div class="empty__title">Your schedule is empty</div>
+          <div class="empty__body">Open All and star the sets you don’t want to miss.</div>
+        </div>
+      </sc-if>
+
       <div style="display:flex;flex-direction:column;gap:var(--sp-xxl);">
         <sc-for list="{{ stages }}" as="st" hint-placeholder-count="3">
           <div>
             <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-md);">
               <span style="width:10px;height:26px;border-radius:var(--r-sm);{{ st.accent }}"></span>
-              <div class="sec__title">{{ st.name }}</div>
+              <div>
+                <div style="font-size:var(--fs-xs);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);">{{ st.dayLabel }}</div>
+                <div class="sec__title">{{ st.name }}</div>
+              </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
               <sc-for list="{{ st.sets }}" as="se" hint-placeholder-count="4">
@@ -784,13 +825,14 @@
                     <sc-if value="{{ se.clash }}"><div style="font-size:var(--fs-xs);color:var(--danger);margin-top:2px;">⚠ {{ se.clashMsg }}</div></sc-if>
                     <sc-if value="{{ se.hasFriends }}"><div style="font-size:var(--fs-xs);color:var(--accent);margin-top:2px;">👥 {{ se.friendsLabel }}</div></sc-if>
                   </div>
-                  <button type="button" onClick="{{ se.star }}" style="width:40px;height:40px;border-radius:50%;background:{{ se.starBg }};border:1px solid {{ se.starBorder }};color:{{ se.starColor }};font-size:18px;cursor:pointer;flex:0 0 auto;">{{ se.starGlyph }}</button>
+                  <button type="button" aria-label="{{ se.starLabel }}" aria-pressed="{{ se.starPressed }}" onClick="{{ se.star }}" style="width:40px;height:40px;border-radius:50%;background:{{ se.starBg }};border:1px solid {{ se.starBorder }};color:{{ se.starColor }};font-size:18px;cursor:pointer;flex:0 0 auto;">{{ se.starGlyph }}</button>
                 </div>
               </sc-for>
             </div>
           </div>
         </sc-for>
       </div>
+      </sc-if>
     </div>
   </main>
 </sc-if>

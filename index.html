@@ -184,6 +184,19 @@
         </nav>
       </div>
     </section>
+
+    <!-- Global festival feed is intentionally separate from the city-scoped
+         show grid. Festival records often use a region/venue but no city, and
+         marquee dates can sit beyond the general catalog's first page. -->
+    <section class="section" id="festival-section" hidden>
+      <div class="wrap">
+        <div class="sec" style="padding:0 0 var(--sp-lg);">
+          <h2 class="sec-h2" style="margin:0;">Upcoming festivals</h2>
+          <a class="sec__more" href="/events.html?genre=Festivals">Browse festivals →</a>
+        </div>
+        <div class="grid-events" id="festival-grid" aria-label="Upcoming festivals"></div>
+      </div>
+    </section>
   </main>
 
   <!-- ============================ FOOTER ============================ -->
@@ -278,6 +291,20 @@
       prevBtn.addEventListener('click', function () { if (page > 0) { page--; loadGrid(true); } });
       nextBtn.addEventListener('click', function () { if (page < totalPages - 1) { page++; loadGrid(true); } });
       loadGrid(false);
+
+      // Load every published festival independently of the selected city.
+      D.fetchFestivals({ limit: 12 })
+        .then(function (festivals) {
+          if (!festivals.length) return;
+          document.getElementById('festival-section').hidden = false;
+          D.renderEvents(document.getElementById('festival-grid'), festivals, {
+            limit: 12,
+            gate: true
+          });
+        })
+        .catch(function () {
+          // Supplemental content: keep the main home feed usable on failure.
+        });
     })();
   </script>
 </body>

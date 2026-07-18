@@ -33,7 +33,7 @@
 
 /* ===== Segmented control (glass) ===== */
 .seg { display: inline-flex; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
-.seg__item { padding: 7px 16px; border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.seg__item { padding: 7px 16px; border: 0; background: transparent; border-radius: var(--r-pill); font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
 .seg__item.is-active { background: var(--surface-hi); color: var(--text); }
 
 /* ===== Event card (mirrors src/components/EventCard.tsx) ===== */

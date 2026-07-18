@@ -210,7 +210,7 @@
             name: ev.venue_name,
             address: { '@type': 'PostalAddress', addressLocality: ev.city, addressRegion: ev.state }
           },
-          image: ev.image_url ? [ev.image_url] : undefined,
+          image: D.eventArt(ev) ? [D.eventArt(ev)] : undefined,
           description: ev.description || undefined,
           offers: ev.ticket_url ? {
             '@type': 'Offer', url: ev.ticket_url,
@@ -278,16 +278,23 @@
         box.style.cssText = 'position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);';
         var media;
         // Art chain matches Drop.ecard: real event image → lineup-artist photo → prism.
-        var heroSrc = D.hasRealArt(ev) ? ev.image_url : D.artistArt(ev);
+        var heroCandidates = D.eventArtCandidates(ev);
+        var heroIndex = 0;
+        var heroSrc = heroCandidates[heroIndex];
         if (heroSrc) {
           media = el('img');
           media.src = heroSrc; media.alt = ev.title + ' at ' + (ev.venue_name || 'venue');
           media.loading = 'eager'; media.referrerPolicy = 'no-referrer';
           media.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
           media.onerror = function () {
-            var art = D.prismArt(ev);
-            art.style.cssText = 'position:absolute;inset:0;';
-            if (media.parentNode) media.parentNode.replaceChild(art, media);
+            heroIndex++;
+            if (heroCandidates[heroIndex]) {
+              media.src = heroCandidates[heroIndex];
+            } else {
+              var art = D.prismArt(ev);
+              art.style.cssText = 'position:absolute;inset:0;';
+              if (media.parentNode) media.parentNode.replaceChild(art, media);
+            }
           };
         } else {
           media = D.prismArt(ev);
@@ -444,6 +451,11 @@
 
       function renderTools(ev) {
         var row = el('div', 'ed-tools');
+        if (ev.is_festival) {
+          var schedule = el('a', 'chip', '🗓 View set times');
+          schedule.href = 'https://app.trydropapp.com/?festival=' + encodeURIComponent(ev.id);
+          row.appendChild(schedule);
+        }
         row.appendChild(gateLink('chip gate', '👥 Plan with friends', 'Log in to plan with your crew'));
         var ics = el('button', 'chip', '📅 Download .ics');
         ics.type = 'button';

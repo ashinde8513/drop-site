@@ -189,7 +189,7 @@
           '@type': 'MusicGroup',
           name: artist.name,
           genre: artist.genres || [],
-          image: artist.image_url || undefined,
+          image: D.isRealArtUrl(artist.image_url) ? artist.image_url : undefined,
           url: 'https://trydropapp.com/artist.html?id=' + encodeURIComponent(artist.id)
         });
         document.head.appendChild(s);
@@ -223,7 +223,7 @@
           art.style.fontFamily = 'var(--font-display)'; art.style.fontWeight = '700'; art.style.fontSize = '40px'; art.style.color = 'var(--text)';
           return art;
         }
-        if (a.image_url) {
+        if (D.isRealArtUrl(a.image_url)) {
           var img = D.el('img', 'art-avatar');
           img.src = a.image_url; img.alt = a.name; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
           img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(fallbackArt(), img); };

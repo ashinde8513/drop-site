@@ -95,7 +95,7 @@
 
   var EVENT_COLS =
     'id,title,description,date,end_date,venue_name,city,state,image_url,ticket_url,' +
-    'price_min,price_max,currency,is_festival,time_tbd,status,created_at';
+    'price_min,price_max,currency,is_festival,time_tbd,timezone,status,created_at';
   var EVENT_SELECT = EVENT_COLS + ',event_artists(artists(id,name,genres,image_url))';
 
   // ---- Public fetchers ----------------------------------------------------
@@ -151,6 +151,53 @@
       }
       return opts.count ? { rows: rows, total: res.total } : rows;
     });
+  };
+
+  // A multi-day festival remains discoverable until its authored end time.
+  // Keep this separate from fetchEvents so ordinary event pagination/counting
+  // stays a single stable query while festival rails can include day 2/day 3.
+  Drop.fetchFestivals = function (opts) {
+    opts = opts || {};
+    var startOfToday = todayISO();
+    var now = new Date().toISOString();
+    var limit = opts.limit || 1000;
+    var common = {
+      select: EVENT_SELECT,
+      status: 'eq.published',
+      is_festival: 'is.true',
+      order: 'date.asc,id.asc',
+      limit: limit
+    };
+    var future = Object.assign({}, common, { date: 'gte.' + startOfToday });
+    var ongoing = Object.assign({}, common, {
+      date: 'lt.' + startOfToday,
+      end_date: 'gte.' + now
+    });
+
+    return Promise.all([
+      get('events?' + q(future)),
+      get('events?' + q(ongoing))
+    ]).then(function (results) {
+      var byId = {};
+      results[0].concat(results[1]).forEach(function (event) { byId[event.id] = event; });
+      return Object.keys(byId).map(function (id) { return byId[id]; })
+        .sort(function (a, b) {
+          var byDate = String(a.date || '').localeCompare(String(b.date || ''));
+          return byDate || String(a.id || '').localeCompare(String(b.id || ''));
+        })
+        .slice(0, limit);
+    });
+  };
+
+  Drop.eventOverlapsWindow = function (event, fromMs, toMs) {
+    var start = Date.parse(event && event.date);
+    if (!Number.isFinite(start)) return false;
+    var end = start;
+    if (event.is_festival && event.end_date) {
+      var parsedEnd = Date.parse(event.end_date);
+      if (Number.isFinite(parsedEnd)) end = Math.max(start, parsedEnd);
+    }
+    return start <= toMs && end >= fromMs;
   };
 
   // Distinct venues with upcoming shows, optionally city-scoped — feeds the
@@ -360,19 +407,48 @@
 
   // Ticketmaster "category" art (/dam/c/) is a generic grayscale stock photo,
   // not real event artwork — prism art looks designed, the stock photo doesn't.
-  Drop.hasRealArt = function (event) {
-    return !!(event.image_url && !/s1\.ticketm\.net\/dam\/c\//i.test(event.image_url));
+  function isTicketmasterCategoryArt(imageUrl) {
+    try {
+      var parsed = new URL(imageUrl);
+      var host = parsed.hostname.toLowerCase();
+      var ticketmasterHost = host === 'ticketm.net' || host.slice(-12) === '.ticketm.net' ||
+        host === 'ticketmaster.com' || host.slice(-17) === '.ticketmaster.com';
+      return ticketmasterHost && /\/dam\/c\//i.test(parsed.pathname);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Drop.isRealArtUrl = function (imageUrl) {
+    if (!imageUrl) return false;
+    try {
+      var parsed = new URL(imageUrl);
+      if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return false;
+    } catch (e) {
+      return false;
+    }
+    return !isTicketmasterCategoryArt(imageUrl);
   };
 
-  // Best substitute art when the event has none: the first lineup artist with
-  // a real photo (97% of artists have one) — beats the generic prism block.
-  Drop.artistArt = function (event) {
-    var eas = event.event_artists || [];
-    for (var i = 0; i < eas.length; i++) {
-      var a = eas[i].artists;
-      if (a && a.image_url) return a.image_url;
+  Drop.hasRealArt = function (event) {
+    return !!(event && Drop.isRealArtUrl(event.image_url));
+  };
+
+  Drop.eventArtCandidates = function (event) {
+    var out = [];
+    function add(url) {
+      if (Drop.isRealArtUrl(url) && out.indexOf(url) < 0) out.push(url);
     }
-    return null;
+    if (!event) return out;
+    add(event.image_url);
+    (event.event_artists || []).forEach(function (ea) {
+      add(ea.artists && ea.artists.image_url);
+    });
+    return out;
+  };
+
+  Drop.eventArt = function (event) {
+    return Drop.eventArtCandidates(event)[0] || null;
   };
 
   // CSS class for prism-art tint, keyed off the display genre.
