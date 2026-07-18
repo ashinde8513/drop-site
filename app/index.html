@@ -251,7 +251,7 @@
         <label class="cb" style="margin-bottom:var(--sp-xl);">
           <input id="signup-consent" class="cb__input" type="checkbox" />
           <span class="cb__box"></span>
-          <span class="cb__label">I agree to Drop's <a href="#" onClick="{{ noop }}">Terms</a> and <a href="#" onClick="{{ noop }}">Privacy Policy</a>.</span>
+          <span class="cb__label">I agree to Drop's <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.</span>
         </label>
         <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
         <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
@@ -3052,31 +3052,6 @@
   </main>
 </sc-if>
 
-<!-- ============ LEGAL ============ -->
-<sc-if value="{{ screenLegal }}">
-  <main class="wsh">
-    <div class="legal-grid" style="max-width:1000px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);display:grid;grid-template-columns:200px 1fr;gap:var(--sp-xxl);align-items:start;">
-      <nav class="legal-nav" style="position:sticky;top:96px;display:flex;flex-direction:column;gap:var(--sp-xs);">
-        <button type="button" class="{{ legalPrivacyCls }}" onClick="{{ legalPrivacy }}" style="text-align:left;background:none;border:0;color:inherit;font-family:var(--font-body);font-size:var(--fs-sm);font-weight:700;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;">Privacy Policy</button>
-        <button type="button" class="{{ legalTermsCls }}" onClick="{{ legalTerms }}" style="text-align:left;background:none;border:0;color:inherit;font-family:var(--font-body);font-size:var(--fs-sm);font-weight:700;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;">Terms of Service</button>
-        <div style="height:1px;background:var(--border);margin:var(--sp-sm) 0;"></div>
-        <sc-for list="{{ legalSections }}" as="sec" hint-placeholder-count="5">
-          <a href="#" onClick="{{ sec.jump }}" style="font-size:var(--fs-sm);color:var(--text-secondary);padding:5px 12px;">{{ sec.label }}</a>
-        </sc-for>
-      </nav>
-      <article style="max-width:640px;">
-        <div class="wsc__date">{{ legalKicker }}</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:6px 0 var(--sp-xs);">{{ legalTitle }}</h1>
-        <p style="color:var(--text-muted);font-size:var(--fs-sm);margin:0 0 var(--sp-xl);">Last updated July 7, 2026</p>
-        <sc-for list="{{ legalBody }}" as="p" hint-placeholder-count="6">
-          <h2 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);letter-spacing:var(--tr-snug);margin:var(--sp-xl) 0 var(--sp-sm);">{{ p.h }}</h2>
-          <p style="color:var(--text-secondary);line-height:var(--lh-loose);font-size:var(--fs-md);margin:0;">{{ p.t }}</p>
-        </sc-for>
-      </article>
-    </div>
-  </main>
-</sc-if>
-
 <!-- ============ GENERIC ERROR ============ -->
 <sc-if value="{{ screenError }}">
   <main style="min-height:70vh;display:flex;align-items:center;justify-content:center;padding:64px var(--sp-xl);">
@@ -3099,7 +3074,6 @@
           <a href="#" onClick="{{ goAbout }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">About</a>
           <a href="#" onClick="{{ goGetApp }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Get the app</a>
           <a href="#" onClick="{{ goPromoters }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">For promoters</a>
-          <a href="#" onClick="{{ goLegal }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Legal</a>
           <a href="#" onClick="{{ goPaywall }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Drop+</a>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;min-width:130px;">
@@ -3131,8 +3105,8 @@
         <div style="display:flex;gap:var(--sp-lg);flex-wrap:wrap;">
           <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">Instagram</a>
           <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">TikTok</a>
-          <a href="#" onClick="{{ goLegal }}" style="color:var(--text-secondary);">Privacy</a>
-          <a href="#" onClick="{{ goTerms }}" style="color:var(--text-secondary);">Terms</a>
+          <a href="https://trydropapp.com/privacy" style="color:var(--text-secondary);">Privacy</a>
+          <a href="https://trydropapp.com/terms" style="color:var(--text-secondary);">Terms</a>
           <span>Drop may earn a commission on ticket links.</span>
         </div>
         <div style="color:var(--text-muted);font-size:var(--fs-xs);">© Resonance Ventures LLC</div>

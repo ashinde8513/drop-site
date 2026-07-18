@@ -619,8 +619,6 @@ class Component extends DCLogic {
     guestChecked: { g1:true, g3:true }, codeActive: { c1:true, c2:false },
     // admin
     adminTab: 'queue', reviewActioned: {}, reportState: {},
-    // legal
-    legalDoc: 'privacy',
     // mobile nav
     navOpen: false,
     // PHASE 1 — real Supabase wiring
@@ -1945,26 +1943,6 @@ class Component extends DCLogic {
     const maxSignup = Math.max(1, ...this.ADMIN_SIGNUPS);
     const signupBars = this.ADMIN_SIGNUPS.map(v=>({ h:(v/maxSignup*100)+'%', value:v+' signups' }));
 
-    // ===== Legal =====
-    const LEGAL = {
-      privacy: { kicker:'LEGAL · PRIVACY', title:'Privacy Policy', body:[
-        {h:'What we collect', t:'Account details you give us (email, username), the shows you RSVP to or save, artists and venues you follow, and connected-provider data you explicitly authorize. We collect basic device and usage analytics to keep the app fast and reliable.'},
-        {h:'How we use it', t:'To match you with shows worth your night, notify you about presales and friend activity, and improve the product. We never sell your personal data. Recap and Wrapped sharing is always opt-in.'},
-        {h:'Connected providers', t:'When you link SoundCloud or another music service, we read likes and follows to seed your taste. We never post, message, or modify anything on your account, and you can disconnect at any time.'},
-        {h:'Your controls', t:'Edit or delete your taste data, opt out of appearing in friends\u2019 recaps, block accounts, or delete your account entirely from Settings. Deletion is permanent and removes your plans, recaps, and history.'},
-        {h:'Contact', t:'Questions about your data? Reach our privacy team at privacy@drop.fm and we\u2019ll respond within 30 days.'},
-      ]},
-      terms: { kicker:'LEGAL · TERMS', title:'Terms of Service', body:[
-        {h:'Using Drop', t:'You must be 18 or older to create an account. You\u2019re responsible for activity under your account and for keeping your login secure. Don\u2019t use Drop to harass others, scalp tickets, or post spam.'},
-        {h:'Tickets & promoters', t:'Drop links to third-party ticketing. We are not the seller of record and don\u2019t control pricing, fees, or entry policies. Drop may earn a commission on some ticket links. Promoters are responsible for the accuracy of their listings, guest lists, and codes.'},
-        {h:'Community content', t:'Comments, reviews, and recaps you post are yours, but you grant Drop a license to display them. We may remove content that violates these terms, and repeat violations can lead to account suspension.'},
-        {h:'Drop+', t:'Drop+ time is earned or granted as described in the app and applies to your membership. Earned time has no cash value and is non-transferable.'},
-        {h:'Changes', t:'We may update these terms; material changes will be announced in-app. Continued use after an update means you accept the revised terms.'},
-      ]},
-    };
-    const legalActive = LEGAL[s.legalDoc] || LEGAL.privacy;
-    const legalSections = legalActive.body.map(b=>({ label:b.h, jump:(e)=>{ this.prevent(e); } }));
-
     return {
       showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharerecap' && s.screen!=='sharewrapped' && s.screen!=='claim',
       screenHome: s.screen==='home', screenLogin: s.screen==='login', screenSignup: s.screen==='signup',
@@ -1987,7 +1965,7 @@ class Component extends DCLogic {
       screenCity: s.screen==='city', screenGenre: s.screen==='genre',
       screenSharePlan: s.screen==='shareplan', screenShareRecap: s.screen==='sharerecap', screenShareWrapped: s.screen==='sharewrapped',
       screenTaste: s.screen==='taste', screenSuggest: s.screen==='suggest', screenError: s.screen==='error',
-      screenPromoter: s.screen==='promoter', screenPromoManage: s.screen==='promomanage', screenAdmin: s.screen==='admin', screenLegal: s.screen==='legal',
+      screenPromoter: s.screen==='promoter', screenPromoManage: s.screen==='promomanage', screenAdmin: s.screen==='admin',
       isPromoter: s.isPromoter, notPromoter: !s.isPromoter,
       promoEvents, promoEventsEmpty, promoEventCount: promoEvents.length, pm, promoTabs, promoTabDetails: s.promoTab==='details', promoTabGuests: s.promoTab==='guests', promoTabCodes: s.promoTab==='codes',
       promoDelConfirm: s.promoDelConfirm, promoDelDisabled: !promoDelOk, promoDelOpacity: promoDelOk?'1':'0.5',
@@ -1995,8 +1973,6 @@ class Component extends DCLogic {
       adminTabs, adminTabQueue: s.adminTab==='queue', adminTabReports: s.adminTab==='reports', adminTabAnalytics: s.adminTab==='analytics',
       reviewQueue, queuePending: reviewQueue.length, queueEmpty: reviewQueue.length===0, reports, reportsEmpty: reports.length===0, signupBars,
       topEvents: this.ADMIN_TOP_EVENTS, adminActions: this.ADMIN_ACTIONS,
-      legalKicker: legalActive.kicker, legalTitle: legalActive.title, legalBody: legalActive.body, legalSections,
-      legalPrivacyCls: s.legalDoc==='privacy'?'is-active-legal':'', legalTermsCls: s.legalDoc==='terms'?'is-active-legal':'',
       // Real events fetch factors into the shared skeleton/content-ready gate
       // so Discover/Home/Event/Search never flash an empty grid before the
       // first real fetch resolves.
@@ -2198,11 +2174,6 @@ class Component extends DCLogic {
       promoAddCode:()=>this.flash('Presale code created'),
       // admin
       goAdmin:(e)=>{ this.prevent&&this.prevent(e); this.go('admin'); },
-      // legal
-      goLegal:(e)=>{ this.prevent(e); this.setState({legalDoc:'privacy'}); this.go('legal'); },
-      goTerms:(e)=>{ this.prevent(e); this.setState({legalDoc:'terms'}); this.go('legal'); },
-      legalPrivacy:()=>this.setState({legalDoc:'privacy'}),
-      legalTerms:()=>this.setState({legalDoc:'terms'}),
       // taste
       scAction:()=>{ if(this.state.scConnected){ this.setState({scConnected:false, tasteImport:false}); this.flash('SoundCloud disconnected'); } else { this.setState({tasteConsent:true}); } },
       scConfirm:()=>{ this.setState({scConnected:true, tasteConsent:false, tasteImport:true}); this.flash('Imported 12 artists from SoundCloud'); },
