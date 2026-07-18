@@ -20,6 +20,14 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
+  `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
+  `29639887776`. Live QA at `trydropapp.com` rendered the homepage, the global
+  24-festival catalog, and a real Day Trip Seattle detail page with proper art,
+  zero browser console warnings/errors, and no 390px horizontal overflow.
+  Festival schedules remain honest-empty until an official schedule manifest
+  supplies production `event_set_times`; the timezone/schedule UI is regression
+  tested but is not yet live-data verified.
 - **CI AUTO-DEPLOY (2026-07-16, PR #14): push to `main` = live site.** `.github/workflows/deploy.yml` tests (full Playwright, chromium+webkit) then deploys `dist/` to CF Pages using repo Actions secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` — the token lives in GitHub, so **no agent should ever ask the founder for a Cloudflare token to deploy this site**. Docs-only commits (`**.md`, `docs/`, `history/`) skip deploy; redeploy current main anytime via the workflow's Run-workflow button (workflow_dispatch).
 - FULL 12-page public event-discovery website LIVE at trydropapp.com (cutover 2026-07-06, see CUTOVER RECORD): AXS-style IA, Prism tokens, live Supabase public catalog (anon key, 1.5K events), 32/32 Playwright smoke green.
 - Post-login web app = the Prism SPA, LIVE on `app.trydropapp.com` + `trydropapp.com/app/` (2026-07-12): old static `account.html` shell DELETED; all landing Log in / Get started → `app.trydropapp.com/?mode=login|signup`; authed sessions boot to Discover; full auth (password, username via `login-with-username`, signup, reset, Google/Apple OAuth triggers) lives in the SPA login/signup screens. Facebook is a muted “sign-in coming soon” status note until it is wired. Design round-4 (filterable scrollable city dropdown, empty-state CTAs, search filter-panel dropdowns) ported + live. Worker `drop-app-path` version `c650cc64-6c51-4f28-b1a4-7a18fa800bb2` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed).
@@ -31,8 +39,15 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
+- Official festival schedule/export source: production currently has zero
+  published-festival `event_set_times`; do not fabricate set times. Author and
+  apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Merge and live-smoke PR #17:** the paired backend schema/ingest is live, the identical local and GitHub suites are both **96/96**, and the live-catalog browser path is green. Mark PR #17 ready, merge it through normal review so CI auto-deploys, then verify proper image fallback, the global future/ongoing festival rail, and a multi-day venue-timezone schedule on `trydropapp.com` with zero console/request failures.
+- **Run the first post-release catalog monitor after the next scheduled ingest:**
+  recheck the global Festivals filter, one event-art detail page, request/console
+  health, and proper-art fallback against live data. If festival set times remain
+  zero, leave schedule live-QA in waiting and point the next agent to the reviewed
+  backend manifest command instead of inventing rows.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
 1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
@@ -42,10 +57,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-18 — Codex — proper event art and real multi-day festivals staged; not deployed
+## 2026-07-18 — Codex — proper event art and real multi-day festivals live
 - **Event art:** every public and SPA event surface now cycles only safe, non-generic candidates: proper event art first, then lineup artist images, then the intentional Prism fallback. Ticketmaster category stock is rejected only on exact Ticketmaster hosts; broken candidates advance instead of leaving an empty card.
 - **Festivals:** the signed-out homepage has a global festival rail independent of city; the SPA supplements its paged future catalog with bounded future + ongoing festivals so day 2/day 3 remain discoverable. Festival schedules load only published `event_set_times`, group repeated stages by venue-local day, show the event date range/timezone, persist real signed-in picks, and contain no demo rows.
-- **Verified:** generated `dist/` rebuilt with all 45 changed source/dist pairs byte-identical; JS syntax and diff checks are green; independent adversarial review found no remaining code blocker/high. After the paired backend schema/ingest landed, the full suite passed **96/96 locally and 96/96 in GitHub Actions** (Chromium + WebKit). Live-catalog browser smoke rendered 24 home cards and 12 festival cards, navigated correctly, and reported zero console/request failures. PR #17 remains draft only until this closeout commit; merge will use the normal CI auto-deploy path.
+- **Verified and deployed:** generated `dist/` rebuilt with all 45 changed source/dist pairs byte-identical; JS syntax and diff checks are green; independent adversarial review found no remaining code blocker/high. After the paired backend schema/ingest landed, the full suite passed **96/96 locally and 96/96 in GitHub Actions** (Chromium + WebKit). PR #17 merged as `aa76a7a`; production deploy run `29639887776` succeeded. Post-deploy browser QA rendered the homepage, 24 global festival results, and Day Trip Seattle detail art at desktop and 390×844 with zero console warnings/errors and no horizontal overflow. A read-only production check found no published-festival set-time rows, so schedule behavior remains deterministic-test verified rather than falsely labeled live-data verified.
 
 ## 2026-07-18 — Claude (remote) — hero badge removed + "one website, two views" framing
 - Removed the "✦ The EDM show discovery app" chip from both signed-out heroes (`index.html`, `app/index.html`) per founder request; merged to `main` (7a41f93), live-verified gone on trydropapp.com + app.trydropapp.com.
