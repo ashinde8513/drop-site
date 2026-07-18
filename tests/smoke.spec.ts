@@ -96,6 +96,42 @@ test.describe('website smoke', () => {
     await expect(page.locator('#home-grid')).toHaveCount(1);
   });
 
+  test('homepage keeps an ongoing multi-day festival in the global rail', async ({ page }) => {
+    const ongoingFestival = {
+      id: '9fa26a17-b908-414a-950d-ebbbb7377e45', title: 'Ongoing Test Festival', description: '',
+      date: new Date(Date.now() - 2 * 86400000).toISOString(),
+      end_date: new Date(Date.now() + 2 * 86400000).toISOString(),
+      venue_name: 'Test Festival Grounds', city: 'Elsewhere', state: 'CO', image_url: null,
+      ticket_url: null, price_min: null, price_max: null, currency: 'USD',
+      is_festival: true, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00Z', event_artists: [],
+    };
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      const rows = url.searchParams.has('end_date') ? [ongoingFestival] : [];
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
+
+    await page.goto('/index.html');
+    await expect(page.locator('#festival-section')).toBeVisible();
+    await expect(page.locator('#festival-grid')).toContainText('Ongoing Test Festival');
+    expect(await page.evaluate(() => (window as any).Drop.eventOverlapsWindow(
+      {
+        date: new Date(Date.now() - 2 * 86400000).toISOString(),
+        end_date: new Date(Date.now() + 2 * 86400000).toISOString(),
+        is_festival: true,
+      },
+      new Date().setHours(0, 0, 0, 0),
+      new Date().setHours(23, 59, 59, 999),
+    ))).toBe(true);
+
+    await page.getByRole('link', { name: /Browse festivals/ }).click();
+    await expect(page).toHaveURL(/events\.html\?genre=Festivals/);
+    expect(new URL(page.url()).searchParams.get('city')).not.toBe('Denver');
+    await expect(page.locator('#grid')).toContainText('Ongoing Test Festival');
+    await expect(page.locator('#result-count')).toContainText('1 show');
+  });
+
   test('hero proof line is the honest tracking stat, not a fabricated user count', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
@@ -343,6 +379,153 @@ test.describe('website smoke', () => {
     await page.goto(`/event.html?id=${fakeId}`);
     await expect(page.locator('.ed-price-row')).toContainText('Etix');
     await expect(page.locator('.ed-price-row')).not.toContainText('Prf');
+  });
+
+  test('event surfaces reject Ticketmaster category stock and cycle every artist fallback', async ({ page }) => {
+    const fakeId = '6a1655bb-354e-4bbc-963a-9212d8404401';
+    const brokenArtist = 'https://art.example/broken.jpg';
+    const workingArtist = 'https://art.example/working.png';
+    const fakeEvent = {
+      id: fakeId, title: 'Fallback Art Festival', description: '',
+      date: '2027-03-01T02:00:00Z', end_date: null, venue_name: 'Test Grounds',
+      city: 'Denver', state: 'CO',
+      image_url: 'https://images.ticketmaster.com/dam/c/category.jpg',
+      ticket_url: null, price_min: null, price_max: null, currency: 'USD',
+      is_festival: true, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00Z',
+      event_artists: [
+        { artists: { id: 'a1', name: 'Broken Artist', genres: [], image_url: brokenArtist } },
+        { artists: { id: 'a2', name: 'Working Artist', genres: [], image_url: workingArtist } },
+      ],
+    };
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) }));
+    await page.route(brokenArtist, (route) => route.abort('failed'));
+    await page.route(workingArtist, (route) => route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      path: 'og-image.png',
+    }));
+
+    await page.goto(`/event.html?id=${fakeId}`);
+    const hero = page.locator(`#event-root img[alt^="${fakeEvent.title}"]`);
+    await expect(hero).toHaveAttribute('src', workingArtist);
+    expect(await page.evaluate(() => ({
+      category: (window as any).Drop.isRealArtUrl('https://images.ticketmaster.com/dam/c/category.jpg'),
+      deceptiveHost: (window as any).Drop.isRealArtUrl('https://example.com/images.ticketmaster.com/dam/c/category.jpg'),
+      insecure: (window as any).Drop.isRealArtUrl('http://example.com/artist.jpg'),
+      malformed: (window as any).Drop.isRealArtUrl('not-a-url'),
+    }))).toEqual({ category: false, deceptiveHost: true, insecure: false, malformed: false });
+
+    await page.goto('/index.html');
+    await expect(page.locator('#home-grid img.wsc__img')).toHaveAttribute('src', workingArtist);
+  });
+
+  test('web app renders a real venue-timezone festival schedule with no demo rows', async ({ page }) => {
+    const festivalId = '1b2625b7-40f4-45ca-a55d-59d839141881';
+    const fakeFestival = {
+      id: festivalId, title: 'Test Festival 2027', description: '',
+      date: '2027-09-18T12:00:00Z', end_date: '2027-09-20T23:59:59Z',
+      venue_name: 'Test Festival Grounds', city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: null, price_min: null, price_max: null, currency: 'USD',
+      is_festival: true, time_tbd: false, timezone: 'America/Denver', status: 'published',
+      created_at: '2026-07-01T00:00:00Z', event_artists: [],
+    };
+    const sets = [
+      {
+        id: '3bd42422-c675-4389-9817-ebcce8ed5594', event_id: festivalId,
+        artist_name: 'ALPHA', artist_id: null, stage: 'Main Stage',
+        start_time: '2027-09-19T04:30:00Z', end_time: '2027-09-19T06:00:00Z',
+        timezone: 'America/Denver', status: 'published',
+      },
+      {
+        id: '71130718-bc47-4e35-88f9-4bd484033b3a', event_id: festivalId,
+        artist_name: 'BETA', artist_id: null, stage: 'Bass Stage',
+        start_time: '2027-09-19T05:00:00Z', end_time: '2027-09-19T06:30:00Z',
+        timezone: 'America/Denver', status: 'published',
+      },
+      {
+        id: '180f702f-52a9-4816-a497-ec37e103af17', event_id: festivalId,
+        artist_name: 'GAMMA', artist_id: null, stage: 'Main Stage',
+        start_time: '2027-09-20T04:30:00Z', end_time: '2027-09-20T06:00:00Z',
+        timezone: 'America/Denver', status: 'published',
+      },
+      {
+        id: 'e7bfd55e-427f-4a16-9444-8d2bf9ebdeed', event_id: festivalId,
+        artist_name: 'LEGACY DEMO', artist_id: null, stage: 'Main Stage',
+        start_time: '2027-09-20T07:00:00Z', end_time: '2027-09-20T08:00:00Z',
+        timezone: 'America/Denver', status: null,
+      },
+    ];
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeFestival]) }));
+    await page.route('**/rest/v1/event_set_times?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sets) }));
+
+    await page.goto(`/app/index.html?festival=${festivalId}`);
+    await expect(page.getByRole('heading', { name: 'Test Festival 2027' })).toBeVisible();
+    await expect(page.locator('body')).toContainText('Test Festival Grounds · 2 stages · 3 sets');
+    await expect(page.locator('body')).toContainText('Times shown in America/Denver');
+    await expect(page.getByText('Sat, Sep 18', { exact: true })).toHaveCount(2);
+    await expect(page.getByText('Sun, Sep 19', { exact: true })).toHaveCount(1);
+    await expect(page.getByText('Main Stage', { exact: true })).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Add ALPHA to my schedule' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('body')).toContainText('ALPHA');
+    await expect(page.locator('body')).toContainText('10:30PM – 12AM');
+    await expect(page.locator('body')).not.toContainText('Global Dance Festival 2026');
+    await expect(page.locator('body')).not.toContainText('LEGACY DEMO');
+    await expect(page.locator('body')).not.toContainText('Demo data');
+  });
+
+  test('set-time-free festival dates use the authoritative venue timezone', async ({ page }) => {
+    const festivalId = '5c26525c-99ae-41cd-a9de-00b9196c3975';
+    const festival = {
+      id: festivalId, title: 'DST Safe Festival', description: '',
+      date: '2027-08-01T12:00:00Z', end_date: '2027-08-03T05:59:59.999Z',
+      timezone: 'America/Denver', venue_name: 'Denver Grounds', city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: null, price_min: null, price_max: null, currency: 'USD', is_festival: true,
+      time_tbd: true, status: 'published', created_at: '2026-07-01T00:00:00Z', event_artists: [],
+    };
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([festival]) }));
+    await page.route('**/rest/v1/event_set_times?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/app/index.html?festival=${festivalId}`);
+    await expect(page.getByRole('heading', { name: 'DST Safe Festival' })).toBeVisible();
+    await expect(page.locator('body')).toContainText('AUG 1 – AUG 2');
+    await expect(page.locator('body')).not.toContainText('AUG 1 – AUG 3');
+    await expect(page.locator('body')).toContainText('Set times not published yet');
+  });
+
+  test('festival retry recovers after one transient catalog failure', async ({ page }) => {
+    const festivalId = 'f7edc77c-2451-4076-a90c-b979d11a3f60';
+    const festival = {
+      id: festivalId, title: 'Retry Festival', description: '', date: '2027-10-01T12:00:00Z',
+      end_date: '2027-10-03T05:59:59Z', timezone: 'America/Denver', venue_name: 'Retry Grounds',
+      city: 'Denver', state: 'CO', image_url: null, ticket_url: null, price_min: null, price_max: null,
+      currency: 'USD', is_festival: true, time_tbd: true, status: 'published',
+      created_at: '2026-07-01T00:00:00Z', event_artists: [],
+    };
+    let festivalRequests = 0;
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get('is_festival') === 'is.true') {
+        festivalRequests++;
+        if (festivalRequests === 1) return route.fulfill({ status: 503, body: 'temporary' });
+        const rows = festivalRequests >= 3 ? [festival] : [];
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+    await page.route('**/rest/v1/event_set_times?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/app/index.html?festival=${festivalId}`);
+    await expect(page.getByText('Couldn’t load set times')).toBeVisible();
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expect(page.getByRole('heading', { name: 'Retry Festival' })).toBeVisible();
   });
 
   test('mobile: hamburger opens the .mnav drawer at 390px', async ({ page }) => {

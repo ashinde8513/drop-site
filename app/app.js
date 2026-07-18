@@ -383,6 +383,69 @@
     return { from: from.toISOString(), to: to.toISOString() };
   }
 
+  function festivalDateLabel(startIso, endIso, timeZone) {
+    if (!startIso) return 'DATES TO BE ANNOUNCED';
+    const opts = { month:'short', day:'numeric' };
+    if (timeZone) opts.timeZone = timeZone;
+    const start = new Date(startIso);
+    const end = endIso ? new Date(endIso) : null;
+    try {
+      const fmt = new Intl.DateTimeFormat('en-US', opts);
+      const first = fmt.format(start);
+      if (!end || isNaN(end.getTime()) || zonedDayKey(startIso, timeZone) === zonedDayKey(endIso, timeZone)) return first.toUpperCase();
+      return (first + ' – ' + fmt.format(end)).toUpperCase();
+    } catch (_) {
+      return (Drop && Drop.fmtDate(startIso) || 'Dates TBA').toUpperCase();
+    }
+  }
+
+  function zonedTime(iso, timeZone) {
+    if (!iso) return '';
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone || undefined,
+        hour: 'numeric', minute: '2-digit', hour12: true,
+      }).format(new Date(iso)).replace(':00', '').replace(/\s/g, '');
+    } catch (_) {
+      const d = new Date(iso);
+      let h = d.getHours(); const m = d.getMinutes(); const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + (m ? ':' + String(m).padStart(2, '0') : '') + ap;
+    }
+  }
+
+  function zonedDayKey(iso, timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timeZone || undefined, year:'numeric', month:'2-digit', day:'2-digit',
+      }).formatToParts(new Date(iso));
+      const value = {};
+      parts.forEach(p => { if (p.type !== 'literal') value[p.type] = p.value; });
+      return value.year + '-' + value.month + '-' + value.day;
+    } catch (_) {
+      return String(iso).slice(0, 10);
+    }
+  }
+
+  function zonedDayLabel(iso, timeZone) {
+    if (!iso) return 'Date TBA';
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone || undefined,
+        weekday:'short', month:'short', day:'numeric',
+      }).format(new Date(iso));
+    } catch (_) {
+      return String(iso).slice(0, 10);
+    }
+  }
+
+  function setsOverlap(a, b) {
+    const aStart = Date.parse(a.start_time), bStart = Date.parse(b.start_time);
+    const aEnd = a.end_time ? Date.parse(a.end_time) : aStart + 60 * 60000;
+    const bEnd = b.end_time ? Date.parse(b.end_time) : bStart + 60 * 60000;
+    return aStart < bEnd && bStart < aEnd;
+  }
+
   // DB url -> a CSS url() token safe to inject into an inline style attribute:
   // safeUrl enforces http(s), then quote/paren/backslash/space are %-encoded so
   // the value can't break out of url('…') (CSS injection via image_url).
@@ -396,10 +459,11 @@
   // real event image -> lineup artist photo -> prism gradient. The photo is
   // layered OVER the gradient so the gradient shows while it loads/fails.
   function artFor(ev) {
-    var photo = (Drop && Drop.hasRealArt(ev)) ? ev.image_url : (Drop && Drop.artistArt(ev));
-    var url = photo && cssUrl(photo);
     var grad = gradFor(ev.id);
-    return url ? url + ', ' + grad : grad;
+    // CSS background layers are fetched in parallel, so keep this bounded:
+    // event art plus the first two billed artist fallbacks.
+    var urls = Drop ? Drop.eventArtCandidates(ev).slice(0, 3).map(cssUrl).filter(Boolean) : [];
+    return urls.concat([grad]).join(', ');
   }
 
   // Real Supabase event row -> the view-model shape the ported markup expects.
@@ -425,6 +489,10 @@
       lineupArtists: artists, // [{id,name,genres,image_url}] — real artist ids, used to wire follow writes
       city: ev.city || '',
       state: ev.state || '',
+      date: ev.date,
+      isFestival: !!ev.is_festival,
+      endDate: ev.end_date || null,
+      timezone: ev.timezone || null,
     };
   }
 
@@ -509,8 +577,9 @@ class Component extends DCLogic {
     // search filter dropdowns (design round 4) — distance/genre/city/venue selects
     sDistOpen: false, searchGenreOpen: false, searchGenreFilter: '',
     sCity: '', sVenue: '', sCityOpen: false, sVenueOpen: false, sCityFilter: '', sVenueFilter: '',
-    // festival
-    festTab: 'All', stars: { 'main-2':true },
+    // festival — always live rows; no seeded schedule or fake friend picks.
+    festTab: 'All', stars: {}, festivalEvent: null, festivalSetTimes: [],
+    festivalLoading: false, festivalError: null,
     // activation wizard
     wizStep: 0, wizGenres: {}, wizFriendSel: {}, wizArtistSel: {}, wizArtQuery: '',
     // settings
@@ -594,25 +663,6 @@ class Component extends DCLogic {
   // show an honest empty state instead of seed content.
   COMMENTS = [];
 
-  FEST_STAGES = [
-    { id:'main', name:'Main Stage', color:'var(--going)', sets:[
-      { id:'main-0', time:'6:00 – 7:00', artist:'Elderbrook', friends:0 },
-      { id:'main-1', time:'7:15 – 8:30', artist:'Lane 8', friends:2 },
-      { id:'main-2', time:'8:45 – 10:15', artist:'ODESZA', friends:3 },
-      { id:'main-3', time:'10:30 – 12:00', artist:'RÜFÜS DU SOL', friends:1 },
-    ]},
-    { id:'bass', name:'Bass Cathedral', color:'var(--interested)', sets:[
-      { id:'bass-0', time:'6:30 – 7:30', artist:'ISOxo', friends:0 },
-      { id:'bass-1', time:'8:00 – 9:15', artist:'Subtronics', friends:1 },
-      { id:'bass-2', time:'9:30 – 11:00', artist:'Skrillex', friends:2, clashWith:'ODESZA' },
-    ]},
-    { id:'house', name:'Warehouse', color:'var(--attended)', sets:[
-      { id:'house-0', time:'7:00 – 8:15', artist:'Peggy Gou', friends:0 },
-      { id:'house-1', time:'8:30 – 10:00', artist:'FISHER', friends:4 },
-      { id:'house-2', time:'10:15 – 11:45', artist:'Disclosure', friends:2 },
-    ]},
-  ];
-
   // ponytail: no friends/crew backend this phase — friend suggestions,
   // requests, plans and the wizard's friend-add step all stay empty (honest
   // empty states in the templates) instead of seeding fake people.
@@ -683,6 +733,7 @@ class Component extends DCLogic {
     // Authed users never land on the marketing hero — Discover is the
     // logged-in main (design contract; hero is a signed-out surface).
     if (s === 'home' && this.state.authed) s = 'discover';
+    if (s !== 'festival') this._festivalRequest = (this._festivalRequest || 0) + 1;
     const withSkel = (s==='discover'||s==='event'||s==='search'||s==='myshows');
     this.setState({ screen: s, cityOpen:false, menuOpen:false, navOpen:false, loading: withSkel });
     if(typeof window!=='undefined') window.scrollTo(0,0);
@@ -722,11 +773,20 @@ class Component extends DCLogic {
   // 1000-row cap, fetched once per session. City/date narrowing is client-
   // side so the city picker (all ~200 cities), venues browse and search
   // cover the whole DB instead of one 240-row page.
+  loadFestivalCatalog(){
+    if (this._festivalCatalogP) return this._festivalCatalogP;
+    this._festivalCatalogP = Drop.fetchFestivals({ limit: 1000 })
+      .catch(err => { this._festivalCatalogP = null; throw err; });
+    return this._festivalCatalogP;
+  }
   loadCatalog(){
     if (this._catalogP) return this._catalogP;
     const page = (offset, acc) => Drop.fetchEvents({ limit: 1000, offset })
       .then(rows => { acc.push(...(rows||[])); return (rows && rows.length === 1000) ? page(offset+1000, acc) : acc; });
-    this._catalogP = page(0, []).then(rows => {
+    this._catalogP = Promise.all([page(0, []), this.loadFestivalCatalog().catch(() => [])]).then(([rows, festivals]) => {
+      const byId = new Map(rows.map(row => [row.id, row]));
+      (festivals || []).forEach(row => byId.set(row.id, row));
+      rows = [...byId.values()].sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')) || String(a.id||'').localeCompare(String(b.id||'')));
       this.CATALOG = rows;
       this.CITIES = this.deriveCities(rows);
       return rows;
@@ -753,11 +813,83 @@ class Component extends DCLogic {
       const fromT = Date.parse(win.from), toT = Date.parse(win.to);
       const rows = this.CATALOG.filter(r => {
         if (cityName && (r.city||'').toLowerCase() !== cityName) return false;
-        const t = Date.parse(r.date);
-        return !isNaN(t) && t >= fromT && t <= toT;
+        return Drop.eventOverlapsWindow(r, fromT, toT);
       });
       this.setState({ realEvents: rows, eventsLoading:false });
     }).catch(err=>{ console.error('[app] events fetch failed:', err.message); this.setState({ eventsLoading:false, eventsError:'Could not load shows — try again.' }); });
+  }
+  openFestival(eventId){
+    const requestId = this._festivalRequest = (this._festivalRequest || 0) + 1;
+    this._festivalRequestedId = eventId || null;
+    this.setState({
+      screen:'festival', festivalEvent:null, festivalSetTimes:[], stars:{},
+      festivalLoading:true, festivalError:null, festTab:'All',
+    });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+    if (!supa || !Drop) {
+      this.setState({ festivalLoading:false, festivalError:'Festival schedules are unavailable right now.' });
+      return;
+    }
+    Promise.all([this.loadCatalog(), this.loadFestivalCatalog()]).then(([rows, festivals]) => {
+      if (requestId !== this._festivalRequest) return;
+      const byId = new Map(rows.map(row => [row.id, row]));
+      (festivals || []).forEach(row => byId.set(row.id, row));
+      rows = [...byId.values()];
+      const requestedRow = eventId ? rows.find(r => r.id === eventId && r.is_festival) : null;
+      if (eventId && !requestedRow) {
+        this.setState({ festivalEvent:null, festivalSetTimes:[], festivalLoading:false, festivalError:'This festival is not available or published.' });
+        return;
+      }
+      const festivalRow = requestedRow || rows.find(r => r.is_festival) || null;
+      if (!festivalRow) {
+        this.setState({ festivalEvent:null, festivalSetTimes:[], festivalLoading:false, festivalError:'No upcoming festival is published yet.' });
+        return;
+      }
+      const festival = mapRealEvent(festivalRow);
+      this._festivalRequestedId = festival.id;
+      this.setState({ festivalEvent:festival, festivalSetTimes:[], stars:{} });
+      const picksP = this.state.userId
+        ? supa.from('my_set_times').select('set_time_id').eq('user_id', this.state.userId)
+        : Promise.resolve({ data:[], error:null });
+      return Promise.all([
+        supa.from('event_set_times').select('*').eq('event_id', festival.id).order('start_time', { ascending:true }),
+        picksP,
+      ]).then(([setsResult, picksResult]) => {
+        if (requestId !== this._festivalRequest) return;
+        if (setsResult.error) throw setsResult.error;
+        if (picksResult.error) throw picksResult.error;
+        const setTimes = (setsResult.data || []).filter(r => r.status === 'published');
+        const validIds = new Set(setTimes.map(r => r.id));
+        const stars = {};
+        (picksResult.data || []).forEach(r => { if (validIds.has(r.set_time_id)) stars[r.set_time_id] = true; });
+        this.setState({ festivalEvent:festival, festivalSetTimes:setTimes, stars, festivalLoading:false, festivalError:null });
+      });
+    }).catch(err => {
+      if (requestId !== this._festivalRequest) return;
+      console.error('[app] festival schedule load failed:', err.message);
+      this.setState({ festivalLoading:false, festivalError:'Could not load this festival schedule — try again.' });
+    });
+  }
+  toggleFestivalSet(setTimeId){
+    if (!this.state.authed || !this.state.userId) { this.openGate('Log in to build your schedule'); return; }
+    this._festivalWrites = this._festivalWrites || new Set();
+    if (this._festivalWrites.has(setTimeId)) return;
+    this._festivalWrites.add(setTimeId);
+    const wasOn = !!this.state.stars[setTimeId];
+    this.setState(s => ({ stars:{ ...s.stars, [setTimeId]:!wasOn } }));
+    const write = wasOn
+      ? supa.from('my_set_times').delete().eq('user_id', this.state.userId).eq('set_time_id', setTimeId)
+      : supa.from('my_set_times').upsert(
+        { user_id:this.state.userId, set_time_id:setTimeId },
+        { onConflict:'user_id,set_time_id', ignoreDuplicates:true }
+      );
+    write.then(({ error }) => {
+      this._festivalWrites.delete(setTimeId);
+      if (!error) return;
+      console.error('[app] festival schedule write failed:', error.message);
+      this.setState(s => ({ stars:{ ...s.stars, [setTimeId]:wasOn } }));
+      this.flash('Could not update your schedule — try again');
+    });
   }
   loadProfile(uid){
     if (!supa) return;
@@ -889,6 +1021,9 @@ class Component extends DCLogic {
       if (scr === 'home' || scr === 'login' || scr === 'signup') this.go('discover');
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
+      if (this.state.screen === 'festival' && this.state.festivalEvent) {
+        this.openFestival(this.state.festivalEvent.id);
+      }
       this.maybeResumeClaimDeepLink();
     });
   }
@@ -1007,7 +1142,7 @@ class Component extends DCLogic {
         const e = seen.get(a.name);
         if (e) { e.shows++; return; }
         const genre = (a.genres && a.genres.length && Drop) ? Drop.genreOf({ event_artists:[{ artists:{ genres:a.genres } }] }) : '';
-        seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.safeUrl(a.image_url)) || '', upcoming:true, shows:1 });
+        seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.isRealArtUrl(a.image_url) && Drop.safeUrl(a.image_url)) || '', upcoming:true, shows:1 });
       }));
       return [...seen.values()].sort((a,b)=> b.shows-a.shows || a.name.localeCompare(b.name));
     })();
@@ -1219,35 +1354,85 @@ class Component extends DCLogic {
     ].filter(grp=>grp.items.length>0);
     const typeaheadOpen = !searchEmpty && typeaheadGroups.length>0;
 
-    // ===== Festival =====
-    const festTabs = ['All','My schedule','Friends'].map(t=>({ label:t, cls: s.festTab===t?'is-active':'', pick:()=>this.setState({festTab:t}) }));
-    const starredSets = Object.keys(s.stars).filter(k=>s.stars[k]);
-    // clash detection: any two starred sets that overlap (hardcoded conflict pair)
-    const clashPairs = [['main-2','bass-2']];
-    const clashIds = new Set();
-    clashPairs.forEach(([a,b])=>{ if(s.stars[a]&&s.stars[b]){ clashIds.add(a); clashIds.add(b); } });
-    const festClashBanner = clashIds.size>0 ? 'ODESZA and Skrillex overlap in your schedule (8:45 vs 9:30).' : null;
-    const stages = this.FEST_STAGES.map(st=>({
-      name: st.name,
-      accent: 'background:'+st.color+';',
-      sets: st.sets
-        .filter(se=> s.festTab==='All' ? true : s.festTab==='My schedule' ? s.stars[se.id] : se.friends>0)
-        .map(se=>{
-          const on = !!s.stars[se.id];
-          const clash = clashIds.has(se.id);
-          return {
-            time: se.time, artist: se.artist,
-            border: clash ? 'var(--danger)' : (on ? 'var(--gold)' : 'var(--border)'),
-            clash, clashMsg: clash ? 'Clashes with '+(se.clashWith||'ODESZA') : '',
-            hasFriends: se.friends>0, friendsLabel: fl(se.friends)+' going',
-            starGlyph: on?'★':'☆',
-            starBg: on?'rgba(255,203,61,0.15)':'var(--glass)',
-            starBorder: on?'var(--gold)':'var(--glass-border)',
-            starColor: on?'var(--gold)':'var(--text-muted)',
-            star: ()=>{ if(!this.state.authed){ this.openGate('Log in to build your schedule'); return; } this.setState(x=>({ stars:{...x.stars, [se.id]: !x.stars[se.id]} })); },
-          };
-        }),
-    })).filter(st=>st.sets.length>0);
+    // ===== Festival — real event_set_times rows only =====
+    const festival = s.festivalEvent;
+    const festSetTimes = s.festivalSetTimes || [];
+    const festivalTimeZone = (festival && festival.timezone) || (festSetTimes.find(se=>se.timezone) || {}).timezone || '';
+    const festTabs = ['All','My schedule'].map(t=>({
+      label:t,
+      cls:s.festTab===t?'is-active':'',
+      selected:s.festTab===t?'true':'false',
+      pick:()=>{
+        if (t === 'My schedule' && !this.state.authed) { this.openGate('Log in to build your schedule'); return; }
+        this.setState({festTab:t});
+      },
+    }));
+    const starredSets = festSetTimes.filter(se=>s.stars[se.id]);
+    const clashNames = new Map();
+    const clashPairs = [];
+    for (let i=0; i<starredSets.length; i++) {
+      for (let j=i+1; j<starredSets.length; j++) {
+        if (!setsOverlap(starredSets[i], starredSets[j])) continue;
+        const a=starredSets[i], b=starredSets[j];
+        clashPairs.push([a,b]);
+        clashNames.set(a.id, [...(clashNames.get(a.id)||[]), b.artist_name]);
+        clashNames.set(b.id, [...(clashNames.get(b.id)||[]), a.artist_name]);
+      }
+    }
+    const festClashBanner = clashPairs.length
+      ? clashPairs[0][0].artist_name+' and '+clashPairs[0][1].artist_name+' overlap in your schedule'+(clashPairs.length>1?' (+'+(clashPairs.length-1)+' more clash'+(clashPairs.length>2?'es':'')+')':'')+'.'
+      : null;
+    const stageColors = ['var(--going)','var(--interested)','var(--attended)','var(--gold)','var(--accent)'];
+    const groupedStages = new Map();
+    festSetTimes
+      .filter(se=>s.festTab==='All' || !!s.stars[se.id])
+      .forEach(se=>{
+        const stage = se.stage || 'Stage TBA';
+        const zone = se.timezone || festivalTimeZone || undefined;
+        const dayKey = zonedDayKey(se.start_time, zone);
+        const groupKey = dayKey + '|' + stage;
+        if (!groupedStages.has(groupKey)) groupedStages.set(groupKey, { stage, dayKey, dayLabel:zonedDayLabel(se.start_time, zone), sets:[] });
+        groupedStages.get(groupKey).sets.push(se);
+      });
+    const stages = [...groupedStages.values()]
+      .sort((a,b)=>a.dayKey.localeCompare(b.dayKey) || a.stage.localeCompare(b.stage))
+      .map((group, stageIndex)=>({
+      name:group.stage,
+      dayLabel:group.dayLabel,
+      accent:'background:'+stageColors[stageIndex%stageColors.length]+';',
+      sets:group.sets.map(se=>{
+        const on=!!s.stars[se.id];
+        const clashes=clashNames.get(se.id)||[];
+        const zone=se.timezone||festivalTimeZone||undefined;
+        return {
+          time:zonedTime(se.start_time, zone)+(se.end_time?' – '+zonedTime(se.end_time, zone):''),
+          artist:se.artist_name,
+          border:clashes.length?'var(--danger)':(on?'var(--gold)':'var(--border)'),
+          clash:clashes.length>0,
+          clashMsg:clashes.length?'Clashes with '+clashes.join(', '):'',
+          hasFriends:false,
+          friendsLabel:'',
+          starGlyph:on?'★':'☆',
+          starLabel:(on?'Remove ':'Add ')+se.artist_name+(on?' from':' to')+' my schedule',
+          starPressed:on?'true':'false',
+          starBg:on?'rgba(255,203,61,0.15)':'var(--glass)',
+          starBorder:on?'var(--gold)':'var(--glass-border)',
+          starColor:on?'var(--gold)':'var(--text-muted)',
+          star:()=>this.toggleFestivalSet(se.id),
+        };
+      }),
+    }));
+    const festivalLocation = festival ? [festival.city, festival.state].filter(Boolean).join(', ') : '';
+    const festivalStageCount = new Set(festSetTimes.map(se=>se.stage||'Stage TBA')).size;
+    const festivalKicker = festival
+      ? [festivalDateLabel(festival.date, festival.endDate, festivalTimeZone||undefined), festivalLocation].filter(Boolean).join(' · ')
+      : '';
+    const festivalVenueMeta = festival
+      ? [festival.venue, festivalStageCount+(festivalStageCount===1?' stage':' stages'), festSetTimes.length+(festSetTimes.length===1?' set':' sets')].filter(Boolean).join(' · ')
+      : '';
+    const festivalHasSchedule = !s.festivalLoading && !s.festivalError && festSetTimes.length>0;
+    const festivalEmpty = !s.festivalLoading && !s.festivalError && !!festival && festSetTimes.length===0;
+    const festivalTabEmpty = festivalHasSchedule && stages.length===0;
 
     // ===== Activation wizard =====
     const wizSteps = [
@@ -1339,7 +1524,7 @@ class Component extends DCLogic {
     const artOwned = !!(artRow && s.userId && artRow.claimed_by === s.userId);
     const artMerchUrl = (artRow && Drop && Drop.safeUrl(artRow.merch_url)) || '';
     const artWebsiteUrl = (artRow && Drop && Drop.safeUrl(artRow.website_url)) || '';
-    const artImageUrl = (artRow && Drop && Drop.safeUrl(artRow.image_url)) || '';
+    const artImageUrl = (artRow && Drop && Drop.isRealArtUrl(artRow.image_url) && Drop.safeUrl(artRow.image_url)) || '';
     const artGrad = this.ARTIST_GRADS[(artName.length) % this.ARTIST_GRADS.length];
     const artShows = events.filter(e=>e.lineup.some(n=>n===artName));
     const artFollowing = !!s.following[artName];
@@ -1859,6 +2044,16 @@ class Component extends DCLogic {
 
       // festival
       festTabs, stages, festClashBanner,
+      festivalLoading:s.festivalLoading,
+      festivalError:s.festivalError,
+      festivalHasEvent:!!festival,
+      festivalHasSchedule,
+      festivalEmpty,
+      festivalTabEmpty,
+      festivalTitle:festival ? festival.title : 'Festival schedule',
+      festivalKicker,
+      festivalVenueMeta,
+      festivalTimeZone,
 
       // wizard
       wizStepNum, wizTitle: wizCur.title, wizSubtitle: wizCur.sub, wizDots, wizNextLabel, wizHasBack: s.wizStep>0,
@@ -2331,7 +2526,8 @@ class Component extends DCLogic {
       clearGenre:(e)=>{ this.prevent(e); this.setState({genre:null}); },
 
       // festival
-      goFestival:(e)=>{ this.prevent(e); this.go('festival'); },
+      goFestival:(e)=>{ this.prevent(e); this.openFestival(ae.id); },
+      retryFestival:()=>this.openFestival(this._festivalRequestedId),
 
       // wizard
       wizNext:()=>{ if(this.state.wizStep>=4){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
@@ -2431,11 +2627,18 @@ class Component extends DCLogic {
       // Public-site "suggest an event" deep link → the suggest screen once the
       // session settles (afterLogin below; writes there are auth-gated anyway).
       if (new URLSearchParams(location.search).get('suggest') === '1') instance.setState({ screen: 'suggest' });
+      // Public event pages link festival schedules directly. `festival=1`
+      // selects the next published festival; a UUID opens that exact edition.
+      const festivalId = new URLSearchParams(location.search).get('festival');
+      if (festivalId) instance.openFestival(festivalId === '1' ? null : festivalId);
     }
     if (supa) {
       instance.afterLogin(); // checks for an existing/just-confirmed session
       supa.auth.onAuthStateChange((event) => {
-        if (event === 'SIGNED_OUT') instance.setState({ authed:false, userId:null, profile:null });
+        if (event === 'SIGNED_OUT') {
+          if (instance._festivalWrites) instance._festivalWrites.clear();
+          instance.setState({ authed:false, userId:null, profile:null, stars:{}, festTab:'All' });
+        }
       });
     }
   }

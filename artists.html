@@ -227,7 +227,7 @@
           art.appendChild(D.el('span', 'art-mark', (a.name || '•').charAt(0).toUpperCase()));
           return art;
         }
-        if (a.image_url) {
+        if (D.isRealArtUrl(a.image_url)) {
           var img = D.el('img', 'acard-img');
           img.src = a.image_url; img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
           img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(fallback(), img); };

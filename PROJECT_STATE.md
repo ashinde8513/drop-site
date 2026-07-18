@@ -16,7 +16,7 @@ Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJE
 **Status:** UNLOCKED
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: — · Started: — · Working on: fresh — no sessions yet
+- Owner: — · Started: — · Working on: fresh — no active session
 
 ## Current status
 ### What works
@@ -32,6 +32,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
+- **Content-quality release gate:** deploy the paired backend's nullable `events.timezone` migration and timezone-aware festival ingest first; then rerun the full website suite and a real-browser catalog path. Only after those are green should the website branch merge through normal review and live-smoke proper image fallback, the global future/ongoing festival rail, and a multi-day venue-timezone schedule. No production deploy is authorized by this isolated branch.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
 1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
@@ -40,6 +41,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-18 — Codex — proper event art and real multi-day festivals staged; not deployed
+- **Event art:** every public and SPA event surface now cycles only safe, non-generic candidates: proper event art first, then lineup artist images, then the intentional Prism fallback. Ticketmaster category stock is rejected only on exact Ticketmaster hosts; broken candidates advance instead of leaving an empty card.
+- **Festivals:** the signed-out homepage has a global festival rail independent of city; the SPA supplements its paged future catalog with bounded future + ongoing festivals so day 2/day 3 remain discoverable. Festival schedules load only published `event_set_times`, group repeated stages by venue-local day, show the event date range/timezone, persist real signed-in picks, and contain no demo rows.
+- **Verified:** generated `dist/` rebuilt with all 45 changed source/dist pairs byte-identical; JS syntax and diff checks are green; the 10 targeted desktop/mobile regressions pass; independent adversarial review found no remaining code blocker/high. The full live-backed suite is intentionally held at 91/96 because live Supabase does not yet have the newly selected `events.timezone` column, producing five HTTP 400 fallout failures and the catalog error state. Deploy the paired backend migration/ingest before this branch, then rerun the full suite and real-browser path; expected result is 96/96. No deploy or production write.
 
 ## 2026-07-18 — Claude (remote) — hero badge removed + "one website, two views" framing
 - Removed the "✦ The EDM show discovery app" chip from both signed-out heroes (`index.html`, `app/index.html`) per founder request; merged to `main` (7a41f93), live-verified gone on trydropapp.com + app.trydropapp.com.

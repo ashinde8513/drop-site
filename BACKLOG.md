@@ -4,6 +4,8 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Now
 
+- [ ] Deploy the paired backend `events.timezone` migration/ingest first, then rerun the website's full live-backed suite (currently 91/96 only because the live schema rejects that column), real-browser catalog path, and multi-day schedule smoke before release.
+- [x] Replace generic/empty event cards with the proper event → lineup artist → Prism chain and wire real festival discovery/set times — staged and independently reviewed 2026-07-18; targeted regressions 10/10, generated-dist parity clean, not deployed.
 - [x] Add link-hub-specific `og-image-link.png` for `/link` (link.html) — done 2026-07-02 (commit 006699c), verified 1200x630.
 
 ## Blocked / waiting
