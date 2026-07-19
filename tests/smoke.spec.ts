@@ -100,6 +100,39 @@ test.describe('landing site smoke', () => {
     expect(eventDetail).toContain('Interested</button>');
   });
 
+  test('logged-in Discover gives the share footer space to contained artwork', async ({ page }) => {
+    await page.goto('/app/index.html');
+    await page.setContent(`
+      <link rel="stylesheet" href="/app/app.css">
+      <div class="wsc wsc--share">
+        <a class="wsc__card" href="#">
+          <div class="wsc__img"></div>
+          <div class="wsc__text">
+            <div class="wsc__date">SAT · JUL 25</div>
+            <div class="wsc__title">Long event title wraps across two lines safely</div>
+            <div class="wsc__venue">Long Venue Name · Denver</div>
+          </div>
+        </a>
+        <div class="wsc__actions"><button class="wsc__share" aria-label="Share">↗</button></div>
+      </div>
+    `);
+
+    const shell = page.locator('.wsc');
+    const card = page.locator('.wsc__card');
+    const media = page.locator('.wsc__img');
+    const details = page.locator('.wsc__text');
+    const share = page.getByRole('button', { name: 'Share' });
+    await expect(shell).toHaveCSS('height', '360px');
+    await expect(card).toHaveCSS('height', '360px');
+    await expect(media).toHaveCSS('height', '220px');
+    expect((await media.evaluate((node) => getComputedStyle(node).backgroundSize)).split(',')[0]).toBe('contain');
+    await expect(details).toHaveCSS('height', '140px');
+    const [mediaBox, shareBox] = await Promise.all([media.boundingBox(), share.boundingBox()]);
+    expect(mediaBox && shareBox).toBeTruthy();
+    expect(shareBox!.y).toBeGreaterThanOrEqual(mediaBox!.y + mediaBox!.height);
+    expect(shareBox!.height).toBe(44);
+  });
+
   for (const { path, title } of PAGES) {
     test(`${path} loads with correct title and no console errors`, async ({ page }) => {
       const errors = trackPageErrors(page);
@@ -197,11 +230,12 @@ test.describe('landing site smoke', () => {
     await expect(cards).toHaveCount(2);
     for (const card of await cards.all()) {
       await expect(card).toHaveCSS('width', '300px');
-      await expect(card).toHaveCSS('height', '340px');
+      await expect(card).toHaveCSS('height', '360px');
       await expect(card.locator('.wsc__img')).toHaveCSS('object-fit', 'contain');
       const media = await card.locator('.wsc__media').boundingBox();
       const details = await card.locator('.wsc__text').boundingBox();
       expect(media && details).toBeTruthy();
+      expect(media!.height).toBe(220);
       expect(details!.y).toBeGreaterThanOrEqual(media!.y + media!.height);
       await expect(card.getByRole('button')).toHaveCount(0);
       await expect(card).not.toContainText('Interested');

@@ -346,8 +346,8 @@
       <sc-if value="{{ loading }}">
         <div class="wsh__grid" style="justify-content:center;">
           <sc-for list="{{ skelCards }}" as="k" hint-placeholder-count="8">
-            <div class="wsc">
-              <div class="skel" style="height:284px;border-radius:0;"></div>
+            <div class="wsc wsc--share">
+              <div class="skel" style="height:360px;border-radius:0;"></div>
               <div class="wsc__actions"><div class="skel" style="width:44px;height:44px;margin-left:auto;border-radius:var(--r-pill);"></div></div>
             </div>
           </sc-for>
@@ -356,7 +356,7 @@
       <sc-if value="{{ contentReady }}">
       <div class="wsh__grid" style="justify-content:center;">
         <sc-for list="{{ discoverEvents }}" as="ev" hint-placeholder-count="8">
-          <div class="wsc">
+          <div class="wsc wsc--share">
             <a class="wsc__card" href="#" onClick="{{ ev.open }}">
               <div class="wsc__img" style="{{ ev.gradStyle }}"></div>
               <div class="wsc__scrim"></div>

@@ -9,7 +9,7 @@ Last updated: 2026-07-19
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — artwork-first Event Card + Discover RSVP follow-up complete locally
+**Status:** UNLOCKED
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
@@ -41,8 +41,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## 2026-07-19 — Codex — Artwork-first Event Card redesign (completed locally)
 - Designed three fixed 300×340 Prism concepts in the live Claude Design mobile and website files; selected `Prism Gallery` because the existing event-derived gradient makes `contain` letterboxing intentional while using one image layer and preserving every portrait, square, or banner.
-- Public cards and every signed-in SPA `.wsc__card` template keep a fixed media stage and metadata region. The follow-up removes Going/Interested from Discover/public cards entirely while keeping them on Event Detail; signed-in Discover retains Share. Existing event-art fallback, lazy loading, navigation, social lookup, and data flow remain intact; stale duplicate card rules were removed from `shell.css`.
-- Evidence: `docs/qa/event-card/{before,after}.png` plus desktop browser capture `/private/tmp/drop-discover-cards-desktop.png`. Gate: JavaScript syntax checks, deterministic portrait/wide geometry regression 2/2, full Chromium + Mobile Safari Playwright 92/92, desktop and 390px real-page visual/geometry QA, Event Detail interaction proof, `git diff --check`, and adversarial diff review. No deploy, backend, analytics, or production state changed.
+- Public and signed-in Discover cards now use a uniform 300×360 shell with a 220px contained-artwork stage. The share-only footer is collapsed into a 44px metadata action, reclaiming space for the complete artwork; Going/Interested remain exclusive to Event Detail. Existing event-art fallback, lazy loading, navigation, social lookup, and data flow remain intact; stale duplicate card rules were removed from `shell.css`.
+- Evidence: `docs/qa/event-card/{before,after}.png` plus fresh desktop and 390px browser captures. Gate: JavaScript syntax checks, deterministic portrait/wide and signed-in geometry regressions 4/4, full Chromium + Mobile Safari Playwright 94/94, desktop and 390px real-page visual/geometry QA, Event Detail interaction proof, `git diff --check`, and adversarial diff review. No deploy, backend, analytics, or production state changed.
 
 ## 2026-07-17 — Codex — Canonical shared past-show flow (draft PR #16)
 - Changed: the logged-in ticket/manual form now sends show title, optional description, headliner, and the full remaining lineup to `record_past_show`. The backend reuses one shared event. A differing lineup returns without writing; the website shows matching-event context, then lets the fan combine lineups, explicitly keep separate shows, or return to the form. Canonical attendance feeds My Shows and Wrapped without double-counting linked private logs.

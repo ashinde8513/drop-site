@@ -388,10 +388,10 @@ button { font: inherit; cursor: pointer; }
      curated, not left-aligned/orphaned. Cards keep their own capped width. */
   display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
 }
-/* Artwork-first Prism card — every orientation fits inside the same 300x340 shell. */
+/* Artwork-first Prism card — every orientation fits inside the same 300x360 shell. */
 .wsc-card {
-  position: relative; display: grid; grid-template-rows: 164px minmax(0, 1fr);
-  width: 300px; max-width: 100%; height: 340px; flex: 0 0 auto;
+  position: relative; display: grid; grid-template-rows: 220px minmax(0, 1fr);
+  width: 300px; max-width: 100%; height: 360px; flex: 0 0 auto;
   border: 1px solid var(--border); border-radius: var(--r-lg);
   background: var(--surface); overflow: hidden;
   transition: transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease),
@@ -443,7 +443,7 @@ button { font: inherit; cursor: pointer; }
   color: var(--text-secondary); font-family: var(--font-body); font-size: 14px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wsc__skeleton { width: 300px; height: 340px; flex: 0 0 auto; border-radius: var(--r-lg); }
+.wsc__skeleton { width: 300px; height: 360px; flex: 0 0 auto; border-radius: var(--r-lg); }
 
 /* Social chip (PREVIEW-ONLY — static index marketing block) */
 .chip-social {

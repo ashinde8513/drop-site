@@ -48,7 +48,7 @@
   };
 
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event) -> <a> artwork-first 300x340 Prism card. Reused everywhere.
+  // Drop.ecard(event) -> <a> artwork-first 300x360 Prism card. Reused everywhere.
   Drop.ecard = function (event) {
     var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);

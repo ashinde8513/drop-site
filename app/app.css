@@ -334,9 +334,9 @@
 /* Artwork-first Prism card — fixed shell, adaptive contained artwork stage. */
 .wsc { width: 300px; }
 .wsc__card {
-  --wsc-media: 164px;
+  --wsc-media: 220px;
   position: relative; display: grid; grid-template-rows: var(--wsc-media) minmax(0, 1fr);
-  width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden;
+  width: 300px; height: 360px; border-radius: var(--r-lg); overflow: hidden;
   background: var(--surface); border: 1px solid var(--border); text-decoration: none;
   transition: transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
 }
@@ -368,16 +368,22 @@
   .wsc__card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-card); }
 }
 .wsc__card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Action cards keep the same 340px outer height as cards without actions. */
-.wsc:has(> .wsc__actions) { height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
-.wsc:has(> .wsc__actions) > .wsc__card { --wsc-media: 150px; height: 284px; border: 0; border-radius: 0; }
+/* Action cards keep the same 360px outer height as cards without actions. */
+.wsc:has(> .wsc__actions) { height: 360px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+.wsc:has(> .wsc__actions) > .wsc__card { --wsc-media: 164px; height: 304px; border: 0; border-radius: 0; }
 .wsc__actions { height: 56px; display: flex; align-items: center; gap: var(--sp-sm); margin: 0; padding: 6px var(--sp-md); border-top: 1px solid var(--border); }
 .wsc__act { min-height: 44px; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 var(--sp-sm); border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); cursor: pointer; }
 .wsc__act.is-going { background: var(--going-glass); border-color: var(--going-glass-border); color: var(--going); }
 .wsc__act.is-interested { background: var(--social-glass); border-color: var(--social-glass-border); color: var(--accent); }
 .wsc__share { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; }
 .wsc__actions > .wsc__share:only-child { margin-left: auto; }
-.wsc__skeleton { width: 300px; height: 340px; border-radius: var(--r-lg); background: var(--surface-alt); }
+/* Discover keeps Share in the metadata region; reclaimed footer height goes to artwork. */
+.wsc--share { position: relative; }
+.wsc--share > .wsc__card { --wsc-media: 220px !important; height: 360px !important; }
+.wsc--share > .wsc__actions { position: absolute; right: var(--sp-md); bottom: var(--sp-md); z-index: 2; height: 44px; padding: 0; border: 0; }
+.wsc--share .wsc__venue { padding-right: 52px; }
+.wsc--share .wsc__friends { max-width: calc(100% - 92px); }
+.wsc__skeleton { width: 300px; height: 360px; border-radius: var(--r-lg); background: var(--surface-alt); }
 
 /* ===== design file's own inline <style> block, verbatim ===== */
   :root {
