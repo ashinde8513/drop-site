@@ -4,6 +4,8 @@
 
 Event Cards keep one fixed outer size and separate media, metadata, and action regions. Artwork renders once with `contain` over the existing event-derived Prism gradient, so portrait posters, square art, and wide banners remain fully visible without cropping, distortion, or a duplicate blurred decode. This is a visual contract only: event loading, fallback selection, caching, sorting, filtering, navigation, RSVP, and analytics behavior stay unchanged.
 
+Discover and public browse cards do not expose Going or Interested. RSVP is available only after the user opens Event Detail; signed-in Discover may retain the independent Share action.
+
 ## 2026-07-17 — Past-show records use shared canonical events
 
 Manual and ticket-prefilled past shows write through the backend `record_past_show` RPC. The reusable event and lineup are shared; notes stay private. Date plus normalized title selects candidates, description disambiguates when available, and venue/city are confirmation context rather than identity. A differing lineup performs no write until the fan explicitly combines or keeps the shows separate. Unknown artist names remain moderated lineup suggestions. Existing catalog duplicates are not silently rewritten by this user flow; a future admin reconciliation must repoint all dependent records safely.

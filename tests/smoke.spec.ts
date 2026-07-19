@@ -91,6 +91,13 @@ test.describe('landing site smoke', () => {
     expect(appJs).toContain('p_lineup:lineupNames.map');
     expect(html).toContain('Show / event title');
     expect(html).toContain('Other artists on the lineup');
+    const discover = html.split('<!-- Main grid -->')[1].split('discShowPager')[0];
+    expect(discover).not.toContain('>✓ Going<');
+    expect(discover).not.toContain('Interested</button>');
+    expect(discover).toContain('aria-label="Share"');
+    const eventDetail = html.split('<!-- RIGHT: sticky buy box -->')[1].split('<!-- ============ SEARCH RESULTS')[0];
+    expect(eventDetail).toContain('>✓ Going<');
+    expect(eventDetail).toContain('Interested</button>');
   });
 
   for (const { path, title } of PAGES) {
@@ -181,8 +188,8 @@ test.describe('landing site smoke', () => {
         price_max: 42,
         event_artists: [],
       };
-      host.appendChild((window as any).Drop.ecard({ ...base, id: 'portrait', image_url: 'https://art.example/portrait.svg' }, { gate: true }));
-      host.appendChild((window as any).Drop.ecard({ ...base, id: 'wide', image_url: 'https://art.example/wide.svg' }, { gate: true }));
+      host.appendChild((window as any).Drop.ecard({ ...base, id: 'portrait', image_url: 'https://art.example/portrait.svg' }));
+      host.appendChild((window as any).Drop.ecard({ ...base, id: 'wide', image_url: 'https://art.example/wide.svg' }));
       document.body.replaceChildren(host);
     });
 
@@ -194,11 +201,10 @@ test.describe('landing site smoke', () => {
       await expect(card.locator('.wsc__img')).toHaveCSS('object-fit', 'contain');
       const media = await card.locator('.wsc__media').boundingBox();
       const details = await card.locator('.wsc__text').boundingBox();
-      const actions = await card.locator('.wsc__gate').boundingBox();
-      expect(media && details && actions).toBeTruthy();
+      expect(media && details).toBeTruthy();
       expect(details!.y).toBeGreaterThanOrEqual(media!.y + media!.height);
-      expect(actions!.y).toBeGreaterThanOrEqual(details!.y + details!.height - 1);
-      await expect(card.locator('.wsc__gate button').first()).toHaveCSS('min-height', '44px');
+      await expect(card.getByRole('button')).toHaveCount(0);
+      await expect(card).not.toContainText('Interested');
     }
   });
 

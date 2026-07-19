@@ -47,25 +47,9 @@
     return art;
   };
 
-  // Login-gated chip <button> — safe to nest inside the card's outer <a>
-  // (an <a> can't nest another <a>). Stops the click from bubbling into the
-  // card link, then sends the visitor to sign in.
-  Drop.gateChip = function (label) {
-    var b = el('button', 'chip gate', label);
-    b.type = 'button';
-    b.title = 'Log in to RSVP';
-    b.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      location.href = '/account.html';
-    });
-    return b;
-  };
-
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event, opts) -> <a> artwork-first 300x340 Prism card. Reused everywhere.
-  // opts.gate: true adds Going/Interested below the metadata, login-gated to /account.html.
-  Drop.ecard = function (event, opts) {
-    opts = opts || {};
+  // Drop.ecard(event) -> <a> artwork-first 300x340 Prism card. Reused everywhere.
+  Drop.ecard = function (event) {
     var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);
     a.dataset.eventId = event.id;
@@ -105,13 +89,6 @@
     going.hidden = true;
     text.appendChild(going);
     a.appendChild(text);
-    if (opts.gate) {
-      a.classList.add('has-actions');
-      var gateRow = el('div', 'wsc__gate');
-      gateRow.appendChild(Drop.gateChip('\u2713 Going'));
-      gateRow.appendChild(Drop.gateChip('\u2606 Interested'));
-      a.appendChild(gateRow);
-    }
     return a;
   };
 
@@ -218,7 +195,7 @@
     var lim = opts.limit || events.length;
     var ids = [];
     for (var i = 0; i < events.length && i < lim; i++) {
-      host.appendChild(Drop.ecard(events[i], opts));
+      host.appendChild(Drop.ecard(events[i]));
       ids.push(events[i].id);
     }
     // Going pill: fetched after cards land so a slow/failed count never blocks render.

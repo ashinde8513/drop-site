@@ -402,7 +402,6 @@ button { font: inherit; cursor: pointer; }
 }
 .wsc-card:active { transform: translateY(-1px); }
 .wsc-card:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 2px; }
-.wsc-card.has-actions { grid-template-rows: 164px minmax(0, 1fr) 56px; }
 .wsc__media {
   min-width: 0; min-height: 0; overflow: hidden;
   display: grid; place-items: center; background-color: var(--surface-alt);
@@ -444,11 +443,6 @@ button { font: inherit; cursor: pointer; }
   color: var(--text-secondary); font-family: var(--font-body); font-size: 14px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wsc__gate {
-  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
-  border-top: 1px solid var(--border); background: var(--surface);
-}
-.wsc__gate .chip { flex: 1; min-height: 44px; justify-content: center; padding: 0 10px; font-size: 12px; }
 .wsc__skeleton { width: 300px; height: 340px; flex: 0 0 auto; border-radius: var(--r-lg); }
 
 /* Social chip (PREVIEW-ONLY — static index marketing block) */

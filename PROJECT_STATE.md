@@ -9,10 +9,10 @@ Last updated: 2026-07-19
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — artwork-first Event Card redesign completed and locally verified on its isolated branch
+**Status:** UNLOCKED — artwork-first Event Card + Discover RSVP follow-up complete locally
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None. Codex completed the artwork-first Event Card redesign locally on `feat/event-card-artwork-first` on 2026-07-19.
+- None.
 
 ## Current status
 ### What works
@@ -28,7 +28,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 ### Exact next step
--2. **Land the verified artwork-first Event Card branch.** Review `docs/qa/event-card/{before,after}.png`, then commit and merge `feat/event-card-artwork-first` from worktree `drop-website-event-card`; after integration rerun `node --check site.js`, `node --check app/app.js`, and `npm test` before allowing the normal `main` auto-deploy.
+-2. **Land the verified artwork-first Event Card branch with the Discover RSVP follow-up.** Review `docs/qa/event-card/{before,after}.png`, then merge `feat/event-card-artwork-first` from worktree `drop-website-event-card`; after integration rerun `node --check site.js`, `node --check app/app.js`, and `npm test` before allowing the normal `main` auto-deploy.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
 0. **QA and land draft PR #16 (`feat/past-show-ticket-import`) only after the shared migration is reviewed/applied:** sign in locally; test new show, reuse, conflicting-lineup combine, conflicting-lineup separate, and cancel; then confirm My Shows + Wrapped. Merge only after founder QA; push to `main` auto-deploys after tests pass.
@@ -41,8 +41,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## 2026-07-19 — Codex — Artwork-first Event Card redesign (completed locally)
 - Designed three fixed 300×340 Prism concepts in the live Claude Design mobile and website files; selected `Prism Gallery` because the existing event-derived gradient makes `contain` letterboxing intentional while using one image layer and preserving every portrait, square, or banner.
-- Public cards and every signed-in SPA `.wsc__card` template now keep a fixed media stage, metadata, and 44px actions in separate regions. The existing event-art fallback, lazy loading, navigation, gate behavior, social lookup, and data flow remain intact; stale duplicate card rules were removed from `shell.css`.
-- Evidence: `docs/qa/event-card/{before,after}.png`. Gate: JavaScript syntax checks, deterministic portrait/wide geometry regression 2/2, full Chromium + Mobile Safari Playwright 92/92, real-page visual/geometry QA, `git diff --check`, and adversarial diff review. No deploy, backend, analytics, or production state changed.
+- Public cards and every signed-in SPA `.wsc__card` template keep a fixed media stage and metadata region. The follow-up removes Going/Interested from Discover/public cards entirely while keeping them on Event Detail; signed-in Discover retains Share. Existing event-art fallback, lazy loading, navigation, social lookup, and data flow remain intact; stale duplicate card rules were removed from `shell.css`.
+- Evidence: `docs/qa/event-card/{before,after}.png` plus responsive browser captures in `/private/tmp/drop-discover-cards-{desktop,mobile}.png`. Gate: JavaScript syntax checks, deterministic portrait/wide geometry regression 2/2, full Chromium + Mobile Safari Playwright 92/92, desktop and 390px real-page visual/geometry QA, Event Detail interaction proof, `git diff --check`, and adversarial diff review. No deploy, backend, analytics, or production state changed.
 
 ## 2026-07-17 — Codex — Canonical shared past-show flow (draft PR #16)
 - Changed: the logged-in ticket/manual form now sends show title, optional description, headliner, and the full remaining lineup to `record_past_show`. The backend reuses one shared event. A differing lineup returns without writing; the website shows matching-event context, then lets the fan combine lineups, explicitly keep separate shows, or return to the form. Canonical attendance feeds My Shows and Wrapped without double-counting linked private logs.

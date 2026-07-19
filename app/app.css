@@ -376,6 +376,7 @@
 .wsc__act.is-going { background: var(--going-glass); border-color: var(--going-glass-border); color: var(--going); }
 .wsc__act.is-interested { background: var(--social-glass); border-color: var(--social-glass-border); color: var(--accent); }
 .wsc__share { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; }
+.wsc__actions > .wsc__share:only-child { margin-left: auto; }
 .wsc__skeleton { width: 300px; height: 340px; border-radius: var(--r-lg); background: var(--surface-alt); }
 
 /* ===== design file's own inline <style> block, verbatim ===== */
