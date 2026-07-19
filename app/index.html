@@ -347,7 +347,6 @@
           <sc-for list="{{ skelCards }}" as="k" hint-placeholder-count="8">
             <div class="wsc">
               <div class="skel" style="aspect-ratio:3/4;border-radius:var(--r-lg);"></div>
-              <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-sm);"><div class="skel" style="flex:1;height:34px;border-radius:var(--r-pill);"></div><div class="skel" style="flex:1;height:34px;border-radius:var(--r-pill);"></div></div>
             </div>
           </sc-for>
         </div>
@@ -367,11 +366,6 @@
                 <div class="wsc__venue">{{ ev.venueCity }}</div>
               </div>
             </a>
-            <div class="wsc__actions">
-              <button type="button" class="{{ ev.goingCls }}" onClick="{{ ev.going }}">✓ Going</button>
-              <button type="button" class="{{ ev.interestedCls }}" onClick="{{ ev.interested }}">{{ ev.interestedGlyph }} Interested</button>
-              <button type="button" class="wsc__share" aria-label="Share" onClick="{{ ev.share }}">↗</button>
-            </div>
           </div>
         </sc-for>
       </div>
