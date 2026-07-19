@@ -79,6 +79,7 @@
     var text = el('div', 'wsc__text');
     var meta = el('div', 'wsc__meta');
     meta.appendChild(el('div', 'wsc__date', Drop.fmtDate(event.date, event.time_tbd)));
+    meta.appendChild(el('span', 'wsc__genre', Drop.genreOf(event)));
     if (price) meta.appendChild(el('span', 'wsc__price', price));
     text.appendChild(meta);
     text.appendChild(el('h3', 'wsc__title', event.title));

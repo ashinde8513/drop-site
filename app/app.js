@@ -1050,7 +1050,6 @@ class Component extends DCLogic {
         hasFriends: false,
         friendsLabel: '',
         open: (ev)=>{ this.prevent(ev); this.setState({screen:'event', activeId:e.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
-        share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
       };
     };
     const events = (s.realEvents||[]).map(mapRealEvent).map(decorate);
@@ -1449,7 +1448,6 @@ class Component extends DCLogic {
           statusStyle: x.row.status==='going' ? 'background:var(--going);color:var(--white);' : 'background:var(--interested);color:var(--ink);',
           open: (evn)=>{ this.prevent(evn); this.setState({screen:'event', activeId: ev.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
           ics: (evn)=>{ this.prevent(evn); this.flash('Added to calendar (.ics)'); },
-          share: (evn)=>{ this.prevent(evn); this.shareEvent(ev.id); },
         };
       });
     // ponytail: "Saved" has no backing table — local-only bookmark, so it
@@ -1457,7 +1455,6 @@ class Component extends DCLogic {
     const mySaved = events.filter(e=>s.saved[e.id]).map(e=>({
       ...e,
       unsave: (evn)=>{ this.prevent(evn); this.toggleSave(e.id); },
-      share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
     }));
     const myPast = myRows
       .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))

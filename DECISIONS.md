@@ -2,9 +2,9 @@
 
 ## 2026-07-19 — Event artwork uses a contained Prism Gallery stage
 
-Event Cards keep one fixed outer size and separate media and metadata regions. Public and signed-in Discover cards use a 300×360 shell with a 220px media stage; the independent 44px Share control sits inside metadata instead of consuming a footer. Artwork renders once with `contain` over the existing event-derived Prism gradient, so portrait posters, square art, and wide banners remain fully visible without cropping, distortion, or a duplicate blurred decode. This is a visual contract only: event loading, fallback selection, caching, sorting, filtering, navigation, RSVP, and analytics behavior stay unchanged.
+Event Cards keep one fixed outer size and separate media and metadata regions. Public and signed-in cards use a 300×360 shell with a 220px media stage; normalized genre and price stay in metadata, with no card-level actions. Artwork renders once with `contain` over the existing event-derived Prism gradient, so portrait posters, square art, and wide banners remain fully visible without cropping, distortion, or a duplicate blurred decode. This is a visual contract only: event loading, fallback selection, caching, sorting, filtering, navigation, RSVP, and analytics behavior stay unchanged.
 
-Discover and public browse cards do not expose Going or Interested. RSVP is available only after the user opens Event Detail; signed-in Discover may retain the independent Share action.
+Cards do not expose Going, Interested, or Share. All three actions are available only after the user opens Event Detail.
 
 ## 2026-07-17 — Past-show records use shared canonical events
 

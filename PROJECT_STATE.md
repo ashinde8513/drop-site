@@ -41,7 +41,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## 2026-07-19 — Codex — Artwork-first Event Card redesign (completed locally)
 - Designed three fixed 300×340 Prism concepts in the live Claude Design mobile and website files; selected `Prism Gallery` because the existing event-derived gradient makes `contain` letterboxing intentional while using one image layer and preserving every portrait, square, or banner.
-- Public and signed-in Discover cards now use a uniform 300×360 shell with a 220px contained-artwork stage. The share-only footer is collapsed into a 44px metadata action, reclaiming space for the complete artwork; Going/Interested remain exclusive to Event Detail. Existing event-art fallback, lazy loading, navigation, social lookup, and data flow remain intact; stale duplicate card rules were removed from `shell.css`.
+- Public and signed-in cards use a uniform 300×360 shell with a 220px contained-artwork stage. Price and normalized genre remain in metadata; card-level Share was removed everywhere, while Share/Going/Interested remain available after opening Event Detail. Existing event-art fallback, lazy loading, navigation, social lookup, and data flow remain intact.
 - Evidence: `docs/qa/event-card/{before,after}.png` plus fresh desktop and 390px browser captures. Gate: JavaScript syntax checks, deterministic portrait/wide and signed-in geometry regressions 4/4, full Chromium + Mobile Safari Playwright 94/94, desktop and 390px real-page visual/geometry QA, Event Detail interaction proof, `git diff --check`, and adversarial diff review. No deploy, backend, analytics, or production state changed.
 
 ## 2026-07-17 — Codex — Canonical shared past-show flow (draft PR #16)

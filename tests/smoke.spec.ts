@@ -94,26 +94,28 @@ test.describe('landing site smoke', () => {
     const discover = html.split('<!-- Main grid -->')[1].split('discShowPager')[0];
     expect(discover).not.toContain('>✓ Going<');
     expect(discover).not.toContain('Interested</button>');
-    expect(discover).toContain('aria-label="Share"');
+    expect(discover).not.toContain('wsc__share');
     const eventDetail = html.split('<!-- RIGHT: sticky buy box -->')[1].split('<!-- ============ SEARCH RESULTS')[0];
     expect(eventDetail).toContain('>✓ Going<');
     expect(eventDetail).toContain('Interested</button>');
+    expect(html).toContain('aria-label="Share event"');
   });
 
-  test('logged-in Discover gives the share footer space to contained artwork', async ({ page }) => {
+  test('logged-in Discover keeps genre and price below contained artwork without Share', async ({ page }) => {
     await page.goto('/app/index.html');
     await page.setContent(`
       <link rel="stylesheet" href="/app/app.css">
-      <div class="wsc wsc--share">
+      <div class="wsc">
         <a class="wsc__card" href="#">
           <div class="wsc__img"></div>
+          <span class="wsc__price">$25</span>
+          <span data-genre>House</span>
           <div class="wsc__text">
             <div class="wsc__date">SAT · JUL 25</div>
             <div class="wsc__title">Long event title wraps across two lines safely</div>
             <div class="wsc__venue">Long Venue Name · Denver</div>
           </div>
         </a>
-        <div class="wsc__actions"><button class="wsc__share" aria-label="Share">↗</button></div>
       </div>
     `);
 
@@ -121,16 +123,18 @@ test.describe('landing site smoke', () => {
     const card = page.locator('.wsc__card');
     const media = page.locator('.wsc__img');
     const details = page.locator('.wsc__text');
-    const share = page.getByRole('button', { name: 'Share' });
+    const genre = page.locator('[data-genre]');
+    const price = page.locator('.wsc__price');
     await expect(shell).toHaveCSS('height', '360px');
     await expect(card).toHaveCSS('height', '360px');
     await expect(media).toHaveCSS('height', '220px');
     expect((await media.evaluate((node) => getComputedStyle(node).backgroundSize)).split(',')[0]).toBe('contain');
     await expect(details).toHaveCSS('height', '140px');
-    const [mediaBox, shareBox] = await Promise.all([media.boundingBox(), share.boundingBox()]);
-    expect(mediaBox && shareBox).toBeTruthy();
-    expect(shareBox!.y).toBeGreaterThanOrEqual(mediaBox!.y + mediaBox!.height);
-    expect(shareBox!.height).toBe(44);
+    const [mediaBox, genreBox, priceBox] = await Promise.all([media.boundingBox(), genre.boundingBox(), price.boundingBox()]);
+    expect(mediaBox && genreBox && priceBox).toBeTruthy();
+    expect(genreBox!.y).toBeGreaterThanOrEqual(mediaBox!.y + mediaBox!.height);
+    expect(priceBox!.y).toBeGreaterThanOrEqual(mediaBox!.y + mediaBox!.height);
+    await expect(page.getByRole('button', { name: 'Share' })).toHaveCount(0);
   });
 
   for (const { path, title } of PAGES) {
@@ -219,7 +223,7 @@ test.describe('landing site smoke', () => {
         city: 'Denver',
         price_min: 42,
         price_max: 42,
-        event_artists: [],
+        event_artists: [{ artists: { genres: ['tech house'] } }],
       };
       host.appendChild((window as any).Drop.ecard({ ...base, id: 'portrait', image_url: 'https://art.example/portrait.svg' }));
       host.appendChild((window as any).Drop.ecard({ ...base, id: 'wide', image_url: 'https://art.example/wide.svg' }));
@@ -232,6 +236,8 @@ test.describe('landing site smoke', () => {
       await expect(card).toHaveCSS('width', '300px');
       await expect(card).toHaveCSS('height', '360px');
       await expect(card.locator('.wsc__img')).toHaveCSS('object-fit', 'contain');
+      await expect(card.locator('.wsc__genre')).toHaveText('House');
+      await expect(card.locator('.wsc__price')).toHaveText('From $42');
       const media = await card.locator('.wsc__media').boundingBox();
       const details = await card.locator('.wsc__text').boundingBox();
       expect(media && details).toBeTruthy();
