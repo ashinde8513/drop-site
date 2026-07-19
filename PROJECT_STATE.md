@@ -280,6 +280,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-07-18 — Codex — Google favicon correction
+- **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
+- **Changed:** added 96×96 Prism spectrum `favicon.png`, a matching root `favicon.ico` fallback, made the PNG the homepage's primary declared favicon, and added both files to the deploy whitelist.
+- **Verified:** final deploy build contains byte-identical PNG/ICO assets; local rendered homepage declares `/favicon.png` at 96×96 with the SVG fallback and zero console warnings/errors; direct favicon request returns the 96×96 image; Playwright desktop + Mobile Safari suite passes 100/100; `git diff --check` clean.
+- **Remaining:** push to `main` for automatic deploy, live-check both favicon URLs and homepage metadata, then request homepage indexing in Google Search Console. Google documents favicon refreshes as taking several days to several weeks.
+
 ### 2026-07-12 — Claude (Fable) — account.html retired + round-4 port; logged-in web = Prism SPA (LIVE: Pages d8fb2117→1e5712a6, worker c650cc64)
 - **Changed:** `workers/app-path/worker.js` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed — they 404'd as text/html on app.trydropapp.com, killing auth/data there); all 18 landing pages' Log in / Get started → `https://app.trydropapp.com/?mode=login|signup` (`?ref=` → signup, `?next=` inert); `app/app.js` boot handles `?mode=login|signup` + authed session on home/login/signup hops to Discover; `_redirects` `/login|/login.html|/account.html` → app shell (root copy reconciled with dist — stale `/app*→/account.html` rule dropped); `account.html/.css/.js` DELETED; `tests/smoke.spec.ts` rewritten for new hrefs; dist/ mirrored.
 - **Tested:** `npm test` 66/66 (desktop + mobile-safari); local python http.server + Playwright: `/app/?mode=login` renders split-panel login, `?mode=signup` renders signup, zero console errors. **Unverified:** authed→Discover boot (needs prod deploy — localhost has no session); Supabase OAuth redirect allowlist for app.trydropapp.com.
