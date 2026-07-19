@@ -62,9 +62,8 @@
   };
 
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event, opts) -> <a> shell show card (canonical web look: uniform
-  // 300x340 image-forward unit mirroring the app's WebShowCard). Reused everywhere.
-  // opts.gate: true adds an inline Going/Interested row, login-gated to /account.html.
+  // Drop.ecard(event, opts) -> <a> artwork-first 300x340 Prism card. Reused everywhere.
+  // opts.gate: true adds Going/Interested below the metadata, login-gated to /account.html.
   Drop.ecard = function (event, opts) {
     opts = opts || {};
     var a = el('a', 'wsc-card');
@@ -72,7 +71,9 @@
     a.dataset.eventId = event.id;
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
-    // Art chain: real event image → lineup-artist photo → prism block.
+    // A genre-derived Prism stage makes letterboxing intentional while one
+    // contained image preserves the complete poster/banner without extra decodes.
+    var media = el('div', 'wsc__media ' + Drop.genreClass(event));
     var artSrc = Drop.hasRealArt(event) ? event.image_url : Drop.artistArt(event);
     if (artSrc) {
       var img = el('img', 'wsc__img');
@@ -84,30 +85,33 @@
         // Swap the broken image for the CSS prism-art block.
         if (img.parentNode) { img.parentNode.replaceChild(Drop.prismArt(event), img); }
       };
-      a.appendChild(img);
+      media.appendChild(img);
     } else {
-      a.appendChild(Drop.prismArt(event));
+      media.appendChild(Drop.prismArt(event));
     }
-    a.appendChild(el('div', 'wsc__scrim'));
+    a.appendChild(media);
 
-    a.appendChild(el('span', 'genre-pill', Drop.genreOf(event)));
     var price = Drop.fmtPrice(event.price_min, event.price_max);
-    if (price) a.appendChild(el('span', 'wsc__price', price));
-
     var text = el('div', 'wsc__text');
-    text.appendChild(el('div', 'wsc__date', Drop.fmtDate(event.date, event.time_tbd)));
+    var meta = el('div', 'wsc__meta');
+    meta.appendChild(el('div', 'wsc__date', Drop.fmtDate(event.date, event.time_tbd)));
+    if (price) meta.appendChild(el('span', 'wsc__price', price));
+    text.appendChild(meta);
     text.appendChild(el('h3', 'wsc__title', event.title));
     var venue = el('p', 'wsc__venue');
     venue.textContent = [event.venue_name, event.city].filter(Boolean).join(' \u00b7 ');
     text.appendChild(venue);
+    var going = el('span', 'wsc__going');
+    going.hidden = true;
+    text.appendChild(going);
+    a.appendChild(text);
     if (opts.gate) {
+      a.classList.add('has-actions');
       var gateRow = el('div', 'wsc__gate');
-      gateRow.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
       gateRow.appendChild(Drop.gateChip('\u2713 Going'));
       gateRow.appendChild(Drop.gateChip('\u2606 Interested'));
-      text.appendChild(gateRow);
+      a.appendChild(gateRow);
     }
-    a.appendChild(text);
     return a;
   };
 
@@ -222,7 +226,8 @@
       for (var id in counts) {
         if (counts[id] < 2) continue; // ponytail: hide low counts — an empty room isn't social proof
         var card = host.querySelector('[data-event-id="' + id + '"]');
-        if (card) card.appendChild(el('span', 'wsc__going', counts[id] + ' going'));
+        var going = card && card.querySelector('.wsc__going');
+        if (going) { going.textContent = counts[id] + ' going'; going.hidden = false; }
       }
     });
   };

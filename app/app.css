@@ -331,23 +331,51 @@
 .genre-arrow { flex: 0 0 auto; width: 40px; height: 40px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; transition: opacity 0.15s var(--ease); }
 .genre-arrow:disabled { opacity: 0.35; cursor: default; }
 
-/* Web show card — uniform 300×340 image-forward unit (identical signed-out/in) */
+/* Artwork-first Prism card — fixed shell, adaptive contained artwork stage. */
 .wsc { width: 300px; }
-.wsc__card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--border); text-decoration: none; }
-.wsc__img { position: absolute; inset: 0; background: var(--surface-alt) center/cover no-repeat; }
-.wsc__scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; background: var(--scrim); pointer-events: none; }
-.wsc__price { position: absolute; top: var(--sp-md); right: var(--sp-md); background: var(--glass-dark); border: 1px solid var(--glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--text); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.wsc__friends { position: absolute; top: var(--sp-md); left: var(--sp-md); display: flex; align-items: center; gap: 4px; background: var(--social-glass); border: 1px solid var(--social-glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--accent); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.wsc__text { position: relative; padding: var(--sp-lg); display: flex; flex-direction: column; gap: 4px; }
+.wsc__card {
+  --wsc-media: 164px;
+  position: relative; display: grid; grid-template-rows: var(--wsc-media) minmax(0, 1fr);
+  width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); text-decoration: none;
+  transition: transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+.wsc__img {
+  position: static; width: 100%; height: var(--wsc-media); min-width: 0;
+  background-color: var(--surface-alt); background-position: center; background-size: contain, cover; background-repeat: no-repeat;
+}
+.wsc__card > .wsc__scrim { display: none; }
+/* Legacy genre badges are removed from card artwork; genre remains available in filters/detail. */
+.wsc__card > span:not([class]), .wsc__card > sc-if > span:not([class]) { display: none !important; }
+.wsc__price {
+  position: absolute !important; top: calc(var(--wsc-media) + 12px) !important; right: var(--sp-lg) !important;
+  max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: transparent !important; border: 0 !important; padding: 0 !important;
+  color: var(--text) !important; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+}
+.wsc__friends {
+  position: absolute !important; top: auto !important; bottom: 12px; left: var(--sp-lg);
+  display: flex; align-items: center; gap: 4px; max-width: calc(100% - 32px);
+  background: transparent; border: 0; padding: 0;
+  color: var(--accent); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+}
+.wsc__text { min-height: 0; padding: 12px var(--sp-lg); display: flex; flex-direction: column; gap: 4px; }
 .wsc__date { color: var(--accent); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); letter-spacing: var(--tr-wide); text-transform: uppercase; }
-.wsc__title { color: var(--text); font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); letter-spacing: var(--tr-tight); line-height: 24px; }
-.wsc__venue { color: var(--text-secondary); font-family: var(--font-body); font-size: var(--fs-sm); }
-/* Signed-in action row (below the image; absent → identical to the signed-out card) */
-.wsc__actions { display: flex; align-items: center; gap: var(--sp-sm); margin-top: var(--sp-sm); }
-.wsc__act { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: var(--sp-sm) 0; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); cursor: pointer; }
+.wsc__date { padding-right: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wsc__title { color: var(--text); font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); letter-spacing: var(--tr-tight); line-height: 24px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wsc__venue { color: var(--text-secondary); font-family: var(--font-body); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) {
+  .wsc__card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-card); }
+}
+.wsc__card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Action cards keep the same 340px outer height as cards without actions. */
+.wsc:has(> .wsc__actions) { height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }
+.wsc:has(> .wsc__actions) > .wsc__card { --wsc-media: 150px; height: 284px; border: 0; border-radius: 0; }
+.wsc__actions { height: 56px; display: flex; align-items: center; gap: var(--sp-sm); margin: 0; padding: 6px var(--sp-md); border-top: 1px solid var(--border); }
+.wsc__act { min-height: 44px; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 var(--sp-sm); border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-secondary); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); cursor: pointer; }
 .wsc__act.is-going { background: var(--going-glass); border-color: var(--going-glass-border); color: var(--going); }
 .wsc__act.is-interested { background: var(--social-glass); border-color: var(--social-glass-border); color: var(--accent); }
-.wsc__share { width: 40px; aspect-ratio: 1; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; }
+.wsc__share { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; }
 .wsc__skeleton { width: 300px; height: 340px; border-radius: var(--r-lg); background: var(--surface-alt); }
 
 /* ===== design file's own inline <style> block, verbatim ===== */

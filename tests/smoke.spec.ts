@@ -156,6 +156,52 @@ test.describe('landing site smoke', () => {
     await expect(page.locator('#home-grid')).toHaveCSS('justify-content', 'center');
   });
 
+  test('event cards preserve complete portrait and banner artwork in equal fixed shells', async ({ page }) => {
+    await page.route('https://art.example/**', async (route) => {
+      const wide = route.request().url().includes('wide');
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: `<svg xmlns="http://www.w3.org/2000/svg" width="${wide ? 1600 : 400}" height="${wide ? 400 : 1600}"><rect width="100%" height="100%" fill="#4de2ff"/></svg>`,
+      });
+    });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      const host = document.createElement('div');
+      host.id = 'event-card-qa';
+      host.style.display = 'flex';
+      host.style.gap = '16px';
+      const base = {
+        title: 'A deliberately long international event title that needs two lines',
+        date: '2026-10-24T19:30:00',
+        time_tbd: false,
+        venue_name: 'A Very Long Venue Name',
+        city: 'Denver',
+        price_min: 42,
+        price_max: 42,
+        event_artists: [],
+      };
+      host.appendChild((window as any).Drop.ecard({ ...base, id: 'portrait', image_url: 'https://art.example/portrait.svg' }, { gate: true }));
+      host.appendChild((window as any).Drop.ecard({ ...base, id: 'wide', image_url: 'https://art.example/wide.svg' }, { gate: true }));
+      document.body.replaceChildren(host);
+    });
+
+    const cards = page.locator('#event-card-qa .wsc-card');
+    await expect(cards).toHaveCount(2);
+    for (const card of await cards.all()) {
+      await expect(card).toHaveCSS('width', '300px');
+      await expect(card).toHaveCSS('height', '340px');
+      await expect(card.locator('.wsc__img')).toHaveCSS('object-fit', 'contain');
+      const media = await card.locator('.wsc__media').boundingBox();
+      const details = await card.locator('.wsc__text').boundingBox();
+      const actions = await card.locator('.wsc__gate').boundingBox();
+      expect(media && details && actions).toBeTruthy();
+      expect(details!.y).toBeGreaterThanOrEqual(media!.y + media!.height);
+      expect(actions!.y).toBeGreaterThanOrEqual(details!.y + details!.height - 1);
+      await expect(card.locator('.wsc__gate button').first()).toHaveCSS('min-height', '44px');
+    }
+  });
+
   test('artist page renders verified badge, merch/website pills, and a claim-profile link', async ({ page }) => {
     // Live data has no verified/merch/website rows populated yet — mock the
     // Supabase response so this exercises the new artist.html render branches

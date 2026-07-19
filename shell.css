@@ -53,23 +53,7 @@
 .wsh__controls { display: flex; align-items: center; gap: var(--sp-md); flex-wrap: wrap; }
 .wsh__grid { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--sp-lg); }
 
-/* ========================================================================
-   Web show card (.wsc) — uniform 300x340 image-forward unit. Signed-out
-   fields only; .wsc__actions/.wsc__act/.wsc__share (signed-in RSVP row)
-   are intentionally excluded — out of scope per INGEST_PLAN and their
-   --going-glass/--going-glass-border tokens are undefined (see report).
-   ======================================================================== */
-.wsc { width: 300px; }
-.wsc__card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; width: 300px; height: 340px; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--border); text-decoration: none; }
-.wsc__img { position: absolute; inset: 0; background: var(--surface-alt) center/cover no-repeat; }
-.wsc__scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; background: var(--scrim); pointer-events: none; }
-.wsc__price { position: absolute; top: var(--sp-md); right: var(--sp-md); background: var(--glass-dark); border: 1px solid var(--glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--text); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.wsc__friends { position: absolute; top: var(--sp-md); left: var(--sp-md); display: flex; align-items: center; gap: 4px; background: var(--social-glass); border: 1px solid var(--social-glass-border); padding: 5px var(--sp-md); border-radius: var(--r-pill); color: var(--accent); font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-.wsc__text { position: relative; padding: var(--sp-lg); display: flex; flex-direction: column; gap: 4px; }
-.wsc__date { color: var(--accent); font-family: var(--font-body); font-weight: var(--fw-bold); font-size: var(--fs-xs); letter-spacing: var(--tr-wide); text-transform: uppercase; }
-.wsc__title { color: var(--text); font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); letter-spacing: var(--tr-tight); line-height: 24px; }
-.wsc__venue { color: var(--text-secondary); font-family: var(--font-body); font-size: var(--fs-sm); }
-.wsc__skeleton { width: 300px; height: 340px; border-radius: var(--r-lg); background: var(--surface-alt); }
+/* Event cards live in site.css; one canonical definition prevents shell-order regressions. */
 
 /* ========================================================================
    Glass pills — location chip + genre/filter chip.
