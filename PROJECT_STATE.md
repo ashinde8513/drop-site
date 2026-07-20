@@ -13,7 +13,7 @@ Last updated: 2026-07-19
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — mobile event-detail responsive fix is verified on draft PR #22; awaiting merge/deploy
+**Status:** UNLOCKED — desktop event metadata and long-lineup containment are verified and ready for the standard PR/deploy path
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: — · Started: — · Working on: none
@@ -44,7 +44,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Review and merge draft PR #22 (`codex/mobile-event-detail-20260719`), let the standard CI workflow deploy it, then open the real Alphabeat Soup event in physical iPhone Safari and confirm the poster has no metadata overlay or horizontal page scroll.** Local Chromium + Playwright WebKit are green; production is unchanged until merge.
+- **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the app and complete the reset. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
@@ -60,10 +60,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-19 — Codex — mobile event-detail layout fix (draft PR #22)
-- **Changed:** on phones, event art now renders unobstructed; genre/title move below it, with date and venue in a bordered details card. Long promoter copy wraps instead of expanding the CSS grid, and related-event rails now match the responsive page gutter without widening the document. Desktop keeps its date/title/venue overlay caption.
+## 2026-07-19 — Codex — desktop event metadata + lineup containment
+- **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.
+- **Verified:** `npm test` 102/102 across desktop Chrome + mobile Safari; source/dist mirrors match; independent review found no actionable issue. Browser QA on the real Treehouse event confirmed `scrollWidth = clientWidth`, metadata below artwork, and the lineup chip contained within the details-card edges at 390px and 1280px, with zero console warnings/errors.
+- **Delivery:** ship through the standard PR → `main` CI auto-deploy path, then use the exact physical-iPhone Safari check in `Exact next step`.
+
+## 2026-07-19 — Codex — mobile event-detail layout fix live (PR #22)
+- **Changed:** on phones, event art now renders unobstructed; genre/title move below it, with date and venue in a bordered details card. Long promoter copy wraps instead of expanding the CSS grid, and related-event rails now match the responsive page gutter without widening the document.
 - **Verified:** `npm test` 102/102 across desktop Chrome + mobile Safari locally and GitHub PR run `29712944568`; source/dist mirrors match; real Alphabeat event at 390×844 has 16 loaded related cards, document `scrollWidth = clientWidth = 375`, and zero console warnings/errors. Desktop 1280×800 remains two-column with no overflow. Independent code review found no issues; independent behavior verification passed.
-- **Handoff:** draft PR #22. Production remains unchanged until merge; standard `main` CI will test and deploy automatically, then physical-iPhone Safari visual QA is the exact next step.
+- **Delivery:** PR #22 merged as `5d93fa6`; standard production workflow `29713233741` passed and deployed. Physical-iPhone Safari remains the final device-only check.
 
 ## 2026-07-19 — Codex — website event-card RSVP change live
 - **Changed:** signed-out and signed-in discovery cards no longer render Going or Interested action rows. Date/title/location now finish the 340px image card; the social-count pill moved to the upper badge area. Event Detail retains both RSVP controls.

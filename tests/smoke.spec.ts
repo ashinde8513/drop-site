@@ -455,7 +455,7 @@ test.describe('website smoke', () => {
     await expect(page.locator('.ed-section', { hasText: 'Tickets' })).not.toContainText('only');
   });
 
-  test('event detail keeps mobile metadata below artwork and its desktop caption intact', async ({ page }) => {
+  test('event detail keeps metadata and long lineup pills below and within artwork bounds', async ({ page }) => {
     const fakeId = '8d29d4e4-6845-4ef5-9259-a036074065bc';
     const fakeEvent = {
       id: fakeId,
@@ -466,7 +466,12 @@ test.describe('website smoke', () => {
       ticket_url: 'https://www.ticketmaster.com/e/123',
       price_min: 45, price_max: null, currency: 'USD',
       is_festival: false, time_tbd: false, status: 'published',
-      created_at: '2026-07-01T00:00:00', event_artists: [],
+      created_at: '2026-07-01T00:00:00',
+      event_artists: [{ artists: {
+        id: 'long-lineup-artist',
+        name: 'BASS BINGO AFTERS – Earth/One – DJ Bacon – MJ – Another Artist With A Long Name',
+        image_url: null,
+      } }],
     };
     const relatedEvent = { ...fakeEvent, id: '33a064c4-cb11-4df9-b5ba-428938cd62e2', title: 'Related show' };
     await page.setViewportSize({ width: 390, height: 844 });
@@ -477,11 +482,12 @@ test.describe('website smoke', () => {
 
     await page.goto(`/event.html?id=${fakeId}`);
     await expect(page.locator('.ed-hero__title')).toHaveText(fakeEvent.title);
+    await expect(page.locator('.ed-hero__date, .ed-hero__venue')).toHaveCount(0);
     await expect(page.locator('.rail .wsc-card').first()).toBeVisible();
     const layout = await page.locator('#event-root').evaluate((root) => {
       const rect = (selector: string) => {
         const box = root.querySelector(selector)!.getBoundingClientRect();
-        return { top: box.top, bottom: box.bottom };
+        return { top: box.top, bottom: box.bottom, left: box.left, right: box.right };
       };
       return {
         clientWidth: document.documentElement.clientWidth,
@@ -490,6 +496,9 @@ test.describe('website smoke', () => {
         genre: rect('.ed-hero__meta .genre-pill'),
         title: rect('.ed-hero__title'),
         facts: rect('.ed-facts'),
+        lineupSection: rect('.ed-lineup'),
+        lineupChip: rect('.ed-lineup .chip'),
+        lineupWhiteSpace: getComputedStyle(root.querySelector('.ed-lineup .chip')!).whiteSpace,
         titleInsideMedia: root.querySelector('.ed-hero__media .ed-hero__title') !== null,
       };
     });
@@ -499,25 +508,33 @@ test.describe('website smoke', () => {
     expect(layout.genre.top).toBeGreaterThanOrEqual(layout.media.bottom);
     expect(layout.title.top).toBeGreaterThanOrEqual(layout.media.bottom);
     expect(layout.facts.top).toBeGreaterThanOrEqual(layout.title.bottom);
+    expect(layout.lineupChip.left).toBeGreaterThanOrEqual(layout.lineupSection.left);
+    expect(layout.lineupChip.right).toBeLessThanOrEqual(layout.lineupSection.right);
+    expect(layout.lineupWhiteSpace).toBe('normal');
 
     await page.setViewportSize({ width: 1280, height: 800 });
     const desktop = await page.locator('#event-root').evaluate((root) => {
       const media = root.querySelector('.ed-hero__media')!.getBoundingClientRect();
+      const meta = root.querySelector('.ed-hero__meta')!.getBoundingClientRect();
       const title = root.querySelector('.ed-hero__title')!.getBoundingClientRect();
+      const facts = root.querySelector('.ed-facts')!.getBoundingClientRect();
       return {
         metaPosition: getComputedStyle(root.querySelector('.ed-hero__meta')!).position,
-        titleBottom: title.bottom,
+        metaTop: meta.top,
+        titleTop: title.top,
         mediaBottom: media.bottom,
-        date: root.querySelector('.ed-hero__date')!.textContent,
-        venue: root.querySelector('.ed-hero__venue')!.textContent,
+        factsTop: facts.top,
+        factsText: root.querySelector('.ed-facts')!.textContent,
         clientWidth: document.documentElement.clientWidth,
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
-    expect(desktop.metaPosition).toBe('absolute');
-    expect(desktop.titleBottom).toBeLessThanOrEqual(desktop.mediaBottom);
-    expect(desktop.date).toContain('Jan 15');
-    expect(desktop.venue).toBe('The Test Lounge · Denver');
+    expect(desktop.metaPosition).toBe('static');
+    expect(desktop.metaTop).toBeGreaterThanOrEqual(desktop.mediaBottom);
+    expect(desktop.titleTop).toBeGreaterThanOrEqual(desktop.mediaBottom);
+    expect(desktop.factsTop).toBeGreaterThanOrEqual(desktop.metaTop);
+    expect(desktop.factsText).toContain('Jan 15');
+    expect(desktop.factsText).toContain('The Test Lounge · Denver, CO');
     expect(desktop.scrollWidth).toBe(desktop.clientWidth);
   });
 
