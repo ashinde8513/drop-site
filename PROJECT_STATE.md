@@ -62,7 +62,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## 2026-07-19 — Codex — mobile event-detail layout fix (draft PR #22)
 - **Changed:** on phones, event art now renders unobstructed; genre/title move below it, with date and venue in a bordered details card. Long promoter copy wraps instead of expanding the CSS grid, and related-event rails now match the responsive page gutter without widening the document. Desktop keeps its date/title/venue overlay caption.
-- **Verified:** `npm test` 102/102 across desktop Chrome + mobile Safari; source/dist mirrors match; real Alphabeat event at 390×844 has 16 loaded related cards, document `scrollWidth = clientWidth = 375`, and zero console warnings/errors. Desktop 1280×800 remains two-column with no overflow. Independent code review found no issues; independent behavior verification passed.
+- **Verified:** `npm test` 102/102 across desktop Chrome + mobile Safari locally and GitHub PR run `29712944568`; source/dist mirrors match; real Alphabeat event at 390×844 has 16 loaded related cards, document `scrollWidth = clientWidth = 375`, and zero console warnings/errors. Desktop 1280×800 remains two-column with no overflow. Independent code review found no issues; independent behavior verification passed.
 - **Handoff:** draft PR #22. Production remains unchanged until merge; standard `main` CI will test and deploy automatically, then physical-iPhone Safari visual QA is the exact next step.
 
 ## 2026-07-19 — Codex — website event-card RSVP change live
