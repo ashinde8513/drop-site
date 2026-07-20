@@ -806,6 +806,7 @@ button { font: inherit; cursor: pointer; }
 @media (max-width: 560px) {
   body { font-size: 16px; }
   .wrap { padding: 0 18px; }
+  .rail { margin-inline: -18px; padding-inline-start: 18px; }
   /* Event cards only: match the app's signed-in card width (12px from the
      screen edge) — grid cards stretch full-width and the grid bleeds past
      the 18px page gutter by the 6px difference. Every other element keeps
@@ -817,6 +818,7 @@ button { font: inherit; cursor: pointer; }
 }
 @media (max-width: 360px) {
   .wrap { padding: 0 14px; }
+  .rail { margin-inline: -14px; padding-inline-start: 14px; }
   .grid-events { margin: 0 -2px; }
 }
 

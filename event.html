@@ -272,10 +272,9 @@
       // resale markets usually also carry the show (founder call 2026-07-16). --
 
       function renderHero(ev) {
-        var wrap = el('div');
+        var wrap = el('div', 'ed-hero');
 
-        var box = el('div');
-        box.style.cssText = 'position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);';
+        var box = el('div', 'ed-hero__media');
         var media;
         // Art chain matches Drop.ecard: real event image → lineup-artist photo → prism.
         var heroCandidates = D.eventArtCandidates(ev);
@@ -302,18 +301,10 @@
         }
         box.appendChild(media);
 
-        var scrim = el('div');
-        scrim.style.cssText = 'position:absolute;inset:0;background:var(--scrim);pointer-events:none;';
-        box.appendChild(scrim);
-
-        box.appendChild(el('span', 'genre-pill', D.genreOf(ev)));
-
         var shareStatus = el('p', 'share-status');
         shareStatus.setAttribute('aria-live', 'polite');
-        shareStatus.style.cssText = 'position:absolute;bottom:var(--sp-sm);right:var(--sp-lg);z-index:2;';
 
-        var actions = el('div');
-        actions.style.cssText = 'position:absolute;top:var(--sp-lg);right:var(--sp-lg);z-index:2;display:flex;gap:var(--sp-sm);';
+        var actions = el('div', 'ed-hero__actions');
         var circleStyle = 'width:44px;height:44px;border-radius:50%;background:var(--glass-dark);border:1px solid var(--glass-border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
         var saveBtn = gateLink(null, '🔖', 'Log in to save this show');
         saveBtn.setAttribute('aria-label', 'Log in to save this show');
@@ -338,18 +329,13 @@
         actions.appendChild(shareBtn);
         box.appendChild(actions);
 
-        var caption = el('div');
-        caption.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:1;padding:var(--sp-xl);';
-        caption.appendChild(el('div', 'wsc__date', D.fmtDate(ev.date, ev.time_tbd)));
-        var h1 = el('h1', null, ev.title);
-        h1.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4vw,44px);letter-spacing:var(--tr-tight);line-height:1.05;margin:6px 0 8px;color:var(--text);';
-        caption.appendChild(h1);
-        var sub = el('div', null, [ev.venue_name, ev.city].filter(Boolean).join(' · '));
-        sub.style.cssText = 'color:var(--text-secondary);font-size:var(--fs-md);';
-        caption.appendChild(sub);
-        box.appendChild(caption);
-
         wrap.appendChild(box);
+        var meta = el('div', 'ed-hero__meta');
+        meta.appendChild(el('span', 'genre-pill', D.genreOf(ev)));
+        meta.appendChild(el('div', 'wsc__date ed-hero__date', D.fmtDate(ev.date, ev.time_tbd)));
+        meta.appendChild(el('h1', 'ed-hero__title', ev.title));
+        meta.appendChild(el('div', 'ed-hero__venue', [ev.venue_name, ev.city].filter(Boolean).join(' · ')));
+        wrap.appendChild(meta);
         wrap.appendChild(shareStatus);
         return wrap;
       }
