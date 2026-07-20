@@ -455,6 +455,72 @@ test.describe('website smoke', () => {
     await expect(page.locator('.ed-section', { hasText: 'Tickets' })).not.toContainText('only');
   });
 
+  test('event detail keeps mobile metadata below artwork and its desktop caption intact', async ({ page }) => {
+    const fakeId = '8d29d4e4-6845-4ef5-9259-a036074065bc';
+    const fakeEvent = {
+      id: fakeId,
+      title: 'A very long event title with every artist in the lineup',
+      description: `Doors:9:00PM_${'promoter.example/event/'.repeat(20)}`,
+      date: '2027-01-15T20:00:00', end_date: null, venue_name: 'The Test Lounge',
+      city: 'Denver', state: 'CO', image_url: null,
+      ticket_url: 'https://www.ticketmaster.com/e/123',
+      price_min: 45, price_max: null, currency: 'USD',
+      is_festival: false, time_tbd: false, status: 'published',
+      created_at: '2026-07-01T00:00:00', event_artists: [],
+    };
+    const relatedEvent = { ...fakeEvent, id: '33a064c4-cb11-4df9-b5ba-428938cd62e2', title: 'Related show' };
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route('**/rest/v1/events?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent, relatedEvent]) }));
+    await page.route('**/rest/v1/rpc/event_going_counts', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    await page.goto(`/event.html?id=${fakeId}`);
+    await expect(page.locator('.ed-hero__title')).toHaveText(fakeEvent.title);
+    await expect(page.locator('.rail .wsc-card').first()).toBeVisible();
+    const layout = await page.locator('#event-root').evaluate((root) => {
+      const rect = (selector: string) => {
+        const box = root.querySelector(selector)!.getBoundingClientRect();
+        return { top: box.top, bottom: box.bottom };
+      };
+      return {
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        media: rect('.ed-hero__media'),
+        genre: rect('.ed-hero__meta .genre-pill'),
+        title: rect('.ed-hero__title'),
+        facts: rect('.ed-facts'),
+        titleInsideMedia: root.querySelector('.ed-hero__media .ed-hero__title') !== null,
+      };
+    });
+
+    expect(layout.scrollWidth).toBe(layout.clientWidth);
+    expect(layout.titleInsideMedia).toBe(false);
+    expect(layout.genre.top).toBeGreaterThanOrEqual(layout.media.bottom);
+    expect(layout.title.top).toBeGreaterThanOrEqual(layout.media.bottom);
+    expect(layout.facts.top).toBeGreaterThanOrEqual(layout.title.bottom);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const desktop = await page.locator('#event-root').evaluate((root) => {
+      const media = root.querySelector('.ed-hero__media')!.getBoundingClientRect();
+      const title = root.querySelector('.ed-hero__title')!.getBoundingClientRect();
+      return {
+        metaPosition: getComputedStyle(root.querySelector('.ed-hero__meta')!).position,
+        titleBottom: title.bottom,
+        mediaBottom: media.bottom,
+        date: root.querySelector('.ed-hero__date')!.textContent,
+        venue: root.querySelector('.ed-hero__venue')!.textContent,
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(desktop.metaPosition).toBe('absolute');
+    expect(desktop.titleBottom).toBeLessThanOrEqual(desktop.mediaBottom);
+    expect(desktop.date).toContain('Jan 15');
+    expect(desktop.venue).toBe('The Test Lounge · Denver');
+    expect(desktop.scrollWidth).toBe(desktop.clientWidth);
+  });
+
   test('event page labels an affiliate-wrapped etix.prf.hn ticket link as Etix', async ({ page }) => {
     // ~226 live events carry etix.prf.hn (Partnerize) hosts — the hostname
     // fallback would label them "Prf" without the explicit map entry.

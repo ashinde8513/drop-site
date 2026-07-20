@@ -88,13 +88,29 @@
    specificity !important (:empty pseudo-class) can suppress it pre-render. */
 .ed-bottombar:empty { display: none !important; }
 .ed-grid { display: grid; grid-template-columns: 1fr 360px; gap: var(--sp-xxl); align-items: start; }
+.ed-grid > * { min-width: 0; }
+.ed-hero { position: relative; display: flex; flex-direction: column; }
+.ed-hero__media {
+  position: relative; height: 360px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--r-xl);
+}
+.ed-hero__media::after { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; }
+.ed-hero__actions { position: absolute; top: var(--sp-lg); right: var(--sp-lg); z-index: 2; display: flex; gap: var(--sp-sm); }
+.ed-hero__meta { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-sm); padding: var(--sp-xl); }
+.ed-hero__meta .genre-pill { position: static; }
+.ed-hero__venue { color: var(--text-secondary); font-size: var(--fs-md); }
+.ed-hero__title {
+  margin: 0; color: var(--text); overflow-wrap: anywhere;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(28px, 4vw, 44px); letter-spacing: var(--tr-tight); line-height: 1.05;
+}
 .ed-aside { position: sticky; top: calc(var(--nav-h) + 20px); display: flex; flex-direction: column; gap: var(--sp-md); }
 .ed-buybox {
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg);
   padding: var(--sp-lg); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--sp-md);
 }
 .ed-facts { display: flex; flex-wrap: wrap; gap: var(--sp-xl); padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
-.ed-section { padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); }
+.ed-section { min-width: 0; padding: var(--sp-xl) 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
 .ed-section:last-child { border-bottom: none; }
 .ed-price-row {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-md);
@@ -105,6 +121,23 @@
 .ed-onsale { display: flex; align-items: center; gap: var(--sp-sm); color: var(--text-secondary); font-size: var(--fs-xs); padding-top: var(--sp-md); border-top: 1px solid var(--border); }
 .ed-onsale .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--attended); box-shadow: 0 0 8px var(--attended); }
 .ed-lineup-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--grad-brand); flex: 0 0 auto; }
+
+@media (max-width: 720px) {
+  .ed-wrap { padding-left: var(--sp-md); padding-right: var(--sp-md); }
+  .ed-hero__media { height: auto; aspect-ratio: 1 / 1; }
+  .ed-hero__media::after { display: none; }
+  .ed-hero__actions { top: var(--sp-md); right: var(--sp-md); }
+  .ed-hero__meta { position: static; padding: var(--sp-lg) 0 0; }
+  .ed-hero__date, .ed-hero__venue { display: none; }
+  .ed-hero__title { font-size: clamp(28px, 9vw, 38px); }
+  .ed-facts {
+    flex-direction: column; gap: var(--sp-md); margin-top: var(--sp-xl);
+    padding: var(--sp-lg); background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+  }
+  .ed-facts .metric { min-width: 0; }
+  .ed-facts .metric__value, .ed-facts a { overflow-wrap: anywhere; }
+}
 
 /* Login-gated chip/button (Going/Interested/Save/Follow when signed out) —
    same visual language, slightly muted so it doesn't read as "already on". */
