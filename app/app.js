@@ -1100,19 +1100,13 @@ class Component extends DCLogic {
     // falls back to a real loaded event (or a safe empty stand-in — never a
     // fabricated one) when nothing is loaded yet.
     const decorate = e => {
-      const st = s.rsvp[e.id];
       return {
         ...e,
         gradStyle: 'background-image:'+e.grad,
         hasFriends: false,
         friendsLabel: '',
         open: (ev)=>{ this.prevent(ev); this.setState({screen:'event', activeId:e.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
-        going: ()=>this.toggleRsvp(e.id,'going'),
-        interested: ()=>this.toggleRsvp(e.id,'interested'),
         share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
-        goingCls: 'wsc__act'+(st==='going'?' is-going':''),
-        interestedCls: 'wsc__act'+(st==='interested'?' is-interested':''),
-        interestedGlyph: st==='interested'?'★':'☆',
       };
     };
     const events = (s.realEvents||[]).map(mapRealEvent).map(decorate);

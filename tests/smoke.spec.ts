@@ -444,6 +444,7 @@ test.describe('website smoke', () => {
       route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
 
     await page.goto(`/event.html?id=${fakeId}`);
+    await expect(page.locator('.ed-buybox [title="Log in to RSVP"]')).toHaveCount(2);
     // One honest row — real seller name from the URL, no fabricated competitors,
     // and no "Only seller" badge/notice (it implied exclusivity, but resale
     // markets usually also carry the show — removed 2026-07-16, founder call).
@@ -515,6 +516,7 @@ test.describe('website smoke', () => {
 
     await page.goto('/index.html');
     await expect(page.locator('#home-grid img.wsc__img')).toHaveAttribute('src', workingArtist);
+    await expect(page.locator('#home-grid .wsc-card button')).toHaveCount(0);
   });
 
   test('web app renders a real venue-timezone festival schedule with no demo rows', async ({ page }) => {

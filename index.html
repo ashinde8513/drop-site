@@ -276,7 +276,7 @@
             // Prefer cards with real artwork up front, within the page.
             evs.sort(function (a, b) { return (D.hasRealArt(b) ? 1 : 0) - (D.hasRealArt(a) ? 1 : 0); });
             D.renderEvents(host, evs, {
-              limit: PAGE, gate: true,
+              limit: PAGE,
               emptyMsg: 'No shows in ' + city + ' yet — shows coming soon.',
               emptyAction: 'Know of one? Suggest an event', emptyHref: 'https://app.trydropapp.com/?suggest=1'
             });
@@ -299,8 +299,7 @@
           if (!festivals.length) return;
           document.getElementById('festival-section').hidden = false;
           D.renderEvents(document.getElementById('festival-grid'), festivals, {
-            limit: 12,
-            gate: true
+            limit: 12
           });
         })
         .catch(function () {

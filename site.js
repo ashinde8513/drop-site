@@ -47,26 +47,11 @@
     return art;
   };
 
-  // Login-gated chip <button> — safe to nest inside the card's outer <a>
-  // (an <a> can't nest another <a>). Stops the click from bubbling into the
-  // card link, then sends the visitor to sign in.
-  Drop.gateChip = function (label) {
-    var b = el('button', 'chip gate', label);
-    b.type = 'button';
-    b.title = 'Log in to RSVP';
-    b.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      location.href = '/account.html';
-    });
-    return b;
-  };
-
   // ---- Event card ---------------------------------------------------------
-  // Drop.ecard(event, opts) -> <a> shell show card (canonical web look: uniform
+  // Drop.ecard(event) -> <a> shell show card (canonical web look: uniform
   // 300x340 image-forward unit mirroring the app's WebShowCard). Reused everywhere.
-  // opts.gate: true adds an inline Going/Interested row, login-gated to /account.html.
-  Drop.ecard = function (event, opts) {
-    opts = opts || {};
+  // RSVP controls live on event detail, keeping discovery cards image-forward.
+  Drop.ecard = function (event) {
     var a = el('a', 'wsc-card');
     a.href = '/event.html?id=' + encodeURIComponent(event.id);
     a.dataset.eventId = event.id;
@@ -103,13 +88,6 @@
     var venue = el('p', 'wsc__venue');
     venue.textContent = [event.venue_name, event.city].filter(Boolean).join(' \u00b7 ');
     text.appendChild(venue);
-    if (opts.gate) {
-      var gateRow = el('div', 'wsc__gate');
-      gateRow.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
-      gateRow.appendChild(Drop.gateChip('\u2713 Going'));
-      gateRow.appendChild(Drop.gateChip('\u2606 Interested'));
-      text.appendChild(gateRow);
-    }
     a.appendChild(text);
     return a;
   };
@@ -217,7 +195,7 @@
     var lim = opts.limit || events.length;
     var ids = [];
     for (var i = 0; i < events.length && i < lim; i++) {
-      host.appendChild(Drop.ecard(events[i], opts));
+      host.appendChild(Drop.ecard(events[i]));
       ids.push(events[i].id);
     }
     // Going pill: fetched after cards land so a slow/failed count never blocks render.

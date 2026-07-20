@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-18
+Last updated: 2026-07-19
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -58,6 +58,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-07-19 — Codex — website event-card RSVP change ready in PR #20
+- **Changed:** signed-out and signed-in discovery cards no longer render Going or Interested action rows. Date/title/location now finish the 340px image card; the social-count pill moved to the upper badge area. Event Detail retains both RSVP controls.
+- **Verified:** 100/100 Playwright across desktop Chromium and Mobile Safari; 390×844 signed-out and signed-in browser QA with no console/page errors or overflow; card→detail interaction; source/dist build; independent review clean after removing the local dependency symlink.
+- **Handoff:** PR #20 is merge-ready under the founder's cross-surface authorization. Merging runs the normal test-then-Cloudflare deploy workflow; standing physical-iPhone and post-release catalog next steps remain unchanged.
 
 ## 2026-07-18 — Codex — v1.0.1 hosted legal and password-recovery AASA live
 - **Merged/deployed:** PR #19 merged as `9399fad`; GitHub workflow `29663058803` passed and deployed.
