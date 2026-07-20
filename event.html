@@ -332,9 +332,7 @@
         wrap.appendChild(box);
         var meta = el('div', 'ed-hero__meta');
         meta.appendChild(el('span', 'genre-pill', D.genreOf(ev)));
-        meta.appendChild(el('div', 'wsc__date ed-hero__date', D.fmtDate(ev.date, ev.time_tbd)));
         meta.appendChild(el('h1', 'ed-hero__title', ev.title));
-        meta.appendChild(el('div', 'ed-hero__venue', [ev.venue_name, ev.city].filter(Boolean).join(' · ')));
         wrap.appendChild(meta);
         wrap.appendChild(shareStatus);
         return wrap;
@@ -355,7 +353,8 @@
         row.appendChild(metric('Date & time', D.fmtDate(ev.date, ev.time_tbd)));
         var venueMetric = el('div', 'metric');
         venueMetric.appendChild(el('span', 'metric__label', 'Venue'));
-        var venueLink = el('a', null, ev.venue_name || 'Venue TBA');
+        var location = [ev.city, ev.state].filter(Boolean).join(', ');
+        var venueLink = el('a', null, [ev.venue_name || 'Venue TBA', location].filter(Boolean).join(' · '));
         venueLink.href = '/venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
         venueLink.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--text);';
         venueMetric.appendChild(venueLink);
@@ -372,7 +371,7 @@
         if (!arts.length) return null;
         var section = el('div', 'ed-section');
         section.appendChild(el('div', 'sec-h2', 'Lineup'));
-        var list = el('div', 'filt-row');
+        var list = el('div', 'filt-row ed-lineup');
         list.style.marginTop = 'var(--sp-md)';
         arts.forEach(function (a) {
           var chip = el('a', 'chip', a.name);
