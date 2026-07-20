@@ -59,10 +59,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
-## 2026-07-19 — Codex — website event-card RSVP change ready in PR #20
+## 2026-07-19 — Codex — website event-card RSVP change live
 - **Changed:** signed-out and signed-in discovery cards no longer render Going or Interested action rows. Date/title/location now finish the 340px image card; the social-count pill moved to the upper badge area. Event Detail retains both RSVP controls.
-- **Verified:** 100/100 Playwright across desktop Chromium and Mobile Safari; 390×844 signed-out and signed-in browser QA with no console/page errors or overflow; card→detail interaction; source/dist build; independent review clean after removing the local dependency symlink.
-- **Handoff:** PR #20 is merge-ready under the founder's cross-surface authorization. Merging runs the normal test-then-Cloudflare deploy workflow; standing physical-iPhone and post-release catalog next steps remain unchanged.
+- **Verified:** 100/100 Playwright locally and in GitHub run `29711282780`; Cloudflare production deploy passed. Live 390×844 readback found 24 public and 257 app-shell cards, zero card buttons, metadata within 1px of the card bottom, valid event-detail links, and zero console/page errors. Independent review was clean.
+- **Handoff:** PR #20 merged as `8078f1e` and is live. Standing physical-iPhone and post-release catalog next steps remain unchanged.
 
 ## 2026-07-18 — Codex — v1.0.1 hosted legal and password-recovery AASA live
 - **Merged/deployed:** PR #19 merged as `9399fad`; GitHub workflow `29663058803` passed and deployed.
