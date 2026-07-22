@@ -9,11 +9,11 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-19
+Last updated: 2026-07-22
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — desktop event metadata and long-lineup containment are verified and ready for the standard PR/deploy path
+**Status:** UNLOCKED — draft PR #16 is rebased onto current main; production migration is live, but signed-in website write QA remains separately gated
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: — · Started: — · Working on: none
@@ -39,6 +39,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
+- Draft PR #16 (`feat/past-show-ticket-import`) is code-green after rebasing onto
+  website `main` at `9c68e14`; merge remains blocked on separately authorized
+  signed-in website write QA. The shared canonical-history migration is live and
+  verified. No production write, deploy, or merge was performed in this session.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
@@ -53,12 +57,23 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   backend manifest command instead of inventing rows.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
-1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
-2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
-3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
-4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
-5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
-6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+0. **When separately authorized, run signed-in website write QA on draft PR #16 (`feat/past-show-ticket-import`):** test new show, reuse, conflicting-lineup combine, conflicting-lineup separate, and cancel against the live canonical-history backend; then confirm My Shows + Wrapped and delete any QA data. Mark the PR ready and merge only after that matrix is green; push to `main` auto-deploys after tests pass.
+1. **Founder QA remaining logged-in write paths on app.trydropapp.com:** artist claim, owner Edit-links, Wrapped, RSVP, and follow. Ticket-paste QA is step 0.
+2. **Review/merge artist-claims app PR #150** after device QA.
+3. **Retire the obsolete drop-web CF Pages project** and remove mobile web-deploy workflow.
+4. **Schema remaining social features** only after founder picks one.
+5. **Resubmit sitemap in GSC** + Bing import.
+6. **Drop-App PR #146:** wire recap celebration, device-QA, merge.
+
+## 2026-07-22 — Codex — PR #16 rebased onto current website main
+- **Changed:** rebased the three past-show commits onto website `main` at `9c68e14`, preserving the newer canonical legal links and event-detail regressions. Hardened the shared Playwright error collector so third-party image/font failures follow the existing external-request policy while same-origin and source-less application errors still fail closed.
+- **Verified:** `npm test` passed 106/106 across desktop Chrome + mobile Safari; source/dist mirrors are byte-identical; `git diff --check` and JavaScript syntax checks passed. Browser QA rendered Home and the Log in screen with zero console warnings/errors. The production canonical-history migration is live and the RPC contract matches this branch.
+- **Boundaries:** no signed-in production write QA, deploy, merge, or Hermes action was performed. Draft PR #16 remains parked until the separately approved write-QA matrix above is green.
+
+## 2026-07-17 — Codex — Canonical shared past-show flow (draft PR #16)
+- Changed: the logged-in ticket/manual form now sends show title, optional description, headliner, and the full remaining lineup to `record_past_show`. The backend reuses one shared event. A differing lineup returns without writing; the website shows matching-event context, then lets the fan combine lineups, explicitly keep separate shows, or return to the form. Canonical attendance feeds My Shows and Wrapped without double-counting linked private logs.
+- Verified at implementation: JavaScript syntax checks; Playwright 90/90 on desktop + mobile Safari; source/dist mirrors were byte-identical; `git diff --check` clean. The paired migration passed rollback-only database contract tests. It has since been applied and verified in production through the canonical mobile flow.
+- Remaining: separately authorized signed-in website QA before merge/deploy; first-run activation and scoped Gmail/Outlook import remain later phases.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
 - **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.

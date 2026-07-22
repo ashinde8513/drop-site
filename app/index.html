@@ -1972,8 +1972,23 @@
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Log a past show</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Add shows you attended to build your history and Drop Wrapped.</p>
 
-      <!-- ===== Section 1: "I was there" — pick from the archive ===== -->
-      <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">I was there — pick from the archive</div></div>
+      <!-- ===== Section 1: review-first ticket confirmation import ===== -->
+      <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">Import a ticket confirmation</div></div>
+      <p style="color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-base);margin:0 0 var(--sp-lg);">Paste one confirmation from Ticketmaster, AXS, DICE, Eventbrite, or SeatGeek. Drop fills the form below; you review before saving.</p>
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email subject</label>
+      <input type="text" value="{{ logTicketSubject }}" onInput="{{ setLogTicketSubject }}" placeholder="Your Ticketmaster Order Confirmation — John Summit" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Confirmation details</label>
+      <textarea value="{{ logTicketBody }}" onInput="{{ setLogTicketBody }}" placeholder="Paste the email body here" style="width:100%;min-height:132px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:vertical;">{{ logTicketBody }}</textarea>
+      <p style="color:var(--text-muted);font-size:var(--fs-xs);line-height:var(--lh-base);margin:0 0 var(--sp-md);">Raw email text stays in this browser and is never saved.</p>
+      <button type="button" class="btn btn--secondary btn--block" onClick="{{ previewTicketLog }}">Preview and fill details</button>
+      <sc-if value="{{ logTicketReady }}">
+        <div role="status" style="display:flex;align-items:center;gap:8px;color:var(--attended);font-size:var(--fs-sm);font-weight:600;margin-top:var(--sp-md);"><span aria-hidden="true">✓</span>Details filled below. Review them before adding the show.</div>
+      </sc-if>
+
+      <!-- ===== Section 2: "I was there" — pick from the archive ===== -->
+      <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-md);border-top:1px solid var(--border);margin-top:var(--sp-xl);"><div class="sec__title">I was there — pick from the archive</div></div>
       <div style="position:relative;margin-bottom:var(--sp-md);">
         <input type="text" value="{{ logQuery }}" onInput="{{ setLogQuery }}" placeholder="Search past shows by artist, venue or title" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
@@ -2017,11 +2032,20 @@
         </div>
       </sc-if>
 
-      <!-- ===== Section 2: not in the archive? add it manually ===== -->
+      <!-- ===== Section 3: not in the archive? add it manually ===== -->
       <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-md);border-top:1px solid var(--border);margin-top:var(--sp-lg);"><div class="sec__title">Not listed? Add it manually</div></div>
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Show / event title</label>
+      <input type="text" value="{{ logTitle }}" onInput="{{ setLogTitle }}" placeholder="Defaults to the headliner" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Description / tour name</label>
+      <input type="text" value="{{ logDescription }}" onInput="{{ setLogDescription }}" placeholder="Optional — helps match the right show" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner *</label>
       <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+
+      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Other artists on the lineup</label>
+      <input type="text" value="{{ logLineupText }}" onInput="{{ setLogLineupText }}" placeholder="Comma-separated, e.g. Barry Can't Swim, BUNT." style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
       <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
@@ -2043,7 +2067,7 @@
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Notes</label>
       <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:vertical;"></textarea>
 
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}">Add to my history</button>
+      <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}" disabled="{{ logSavePending }}">{{ logSaveLabel }}</button>
     </div>
   </main>
 </sc-if>
@@ -3154,6 +3178,7 @@
      and /favicon* through from the site root, so a root-relative /consent.js
      would 404 on the app host. -->
 <script src="https://trydropapp.com/consent.js" defer></script>
+<script src="./ticket-email-parser.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
