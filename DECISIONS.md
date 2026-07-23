@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-22 — Website parity is shared behavior with a website-native interface
+
+The signed-in website must expose the mobile app's supported features through the same production Supabase accounts, data, RLS, Edge Functions, and business rules. It is not a separate account system or a desktop copy of the phone layout. Desktop stays visibly continuous with the public Prism website; mobile uses compact browser-native navigation and controls.
+
+Each new parity slice is designed and founder-approved first in Claude.ai/design project `Website design prompt` (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`). The React/Vite implementation lives at isolated preview route `/app/next/`; existing production website and `/app` routes are not replaced until the full parity checklist and cutover approval are complete.
+
 ## 2026-07-18 — Hosted legal pages are canonical; embedded SPA copies are retired
 
 `https://trydropapp.com/privacy` and `https://trydropapp.com/terms` are the canonical Privacy Policy and Terms for the website, web app, and mobile app. The SPA must link to those documents instead of maintaining an embedded duplicate. The native app may render an aligned in-app copy for review accessibility, but its version/date and disclosures must match the hosted documents and it must expose the canonical links. The `.html` URLs remain compatibility redirects, not link targets.

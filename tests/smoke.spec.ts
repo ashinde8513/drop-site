@@ -11,9 +11,17 @@ import { test, expect, type Page } from '@playwright/test';
 function trackPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`);
+    if (msg.type() === 'error' && !msg.text().startsWith('Failed to load resource:')) {
+      errors.push(`console.error: ${msg.text()}`);
+    }
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
+  page.on('response', (res) => {
+    const url = res.url();
+    if ((url.includes('localhost') || url.includes('127.0.0.1')) && res.status() >= 400) {
+      errors.push(`response ${res.status()}: ${url}`);
+    }
+  });
   page.on('requestfailed', (req) => {
     // Ignore third-party (fonts, ConvertKit) flakiness; only flag same-origin assets.
     const url = req.url();

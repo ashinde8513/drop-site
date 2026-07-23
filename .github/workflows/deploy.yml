@@ -45,6 +45,11 @@ jobs:
       cancel-in-progress: true # only the newest main matters
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Build dist (whitelist — repo docs/tests/config never ship)
         run: bash scripts/build-dist.sh
       - name: Sanity-check dist before deploy

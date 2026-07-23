@@ -20,5 +20,9 @@ cp _headers _redirects dist/
 # Directories the live site serves.
 cp -R .well-known app vendor dist/
 
+# Signed-in parity preview. This stays beside the current /app runtime until
+# every production-reachable mobile feature has passed parity QA.
+npm run build:webapp
+
 echo "dist/ built:"
 find dist -type f | wc -l

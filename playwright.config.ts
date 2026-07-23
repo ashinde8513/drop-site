@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Reusable template: copy this file + tests/ into any static site repo,
  * change `PORT` if it clashes, and you're done.
  */
-const PORT = 4321;
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 4321);
 
 export default defineConfig({
   testDir: './tests',
@@ -25,7 +25,7 @@ export default defineConfig({
     { name: 'mobile-safari', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
-    command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
+    command: `npm run build && python3 -m http.server ${PORT} --bind 127.0.0.1 --directory dist`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',

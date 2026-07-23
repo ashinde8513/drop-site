@@ -1,3 +1,19 @@
+# Foundation 1A web parity design QA
+
+- Approved Claude design: `/private/tmp/drop-web-parity-design/foundation-login-desktop.png`, `foundation-shell-desktop.png`, `foundation-settings-desktop.png`, `foundation-shell-mobile.png`
+- Implementation: `/private/tmp/drop-web-parity-design/implementation-login-desktop.png`, `implementation-login-mobile.png`
+- Viewports: 1440 × 900 desktop; 390 × 844 mobile
+
+## Comparison
+
+The implementation keeps the public website's Prism header, location/search/browse language, typography, dark surfaces, restrained gradient CTA, and account entry points. The signed-in desktop shell adds a compact left rail beneath that same header; mobile replaces it with the approved compact header and bottom navigation. The login panel, input geometry, responsive gutters, focus states, and split-story layout match the approved direction without copying mobile layouts onto desktop. Facebook was added beside the approved Google and Apple controls because it is production-reachable in the mobile app.
+
+No broken layout, cropped content, horizontal overflow, incorrect border geometry, or unresolved P0–P2 visual difference remains at the checked viewports. Demo event cards from the design stay design-only; the preview renders honest empty states until each later parity slice is approved and wired.
+
+final result: passed
+
+---
+
 # Event detail metadata and lineup design QA
 
 - Source visual truth: `/tmp/codex-remote-attachments/019f7d4c-5ccc-7440-b88e-14ed07487220/8386546F-6CA0-4E67-837A-47A8F3A40C62/4-Photo-4.jpg`

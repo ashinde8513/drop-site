@@ -4,12 +4,28 @@
   "private": true,
   "description": "Playwright E2E/smoke tests for the Drop website",
   "scripts": {
+    "build": "bash scripts/build-dist.sh",
+    "build:webapp": "vite build --config webapp/vite.config.ts",
+    "dev:webapp": "vite --config webapp/vite.config.ts",
+    "typecheck:webapp": "tsc -p webapp/tsconfig.json --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report"
   },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "@supabase/supabase-js": "2.110.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.1"
+  },
   "devDependencies": {
-    "@playwright/test": "^1.49.1"
+    "@playwright/test": "^1.49.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "typescript": "7.0.2",
+    "vite": "8.1.5"
   }
 }
