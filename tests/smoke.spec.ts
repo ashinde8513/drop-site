@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -11,7 +12,15 @@ import { test, expect, type Page } from '@playwright/test';
 function trackPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`);
+    if (msg.type() !== 'error') return;
+    const url = msg.location().url;
+    // Match requestfailed below: third-party image/font failures are noisy,
+    // but external scripts' own console errors must still fail the suite.
+    const externalResourceNoise = url
+      && !url.includes('localhost')
+      && !url.includes('127.0.0.1')
+      && msg.text().startsWith('Failed to load resource:');
+    if (!externalResourceNoise) errors.push(`console.error: ${msg.text()}`);
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('requestfailed', (req) => {
@@ -224,6 +233,13 @@ test.describe('website smoke', () => {
       '/reset-password',
       '/',
     ]);
+  });
+
+  test('password recovery has a browser fallback to the signed-in SPA', () => {
+    const redirects = readFileSync('_redirects', 'utf8');
+    expect(redirects).toContain(
+      '/reset-password https://app.trydropapp.com/?mode=reset-password  302',
+    );
   });
 
   test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
