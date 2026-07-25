@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-19
+Last updated: 2026-07-24
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — desktop event metadata and long-lineup containment are verified and ready for the standard PR/deploy path
+**Status:** UNLOCKED — password-reset browser fallback is live and a fresh recovery email was delivered
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: — · Started: — · Working on: none
 
 ## Current status
 ### What works
+- **PASSWORD-RESET BROWSER FALLBACK LIVE (2026-07-24, PR #25):** Supabase recovery links targeting `https://trydropapp.com/reset-password` now 302 to `https://app.trydropapp.com/?mode=reset-password`; browsers preserve the recovery `#hash`, and the SPA renders “Choose a new password.” Merge `006fe8d` passed 104/104 Playwright checks and production workflow `30138096500`. A fresh Resend message was confirmed delivered after deployment; its single-use link was intentionally not consumed during verification.
 - **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
   `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
@@ -45,7 +46,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
-- **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the app and complete the reset. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
+- **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
   recheck the global Festivals filter, one event-art detail page, request/console
   health, and proper-art fallback against live data. If festival set times remain
@@ -233,6 +234,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-24 — Codex — password-reset browser fallback live
+- **Changed:** added the exact `/reset-password` Cloudflare Pages redirect to the existing SPA reset mode and a regression assertion for the source/dist rule. Kept the native AASA route unchanged. Hardened the existing console collector only against third-party resource-load noise already handled on the active feature branch.
+- **Verified:** local and GitHub Playwright passed 104/104 across desktop Chrome and mobile Safari; PR #25 merged as `006fe8d`; workflow `30138096500` deployed successfully. Live HTTP returns 302 to `https://app.trydropapp.com/?mode=reset-password`, a placeholder recovery hash survives the redirect, and the destination renders “Choose a new password.”
+- **Delivery:** Supabase accepted a fresh recovery request and Resend confirmed the new “Reset your password” email delivered. The real token was not opened because recovery links are single-use.
+
 ### 2026-07-18 — Codex — v1.0.1 hosted legal alignment prepared, not deployed
 - **Changed:** updated canonical Privacy/Terms to July 18, 2026; aligned the 16+ account/social gate and audited data disclosures; removed the SPA's stale embedded 18+ policy and dead bindings; pointed signup/footer and hosted-document links at canonical `/privacy` and `/terms`; added regression coverage for OAuth's no-DOB path, signup consent ordering, stale copy, canonical links, audited disclosures, and the exact AASA route set. Follow-up adversarial review found the live/draft AASA lacked `/reset-password`; this branch now includes that native recovery callback.
 - **Verified:** `dist/` rebuilt byte-for-byte from source; `npm test` passed 100/100 across desktop and mobile Safari; desktop and 390×844 browser review showed no console/page errors; live canonical URLs return 200 while `.html` variants redirect once; the mobile and website AASA sources are byte-identical and parse to event, plan, recovery, and root routes; separate cross-repo `/verify` passed all five criteria before the focused recovery correction.
