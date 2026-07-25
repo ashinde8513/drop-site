@@ -13,10 +13,10 @@ Last updated: 2026-07-24
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** READY TO MERGE — backend production rollout and delivered canary are complete
+**Status:** NO ACTIVE SESSION — reliable launch-access confirmation is live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex · Started: 2026-07-25 · Working on: PR #26 merge, production deploy, and live form verification
+- None.
 
 ## Current status
 ### What works
@@ -249,8 +249,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Verified:** the complete 104-test Playwright suite passed across desktop
   Chrome and mobile Safari; source and generated `dist` match. The paired
   production migration/function are live, and the controlled canary was
-  recorded by the database and delivered by Resend. PR:
-  https://github.com/ashinde8513/drop-site/pull/26.
+  recorded by the database and delivered by Resend. PR #26 merged as
+  `655f54a`; production workflow `30173794587` passed 104/104 tests and
+  deployed Cloudflare Pages. Live duplicate-safe verification returned “Check
+  your inbox” without sending another confirmation.
 
 ### 2026-07-24 — Codex — password-reset browser fallback live
 - **Changed:** added the exact `/reset-password` Cloudflare Pages redirect to the existing SPA reset mode and a regression assertion for the source/dist rule. Kept the native AASA route unchanged. Hardened the existing console collector only against third-party resource-load noise already handled on the active feature branch.
