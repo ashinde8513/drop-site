@@ -13,13 +13,14 @@ Last updated: 2026-07-25
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — Discovery 2A designed and QA-verified in Claude.ai; implementation awaits founder approval
+**Status:** IDLE — Discovery 2A and Social 3A designed and QA-verified in Claude.ai; implementation awaits explicit founder approval
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None. Last session: Codex (`codex-web-design-20260725`) completed the signed-in Discover/Search/Event Detail desktop and mobile design slice in Claude.ai project `Website design prompt`.
+- None. Last session: Codex (`codex-web-social-design-20260725`) completed the signed-in Friends/Requests/Find/Activity desktop and mobile design slice in Claude.ai project `Website design prompt`.
 
 ## Current status
 ### What works
+- **SOCIAL 3A DESIGN COMPLETE (2026-07-25, design only):** Claude.ai project `Website design prompt` now contains four connected signed-in parity states using Foundation 1A: desktop/mobile Friends and Crew Activity. Friends includes Requests and Find subviews, filtering/search, browser invite/copy, Add/Sent and Accept/Decline states, taste-overlap labels, native-only contacts disclosure, person menus, report/block confirmation, and blocked-user filtering. Activity includes going/rated/recap/plan-join feed types, person/event/plan links, icon-based reactions, and honest ready/loading/empty/error states. Desktop/mobile rendering, 390px containment, bottom navigation, tabs, Retry, and reaction picker were visually exercised. No repository implementation, production route, data, or deployment changed.
 - **DISCOVERY 2A DESIGN COMPLETE (2026-07-25, design only):** Claude.ai project `Website design prompt` now contains six connected signed-in parity states using Foundation 1A: desktop/mobile Discover, Search/results, and Event Detail. The slice includes Any-time-first discovery, detailed genre/date/location filters, global festivals, honest data states, artwork-first event cards without RSVP rows, mobile filter sheet, detail-only RSVP/save/follow/calendar/share, weather/presale, and three-seller all-in ticket comparison. Desktop/mobile render and 390px overflow were visually checked; a duplicate state declaration found by Claude verification was fixed. No real reusable map/pin pattern exists in the design file, so Map is explicitly deferred to Discovery 2B instead of represented by a placeholder. No repository implementation, production route, data, or deployment changed.
 - **ISOLATED WEB-PARITY FOUNDATION 1A VERIFIED (2026-07-22, not deployed):** React/Vite preview at `/app/next/` shares the production Supabase account/data contract with mobile; implements auth, compliance, responsive signed-in shell, profile/avatar, privacy, notification preferences, music connection status, logout, and deletion. Desktop stays visually continuous with the public Prism website while mobile uses compact web-native navigation. Full plan: `docs/web-parity-plan.md`.
 - **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
@@ -41,16 +42,16 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
-- Founder review/approval of the completed Claude.ai Discovery 2A slice before implementing signed-in Discover/Search/Event Detail parity.
+- Explicit founder implementation approval for the completed Claude.ai Discovery 2A and Social 3A slices. The 2026-07-25 “looks good so far” message authorized continued design work only.
 - Physical-iPhone checks for the already-live event-detail layout and TestFlight Universal Links remain founder/device actions, not coding next steps.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-1. Founder: review and approve the six connected **Discover/Search/Event Detail** desktop/mobile states in Claude.ai project `Website design prompt`; request any visual changes there before implementation.
-2. After approval, implement Discovery 2A in `/app/next/` against the existing public catalog and mobile Supabase contracts, including RSVP/save/follow/ticket/calendar/share behavior; keep Map deferred until Discovery 2B has a real map asset/pattern.
-3. Then design and implement the Social slice (friends, activity, comments, crews, plans, chat, blocks/safety) from `docs/web-parity-plan.md` without changing the production `/app` route.
+1. Continue design-first parity in Claude.ai project `Website design prompt` with **Social 3B: Plans, Crews, realtime chat, and event comments** in paired desktop/mobile states, reusing Foundation 1A and the verified Social 3A patterns.
+2. Founder: review the four connected **Friends/Requests/Find/Activity** states and request any changes before implementation.
+3. Only after explicit implementation approval, implement the approved Discovery 2A and Social 3A states in `/app/next/`; keep production `/app` unchanged and Map deferred until Discovery 2B has a real map asset/pattern.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
 - **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.
@@ -225,6 +226,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-25 — Codex — Claude.ai Social 3A design complete
+- **Changed:** added four connected signed-in Social 3A states to `Website design prompt`: desktop/mobile Friends and Crew Activity. Friends now includes real Requests and Find subviews, invite/copy, search, Add/Sent, Accept/Decline, taste overlap, native-only contacts disclosure, safety menus, report/block confirmation, and blocked-user filtering. Activity covers going, rating, recap, and plan-join feed types with icon-based reactions.
+- **Design QA:** visually exercised desktop/mobile state switching, Requests, Find, mobile bottom navigation, Activity ready/empty/error/Retry, and the reaction picker. Corrected the section description, sent-state label, and exact iOS-only contacts wording. No horizontal overflow was visible at 390px.
+- **Delivery:** design only; repository implementation, production routes, data, and deployment are unchanged. The founder’s positive interim review authorized continued design, not implementation.
+- **Next:** see Exact next step above.
+
 ### 2026-07-25 — Codex — Claude.ai Discovery 2A design complete
 - **Changed:** added six connected signed-in states to the website design project: desktop/mobile Discover, Search/results, and Event Detail. Event cards now navigate into the detail state; RSVP actions remain detail-only. Search includes browser-native mobile filters and honest ready/loading/empty/error states. Event Detail includes wrapped lineup, social proof, weather/presale, profile links, follow/calendar/share actions, and three labeled all-in ticket offers with disclosure and seller/error states.
 - **Design QA:** visually checked desktop and 390px mobile states, filter sheet, ticket disclosure/error state, bottom navigation, and overflow. Claude fixed one duplicate state declaration. Removed text-glyph control icons in favor of plain accessible labels.
