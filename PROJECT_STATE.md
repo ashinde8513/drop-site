@@ -13,10 +13,10 @@ Last updated: 2026-07-24
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** UNLOCKED — password-reset browser fallback is live and a fresh recovery email was delivered
+**Status:** READY TO MERGE — backend production rollout and delivered canary are complete
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: — · Started: — · Working on: none
+- Owner: Codex · Started: 2026-07-25 · Working on: PR #26 merge, production deploy, and live form verification
 
 ## Current status
 ### What works
@@ -45,6 +45,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Merge PR #26 through the standard PR → `main` workflow, submit the
+  already-confirmed controlled address on the live page, and verify the page
+  says “Check your inbox” without sending a duplicate confirmation.**
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -234,6 +237,21 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-25 — Codex — Reliable launch-access client ready to deploy
+- **Cause:** the live form wrote directly from the visitor’s browser to the
+  waitlist table. A failed request was neither queued nor retried, and no code
+  sent a confirmation email; the reported July 24 signup is absent from the
+  live table.
+- **Changed:** `Drop.joinWaitlist` now calls the paired server-side Edge
+  Function; success copy tells visitors to check their inbox, repeat signups
+  receive the same privacy-safe response, and email/quota failures retain the
+  visible retry state. Copy now discloses the immediate confirmation.
+- **Verified:** the complete 104-test Playwright suite passed across desktop
+  Chrome and mobile Safari; source and generated `dist` match. The paired
+  production migration/function are live, and the controlled canary was
+  recorded by the database and delivered by Resend. PR:
+  https://github.com/ashinde8513/drop-site/pull/26.
+
 ### 2026-07-24 — Codex — password-reset browser fallback live
 - **Changed:** added the exact `/reset-password` Cloudflare Pages redirect to the existing SPA reset mode and a regression assertion for the source/dist rule. Kept the native AASA route unchanged. Hardened the existing console collector only against third-party resource-load noise already handled on the active feature branch.
 - **Verified:** local and GitHub Playwright passed 104/104 across desktop Chrome and mobile Safari; PR #25 merged as `006fe8d`; workflow `30138096500` deployed successfully. Live HTTP returns 302 to `https://app.trydropapp.com/?mode=reset-password`, a placeholder recovery hash survives the redirect, and the destination renders “Choose a new password.”

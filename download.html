@@ -101,9 +101,7 @@
             <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(34px,5vw,56px); letter-spacing:-0.8px; line-height:1.03; margin:0 0 var(--sp-md);">Drop in your pocket</h1>
             <p class="hero-sub" style="max-width:52ch;">Push alerts the second presale drops, contacts sync to find your crew, and your ticket wallet on the go.</p>
 
-            <!-- Waitlist → our own Supabase `waitlist` table (write-only for the
-                 public key; see Drop.joinWaitlist in data.js). The action/method
-                 are a harmless no-JS fallback — JS always submits in place. -->
+            <!-- Waitlist → server-side Supabase function; see Drop.joinWaitlist. -->
             <form class="wl-form" id="waitlist"
                   action="/download.html"
                   method="get" novalidate style="margin-top:var(--sp-xl); max-width:440px;">
@@ -114,7 +112,7 @@
                        placeholder="you@email.com" aria-label="Email address" />
                 <button class="btn-primary wl-submit" type="submit">Get launch access →</button>
               </div>
-              <p class="wl-consent">No spam — just one email when Drop launches. Unsubscribe anytime.</p>
+              <p class="wl-consent">We’ll confirm your spot now, then email when Drop launches. No spam.</p>
               <p class="wl-msg" role="status" aria-live="polite"></p>
             </form>
 
@@ -234,9 +232,7 @@
   <script src="/site.js"></script>
   <script src="/consent.js" defer></script>
   <script>
-    // Waitlist capture → our own Supabase `waitlist` table via Drop.joinWaitlist
-    // (data.js). Replaced the Kit (ConvertKit) wiring 2026-07-16 — founder opted
-    // to own the list in Supabase; the table is write-only for the public key.
+    // Server-side capture stores the signup and queues its confirmation email.
     (function () {
       var form = document.getElementById('waitlist');
       if (!form) return;
@@ -267,11 +263,9 @@
         }
         setInvalid(false);
         show('Adding you…', true);
-        Drop.joinWaitlist(email, src).then(function (res) {
+        Drop.joinWaitlist(email, src).then(function () {
           form.reset();
-          show(res.duplicate
-            ? "You're already on the list 🎛️ We'll email you the day Drop launches."
-            : "You're on the list 🎛️ We'll email you the day Drop launches.", true);
+          show("You're on the list 🎛️ Check your inbox for confirmation.", true);
         }).catch(function () {
           show("That didn't go through — tap again, or email trydropapp@gmail.com.", false);
         });
