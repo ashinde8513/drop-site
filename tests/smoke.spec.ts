@@ -387,40 +387,35 @@ test.describe('website smoke', () => {
   });
 
   test('launch-access submit answers inline instead of silently reloading', async ({ page }) => {
-    // Mock the waitlist insert: CI must never write a real row to production.
+    // Mock the function: CI must never write a real row or send a real email.
     let posted: string | undefined;
-    await page.route('**/rest/v1/waitlist**', async (route) => {
+    await page.route('**/functions/v1/join-waitlist', async (route) => {
       posted = route.request().postData() ?? '';
-      await route.fulfill({ status: 201, body: '' });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('Raver@Example.com');
     await page.locator('.wl-submit').click();
     // The tap must produce visible feedback that mentions email — never a
     // bare page reload (founder-reported bug).
-    await expect(page.locator('.wl-msg')).toContainText(/on the list/);
-    await expect(page.locator('.wl-msg')).toContainText(/email/i);
+    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
     expect(page.url()).not.toContain('email_address=');
     // The row goes to our own table, lowercased for the unique constraint.
     expect(posted).toContain('"email":"raver@example.com"');
   });
 
-  test('signing up twice reads as already-on-the-list, not an error', async ({ page }) => {
-    // Supabase answers a repeat email with a unique-constraint 409.
-    await page.route('**/rest/v1/waitlist**', (route) =>
-      route.fulfill({
-        status: 409, contentType: 'application/json',
-        body: JSON.stringify({ code: '23505', message: 'duplicate key value violates unique constraint "waitlist_email_key"' }),
-      }));
+  test('repeat signup gets the same privacy-safe confirmation', async ({ page }) => {
+    await page.route('**/functions/v1/join-waitlist', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('raver@example.com');
     await page.locator('.wl-submit').click();
-    await expect(page.locator('.wl-msg')).toContainText(/already on the list/);
+    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
     await expect(page.locator('.wl-msg')).toHaveClass(/ok/);
   });
 
   test('waitlist outage shows a retry message instead of failing silently', async ({ page }) => {
-    await page.route('**/rest/v1/waitlist**', (route) =>
+    await page.route('**/functions/v1/join-waitlist', (route) =>
       route.fulfill({ status: 500, body: '' }));
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('raver@example.com');
