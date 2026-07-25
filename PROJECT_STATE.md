@@ -13,10 +13,10 @@ Last updated: 2026-07-24
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** BLOCKED — reliable launch-access client is verified locally; backend production rollout must land first
+**Status:** BLOCKED — draft PR #26 is verified; backend production rollout must land first
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex · Started: 2026-07-25 · Working on: verified `codex/waitlist-confirmation-web`; waiting for approved backend production rollout before website delivery
+- Owner: Codex · Started: 2026-07-25 · Working on: draft PR #26; waiting for approved backend production rollout before website delivery
 
 ## Current status
 ### What works
@@ -251,7 +251,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   visible retry state. Copy now discloses the immediate confirmation.
 - **Verified:** the complete 104-test Playwright suite passed across desktop
   Chrome and mobile Safari; source and generated `dist` match. No deploy or
-  production write occurred; backend must ship first.
+  production write occurred; backend must ship first. Draft PR:
+  https://github.com/ashinde8513/drop-site/pull/26.
 
 ### 2026-07-24 — Codex — password-reset browser fallback live
 - **Changed:** added the exact `/reset-password` Cloudflare Pages redirect to the existing SPA reset mode and a regression assertion for the source/dist rule. Kept the native AASA route unchanged. Hardened the existing console collector only against third-party resource-load noise already handled on the active feature branch.
