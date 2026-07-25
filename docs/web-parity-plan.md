@@ -1,6 +1,6 @@
 # Drop website feature-parity plan
 
-Status: Foundation 1A implemented and verified on `codex/web-parity-react`; no production cutover.
+Status: Foundation 1A implemented and verified on `codex/web-parity-react`; Discovery 2A Discover/Search/Event Detail design completed and QA-verified in Claude.ai; no production cutover.
 
 ## Product contract
 
@@ -13,7 +13,7 @@ Status: Foundation 1A implemented and verified on `codex/web-parity-react`; no p
 ## Delivery slices
 
 1. **Foundation 1A — complete:** shared auth/session, login/signup/recovery/OAuth, compliance gate, responsive website-native shell, profile/avatar, privacy, notification preferences, music connection status, logout, and account deletion.
-2. **Discovery:** Discover, search, map, For You, festivals, event detail, ticket offers, weather, presale, RSVP/save/follow, calendar, and sharing.
+2. **Discovery — design complete for Discover/Search/Event Detail; implementation pending approval:** Discover, search, For You, festivals, event detail, ticket offers, weather, presale, RSVP/save/follow, calendar, and sharing. Map is deferred to Discovery 2B because the current design project has no real reusable map/pin asset or pattern; do not ship a placeholder.
 3. **Catalog and identity:** artists, venues, taste profile, wallet, and rewards.
 4. **Social:** friends/requests, contact matching, activity, comments/reactions, crews, plans, realtime chat, taste match, blocks, and safety controls.
 5. **Festival/live:** personal schedules, picks, clash detection, check-ins, and meetups.

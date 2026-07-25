@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-22
+Last updated: 2026-07-25
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — Foundation 1A verified in `codex/web-parity-react`; production routes remain untouched
+**Status:** IDLE — Discovery 2A designed and QA-verified in Claude.ai; implementation awaits founder approval
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None. Last session: Codex (`codex-web-parity-20260722`) completed Foundation 1A at `/app/next/` in isolated worktree `drop-website-parity`.
+- None. Last session: Codex (`codex-web-design-20260725`) completed the signed-in Discover/Search/Event Detail desktop and mobile design slice in Claude.ai project `Website design prompt`.
 
 ## Current status
 ### What works
+- **DISCOVERY 2A DESIGN COMPLETE (2026-07-25, design only):** Claude.ai project `Website design prompt` now contains six connected signed-in parity states using Foundation 1A: desktop/mobile Discover, Search/results, and Event Detail. The slice includes Any-time-first discovery, detailed genre/date/location filters, global festivals, honest data states, artwork-first event cards without RSVP rows, mobile filter sheet, detail-only RSVP/save/follow/calendar/share, weather/presale, and three-seller all-in ticket comparison. Desktop/mobile render and 390px overflow were visually checked; a duplicate state declaration found by Claude verification was fixed. No real reusable map/pin pattern exists in the design file, so Map is explicitly deferred to Discovery 2B instead of represented by a placeholder. No repository implementation, production route, data, or deployment changed.
 - **ISOLATED WEB-PARITY FOUNDATION 1A VERIFIED (2026-07-22, not deployed):** React/Vite preview at `/app/next/` shares the production Supabase account/data contract with mobile; implements auth, compliance, responsive signed-in shell, profile/avatar, privacy, notification preferences, music connection status, logout, and deletion. Desktop stays visually continuous with the public Prism website while mobile uses compact web-native navigation. Full plan: `docs/web-parity-plan.md`.
 - **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
@@ -40,15 +41,15 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
-- Founder approval of the next Claude.ai/design slice before implementing signed-in Discover/Search/Event Detail parity.
+- Founder review/approval of the completed Claude.ai Discovery 2A slice before implementing signed-in Discover/Search/Event Detail parity.
 - Physical-iPhone checks for the already-live event-detail layout and TestFlight Universal Links remain founder/device actions, not coding next steps.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-1. In Claude.ai/design project `Website design prompt`, design the signed-in **Discover/Search/Event Detail** desktop and mobile slice using the approved Foundation 1A shell; present it for founder approval.
-2. After approval, implement that slice in `/app/next/` against the existing public catalog and mobile Supabase contracts, including RSVP/save/follow/ticket/calendar/share behavior.
+1. Founder: review and approve the six connected **Discover/Search/Event Detail** desktop/mobile states in Claude.ai project `Website design prompt`; request any visual changes there before implementation.
+2. After approval, implement Discovery 2A in `/app/next/` against the existing public catalog and mobile Supabase contracts, including RSVP/save/follow/ticket/calendar/share behavior; keep Map deferred until Discovery 2B has a real map asset/pattern.
 3. Then design and implement the Social slice (friends, activity, comments, crews, plans, chat, blocks/safety) from `docs/web-parity-plan.md` without changing the production `/app` route.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
@@ -224,6 +225,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-25 — Codex — Claude.ai Discovery 2A design complete
+- **Changed:** added six connected signed-in states to the website design project: desktop/mobile Discover, Search/results, and Event Detail. Event cards now navigate into the detail state; RSVP actions remain detail-only. Search includes browser-native mobile filters and honest ready/loading/empty/error states. Event Detail includes wrapped lineup, social proof, weather/presale, profile links, follow/calendar/share actions, and three labeled all-in ticket offers with disclosure and seller/error states.
+- **Design QA:** visually checked desktop and 390px mobile states, filter sheet, ticket disclosure/error state, bottom navigation, and overflow. Claude fixed one duplicate state declaration. Removed text-glyph control icons in favor of plain accessible labels.
+- **Deferred honestly:** no real map/pin pattern or asset exists in the current Claude file, so the fake Map placeholder/control was removed and Map is labeled for Discovery 2B.
+- **Delivery:** design only; repository implementation, production routes, data, and deployment are unchanged. Founder approval is the gate before `/app/next/` implementation.
+- **Next:** see Exact next step above.
+
 ### 2026-07-22 — Codex — website parity Foundation 1A complete (isolated, not deployed)
 - **Changed:** added the React/Vite `/app/next/` preview with shared production Supabase auth/data wiring, compliance gating, responsive website-native shell, profile/avatar, privacy, notification preferences, connection status, logout, and real account deletion. Added route-scoped security headers, CI Node setup, SPA fallback rules, and a durable parity plan.
 - **Design:** all four states were created and founder-approved first in the website Claude.ai/design project; paired desktop/mobile reference and implementation QA passed. Desktop preserves the public website's Prism header and visual language.
