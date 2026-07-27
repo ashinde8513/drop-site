@@ -1,6 +1,6 @@
 # Drop website feature-parity plan
 
-Status: Foundation 1A implemented and verified on `codex/web-parity-react`; Discovery 2A Discover/Search/Event Detail and Social 3A Friends/Requests/Find/Activity designs completed and QA-verified in Claude.ai; no production cutover.
+Status: Foundation 1A and the first Discovery 2A runtime slice are implemented and verified on `codex/web-parity-react`; the complete current-app experience is designed and QA-verified in Claude.ai; no production cutover.
 
 ## Product contract
 
@@ -13,7 +13,7 @@ Status: Foundation 1A implemented and verified on `codex/web-parity-react`; Disc
 ## Delivery slices
 
 1. **Foundation 1A — complete:** shared auth/session, login/signup/recovery/OAuth, compliance gate, responsive website-native shell, profile/avatar, privacy, notification preferences, music connection status, logout, and account deletion.
-2. **Discovery — design complete for Discover/Search/Event Detail; implementation pending approval:** Discover, search, For You, festivals, event detail, ticket offers, weather, presale, RSVP/save/follow, calendar, and sharing. Map is deferred to Discovery 2B because the current design project has no real reusable map/pin asset or pattern; do not ship a placeholder.
+2. **Discovery — implementation in progress:** the isolated preview now has real global catalog/search, location-scoped Happening, follow-based For You, block-safe Crew attendance, event detail, Going/Interested, canonical sharing, ticket links, and honest conditional data states. Detailed filters, save/follow/calendar, ticket offers, weather/presale, and comments remain. Map is deferred to Discovery 2B; do not ship a placeholder.
 3. **Catalog and identity:** artists, venues, taste profile, wallet, and rewards.
 4. **Social — 3A design complete; 3B pending:** Social 3A covers desktop/mobile friends, requests, browser search/invite, honest native-only contact matching, activity, reactions, taste match, blocks, and safety controls. Social 3B still needs paired desktop/mobile designs for crews, plans, realtime chat, and event comments before implementation.
 5. **Festival/live:** personal schedules, picks, clash detection, check-ins, and meetups.

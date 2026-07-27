@@ -6,8 +6,9 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 - [x] Build Foundation 1A of the website parity preview at `/app/next/` — approved Claude.ai/design states, shared auth/account wiring, responsive shell, profile/settings/deletion, 118/118 browser checks; isolated and not deployed (2026-07-22).
 - [x] Design the complete current-app signed-in parity experience in Claude.ai/design, preserving public-site continuity on desktop, a web-native mobile layout, and honest native-only boundaries (2026-07-26).
-- [ ] Founder: review the complete `Website design prompt` prototype and explicitly approve implementation or request revisions.
-- [ ] After approval, implement the reviewed parity states in `/app/next/` as bounded vertical slices against the shared Supabase and mobile behavior contracts; keep production `/app` unchanged until the full cutover gate. See `docs/web-parity-plan.md`.
+- [x] Founder approved implementation of the complete `Website design prompt` prototype after the native-source parity clarification (2026-07-26).
+- [x] Implement the first Discovery 2A runtime slice in `/app/next/`: real global catalog/search, scoped Happening, personalized For You, block-safe Crew, event detail, RSVP, canonical sharing, tickets, and honest conditional states (2026-07-26).
+- [ ] Finish Discovery 2A in `/app/next/`: detailed filters plus save/follow/calendar, ticket offers, weather/presale, and event comments; then advance through the remaining approved slices. Keep production `/app` unchanged until the full cutover gate. See `docs/web-parity-plan.md`.
 
 - [x] Deploy the paired backend `events.timezone` migration/ingest, rerun the full live-backed suite, and release the website — complete 2026-07-18: 96/96 local + GitHub, PR #17 / `aa76a7a`, production run `29639887776`, and desktop/mobile live catalog/art QA green. Multi-day schedule rendering is regression-tested; production has no official festival set-time rows yet, so live-data schedule QA remains waiting rather than fabricated.
 - [x] Replace generic/empty event cards with the proper event → lineup artist → Prism chain and wire real festival discovery/set times — independently reviewed and live through PR #17 on 2026-07-18; targeted regressions 10/10 and generated-dist parity clean.

@@ -6,7 +6,7 @@ The signed-in website should provide Drop's complete core jobs instead of withho
 
 The native app earns preference through capabilities the browser cannot match as reliably: push notifications, verified contact discovery, local-media discovery, calendar and deep-link integration, background location, offline behavior, and faster native interaction. Website prompts to install the app must be contextual to those advantages, not generic gates.
 
-The complete current-app feature set is designed first in Claude.ai project `Website design prompt`; implementation remains isolated under `/app/next/` until founder review and explicit approval.
+The complete current-app feature set is designed first in Claude.ai project `Website design prompt`; the founder approved isolated implementation on 2026-07-26. Work remains under `/app/next/` until the full acceptance and explicit production-cutover gates pass.
 
 ## 2026-07-22 — Website parity is shared behavior with a website-native interface
 

@@ -7,6 +7,8 @@ type MockOptions = {
   compliance?: boolean | 'error' | 'hang';
   loginError?: boolean;
   logoutFailure?: boolean;
+  pastEvent?: boolean;
+  personalized?: boolean;
   usernameAvailable?: boolean;
 };
 
@@ -37,6 +39,44 @@ const profile = {
   show_age: false,
   show_history_public: true,
   recap_includable: true,
+};
+
+const dropEvent = {
+  id: '11111111-1111-4111-8111-111111111111',
+  title: 'Prism Nights',
+  description: 'A full night of house music in Denver.',
+  date: '2027-08-20T03:00:00.000Z',
+  end_date: null,
+  venue_name: 'Mission Ballroom',
+  city: 'Denver',
+  state: 'CO',
+  image_url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30',
+  ticket_url: 'https://example.com/tickets',
+  price_min: 35,
+  price_max: 55,
+  currency: 'USD',
+  is_festival: false,
+  time_tbd: false,
+  timezone: 'America/Denver',
+  status: 'published',
+  event_artists: [{ position: 0, artists: { id: 'artist-1', name: 'Neon Current', genres: ['House'], image_url: null } }],
+};
+
+const coastEvent = {
+  ...dropEvent,
+  id: '22222222-2222-4222-8222-222222222222',
+  title: 'Coast Frequency',
+  venue_name: 'Sound',
+  city: 'Los Angeles',
+  state: 'CA',
+  event_artists: [{ position: 0, artists: { id: 'artist-2', name: 'Voltage Bloom', genres: ['Electronic', 'Techno'], image_url: null } }],
+};
+
+const endedEvent = {
+  ...dropEvent,
+  id: '33333333-3333-4333-8333-333333333333',
+  title: 'Ended Frequency',
+  date: '2020-08-20T03:00:00.000Z',
 };
 
 async function mockSupabase(page: Page, authenticated = false, options: MockOptions = {}) {
@@ -92,12 +132,64 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
     if (url.pathname === '/rest/v1/rpc/username_available') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(options.usernameAvailable !== false) });
     }
+    if (url.pathname === '/rest/v1/rpc/recap_crew_for') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.personalized ? [{ id: '00000000-0000-4000-8000-000000000002' }] : []),
+      });
+    }
     if (url.pathname === '/rest/v1/profiles') {
       return route.fulfill({
         status: 200,
         headers: { 'content-range': '0-0/1' },
         contentType: 'application/json',
         body: JSON.stringify([profile]),
+      });
+    }
+    if (url.pathname === '/rest/v1/artist_follows') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.personalized ? [{ artist_id: 'artist-2' }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/artists') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.personalized ? [{ genres: ['Techno'] }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/friendships') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.personalized ? [{
+          requester_id: user.id,
+          recipient_id: '00000000-0000-4000-8000-000000000002',
+          status: 'accepted',
+        }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/user_blocks') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    }
+    if (url.pathname === '/rest/v1/events') {
+      const eventRows = options.pastEvent ? [endedEvent] : options.personalized ? [dropEvent, coastEvent] : [dropEvent];
+      return route.fulfill({
+        status: 200,
+        headers: { 'content-range': options.personalized ? '0-1/2' : '0-0/1' },
+        contentType: 'application/json',
+        body: JSON.stringify(eventRows),
+      });
+    }
+    if (url.pathname === '/rest/v1/attendance') {
+      return route.fulfill({
+        status: 200,
+        headers: { 'content-range': options.personalized ? '0-0/1' : '*/0' },
+        contentType: 'application/json',
+        body: JSON.stringify(options.personalized ? [{ event_id: dropEvent.id }] : []),
       });
     }
 
@@ -164,8 +256,80 @@ test.describe('React parity preview foundation', () => {
     const mobile = page.getByRole('navigation', { name: /mobile navigation/i });
     await expect(mobile).toBeVisible();
     await expect(mobile.getByRole('link', { name: /discover/i })).toBeVisible();
+    await expect(mobile.getByRole('link', { name: /^search$/i })).toBeVisible();
+    await expect(mobile.getByRole('link', { name: /my shows/i })).toBeVisible();
+    await expect(mobile.getByRole('link', { name: /^crew$/i })).toBeVisible();
+    await expect(mobile.getByRole('link', { name: /^profile$/i })).toBeVisible();
+    await expect(mobile.getByRole('link', { name: /^map$/i })).toHaveCount(0);
+    await expect(mobile.getByRole('link', { name: /^friends$/i })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: /^primary$/i })).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
+  test('discover loads real event data and event detail is a child route without the tab bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mockedWrites = await mockSupabase(page, true);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: ({ url }: { url: string }) => {
+          (window as typeof window & { __sharedUrl?: string }).__sharedUrl = url;
+          return Promise.resolve();
+        },
+      });
+    });
+    await page.goto(`${APP}/`);
+
+    await expect(page.getByRole('heading', { name: /shows near denver/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Happening' })).toHaveAttribute('aria-pressed', 'true');
+    const card = page.getByRole('link', { name: /open prism nights/i });
+    await expect(card).toContainText('Mission Ballroom');
+    await expect(card).toContainText('House');
+    await expect(card).toContainText('9:00 PM');
+    await card.click();
+
+    await expect(page).toHaveURL(new RegExp(`${APP}/event/${dropEvent.id}/?$`));
+    await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: /mobile navigation/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /go back/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /get tickets/i })).toHaveAttribute('rel', /noopener/);
+
+    await page.getByRole('button', { name: /share show/i }).click();
+    await expect.poll(() => page.evaluate(() => (window as typeof window & { __sharedUrl?: string }).__sharedUrl))
+      .toBe(`https://trydropapp.com/event.html?id=${dropEvent.id}`);
+
+    await page.getByRole('button', { name: /^going$/i }).click();
+    await expect.poll(() => mockedWrites.filter((entry) => entry === 'POST /rest/v1/attendance').length).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
+  test('personalized discover tabs use real follows and crew attendance while search remains global', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockSupabase(page, true, { personalized: true });
+    await page.goto(`${APP}/`);
+
+    await page.getByRole('button', { name: 'For You' }).click();
+    await expect(page.getByRole('link', { name: /open coast frequency/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Crew' }).click();
+    await expect(page.getByRole('link', { name: /open prism nights/i })).toBeVisible();
+
+    await page.getByRole('navigation', { name: /mobile navigation/i })
+      .getByRole('link', { name: /^search$/i }).click();
+    await page.getByRole('textbox', { name: /search artists, venues, and shows/i }).fill('Los Angeles');
+    await expect(page.getByRole('link', { name: /open coast frequency/i })).toBeVisible();
+  });
+
+  test('past event detail keeps sharing but hides RSVP and ticket actions', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockSupabase(page, true, { pastEvent: true });
+    await page.goto(`${APP}/`);
+    await page.getByRole('link', { name: /open ended frequency/i }).click();
+
+    await expect(page.getByRole('heading', { name: 'Ended Frequency' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^going$/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^interested$/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /get tickets/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /share show/i })).toBeVisible();
   });
 
   test('auth errors stay on the form and taken usernames never create an account', async ({ page }) => {

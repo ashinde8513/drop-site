@@ -1,5 +1,6 @@
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { AppleLogo } from '@phosphor-icons/react/AppleLogo';
+import { ArrowLeft } from '@phosphor-icons/react/ArrowLeft';
 import { Bell } from '@phosphor-icons/react/Bell';
 import { CalendarDots } from '@phosphor-icons/react/CalendarDots';
 import { CaretDown } from '@phosphor-icons/react/CaretDown';
@@ -44,14 +45,17 @@ import {
   type NotificationPrefs,
   type Profile,
 } from './lib/account';
+import { DiscoverPage, EventDetailPage, SearchPage } from './discovery';
+import brandMark from '../../favicon.svg?url';
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
 
 const navItems = [
   { to: '/discover', label: 'Discover', icon: Compass },
+  { to: '/search', label: 'Search', icon: MagnifyingGlass },
   { to: '/map', label: 'Map', icon: MapPin },
   { to: '/shows', label: 'My Shows', icon: Ticket },
-  { to: '/friends', label: 'Friends', icon: UsersThree },
+  { to: '/friends', label: 'Crew', icon: UsersThree },
   { to: '/plans', label: 'Plans', icon: CalendarDots },
   { to: '/festivals', label: 'Festivals & Live', icon: FlagBanner },
   { to: '/notifications', label: 'Notifications', icon: Bell },
@@ -59,9 +63,13 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: GearSix },
 ] as const;
 
-const mobileNavItems = navItems.filter(({ to }) =>
-  ['/discover', '/map', '/shows', '/friends', '/profile'].includes(to),
-);
+const mobileNavItems = [
+  { to: '/discover', label: 'Discover', icon: Compass },
+  { to: '/search', label: 'Search', icon: MagnifyingGlass },
+  { to: '/shows', label: 'My Shows', icon: Ticket },
+  { to: '/friends', label: 'Crew', icon: UsersThree },
+  { to: '/profile', label: 'Profile', icon: UserCircle },
+] as const;
 
 function errorMessage(error: unknown) {
   return error instanceof Error && error.message
@@ -81,7 +89,7 @@ function field(value: unknown) {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">
-      <img className="brand__mark" src="/favicon.svg" alt="" />
+      <img className="brand__mark" src={brandMark} alt="" />
       {!compact && <span>DROP</span>}
     </a>
   );
@@ -415,6 +423,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function pageTitle(pathname: string) {
+  if (pathname.startsWith('/event/')) return 'Event';
   return navItems.find(({ to }) => pathname.startsWith(to))?.label ?? 'Discover';
 }
 
@@ -425,14 +434,21 @@ function AppShell() {
   const user = auth.user;
   const name = displayName(profile, user?.email);
   const title = pageTitle(location.pathname);
+  const navigate = useNavigate();
+  const isRootRoute = mobileNavItems.some(({ to }) => location.pathname === to);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isRootRoute ? '' : ' app-shell--child'}`}>
       <PublicHeader authenticated />
       <div className="mobile-app-header">
-        <Brand compact />
+        {isRootRoute
+          ? <span className="mobile-app-header__mark"><Brand compact /></span>
+          : <button className="mobile-app-header__back" type="button" onClick={() => navigate(-1)} aria-label="Go back"><ArrowLeft size={21} /></button>}
         <strong>{title}</strong>
-        <div className="mobile-app-header__actions"><button type="button" aria-label="Search"><MagnifyingGlass size={20} /></button><Link to="/profile" aria-label="Open profile"><Avatar profile={profile} name={name} size="small" /></Link></div>
+        <div className="mobile-app-header__actions">
+          {isRootRoute && <button type="button" onClick={() => navigate('/search')} aria-label="Search"><MagnifyingGlass size={20} /></button>}
+          {isRootRoute && <Link to="/profile" aria-label="Open profile"><Avatar profile={profile} name={name} size="small" /></Link>}
+        </div>
       </div>
       <aside className="side-nav">
         <div className="side-nav__title">Account</div>
@@ -448,18 +464,21 @@ function AppShell() {
         <main className="stage-content">
           <Routes>
             <Route index element={<Navigate to="/discover" replace />} />
+            <Route path="discover" element={<DiscoverPage />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="event/:eventId" element={<EventDetailPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
-            {navItems.filter(({ to }) => !['/profile', '/settings'].includes(to)).map(({ to, label, icon }) => (
+            {navItems.filter(({ to }) => !['/discover', '/search', '/profile', '/settings'].includes(to)).map(({ to, label, icon }) => (
               <Route key={to} path={to.slice(1)} element={<NextSlice title={label} icon={icon} name={name} />} />
             ))}
             <Route path="*" element={<Navigate to="/discover" replace />} />
           </Routes>
         </main>
       </section>
-      <nav className="mobile-nav" aria-label="Mobile navigation">
+      {isRootRoute && <nav className="mobile-nav" aria-label="Mobile navigation">
         {mobileNavItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to}><Icon size={21} /><span>{label}</span></NavLink>)}
-      </nav>
+      </nav>}
     </div>
   );
 }
