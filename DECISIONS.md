@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-07-26 — Core web parity is a product surface, not an app-download penalty
+
+The signed-in website should provide Drop's complete core jobs instead of withholding useful features to force an app download. Artificially weakening the web experience would reduce activation, sharing, search discovery, and trust.
+
+The native app earns preference through capabilities the browser cannot match as reliably: push notifications, verified contact discovery, local-media discovery, calendar and deep-link integration, background location, offline behavior, and faster native interaction. Website prompts to install the app must be contextual to those advantages, not generic gates.
+
+The complete current-app feature set is designed first in Claude.ai project `Website design prompt`; implementation remains isolated under `/app/next/` until founder review and explicit approval.
+
 ## 2026-07-22 — Website parity is shared behavior with a website-native interface
 
 The signed-in website must expose the mobile app's supported features through the same production Supabase accounts, data, RLS, Edge Functions, and business rules. It is not a separate account system or a desktop copy of the phone layout. Desktop stays visibly continuous with the public Prism website; mobile uses compact browser-native navigation and controls.
