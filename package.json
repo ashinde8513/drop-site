@@ -8,7 +8,8 @@
     "build:webapp": "vite build --config webapp/vite.config.ts",
     "dev:webapp": "vite --config webapp/vite.config.ts",
     "typecheck:webapp": "tsc -p webapp/tsconfig.json --noEmit",
-    "test": "playwright test",
+    "test": "npm run test:sites-preview && playwright test",
+    "test:sites-preview": "node tests/sites-preview-worker.test.mjs",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report"
