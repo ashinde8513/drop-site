@@ -3,6 +3,7 @@ import { ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut';
 import { BookmarkSimple } from '@phosphor-icons/react/BookmarkSimple';
 import { Buildings } from '@phosphor-icons/react/Buildings';
 import { CalendarDots } from '@phosphor-icons/react/CalendarDots';
+import { CaretRight } from '@phosphor-icons/react/CaretRight';
 import { CheckCircle } from '@phosphor-icons/react/CheckCircle';
 import { CircleNotch } from '@phosphor-icons/react/CircleNotch';
 import { CloudSun } from '@phosphor-icons/react/CloudSun';
@@ -115,6 +116,7 @@ const EVENT_SELECT = [
 
 const sections = ['Happening', 'For You', 'Crew'] as const;
 const dateFilters = ['Any time', 'Today', 'This weekend', 'Next 30 days'] as const;
+const discoverGenres = ['Festivals', 'House', 'Techno', 'Dubstep', 'Drum & Bass', 'Hip-Hop', 'Indie', 'Clubs'] as const;
 const EVENT_GRACE_MS = 6 * 60 * 60 * 1000;
 const PAGE_SIZE = 1000;
 const MAX_CATALOG_EVENTS = 5000;
@@ -363,6 +365,14 @@ function displayGenres(raw: string[]) {
 function eventGenres(event: DropEvent) {
   if (event.is_festival) return new Set(['Festival']);
   return displayGenres(artists(event).flatMap((artist) => artist.genres ?? []));
+}
+
+function matchesDiscoverGenre(event: DropEvent, selected: (typeof discoverGenres)[number]) {
+  if (selected === 'Festivals') return event.is_festival;
+  const raw = artists(event).flatMap((artist) => artist.genres ?? []).map((item) => item.toLocaleLowerCase());
+  if (selected === 'Dubstep') return raw.some((item) => ['bass', 'riddim', 'brostep'].includes(item) || item.includes('dubstep'));
+  if (selected === 'Clubs') return raw.some((item) => ['electronic', 'dance', 'house', 'techno'].some((genre) => item.includes(genre)));
+  return eventGenres(event).has(selected);
 }
 
 function genre(event: DropEvent) {
@@ -947,6 +957,17 @@ function EventGrid({ events }: { events: DropEvent[] }) {
   return <div className="event-grid">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>;
 }
 
+function EventRail({ events }: { events: DropEvent[] }) {
+  return <div className="event-rail">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>;
+}
+
+function discoverGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 function useEvents() {
   const [events, setEvents] = useState<DropEvent[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -965,11 +986,13 @@ export function DiscoverPage() {
   const auth = useAuth();
   const city = auth.profile?.city || undefined;
   const stateCode = auth.profile?.state || undefined;
+  const firstName = (auth.profile?.display_name || auth.profile?.username || auth.user?.email?.split('@')[0] || 'there').split(' ')[0];
   const { events, state } = useEvents();
   const [personal, setPersonal] = useState<{ forYou: DropEvent[]; crew: DropEvent[] }>({ forYou: [], crew: [] });
   const [personalState, setPersonalState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [section, setSection] = useState<(typeof sections)[number]>('Happening');
   const [dateFilter, setDateFilter] = useState<(typeof dateFilters)[number]>('Any time');
+  const [discoverGenre, setDiscoverGenre] = useState<(typeof discoverGenres)[number] | null>(null);
   const scoped = useMemo(() => events.filter((event) => {
     if (city) {
       if (event.city?.toLocaleLowerCase() !== city.toLocaleLowerCase()) return false;
@@ -978,11 +1001,19 @@ export function DiscoverPage() {
     if (stateCode) return normalizeState(event.state) === normalizeState(stateCode);
     return true;
   }), [city, events, stateCode]);
-  const visible = useMemo(() => scoped.filter((event) => eventMatchesDate(event, dateFilter)), [scoped, dateFilter]);
+  const visible = useMemo(() => scoped.filter((event) => (
+    eventMatchesDate(event, dateFilter)
+    && (!discoverGenre || matchesDiscoverGenre(event, discoverGenre))
+  )), [discoverGenre, scoped, dateFilter]);
+  const scopedIds = useMemo(() => new Set(scoped.map((event) => event.id)), [scoped]);
+  const forYou = useMemo(() => personal.forYou.slice(0, 6), [personal.forYou]);
+  const festivals = useMemo(
+    () => events.filter((event) => event.is_festival).slice(0, 8),
+    [events],
+  );
   const crew = useMemo(() => {
-    const scopedIds = new Set(scoped.map((event) => event.id));
     return personal.crew.filter((event) => scopedIds.has(event.id));
-  }, [personal.crew, scoped]);
+  }, [personal.crew, scopedIds]);
 
   useEffect(() => {
     if (state !== 'ready') return;
@@ -1000,34 +1031,84 @@ export function DiscoverPage() {
   }, [auth.user, city, events, state, stateCode]);
 
   return (
-    <section className="discovery-page" aria-labelledby="discover-heading">
-      <header className="discovery-heading">
-        <p>YOUR NEXT NIGHT OUT</p>
-        <h2 id="discover-heading">{city ? `Shows near ${city}` : 'Shows near you'}</h2>
-      </header>
-      <div className="segment-control" aria-label="Discover feed">
-        {sections.map((item) => <button key={item} className={section === item ? 'is-active' : ''} type="button" aria-pressed={section === item} onClick={() => setSection(item)}>{item}</button>)}
-      </div>
-      {section === 'Happening' && (
-        <>
-          <div className="chip-rail" aria-label="Date filter">
+    <section className="discovery-page" aria-label="Discover">
+      <div className="discover-desktop">
+        <p className="discover-greeting">{discoverGreeting()}, {firstName} — here&apos;s what&apos;s moving in {city ? `${city}${stateCode ? `, ${stateCode}` : ''}` : 'your area'}.</p>
+        <div className="discover-filter-row">
+          <div className="chip-rail" aria-label="Date scope">
             {dateFilters.map((item) => <button key={item} className={dateFilter === item ? 'is-active' : ''} type="button" aria-pressed={dateFilter === item} onClick={() => setDateFilter(item)}>{item}</button>)}
           </div>
-          {state === 'loading' && <StatePanel state="loading" />}
-          {state === 'error' && <StatePanel state="error" />}
-          {state === 'ready' && (visible.length ? <EventGrid events={visible} /> : <StatePanel state="empty" />)}
-        </>
-      )}
-      {section === 'For You' && personalState === 'loading' && <StatePanel state="loading" />}
-      {section === 'For You' && personalState === 'error' && <StatePanel state="error" message="Could not load your picks." />}
-      {section === 'For You' && personalState === 'ready' && (personal.forYou.length
-        ? <EventGrid events={personal.forYou} />
-        : <StatePanel state="empty" message="Follow artists in Drop to build your personalized feed." />)}
-      {section === 'Crew' && personalState === 'loading' && <StatePanel state="loading" />}
-      {section === 'Crew' && personalState === 'error' && <StatePanel state="error" message="Could not load crew plans." />}
-      {section === 'Crew' && personalState === 'ready' && (crew.length
-        ? <EventGrid events={crew} />
-        : <StatePanel state="empty" message="Crew shows appear when friends mark that they are going." />)}
+          <Link className="view-map-link" to="/map"><MapPin size={15} /> Map</Link>
+        </div>
+        <div className="genre-tile-rail" aria-label="Browse by genre">
+          {discoverGenres.map((item) => (
+            <button key={item} className={discoverGenre === item ? 'is-active' : ''} type="button" aria-pressed={discoverGenre === item} onClick={() => setDiscoverGenre((current) => current === item ? null : item)}>
+              <span>{item}</span>
+            </button>
+          ))}
+        </div>
+        {state === 'loading' && <StatePanel state="loading" />}
+        {state === 'error' && <StatePanel state="error" />}
+        {state === 'ready' && <>
+          <section className="discover-section" aria-labelledby="for-you-heading">
+            <header><h2 id="for-you-heading">For You</h2><Link to="/search">See all</Link></header>
+            {personalState === 'loading' && <StatePanel state="loading" />}
+            {personalState === 'error' && <StatePanel state="error" message="Could not load your picks." />}
+            {personalState === 'ready' && (forYou.length
+              ? <EventRail events={forYou} />
+              : <p className="section-empty">Follow artists in Drop to build your personalized feed.</p>)}
+          </section>
+          <section className="discover-section" aria-labelledby="upcoming-heading">
+            <header><h2 id="upcoming-heading">{discoverGenre ? `${discoverGenre} shows` : 'Upcoming'}</h2><span>{visible.length}</span></header>
+            {visible.length ? <EventGrid events={visible} /> : <StatePanel state="empty" />}
+          </section>
+          <section className="discover-section" aria-labelledby="festival-heading">
+            <header><h2 id="festival-heading">Global festivals</h2><Link to="/festivals">See all</Link></header>
+            {festivals.length
+              ? <EventRail events={festivals} />
+              : <p className="section-empty">Festival schedules will appear when published events are available.</p>}
+          </section>
+        </>}
+      </div>
+
+      <div className="discover-mobile">
+        <header className="discovery-heading">
+          <p>YOUR NEXT NIGHT OUT</p>
+          <h2>{city ? `Shows near ${city}` : 'Shows near you'}</h2>
+        </header>
+        <div className="segment-control" aria-label="Discover feed">
+          {sections.map((item) => <button key={item} className={section === item ? 'is-active' : ''} type="button" aria-pressed={section === item} onClick={() => setSection(item)}>{item}</button>)}
+        </div>
+        {section === 'Happening' && (
+          <>
+            <div className="chip-rail" aria-label="Date filter">
+              {dateFilters.map((item) => <button key={item} className={dateFilter === item ? 'is-active' : ''} type="button" aria-pressed={dateFilter === item} onClick={() => setDateFilter(item)}>{item}</button>)}
+            </div>
+            <h3 className="mobile-rail-title">Pick your night</h3>
+            <div className="genre-tile-rail genre-tile-rail--mobile" aria-label="Browse by genre">
+              {discoverGenres.map((item) => (
+                <button key={item} className={discoverGenre === item ? 'is-active' : ''} type="button" aria-pressed={discoverGenre === item} onClick={() => setDiscoverGenre((current) => current === item ? null : item)}>
+                  <span>{item}</span>
+                </button>
+              ))}
+            </div>
+            {festivals[0] && <Link className="festival-banner" to={`/event/${festivals[0].id}`}><Flag size={18} /><span><strong>{festivals[0].title}</strong><small>{formatEventDate(festivals[0])} · View festival</small></span><CaretRight size={17} /></Link>}
+            {state === 'loading' && <StatePanel state="loading" />}
+            {state === 'error' && <StatePanel state="error" />}
+            {state === 'ready' && (visible.length ? <EventGrid events={visible} /> : <StatePanel state="empty" />)}
+          </>
+        )}
+        {section === 'For You' && personalState === 'loading' && <StatePanel state="loading" />}
+        {section === 'For You' && personalState === 'error' && <StatePanel state="error" message="Could not load your picks." />}
+        {section === 'For You' && personalState === 'ready' && (personal.forYou.length
+          ? <EventGrid events={personal.forYou} />
+          : <StatePanel state="empty" message="Follow artists in Drop to build your personalized feed." />)}
+        {section === 'Crew' && personalState === 'loading' && <StatePanel state="loading" />}
+        {section === 'Crew' && personalState === 'error' && <StatePanel state="error" message="Could not load crew plans." />}
+        {section === 'Crew' && personalState === 'ready' && (crew.length
+          ? <EventGrid events={crew} />
+          : <StatePanel state="empty" message="Crew shows appear when friends mark that they are going." />)}
+      </div>
     </section>
   );
 }

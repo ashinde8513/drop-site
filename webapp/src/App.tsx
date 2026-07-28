@@ -13,7 +13,6 @@ import { Eye } from '@phosphor-icons/react/Eye';
 import { EyeSlash } from '@phosphor-icons/react/EyeSlash';
 import { FacebookLogo } from '@phosphor-icons/react/FacebookLogo';
 import { FlagBanner } from '@phosphor-icons/react/FlagBanner';
-import { GearSix } from '@phosphor-icons/react/GearSix';
 import { GoogleLogo } from '@phosphor-icons/react/GoogleLogo';
 import { LockKey } from '@phosphor-icons/react/LockKey';
 import { MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass';
@@ -52,15 +51,13 @@ type Notice = { tone: 'success' | 'error'; text: string } | null;
 
 const navItems = [
   { to: '/discover', label: 'Discover', icon: Compass },
-  { to: '/search', label: 'Search', icon: MagnifyingGlass },
   { to: '/map', label: 'Map', icon: MapPin },
   { to: '/shows', label: 'My Shows', icon: Ticket },
-  { to: '/friends', label: 'Crew', icon: UsersThree },
+  { to: '/friends', label: 'Friends', icon: UsersThree },
   { to: '/plans', label: 'Plans', icon: CalendarDots },
   { to: '/festivals', label: 'Festivals & Live', icon: FlagBanner },
   { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
-  { to: '/settings', label: 'Settings', icon: GearSix },
 ] as const;
 
 const mobileNavItems = [
@@ -86,20 +83,19 @@ function field(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function Brand({ compact = false }: { compact?: boolean }) {
-  return (
-    <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">
+function Brand({ compact = false, to }: { compact?: boolean; to?: string }) {
+  const content = (
+    <>
       <img className="brand__mark" src={brandMark} alt="" />
       {!compact && <span>DROP</span>}
-    </a>
+    </>
   );
+  return to
+    ? <Link className="brand" to={to} aria-label="Drop home">{content}</Link>
+    : <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">{content}</a>;
 }
 
-function PublicHeader({ authenticated = false }: { authenticated?: boolean }) {
-  const auth = useAuth();
-  const user = auth.user;
-  const profile = auth.profile;
-
+function PublicHeader() {
   return (
     <header className="public-header">
       <Brand />
@@ -116,16 +112,8 @@ function PublicHeader({ authenticated = false }: { authenticated?: boolean }) {
         <a href="https://trydropapp.com/artists">Artists</a>
       </nav>
       <div className="header-actions">
-        {authenticated ? (
-          <Link className="header-account" to="/profile" aria-label="Open profile">
-            <Avatar profile={profile} name={displayName(profile, user?.email)} size="small" />
-          </Link>
-        ) : (
-          <>
-            <Link className="header-login" to="/login">Log in</Link>
-            <Link className="button button--primary button--small" to="/signup">Get started</Link>
-          </>
-        )}
+        <Link className="header-login" to="/login">Log in</Link>
+        <Link className="button button--primary button--small" to="/signup">Get started</Link>
       </div>
     </header>
   );
@@ -424,6 +412,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 function pageTitle(pathname: string) {
   if (pathname.startsWith('/event/')) return 'Event';
+  if (pathname.startsWith('/search')) return 'Search';
+  if (pathname.startsWith('/settings')) return 'Settings';
   return navItems.find(({ to }) => pathname.startsWith(to))?.label ?? 'Discover';
 }
 
@@ -434,15 +424,15 @@ function AppShell() {
   const user = auth.user;
   const name = displayName(profile, user?.email);
   const title = pageTitle(location.pathname);
+  const place = [field(profile?.city).trim(), field(profile?.state).trim()].filter(Boolean).join(', ') || 'Choose location';
   const navigate = useNavigate();
   const isRootRoute = mobileNavItems.some(({ to }) => location.pathname === to);
 
   return (
     <div className={`app-shell${isRootRoute ? '' : ' app-shell--child'}`}>
-      <PublicHeader authenticated />
       <div className="mobile-app-header">
         {isRootRoute
-          ? <span className="mobile-app-header__mark"><Brand compact /></span>
+          ? <span className="mobile-app-header__mark"><Brand compact to="/discover" /></span>
           : <button className="mobile-app-header__back" type="button" onClick={() => navigate(-1)} aria-label="Go back"><ArrowLeft size={21} /></button>}
         <strong>{title}</strong>
         <div className="mobile-app-header__actions">
@@ -451,7 +441,7 @@ function AppShell() {
         </div>
       </div>
       <aside className="side-nav">
-        <div className="side-nav__title">Account</div>
+        <div className="side-nav__brand"><Brand to="/discover" /></div>
         <nav aria-label="Primary">
           {navItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to}><Icon size={19} /><span>{label}</span></NavLink>)}
         </nav>
@@ -459,7 +449,7 @@ function AppShell() {
       <section className="app-stage">
         <header className="stage-header">
           <h1>{title}</h1>
-          <div className="stage-header__actions"><span><MapPin size={17} /> Denver, CO</span><Link to="/notifications" aria-label="Notifications"><Bell size={19} /></Link><Link to="/profile" aria-label="Profile"><Avatar profile={profile} name={name} size="small" /></Link></div>
+          <div className="stage-header__actions"><Link className="stage-location" to="/search" aria-label={`Browse events near ${place}`}><MapPin size={17} /> {place}</Link><Link to="/search" aria-label="Search"><MagnifyingGlass size={19} /></Link><Link to="/notifications" aria-label="Notifications"><Bell size={19} /></Link><Link to="/profile" aria-label="Profile"><Avatar profile={profile} name={name} size="small" /></Link></div>
         </header>
         <main className="stage-content">
           <Routes>
@@ -469,7 +459,7 @@ function AppShell() {
             <Route path="event/:eventId" element={<EventDetailPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
-            {navItems.filter(({ to }) => !['/discover', '/search', '/profile', '/settings'].includes(to)).map(({ to, label, icon }) => (
+            {navItems.filter(({ to }) => !['/discover', '/profile'].includes(to)).map(({ to, label, icon }) => (
               <Route key={to} path={to.slice(1)} element={<NextSlice title={label} icon={icon} name={name} />} />
             ))}
             <Route path="*" element={<Navigate to="/discover" replace />} />
@@ -520,7 +510,12 @@ function ProfilePage() {
   }, [profile?.id]);
 
   if (!profile) {
-    return <p className="page-intro" role="status">{auth.profileError ?? 'Loading profile…'}</p>;
+    return (
+      <section className="settings-width">
+        <p className="page-intro" role="status">{auth.profileError ?? 'Loading profile…'}</p>
+        <Link className="button button--secondary button--small" to="/settings">Settings</Link>
+      </section>
+    );
   }
 
   function update(key: keyof typeof values, value: string) {
@@ -562,7 +557,10 @@ function ProfilePage() {
       <div className="profile-hero">
         <Avatar profile={profile} name={name} />
         <div><h2>{name}</h2><p>{profile?.username ? `@${profile.username}` : user?.email}</p></div>
-        <label className="button button--secondary button--small file-button">Change photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} disabled={pending} /></label>
+        <div className="profile-hero__actions">
+          <Link className="button button--secondary button--small" to="/settings">Settings</Link>
+          <label className="button button--secondary button--small file-button">Change photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} disabled={pending} /></label>
+        </div>
       </div>
       <form className="settings-card" onSubmit={save}>
         <h2>Profile</h2>

@@ -21,6 +21,7 @@ type MockOptions = {
   delayedWeather?: boolean;
   duplicateCities?: boolean;
   profileCity?: string | null;
+  profileMissing?: boolean;
   profileState?: string | null;
   savedEvent?: boolean;
   singleUnlinkedOffer?: boolean;
@@ -269,7 +270,7 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         status: 200,
         headers: { 'content-range': '0-0/1' },
         contentType: 'application/json',
-        body: JSON.stringify([{
+        body: JSON.stringify(options.profileMissing ? [] : [{
           ...profile,
           city: Object.prototype.hasOwnProperty.call(options, 'profileCity') ? options.profileCity : profile.city,
           state: Object.prototype.hasOwnProperty.call(options, 'profileState') ? options.profileState : profile.state,
@@ -519,8 +520,41 @@ test.describe('React parity preview foundation', () => {
     const primary = page.getByRole('navigation', { name: /^primary$/i });
     await expect(primary).toBeVisible();
     await expect(primary.getByRole('link', { name: /discover/i })).toBeVisible();
-    await expect(primary.getByRole('link', { name: /settings/i })).toBeVisible();
+    await expect(primary.getByRole('link', { name: /^friends$/i })).toBeVisible();
+    await expect(primary.getByRole('link', { name: /festivals & live/i })).toBeVisible();
+    await expect(primary.getByRole('link', { name: /settings/i })).toHaveCount(0);
+    await expect(page.locator('.app-shell > .public-header')).toHaveCount(0);
+    await expect(page.locator('.side-nav').getByRole('link', { name: /drop home/i })).toBeVisible();
+    await expect(page.getByText(/good (morning|afternoon|evening), web/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^for you$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^upcoming$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /global festivals/i })).toBeVisible();
     await expect(page.getByRole('navigation', { name: /mobile navigation/i })).toBeHidden();
+  });
+
+  test('desktop keeps personalized events outside the profile city', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true, { personalized: true });
+    await page.goto(`${APP}/`);
+
+    await expect(page.getByRole('link', { name: /open coast frequency/i }).first()).toBeVisible();
+  });
+
+  test('desktop location never invents missing profile fields', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true, { profileCity: 'Austin', profileState: null });
+    await page.goto(`${APP}/`);
+
+    await expect(page.getByRole('link', { name: /browse events near austin/i })).toHaveText(/Austin/);
+    await expect(page.getByText('Austin, CO', { exact: true })).toHaveCount(0);
+  });
+
+  test('settings remain reachable when the profile cannot be loaded', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true, { profileMissing: true });
+    await page.goto(`${APP}/profile`);
+
+    await expect(page.getByRole('link', { name: /^settings$/i })).toBeVisible();
   });
 
   test('authenticated mobile uses bottom navigation without horizontal overflow', async ({ page }) => {
@@ -1005,7 +1039,8 @@ test.describe('React parity preview foundation', () => {
     await page.goto(`${APP}/`);
 
     await page.getByRole('navigation', { name: /^primary$/i })
-      .getByRole('link', { name: /settings/i }).click();
+      .getByRole('link', { name: /^profile$/i }).click();
+    await page.getByRole('link', { name: /^settings$/i }).click();
     await page.getByRole('button', { name: /delete account/i }).click();
 
     const dialog = page.getByRole('dialog', { name: /delete account/i });

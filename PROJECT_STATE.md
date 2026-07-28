@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-27
+Last updated: 2026-07-28
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — Discovery 2A is complete and the repaired private `/app/next/` preview is live; Drop production remains unchanged
+**Status:** IDLE — signed-in fidelity correction is prepared locally; visual verification and private-preview republish remain blocked on the Chrome connection
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None. Last session: Codex repaired and republished the verified Discovery 2A owner-only Sites preview, then confirmed the live login screen in Chrome; Drop production routes and deployment remain unchanged.
+- None. Last session: Codex corrected the isolated signed-in shell and Discover source against the approved Claude/current-native contracts; the current owner-only Sites URL still serves v3 because paired Chrome visual verification did not complete.
 
 ## Current status
 ### What works
+- **SIGNED-IN FIDELITY CORRECTION PREPARED (2026-07-28, local only):** the isolated React preview now uses one authenticated app shell instead of stacking the public website header over it. Desktop navigation matches the approved Claude structure; mobile keeps the current native five-root structure. Desktop/mobile Discover now share the current profile location, real event/personalization data, Prism cards, date/genre controls, For You, Upcoming, crew, and global-festival surfaces. Settings remains reachable on profile-load failure, recommendations are consistent across viewports, and missing location fields are never fabricated. Typecheck, production build, Sites worker checks, diff checks, and two independent review passes are green. The shared Sites preview has not been replaced: paired Claude/local Chrome screenshots, browser E2E, and live post-publish verification remain outstanding.
 - **PRIVATE SITES PARITY PREVIEW LIVE (2026-07-27):** the verified isolated branch is available at `https://drop-parity-preview.ashinde8513.chatgpt.site/app/next/` with owner-only access. Sites v3 fixes the reported route 404 by serving the static build from its required client asset directory; the live URL was confirmed in Chrome at `/app/next/login` with the complete Drop login UI. The same build passed 154/154 desktop Chrome/mobile Safari checks. This is a review surface only; `trydropapp.com`, `app.trydropapp.com`, production `/app`, backend schema/data, and production deployment remain unchanged.
 - **DISCOVERY 2A RUNTIME COMPLETE (2026-07-27, isolated and not deployed):** `/app/next/` now uses the exact five native mobile roots (Discover, Search, My Shows, Crew, Profile), hides the tab bar on child routes, and implements real global Search with grouped typeahead, profile/GPS location and full launch-city distance filtering, unbounded top-price handling, multi-select genre/city filters, and native-correct calm/filtered states. Discover retains scoped Happening, follow/genre/location-ranked For You, and block-safe Crew. Event Detail includes lifecycle-aware RSVP, save, venue follow, share, all-day-safe calendar export, weather/presale timing, cross-source ticket comparison with honest seller links, comments/moderation/reporting, and real conditional states. Presale code payloads are intentionally not requested until the backend enforces their release window. The final Claude-to-390px comparison and 154/154 desktop Chrome/mobile Safari checks passed. Production `/app`, backend schema/data, and deployments were not changed.
 - **FULL CURRENT-APP PARITY DESIGN COMPLETE (2026-07-26, design only):** Claude.ai project `Website design prompt` (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`) now covers the current native feature families in 48 connected website-native states: Foundation/auth; Discover, Search, Event Detail comments, Map, Festival Schedule, and Live Mode; Friends/Activity, Plans/Plan Detail, Crews/invites; My Shows, Show Detail/log/import/media, Recap, Stats, and Wrapped; Profile/people/taste match, Artist/Venue/Browse; Notifications, Reminders, Ticket Wallet, Settings/privacy/music taste/blocked/Drop+; six-step Activation; and Promoter/Admin operations. Desktop and 390px mobile variants preserve Prism while using honest browser adapters for location, files, calendar, share/copy, and notifications; contacts, push, local-media discovery, and other native advantages remain explicit iOS enhancements. QA confirmed all section/state inventory, representative desktop/mobile layouts, Activation progression, Account surfaces, Admin role/Review Queue behavior, zero visible placeholder artifacts, and zero browser console errors. Claude fixed a duplicate Owner/Admin render and a mobile-admin blank-state bug during verification. No repository implementation, production route, data, or deployment changed.
@@ -45,15 +46,22 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 ### Blocked / waiting on
+- ChatGPT Chrome Extension connection is unstable/unavailable, blocking the required same-browser Claude-reference/local-preview comparison and live post-publish verification. Do not replace the owner-only Sites v3 preview until the connection is restored.
 - Physical-iPhone checks for the already-live event-detail layout and TestFlight Universal Links remain founder/device actions, not coding next steps.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-1. Implement the approved Social/Plans runtime slice in isolated `/app/next/`, starting with Friends/requests/activity and then Plans/Plan Detail/Crews, using the current native source and Claude.ai states as the contract.
-2. Then implement History/Profile/Account, followed by Activation/Owner operations.
+1. Capture the approved Claude signed-in Discover and corrected local `/app/next/` at 1280×800 and 390×844 in the same Chrome session, fix remaining visible diffs, run the browser behavior suite, publish a new owner-only Sites version from the exact reviewed commit, and verify that live version after login.
+2. Implement the approved Social/Plans runtime slice in isolated `/app/next/`, starting with Friends/requests/activity and then Plans/Plan Detail/Crews, using the current native source and Claude.ai states as the contract.
 3. Keep production `/app` unchanged until the complete isolated preview passes shared-backend integration, desktop/mobile Playwright, security/access-control review, founder acceptance, and explicit cutover approval.
+
+## 2026-07-28 — Codex — signed-in fidelity correction prepared
+- **Root cause:** the owner-only URL exposed the partial Foundation/Discovery React runtime, while the approved Claude project showed a newer authenticated shell and signed-in Discover composition. Prior handoff overstated runtime/design parity.
+- **Changed:** removed the signed-in public header, aligned desktop and mobile navigation to their approved contracts, rebuilt desktop/mobile Discover with real data, and fixed review findings covering Settings reachability, personalized recommendations, genre matching, festival copy, and missing profile location fields.
+- **Verified:** `npm run typecheck:webapp`, `npm run build`, `npm run test:sites-preview`, and `git diff --check` pass; final independent review found no actionable defect. Full browser E2E and paired Claude/local visual comparison were not completed because the Chrome extension connection became unavailable.
+- **Delivery:** local branch only. Owner-only Sites v3 and all production routes, deployment, backend schema, and production data remain unchanged.
 
 ## 2026-07-27 — Codex — private Sites preview shared
 - **Changed:** added the minimal Sites static-asset adapter and owner-only hosting metadata, then published the exact verified parity branch at `https://drop-parity-preview.ashinde8513.chatgpt.site/app/next/`.
