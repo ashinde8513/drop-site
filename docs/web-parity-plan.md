@@ -1,6 +1,6 @@
 # Drop website feature-parity plan
 
-Status: Foundation 1A and the first Discovery 2A runtime slice are implemented and verified on `codex/web-parity-react`; the complete current-app experience is designed and QA-verified in Claude.ai; no production cutover.
+Status: Foundation 1A and Discovery 2A are implemented and verified on `codex/web-parity-react`; the complete current-app experience is designed and QA-verified in Claude.ai; no production cutover.
 
 ## Product contract
 
@@ -13,9 +13,9 @@ Status: Foundation 1A and the first Discovery 2A runtime slice are implemented a
 ## Delivery slices
 
 1. **Foundation 1A — complete:** shared auth/session, login/signup/recovery/OAuth, compliance gate, responsive website-native shell, profile/avatar, privacy, notification preferences, music connection status, logout, and account deletion.
-2. **Discovery — implementation in progress:** the isolated preview now has real global catalog/search, location-scoped Happening, follow-based For You, block-safe Crew attendance, event detail, Going/Interested, canonical sharing, ticket links, and honest conditional data states. Detailed filters, save/follow/calendar, ticket offers, weather/presale, and comments remain. Map is deferred to Discovery 2B; do not ship a placeholder.
+2. **Discovery 2A — complete:** the isolated preview has real global catalog/search, grouped suggestions, profile/GPS location, the native launch-city radius dataset, price/genre/city filters, location-scoped Happening, follow-based For You, block-safe Crew attendance, lifecycle-aware Event Detail, Going/Interested, save/follow/calendar/share, cross-source ticket comparison, weather/presale timing, moderated comments, and honest conditional data states. Presale code payloads require a server-enforced current-window contract before cutover. Map remains deferred to Discovery 2B; do not ship a placeholder.
 3. **Catalog and identity:** artists, venues, taste profile, wallet, and rewards.
-4. **Social — 3A design complete; 3B pending:** Social 3A covers desktop/mobile friends, requests, browser search/invite, honest native-only contact matching, activity, reactions, taste match, blocks, and safety controls. Social 3B still needs paired desktop/mobile designs for crews, plans, realtime chat, and event comments before implementation.
+4. **Social/Plans — design complete, implementation next:** approved desktop/mobile states cover friends, requests, browser search/invite, honest native-only contact matching, activity, reactions, taste match, blocks/safety, crews, plans, realtime chat, and event comments.
 5. **Festival/live:** personal schedules, picks, clash detection, check-ins, and meetups.
 6. **Show history:** archive/manual/calendar/ticket imports, full lineups, local media, recaps, seen history, stats, Wrapped, and tags.
 7. **Notifications:** shared preferences plus browser push/reminders only after the web subscription infrastructure exists.
