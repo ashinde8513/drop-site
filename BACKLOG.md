@@ -9,7 +9,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 - [x] Founder approved implementation of the complete `Website design prompt` prototype after the native-source parity clarification (2026-07-26).
 - [x] Implement the first Discovery 2A runtime slice in `/app/next/`: real global catalog/search, scoped Happening, personalized For You, block-safe Crew, event detail, RSVP, canonical sharing, tickets, and honest conditional states (2026-07-26).
 - [x] Finish Discovery 2A in `/app/next/`: detailed native-correct Search filters plus save/follow/calendar, cross-source ticket offers, weather/presale timing, and moderated event comments; isolated and not deployed (2026-07-27).
-- [ ] Finish the signed-in fidelity correction: paired Claude/local screenshots at desktop and 390px mobile, browser behavior suite, owner-only Sites republish, and live post-login verification. Source/build/review correction is prepared locally; current Sites v3 remains unchanged.
+- [x] Finish the signed-in fidelity correction: paired Claude/local screenshots at desktop and 390px mobile, 160/160 browser checks, owner-only Sites v4 republish from exact source commit `b4f1de4`, and live asset/log verification (2026-07-28). Production remains unchanged.
 - [ ] Before production cutover, add a server-enforced current-window presale-code RPC/RLS contract. The preview intentionally never requests `presale_codes` because the current authenticated-read policy exposes future codes.
 - [ ] Implement the approved Social/Plans runtime slice in `/app/next/`: Friends/requests/activity, Plans/Plan Detail, and Crews, using current native source as the behavior contract. Keep production `/app` unchanged.
 
@@ -19,7 +19,6 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Blocked / waiting
 
-- [ ] ChatGPT Chrome Extension connection must stay available for the required Claude-reference/local-preview comparison and live Sites verification.
 - [ ] Submit sitemap.xml to Google Search Console and Bing Webmaster Tools (needs site verification — founder action).
 - [ ] Obtain an official festival schedule/export source, author the reviewed v1 set-time manifest, and then live-smoke venue-timezone grouping. Production currently has zero published-festival set times.
 
