@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-28 — Native iOS keeps Apple Maps; web uses an attributed dark web-map provider
+
+The native Drop app continues to use Apple Maps through its native map implementation. The signed-in website uses CARTO dark tiles with OpenStreetMap data, separate required attribution links, price pins, and a card rail containing only events that have real map coordinates.
+
+Do not label the website map as Apple Maps unless MapKit JS is deliberately adopted with its required Apple developer token and web integration. Map-provider differences may remain platform-native; event selection, filtering, pin membership, and Drop's Prism presentation must remain behaviorally aligned.
+
 ## 2026-07-26 — Core web parity is a product surface, not an app-download penalty
 
 The signed-in website should provide Drop's complete core jobs instead of withholding useful features to force an app download. Artificially weakening the web experience would reduce activation, sharing, search discovery, and trust.
