@@ -913,8 +913,34 @@ test.describe('React parity preview foundation', () => {
     await mockSupabase(page, true, { profileCity: 'Austin', profileState: null });
     await page.goto(`${APP}/`);
 
-    await expect(page.getByRole('link', { name: /browse events near austin/i })).toHaveText(/Austin/);
+    const location = page.getByRole('button', { name: /change location, current location austin/i });
+    await expect(location).toHaveText(/Austin/);
+    await location.click();
+    await expect(page.getByRole('link', { name: /change city/i })).toBeVisible();
+    await page.getByRole('link', { name: /change city/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/profile#profile-city$`));
+    await expect(page.locator('#profile-city')).toBeFocused();
+    await expect(page.getByRole('link', { name: /change city/i })).toBeHidden();
     await expect(page.getByText('Austin, CO', { exact: true })).toHaveCount(0);
+  });
+
+  test('signed-in cards are uniform and horizontal rails have working controls', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop', 'Desktop rail control check');
+    await page.setViewportSize({ width: 900, height: 800 });
+    await mockSupabase(page, true, { personalized: true });
+    await openAppRoute(page, '/map');
+
+    const cards = page.locator('.map-event-rail .event-card');
+    await expect(cards).toHaveCount(2);
+    for (const card of await cards.all()) {
+      const box = await card.boundingBox();
+      expect(box?.width).toBe(300);
+      expect(box?.height).toBe(340);
+    }
+    const rail = page.locator('.map-event-rail .event-rail');
+    const before = await rail.evaluate((element) => element.scrollLeft);
+    await page.getByRole('button', { name: /next shows on the map/i }).click();
+    await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(before);
   });
 
   test('settings remain reachable when the profile cannot be loaded', async ({ page }) => {
@@ -942,6 +968,20 @@ test.describe('React parity preview foundation', () => {
     await expect(mobile.getByRole('link', { name: /^map$/i })).toHaveCount(0);
     await expect(mobile.getByRole('link', { name: /^friends$/i })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: /^primary$/i })).toBeHidden();
+    await expect(page.getByRole('button', { name: /change location, current location denver, co/i })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
+  test('mobile For You uses the native horizontal card rail', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockSupabase(page, true, { personalized: true });
+    await page.goto(`${APP}/`);
+    await page.getByRole('button', { name: 'For You' }).click();
+
+    const rail = page.locator('.discover-mobile .event-rail');
+    await expect(rail).toBeVisible();
+    await expect(rail.locator('.event-card')).toHaveCount(1);
+    expect(await rail.evaluate((element) => getComputedStyle(element).overflowX)).toBe('auto');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   });
 
@@ -1141,6 +1181,7 @@ test.describe('React parity preview foundation', () => {
     await openAppRoute(page, '/map');
 
     await expect(page.getByRole('link', { name: /prism nights on map/i })).toHaveCount(0);
+    await expect(page.getByLabel('Shows on the map')).toHaveCount(0);
     await page.getByRole('tab', { name: /^list$/i }).click();
     await expect(page.getByText('Prism Nights', { exact: true })).toBeVisible();
   });
@@ -1152,6 +1193,9 @@ test.describe('React parity preview foundation', () => {
 
     const tile = page.locator('.map-tiles img').first();
     await expect(tile).toBeVisible();
+    await expect(tile).toHaveAttribute('src', /basemaps\.cartocdn\.com\/dark_all/);
+    await expect(page.locator('.map-surface__attribution a[href="https://www.openstreetmap.org/copyright"]')).toBeVisible();
+    await expect(page.locator('.map-surface__attribution a[href="https://carto.com/attributions"]')).toBeVisible();
     const box = await tile.boundingBox();
     expect(box).not.toBeNull();
     expect(Math.abs((box?.width ?? 0) - (box?.height ?? 0))).toBeLessThan(1);

@@ -3,6 +3,7 @@ import { ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut';
 import { BookmarkSimple } from '@phosphor-icons/react/BookmarkSimple';
 import { Buildings } from '@phosphor-icons/react/Buildings';
 import { CalendarDots } from '@phosphor-icons/react/CalendarDots';
+import { CaretLeft } from '@phosphor-icons/react/CaretLeft';
 import { CaretRight } from '@phosphor-icons/react/CaretRight';
 import { CheckCircle } from '@phosphor-icons/react/CheckCircle';
 import { CircleNotch } from '@phosphor-icons/react/CircleNotch';
@@ -948,10 +949,17 @@ function StatePanel({ state, message }: { state: 'loading' | 'empty' | 'error'; 
 }
 
 function EventArtwork({ event }: { event: DropEvent }) {
-  const image = safeHttpUrl(event.image_url);
+  const candidates = [...new Set([
+    safeHttpUrl(event.image_url),
+    ...artists(event).map((artist) => safeHttpUrl(artist.image_url)),
+  ].filter(Boolean) as string[])];
+  const candidateKey = candidates.join('\n');
+  const [imageIndex, setImageIndex] = useState(0);
+  useEffect(() => setImageIndex(0), [event.id, candidateKey]);
+  const image = candidates[imageIndex];
   return image
-    ? <img src={image} alt="" loading="lazy" />
-    : <span className="event-artwork__fallback" aria-hidden="true"><ImageSquare size={40} /></span>;
+    ? <img src={image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setImageIndex((current) => current + 1)} />
+    : <span className="event-artwork__fallback" aria-hidden="true"><ImageSquare size={34} /><b>{event.title}</b></span>;
 }
 
 function EventCard({ event }: { event: DropEvent }) {
@@ -959,13 +967,14 @@ function EventCard({ event }: { event: DropEvent }) {
     <Link className="event-card" to={`/event/${event.id}`} aria-label={`Open ${event.title}`}>
       <div className="event-card__art">
         <EventArtwork event={event} />
+        <span className="event-card__scrim" aria-hidden="true" />
         <span className="event-card__genre">{genre(event)}</span>
         <span className="event-card__price">{formatPrice(event)}</span>
-      </div>
-      <div className="event-card__body">
-        <time dateTime={event.date}>{formatEventDate(event)} · {formatEventTime(event)}</time>
-        <h3>{event.title}</h3>
-        <p><MapPin size={15} /> {[event.venue_name, event.city].filter(Boolean).join(' · ') || 'Venue TBA'}</p>
+        <div className="event-card__body">
+          <time dateTime={event.date}>{formatEventDate(event)} · {formatEventTime(event)}</time>
+          <h3>{event.title}</h3>
+          <p><MapPin size={15} /> {[event.venue_name, event.city].filter(Boolean).join(' · ') || 'Venue TBA'}</p>
+        </div>
       </div>
     </Link>
   );
@@ -975,8 +984,44 @@ function EventGrid({ events }: { events: DropEvent[] }) {
   return <div className="event-grid">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>;
 }
 
-function EventRail({ events }: { events: DropEvent[] }) {
-  return <div className="event-rail">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>;
+export function EventRail({ events, label = 'Events' }: { events: DropEvent[]; label?: string }) {
+  const rail = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: true, overflow: false });
+
+  function measure() {
+    const element = rail.current;
+    if (!element) return;
+    setEdges({
+      start: element.scrollLeft <= 2,
+      end: element.scrollLeft + element.clientWidth >= element.scrollWidth - 2,
+      overflow: element.scrollWidth > element.clientWidth + 2,
+    });
+  }
+
+  useEffect(() => {
+    const element = rail.current;
+    if (!element) return;
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [events.length]);
+
+  function scroll(direction: -1 | 1) {
+    const element = rail.current;
+    if (!element) return;
+    element.scrollBy({ left: direction * Math.max(280, Math.round(element.clientWidth * 0.8)), behavior: 'smooth' });
+  }
+
+  return (
+    <div className="event-rail-wrap">
+      <button className="event-rail__button event-rail__button--previous" type="button" onClick={() => scroll(-1)} disabled={edges.start} hidden={!edges.overflow} aria-label={`Previous ${label}`}><CaretLeft size={19} weight="bold" /></button>
+      <div className="event-rail" ref={rail} onScroll={measure} aria-label={label}>
+        {events.map((event) => <EventCard key={event.id} event={event} />)}
+      </div>
+      <button className="event-rail__button event-rail__button--next" type="button" onClick={() => scroll(1)} disabled={edges.end} hidden={!edges.overflow} aria-label={`Next ${label}`}><CaretRight size={19} weight="bold" /></button>
+    </div>
+  );
 }
 
 function discoverGreeting() {
@@ -1073,7 +1118,7 @@ export function DiscoverPage() {
             {personalState === 'loading' && <StatePanel state="loading" />}
             {personalState === 'error' && <StatePanel state="error" message="Could not load your picks." />}
             {personalState === 'ready' && (forYou.length
-              ? <EventRail events={forYou} />
+              ? <EventRail events={forYou} label="For You shows" />
               : <p className="section-empty">Follow artists in Drop to build your personalized feed.</p>)}
           </section>
           <section className="discover-section" aria-labelledby="upcoming-heading">
@@ -1083,7 +1128,7 @@ export function DiscoverPage() {
           <section className="discover-section" aria-labelledby="festival-heading">
             <header><h2 id="festival-heading">Global festivals</h2><Link to="/festivals">See all</Link></header>
             {festivals.length
-              ? <EventRail events={festivals} />
+              ? <EventRail events={festivals} label="Global festivals" />
               : <p className="section-empty">Festival schedules will appear when published events are available.</p>}
           </section>
         </>}
@@ -1119,7 +1164,7 @@ export function DiscoverPage() {
         {section === 'For You' && personalState === 'loading' && <StatePanel state="loading" />}
         {section === 'For You' && personalState === 'error' && <StatePanel state="error" message="Could not load your picks." />}
         {section === 'For You' && personalState === 'ready' && (personal.forYou.length
-          ? <EventGrid events={personal.forYou} />
+          ? <EventRail events={personal.forYou} label="For You shows" />
           : <StatePanel state="empty" message="Follow artists in Drop to build your personalized feed." />)}
         {section === 'Crew' && personalState === 'loading' && <StatePanel state="loading" />}
         {section === 'Crew' && personalState === 'error' && <StatePanel state="error" message="Could not load crew plans." />}

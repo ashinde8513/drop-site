@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { AppleLogo } from '@phosphor-icons/react/AppleLogo';
 import { ArrowLeft } from '@phosphor-icons/react/ArrowLeft';
 import { Bell } from '@phosphor-icons/react/Bell';
@@ -102,16 +102,37 @@ function field(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function Brand({ compact = false, to }: { compact?: boolean; to?: string }) {
+function Brand({ to }: { to?: string }) {
   const content = (
     <>
       <img className="brand__mark" src={brandMark} alt="" />
-      {!compact && <span>DROP</span>}
+      <span>DROP</span>
     </>
   );
   return to
     ? <Link className="brand" to={to} aria-label="Drop home">{content}</Link>
     : <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">{content}</a>;
+}
+
+function LocationPicker({ place, compact = false }: { place: string; compact?: boolean }) {
+  const details = useRef<HTMLDetailsElement>(null);
+  const close = () => details.current?.removeAttribute('open');
+
+  return (
+    <details ref={details} className={`location-picker${compact ? ' location-picker--compact' : ''}`}>
+      <summary role="button" aria-label={`Change location, current location ${place}`}>
+        <MapPin size={compact ? 14 : 17} weight="fill" />
+        <span>{place}</span>
+        <CaretDown size={12} weight="bold" />
+      </summary>
+      <div>
+        <strong>{place}</strong>
+        <p>Drop uses your home city to tailor shows and the map.</p>
+        <Link to="/profile#profile-city" onClick={close}>Change city</Link>
+        <Link to="/search" onClick={close}>Search another place</Link>
+      </div>
+    </details>
+  );
 }
 
 function PublicHeader() {
@@ -462,11 +483,11 @@ function AppShell() {
 
   return (
     <div className={`app-shell${isRootRoute ? '' : ' app-shell--child'}`}>
-      <div className="mobile-app-header">
+      <div className={`mobile-app-header${isRootRoute ? ' mobile-app-header--root' : ''}`}>
         {isRootRoute
-          ? <span className="mobile-app-header__mark"><Brand compact to="/discover" /></span>
+          ? <div className="mobile-app-header__identity"><Brand to="/discover" /><LocationPicker place={place} compact /></div>
           : <button className="mobile-app-header__back" type="button" onClick={() => navigate(-1)} aria-label="Go back"><ArrowLeft size={21} /></button>}
-        <strong>{title}</strong>
+        {!isRootRoute && <strong>{title}</strong>}
         <div className="mobile-app-header__actions">
           {isRootRoute && <button type="button" onClick={() => navigate('/search')} aria-label="Search"><MagnifyingGlass size={20} /></button>}
           {isRootRoute && <Link to="/profile" aria-label="Open profile"><Avatar profile={profile} name={name} size="small" /></Link>}
@@ -481,7 +502,7 @@ function AppShell() {
       <section className="app-stage">
         <header className="stage-header">
           <h1>{title}</h1>
-          <div className="stage-header__actions"><Link className="stage-location" to="/search" aria-label={`Browse events near ${place}`}><MapPin size={17} /> {place}</Link><Link to="/search" aria-label="Search"><MagnifyingGlass size={19} /></Link><Link to="/notifications" aria-label="Notifications"><Bell size={19} /></Link><Link to="/profile" aria-label="Profile"><Avatar profile={profile} name={name} size="small" /></Link></div>
+          <div className="stage-header__actions"><LocationPicker place={place} /><Link to="/search" aria-label="Search"><MagnifyingGlass size={19} /></Link><Link to="/notifications" aria-label="Notifications"><Bell size={19} /></Link><Link to="/profile" aria-label="Profile"><Avatar profile={profile} name={name} size="small" /></Link></div>
         </header>
         <main className="stage-content">
           <Routes>
@@ -523,6 +544,7 @@ function AppShell() {
 
 function ProfilePage() {
   const auth = useAuth();
+  const location = useLocation();
   const profile = auth.profile;
   const user = auth.user;
   const [values, setValues] = useState(() => ({
@@ -542,6 +564,11 @@ function ProfilePage() {
       state: field(profile.state),
     });
   }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile || location.hash !== '#profile-city') return;
+    document.getElementById('profile-city')?.focus();
+  }, [location.hash, profile?.id]);
 
   if (!profile) {
     return (

@@ -20,7 +20,7 @@ import { UsersThree } from '@phosphor-icons/react/UsersThree';
 import { WarningCircle } from '@phosphor-icons/react/WarningCircle';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
-import { containsDisallowed, coordinatesForCity, loadEventById, loadEventCatalog, type DropEvent } from './discovery';
+import { containsDisallowed, coordinatesForCity, EventRail, loadEventById, loadEventCatalog, type DropEvent } from './discovery';
 import { supabase } from './lib/supabase';
 import type { Profile } from './lib/account';
 
@@ -550,16 +550,21 @@ function MapSurface({ events, city, state, compact = false }: { events: DropEven
   const mapUrl = `https://www.openstreetmap.org/?mlat=${center.latitude}&mlon=${center.longitude}#map=11/${center.latitude}/${center.longitude}`;
   return <div className={`map-surface${compact ? ' map-surface--compact' : ''}`}>
     <div className="map-layer">
-      <div className="map-tiles" aria-hidden="true">{tiles.map((tile) => <span key={`${tile.x}:${tile.y}`}><img src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`} alt="" draggable={false} /></span>)}</div>
+      <div className="map-tiles" aria-hidden="true">{tiles.map((tile) => <span key={`${tile.x}:${tile.y}`}><img src={`https://a.basemaps.cartocdn.com/dark_all/${zoom}/${tile.x}/${tile.y}@2x.png`} alt="" draggable={false} /></span>)}</div>
       {mapped.slice(0, 12).map(({ event, coordinate }) => {
         const tile = tileFor(coordinate);
         const x = Math.max(4, Math.min(96, (tile.x - firstTile.x) / 3 * 100));
         const y = Math.max(4, Math.min(96, (tile.y - firstTile.y) / 3 * 100));
-        return <Link className="map-pin" key={event.id} to={`/event/${event.id}`} style={{ left: `${x}%`, top: `${y}%` }} aria-label={`${event.title} on map`}><span /><small>{event.title}</small></Link>;
+        const price = event.price_min == null ? 'Show' : `${event.currency === 'USD' || !event.currency ? '$' : ''}${Math.round(event.price_min)}+`;
+        return <Link className="map-pin" key={event.id} to={`/event/${event.id}`} style={{ left: `${x}%`, top: `${y}%` }} aria-label={`${event.title} on map, ${price}`}><span>{price}</span><small>{event.title}</small></Link>;
       })}
     </div>
     {!mapped.length && <span className="map-surface__center"><MapPin size={compact ? 18 : 22} weight="fill" /><b>{[city, state].filter(Boolean).join(', ') || 'Nearby'}</b></span>}
-    <a className="map-surface__open" href={mapUrl} target="_blank" rel="noreferrer">© OpenStreetMap · Open map</a>
+    <span className="map-surface__attribution">
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>
+      <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">© CARTO</a>
+      <a href={mapUrl} target="_blank" rel="noreferrer">Open map</a>
+    </span>
   </div>;
 }
 
@@ -605,6 +610,7 @@ export function MapPage() {
       return overlapsDays(event, start, end);
     }).slice(0, 30);
   }, [area?.latitude, area?.longitude, pickDate, range, state.data]);
+  const mappedEvents = events.filter((event) => Number.isFinite(event.lat) && Number.isFinite(event.lng));
 
   return <section className="parity-page map-page">
     <div className="map-filters">
@@ -616,7 +622,7 @@ export function MapPage() {
       ? { title: 'Choose a location', body: 'Add a supported city and state in Profile before opening the map.', icon: <MapPin size={28} /> }
       : events.length === 0 && state.status === 'ready' ? { title: 'No mapped shows yet', body: 'Try another date or location.', icon: <MapPin size={28} /> } : undefined}>
       {view === 'Map'
-        ? <div className="map-canvas"><MapSurface events={events} city={auth.profile?.city} state={auth.profile?.state} /></div>
+        ? <><div className="map-canvas"><MapSurface events={mappedEvents} city={auth.profile?.city} state={auth.profile?.state} /></div>{mappedEvents.length > 0 && <div className="map-event-rail"><EventRail events={mappedEvents.slice(0, 12)} label="Shows on the map" /></div>}</>
         : <div className="map-results" aria-label="Map event list">{events.map((event) => <EventRow key={event.id} event={event} to={`/event/${event.id}`} />)}</div>}
     </PageState>
   </section>;
