@@ -552,7 +552,9 @@ test.describe('React parity preview foundation', () => {
   test('settings remain reachable when the profile cannot be loaded', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mockSupabase(page, true, { profileMissing: true });
-    await page.goto(`${APP}/profile`);
+    await page.goto(`${APP}/`);
+    await page.getByRole('navigation', { name: /^primary$/i })
+      .getByRole('link', { name: /^profile$/i }).click();
 
     await expect(page.getByRole('link', { name: /^settings$/i })).toBeVisible();
   });
@@ -598,7 +600,7 @@ test.describe('React parity preview foundation', () => {
     await card.click();
 
     await expect(page).toHaveURL(new RegExp(`${APP}/event/${dropEvent.id}/?$`));
-    await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
+    await expect(page.getByRole('article').getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: /mobile navigation/i })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /go back/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /get tickets/i })).toHaveAttribute('rel', /noopener/);
@@ -803,7 +805,7 @@ test.describe('React parity preview foundation', () => {
     });
     const mockedWrites = await mockSupabase(page, true, { detailFeatures: true, delayedActionWrite: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
     await expect(page.getByText('72°F · Clear · 10% precip')).toBeVisible();
@@ -855,7 +857,7 @@ test.describe('React parity preview foundation', () => {
     });
     await mockSupabase(page, true, { presaleBoundary: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByRole('heading', { name: /presale upcoming/i })).toBeVisible();
     await page.clock.fastForward(6_000);
@@ -871,7 +873,7 @@ test.describe('React parity preview foundation', () => {
     await page.goto(`${APP}/`);
     const hydrationStarted = page.waitForRequest((request) =>
       request.method() === 'GET' && request.url().includes('/rest/v1/saved_events'));
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
     await hydrationStarted;
 
     await expect(page.getByRole('heading', { name: 'Prism Nights' })).toHaveCount(0);
@@ -885,7 +887,7 @@ test.describe('React parity preview foundation', () => {
     await mockSupabase(page, true, { detailFeatures: true, delayedWeather: true });
     await page.goto(`${APP}/`);
     const weatherStarted = page.waitForRequest((request) => request.url().includes('/functions/v1/event-weather'));
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
     await weatherStarted;
 
     await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible({ timeout: 500 });
@@ -895,9 +897,9 @@ test.describe('React parity preview foundation', () => {
   test('action-state read failures keep save and venue follow disabled', async ({ page }) => {
     await mockSupabase(page, true, { actionReadError: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
-    await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
+    await expect(page.getByRole('article').getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
     await expect(page.getByRole('alert')).toContainText(/some show actions are unavailable/i);
     await expect(page.getByRole('button', { name: /save show/i })).toBeDisabled();
     await expect(page.getByRole('button', { name: /follow venue/i })).toBeDisabled();
@@ -906,7 +908,7 @@ test.describe('React parity preview foundation', () => {
   test('a single unlinked offer keeps the event purchase URL', async ({ page }) => {
     await mockSupabase(page, true, { singleUnlinkedOffer: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByRole('link', { name: /^get tickets$/i })).toHaveAttribute('href', dropEvent.ticket_url);
     await expect(page.getByRole('button', { name: /ticket link unavailable/i })).toHaveCount(0);
@@ -916,7 +918,7 @@ test.describe('React parity preview foundation', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockSupabase(page, true, { tbdEvent: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: /add to calendar/i }).click();
@@ -953,7 +955,7 @@ test.describe('React parity preview foundation', () => {
   test('comment failures show an honest retry state and suppress the composer', async ({ page }) => {
     await mockSupabase(page, true, { detailFeatures: true, commentError: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByRole('alert')).toContainText(/comments are unavailable/i);
     await expect(page.getByRole('button', { name: /try again/i })).toBeVisible();
@@ -964,7 +966,7 @@ test.describe('React parity preview foundation', () => {
   test('block-list failures fail comments closed', async ({ page }) => {
     await mockSupabase(page, true, { detailFeatures: true, blockError: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByRole('alert')).toContainText(/comments are unavailable/i);
     await expect(page.getByText('Meet by the south entrance.')).toHaveCount(0);
@@ -974,7 +976,7 @@ test.describe('React parity preview foundation', () => {
   test('comments retain the newest 100 in chronological display order', async ({ page }) => {
     await mockSupabase(page, true, { commentOverflow: true });
     await page.goto(`${APP}/`);
-    await page.getByRole('link', { name: /open prism nights/i }).click();
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
 
     await expect(page.getByText('Comment 101', { exact: true })).toBeVisible();
     await expect(page.getByText('Comment 1', { exact: true })).toHaveCount(0);
