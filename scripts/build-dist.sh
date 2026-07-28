@@ -28,5 +28,15 @@ npm run build:webapp
 mkdir -p dist/server
 cp workers/sites-preview/worker.js dist/server/index.js
 
+# Sites binds static files from dist/client; Cloudflare Pages still serves dist/.
+mkdir -p dist/client
+for site_path in dist/* dist/.well-known; do
+  case "$site_path" in
+    dist/client|dist/server) continue ;;
+  esac
+  cp -R "$site_path" dist/client/
+done
+test -f dist/client/app/next/index.html
+
 echo "dist/ built:"
 find dist -type f | wc -l
