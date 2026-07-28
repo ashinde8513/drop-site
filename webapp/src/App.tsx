@@ -18,6 +18,8 @@ import { LockKey } from '@phosphor-icons/react/LockKey';
 import { MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass';
 import { MapPin } from '@phosphor-icons/react/MapPin';
 import { SignOut } from '@phosphor-icons/react/SignOut';
+import { Sparkle } from '@phosphor-icons/react/Sparkle';
+import { Star } from '@phosphor-icons/react/Star';
 import { Ticket } from '@phosphor-icons/react/Ticket';
 import { Trash } from '@phosphor-icons/react/Trash';
 import { UserCircle } from '@phosphor-icons/react/UserCircle';
@@ -45,6 +47,23 @@ import {
   type Profile,
 } from './lib/account';
 import { DiscoverPage, EventDetailPage, SearchPage } from './discovery';
+import {
+  CrewsPage,
+  FestivalSchedulePage,
+  FestivalsPage,
+  FriendsPage,
+  HistoryPage,
+  LiveModePage,
+  LoggedShowPage,
+  LogShowPage,
+  MapPage,
+  MyShowsPage,
+  NotificationsPage,
+  PersonProfilePage,
+  PlanDetailPage,
+  PlansPage,
+  UtilityPage,
+} from './parity';
 import brandMark from '../../favicon.svg?url';
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
@@ -411,7 +430,20 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function pageTitle(pathname: string) {
+  if (pathname.startsWith('/profile/')) return 'Profile';
   if (pathname.startsWith('/event/')) return 'Event';
+  if (pathname.startsWith('/show/')) return 'Show';
+  if (pathname.startsWith('/schedule/')) return 'Festival schedule';
+  if (pathname.startsWith('/live/')) return 'Live Mode';
+  if (pathname.startsWith('/plan/')) return 'Plan';
+  if (pathname.startsWith('/log-show')) return 'Log a show';
+  if (pathname.startsWith('/history')) return 'Seen History';
+  if (pathname.startsWith('/stats')) return 'Drop Stats';
+  if (pathname.startsWith('/wrapped')) return 'Drop Wrapped';
+  if (pathname.startsWith('/crews')) return 'Crews';
+  if (pathname.startsWith('/wallet')) return 'Ticket Wallet';
+  if (pathname.startsWith('/reminders')) return 'Reminders';
+  if (pathname.startsWith('/blocked')) return 'Blocked accounts';
   if (pathname.startsWith('/search')) return 'Search';
   if (pathname.startsWith('/settings')) return 'Settings';
   return navItems.find(({ to }) => pathname.startsWith(to))?.label ?? 'Discover';
@@ -457,11 +489,27 @@ function AppShell() {
             <Route path="discover" element={<DiscoverPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="event/:eventId" element={<EventDetailPage />} />
+            <Route path="map" element={<MapPage />} />
+            <Route path="shows" element={<MyShowsPage />} />
+            <Route path="show/:showId" element={<LoggedShowPage />} />
+            <Route path="log-show" element={<LogShowPage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="stats" element={<HistoryPage mode="stats" />} />
+            <Route path="wrapped" element={<HistoryPage mode="wrapped" />} />
+            <Route path="friends" element={<FriendsPage />} />
+            <Route path="crews" element={<CrewsPage />} />
+            <Route path="plans" element={<PlansPage />} />
+            <Route path="plan/:planId" element={<PlanDetailPage />} />
+            <Route path="festivals" element={<FestivalsPage />} />
+            <Route path="schedule/:eventId" element={<FestivalSchedulePage />} />
+            <Route path="live/:eventId" element={<LiveModePage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="wallet" element={<UtilityPage kind="wallet" />} />
+            <Route path="reminders" element={<UtilityPage kind="reminders" />} />
+            <Route path="blocked" element={<UtilityPage kind="blocked" />} />
+            <Route path="profile/:profileId" element={<PersonProfilePage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
-            {navItems.filter(({ to }) => !['/discover', '/profile'].includes(to)).map(({ to, label, icon }) => (
-              <Route key={to} path={to.slice(1)} element={<NextSlice title={label} icon={icon} name={name} />} />
-            ))}
             <Route path="*" element={<Navigate to="/discover" replace />} />
           </Routes>
         </main>
@@ -470,20 +518,6 @@ function AppShell() {
         {mobileNavItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to}><Icon size={21} /><span>{label}</span></NavLink>)}
       </nav>}
     </div>
-  );
-}
-
-function NextSlice({ title, icon: Icon, name }: { title: string; icon: typeof Compass; name: string }) {
-  const greeting = title === 'Discover' ? `Good evening, ${name.split(' ')[0]}.` : title;
-  return (
-    <section className="placeholder-page" aria-labelledby="placeholder-title">
-      <p className="page-intro" id="placeholder-title">{greeting}</p>
-      <div className="honest-state">
-        <span className="honest-state__icon"><Icon size={28} /></span>
-        <h2>{title} is next</h2>
-        <p>This feature arrives in the next approved parity slice. No demo data is shown here.</p>
-      </div>
-    </section>
   );
 }
 
@@ -574,6 +608,14 @@ function ProfilePage() {
         <StatusNotice notice={notice} />
         <div className="form-actions"><button className="button button--primary" type="submit" disabled={pending}>{pending ? <><CircleNotch className="spin" size={18} /> Saving…</> : 'Save changes'}</button></div>
       </form>
+      <div className="feature-links feature-links--profile">
+        <Link to="/history"><Ticket size={18} /> Seen history</Link>
+        <Link to="/stats"><Star size={18} /> Drop Stats</Link>
+        <Link to="/wrapped"><Sparkle size={18} /> Drop Wrapped</Link>
+        <Link to="/wallet"><Ticket size={18} /> Ticket Wallet</Link>
+        <Link to="/reminders"><Bell size={18} /> Reminders</Link>
+        <Link to="/blocked"><LockKey size={18} /> Blocked accounts</Link>
+      </div>
     </section>
   );
 }

@@ -16,9 +16,10 @@ import { PaperPlaneTilt } from '@phosphor-icons/react/PaperPlaneTilt';
 import { ShareNetwork } from '@phosphor-icons/react/ShareNetwork';
 import { Ticket } from '@phosphor-icons/react/Ticket';
 import { Trash } from '@phosphor-icons/react/Trash';
+import { UsersThree } from '@phosphor-icons/react/UsersThree';
 import { WarningCircle } from '@phosphor-icons/react/WarningCircle';
 import { X } from '@phosphor-icons/react/X';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
 import { supabase } from './lib/supabase';
 
@@ -41,6 +42,8 @@ export type DropEvent = {
   venue_name: string | null;
   city: string | null;
   state: string | null;
+  lat?: number | null;
+  lng?: number | null;
   image_url: string | null;
   ticket_url: string | null;
   price_min: number | null;
@@ -110,7 +113,7 @@ type Coordinates = { latitude: number; longitude: number };
 const EVENT_SELECT = [
   'id', 'title', 'description', 'date', 'end_date', 'venue_id', 'venue_name', 'city', 'state',
   'image_url', 'ticket_url', 'price_min', 'price_max', 'currency', 'source', 'is_festival',
-  'time_tbd', 'timezone', 'presale_start', 'onsale_start',
+  'time_tbd', 'timezone', 'presale_start', 'onsale_start', 'lat', 'lng',
   'event_artists(artist_id,position,artists(id,name,genres,image_url))',
 ].join(',');
 
@@ -266,6 +269,21 @@ async function fetchEvents() {
     });
   }
   return catalogPromise;
+}
+
+export function loadEventCatalog() {
+  return fetchEvents();
+}
+
+export async function loadEventById(eventId: string) {
+  const { data, error } = await supabase
+    .from('events')
+    .select(EVENT_SELECT)
+    .eq('status', 'published')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (error) throw error;
+  return data as unknown as DropEvent | null;
 }
 
 async function fetchPersonalizedEvents(
@@ -506,7 +524,7 @@ function normalizeState(value?: string | null) {
   return STATE_CODES[trimmed.toLocaleLowerCase().replace(/[^a-z]/g, '')] ?? trimmed.toUpperCase();
 }
 
-function coordinatesForCity(city?: string | null, state?: string | null) {
+export function coordinatesForCity(city?: string | null, state?: string | null) {
   const cityName = city?.trim().toLocaleLowerCase();
   if (!cityName) return null;
   const exact = CITY_COORDS[cityKey(cityName, normalizeState(state))];
@@ -816,7 +834,7 @@ const DISALLOWED_PATTERNS = [
   /\bk+i+ll+\s+y+o+u+r+s+e+l+f\b/i, /\bk+y+s\b/i,
 ];
 
-function containsDisallowed(text: string) {
+export function containsDisallowed(text: string) {
   return DISALLOWED_PATTERNS.some((pattern) => pattern.test(text.trim()));
 }
 
@@ -1607,6 +1625,7 @@ export function SearchPage() {
 
 export function EventDetailPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const { eventId = '' } = useParams();
   const [event, setEvent] = useState<DropEvent | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -1739,6 +1758,21 @@ export function EventDetailPage() {
       setNotice({ tone: 'error', text: 'Could not save that response.' });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function startPlan() {
+    if (!auth.user || actionPending) return;
+    setActionPending('plan');
+    setNotice(null);
+    try {
+      const { data: planId, error } = await supabase.rpc('create_or_get_plan', { p_event_id: eventId });
+      if (error || !planId) throw error ?? new Error('Could not create that plan.');
+      navigate(`/plan/${planId}`);
+    } catch {
+      setNotice({ tone: 'error', text: 'Could not start that plan. Please try again.' });
+    } finally {
+      setActionPending('');
     }
   }
 
@@ -1920,6 +1954,7 @@ export function EventDetailPage() {
         </p>}
         {(!past || event.venue_name) && (
           <div className="event-tools">
+            {!past && <button className="button button--secondary" type="button" disabled={Boolean(actionPending)} onClick={() => void startPlan()}><UsersThree size={18} /> Start a plan</button>}
             {!past && <button className="button button--secondary" type="button" onClick={() => {
               try {
                 addToCalendar(event);

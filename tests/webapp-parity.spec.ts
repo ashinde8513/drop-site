@@ -5,24 +5,42 @@ const SUPABASE = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
 const STORAGE_KEY = 'sb-ebccwnkmsnhbljxxxdej-auth-token';
 type MockOptions = {
   actionReadError?: boolean;
+  alreadyCheckedIn?: boolean;
+  alertOverflow?: boolean;
   blockError?: boolean;
+  blockedFriend?: boolean;
+  blockedByProfile?: boolean;
+  canonicalLogged?: boolean;
   compliance?: boolean | 'error' | 'hang';
   commentError?: boolean;
   commentOverflow?: boolean;
+  coordinateMissing?: boolean;
+  crewReadError?: boolean;
   loginError?: boolean;
+  logConflict?: boolean;
   logoutFailure?: boolean;
+  ongoingEvent?: boolean;
+  overlappingSetTimes?: boolean;
   pastEvent?: boolean;
+  pastProfileGoing?: boolean;
+  pendingFriendship?: boolean;
   personalized?: boolean;
+  parityFeatures?: boolean;
   presaleBoundary?: boolean;
   detailFeatures?: boolean;
   delayedActionWrite?: boolean;
   delayedProfile?: boolean;
   delayedSaved?: boolean;
   delayedWeather?: boolean;
+  delayedLivePoll?: boolean;
   duplicateCities?: boolean;
   profileCity?: string | null;
   profileMissing?: boolean;
   profileState?: string | null;
+  invitedPlan?: boolean;
+  crewCapReached?: boolean;
+  activeBeyondGrace?: boolean;
+  sameDayReminder?: boolean;
   savedEvent?: boolean;
   singleUnlinkedOffer?: boolean;
   tbdEvent?: boolean;
@@ -77,6 +95,8 @@ const dropEvent = {
   is_festival: false,
   time_tbd: false,
   timezone: 'America/Denver',
+  lat: 39.764,
+  lng: -104.986,
   presale_start: null,
   onsale_start: null,
   status: 'published',
@@ -93,6 +113,8 @@ const coastEvent = {
   price_min: 250,
   price_max: 300,
   source: 'seatgeek',
+  lat: 34.0522,
+  lng: -118.2437,
   event_artists: [{ position: 0, artists: { id: 'artist-2', name: 'Voltage Bloom', genres: ['Electronic', 'Techno'], image_url: null } }],
 };
 
@@ -107,6 +129,8 @@ const morrisonEvent = {
   price_min: 75,
   price_max: 95,
   source: 'axs',
+  lat: 39.6654,
+  lng: -105.2057,
   event_artists: [{ position: 0, artists: { id: 'artist-3', name: 'Signal Path', genres: ['House'], image_url: null } }],
 };
 
@@ -158,8 +182,25 @@ const portlandMaineEvent = {
   state: 'ME',
 };
 
+const festivalEvent = {
+  ...dropEvent,
+  id: '99999999-9999-4999-8999-999999999999',
+  title: 'Prism Festival',
+  is_festival: true,
+  venue_name: 'Civic Center Park',
+  date: '2027-09-04T23:00:00.000Z',
+};
+
+const friendProfile = {
+  ...profile,
+  id: '00000000-0000-4000-8000-000000000002',
+  username: 'nightowl',
+  display_name: 'Night Owl',
+};
+
 async function mockSupabase(page: Page, authenticated = false, options: MockOptions = {}) {
   const mockedWrites: string[] = [];
+  let setTimeReads = 0;
   let commentRows = options.commentOverflow
     ? Array.from({ length: 101 }, (_, index) => ({
       id: `comment-${index + 1}`,
@@ -264,6 +305,52 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         body: JSON.stringify(options.personalized ? [{ id: '00000000-0000-4000-8000-000000000002' }] : []),
       });
     }
+    if (url.pathname === '/rest/v1/rpc/record_past_show') {
+      const payload = request.postDataJSON() as { p_resolution?: string | null };
+      if (options.logConflict && !payload.p_resolution) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'confirmation_required',
+            candidate_event_id: dropEvent.id,
+            existing_lineup: ['Neon Current'],
+            incoming_lineup: ['Lane 8'],
+          }),
+        });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"recorded","logged_show_id":"logged-1"}' });
+    }
+    if (url.pathname === '/rest/v1/rpc/is_blocked_with') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(options.blockedByProfile === true) });
+    }
+    if (url.pathname === '/rest/v1/rpc/public_profile') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: friendProfile.id,
+          display_name: friendProfile.display_name,
+          username: friendProfile.username,
+          profile_image: friendProfile.profile_image,
+        }),
+      });
+    }
+    if (url.pathname === '/rest/v1/rpc/get_show_history_access') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"can_view":true,"is_public":false,"is_friend":true}' });
+    }
+    if (url.pathname === '/rest/v1/rpc/create_or_get_plan') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '"plan-1"' });
+    }
+    if (url.pathname === '/rest/v1/rpc/leave_plan') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+    }
+    if (url.pathname === '/rest/v1/rpc/search_public_profiles') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([friendProfile]) });
+    }
+    if (url.pathname === '/rest/v1/rpc/get_friend_review_activity') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    }
     if (url.pathname === '/rest/v1/profiles') {
       if (options.delayedProfile) await new Promise((resolve) => setTimeout(resolve, 1_500));
       return route.fulfill({
@@ -295,10 +382,22 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(options.personalized ? [{
+        body: JSON.stringify(options.pendingFriendship ? [{
+          id: 'friendship-pending',
+          requester_id: friendProfile.id,
+          recipient_id: user.id,
+          status: 'pending',
+          created_at: '2026-01-02T00:00:00.000Z',
+          requester: friendProfile,
+          recipient: profile,
+        }] : options.personalized || options.parityFeatures ? [{
+          id: 'friendship-1',
           requester_id: user.id,
-          recipient_id: '00000000-0000-4000-8000-000000000002',
+          recipient_id: friendProfile.id,
           status: 'accepted',
+          created_at: '2026-01-02T00:00:00.000Z',
+          requester: profile,
+          recipient: friendProfile,
         }] : []),
       });
     }
@@ -306,7 +405,11 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       if (options.blockError) {
         return route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"blocks unavailable"}' });
       }
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.blockedFriend ? [{ id: 'block-1', blocked_id: friendProfile.id, created_at: '2026-01-03T00:00:00.000Z' }] : []),
+      });
     }
     if (url.pathname === '/rest/v1/saved_events' || url.pathname === '/rest/v1/venue_follows') {
       if (method === 'GET' && options.actionReadError) {
@@ -429,6 +532,10 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         && dateFilters.some((value) => value.startsWith('lte.'));
       const eventRows = isOfferCandidateQuery && options.detailFeatures
         ? [featureEvent, siblingFeatureEvent, wrongStateFeatureEvent]
+        : options.activeBeyondGrace
+          ? [{ ...festivalEvent, date: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(), end_date: null }]
+          : options.sameDayReminder
+            ? [{ ...dropEvent, date: '2027-08-21T01:00:00.000Z' }]
         : options.duplicateCities
           ? [portlandOregonEvent, portlandMaineEvent]
         : options.pastEvent
@@ -448,6 +555,16 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
             }]
             : options.detailFeatures
               ? [featureEvent]
+              : options.coordinateMissing
+                ? [{ ...dropEvent, lat: null, lng: null }]
+                : options.ongoingEvent
+                  ? [{
+                    ...festivalEvent,
+                    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+                    end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                  }]
+              : options.parityFeatures
+                ? [dropEvent, festivalEvent]
               : options.personalized
                 ? [dropEvent, coastEvent, morrisonEvent]
                 : [dropEvent];
@@ -461,11 +578,253 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/attendance') {
+      const selection = url.searchParams.get('select') ?? '';
+      const embedded = selection.includes('events');
+      const withProfiles = selection.includes('profiles');
+      const status = url.searchParams.get('status');
       return route.fulfill({
         status: 200,
         headers: { 'content-range': options.personalized ? '0-0/1' : '*/0' },
         contentType: 'application/json',
-        body: JSON.stringify(options.personalized ? [{ event_id: dropEvent.id }] : []),
+        body: JSON.stringify(withProfiles && options.parityFeatures
+          ? [{ event_id: dropEvent.id, user_id: friendProfile.id, profiles: friendProfile }]
+          : options.ongoingEvent
+          ? embedded
+            ? [{ events: {
+              ...festivalEvent,
+              date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+              end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            } }]
+            : [{ event_id: festivalEvent.id, status: 'going' }]
+          : options.parityFeatures
+          ? embedded
+            ? [{ events: status?.includes('going') ? options.pastProfileGoing ? endedEvent : dropEvent : { ...dropEvent, date: '2020-08-20T03:00:00.000Z' } }]
+            : [{ event_id: dropEvent.id, status: 'going' }]
+          : options.personalized ? [{ event_id: dropEvent.id }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/plans') {
+      if (method === 'GET' && url.searchParams.has('creator_id')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: '{"id":"plan-1"}' });
+      }
+      if (method === 'GET' && url.searchParams.get('id') === 'eq.plan-1') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 'plan-1', creator_id: options.invitedPlan ? friendProfile.id : user.id, events: dropEvent }),
+        });
+      }
+      if (method === 'POST') {
+        return route.fulfill({ status: 201, contentType: 'application/json', body: '{"id":"plan-1"}' });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures ? [{
+          id: 'plan-1',
+          creator_id: user.id,
+          event_id: dropEvent.id,
+          profiles: profile,
+          events: dropEvent,
+        }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/plan_members') {
+      const detail = url.searchParams.get('select')?.includes('profiles');
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures
+          ? detail
+            ? [{ plan_id: 'plan-1', user_id: user.id, status: options.invitedPlan ? 'invited' : 'going', profiles: profile }]
+            : [{ plan_id: 'plan-1', user_id: user.id, status: options.invitedPlan ? 'invited' : 'going' }]
+          : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/plan_messages') {
+      return route.fulfill({
+        status: method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures && method === 'GET' ? [
+          {
+            id: 'message-2',
+            user_id: user.id,
+            body: 'I will bring the tickets.',
+            created_at: '2027-08-19T21:00:00.000Z',
+            profiles: profile,
+          },
+          {
+            id: 'message-1',
+            user_id: friendProfile.id,
+            body: 'Meet at the entrance.',
+            created_at: '2027-08-19T20:00:00.000Z',
+            profiles: friendProfile,
+          },
+        ] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/plan_meetup_spots') {
+      return route.fulfill({
+        status: method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures && method === 'GET' ? [{ user_id: user.id, spot: 'Entrance' }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/crews') {
+      if (method === 'GET' && options.crewReadError) {
+        return route.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"mock unavailable"}' });
+      }
+      if (method === 'HEAD') {
+        const count = options.crewCapReached ? 5 : options.parityFeatures ? 1 : 0;
+        return route.fulfill({
+          status: 200,
+          headers: {
+            'access-control-expose-headers': 'content-range',
+            'content-range': count ? `0-${count - 1}/${count}` : '*/0',
+          },
+          body: '',
+        });
+      }
+      return route.fulfill({
+        status: method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures && method === 'GET' ? [{ id: 'crew-1', name: 'Red Rocks crew', emoji: null }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/crew_members') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures ? [{ crew_id: 'crew-1', user_id: friendProfile.id, profiles: friendProfile }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/event_set_times') {
+      setTimeReads += 1;
+      if (options.delayedLivePoll && setTimeReads > 1) await new Promise((resolve) => setTimeout(resolve, 1_000));
+      const setTimes = options.overlappingSetTimes ? [
+        {
+          id: 'set-1',
+          event_id: festivalEvent.id,
+          artist_name: 'Neon Current',
+          stage: 'Main Stage',
+          start_time: '2027-09-05T01:00:00.000Z',
+          end_time: null,
+          timezone: 'America/Denver',
+        },
+        {
+          id: 'set-2',
+          event_id: festivalEvent.id,
+          artist_name: 'Lane 8',
+          stage: 'Bass Cathedral',
+          start_time: '2027-09-05T01:30:00.000Z',
+          end_time: null,
+          timezone: 'America/Denver',
+        },
+      ] : [
+        {
+          id: 'set-1',
+          event_id: festivalEvent.id,
+          artist_name: 'Neon Current',
+          stage: 'Main Stage',
+          start_time: '2027-09-05T01:00:00.000Z',
+          end_time: '2027-09-05T02:00:00.000Z',
+          timezone: 'America/Denver',
+        },
+        {
+          id: 'set-2',
+          event_id: festivalEvent.id,
+          artist_name: 'Lane 8',
+          stage: 'Bass Cathedral',
+          start_time: '2027-09-06T01:00:00.000Z',
+          end_time: null,
+          timezone: 'America/Denver',
+        },
+      ];
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures ? setTimes : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/my_set_times') {
+      return route.fulfill({ status: method === 'GET' ? 200 : 201, contentType: 'application/json', body: '[]' });
+    }
+    if (url.pathname === '/rest/v1/event_checkins') {
+      return route.fulfill({
+        status: method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures && method === 'GET' ? [
+          ...(options.alreadyCheckedIn ? [{ user_id: user.id, spot_label: null, checked_in_at: '2027-09-05T01:10:00.000Z', profiles: profile }] : []),
+          { user_id: friendProfile.id, spot_label: 'Entrance', checked_in_at: '2027-09-05T01:15:00.000Z', profiles: friendProfile },
+        ] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/alerts') {
+      if (method !== 'GET') return route.fulfill({ status: 204 });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures
+          ? options.alertOverflow
+            ? Array.from({ length: 15 }, (_, index) => ({
+              id: `alert-${index}`,
+              title: `Stored alert ${index + 1}`,
+              body: 'Stored history',
+              kind: 'sale',
+              read: true,
+              created_at: new Date(Date.now() - index * 1_000).toISOString(),
+              event_id: null,
+              plan_id: null,
+            }))
+            : [{
+              id: 'alert-1',
+              title: 'Night Owl is going',
+              body: 'Prism Nights',
+              kind: 'friend_going',
+              read: false,
+              created_at: new Date().toISOString(),
+              event_id: dropEvent.id,
+              plan_id: null,
+            }]
+          : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/notification_prefs') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"artist_announcements":true,"friend_activity":true,"show_reminders":true,"sale_alerts":true,"comment_alerts":true,"plan_messages":true,"recap_alerts":true}',
+      });
+    }
+    if (url.pathname === '/rest/v1/logged_shows') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures ? [{
+          id: 'logged-1',
+          event_id: options.canonicalLogged ? dropEvent.id : null,
+          artist_name: 'Lane 8',
+          venue_name: 'Red Rocks',
+          city: 'Morrison',
+          state: 'CO',
+          show_date: '2025-09-12',
+          notes: 'Sunset set.',
+        }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/user_tickets') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(options.parityFeatures ? [{
+          id: 'ticket-1',
+          event_id: dropEvent.id,
+          seller: 'AXS',
+          order_ref: '1234',
+          shot_path: null,
+          created_at: '2027-08-01T00:00:00.000Z',
+          events: dropEvent,
+        }] : []),
       });
     }
 
@@ -482,6 +841,15 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
   });
 
   return mockedWrites;
+}
+
+async function openAppRoute(page: Page, path: string) {
+  await page.goto(`${APP}/`);
+  await expect(page.getByRole('region', { name: 'Discover' })).toBeVisible();
+  await page.evaluate((route) => {
+    history.pushState({}, '', `/app/next${route}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, path);
 }
 
 test.describe('React parity preview foundation', () => {
@@ -575,6 +943,462 @@ test.describe('React parity preview foundation', () => {
     await expect(mobile.getByRole('link', { name: /^friends$/i })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: /^primary$/i })).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
+  test('the approved desktop parity routes replace every next-slice placeholder', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await page.goto(`${APP}/`);
+    const primary = page.getByRole('navigation', { name: /^primary$/i });
+
+    for (const [name, heading] of [
+      ['Map', 'Map'],
+      ['My Shows', 'My Shows'],
+      ['Friends', 'Friends'],
+      ['Plans', 'Plans'],
+      ['Festivals & Live', 'Festivals'],
+      ['Notifications', 'Notifications'],
+    ] as const) {
+      await primary.getByRole('link', { name: new RegExp(`^${name}$`, 'i') }).click();
+      await expect(page.getByRole('heading', { name: heading, exact: true, level: heading === 'Map' ? 1 : 2 })).toBeVisible();
+      await expect(page.getByText(/is next|next approved parity slice/i)).toHaveCount(0);
+    }
+
+    await expect(page.getByText('Night Owl is going', { exact: true })).toBeVisible();
+    await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/alerts').length).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
+  test('festival schedule and Live Mode use connected set times and check-in writes', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/festivals');
+
+    await expect(page.getByRole('link', { name: /^schedule$/i })).toBeVisible();
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/schedule/99999999-9999-4999-8999-999999999999');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect(page.getByRole('heading', { name: 'Prism Festival' })).toBeVisible();
+    await expect(page.getByText('Neon Current')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Saturday, Sep 4, 2027/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Sunday, Sep 5, 2027/i })).toBeVisible();
+    await page.getByRole('button', { name: /add neon current/i }).click();
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/my_set_times').length).toBe(1);
+
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/festivals');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await page.getByRole('link', { name: /^live mode$/i }).click();
+    await expect(page.getByRole('heading', { name: 'Prism Festival' })).toBeVisible();
+    await expect(page.getByText(/Night Owl/)).toBeVisible();
+    await page.getByRole('button', { name: /check in/i }).click();
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/event_checkins').length).toBe(1);
+  });
+
+  test('Live Mode blocks check-ins outside the event window', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+
+    const checkIn = page.getByRole('button', { name: /check-in opens during the show/i });
+    await expect(checkIn).toBeDisabled();
+    await checkIn.click({ force: true });
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/event_checkins')).toHaveLength(0);
+  });
+
+  test('Live Mode restores an existing active check-in', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    const writes = await mockSupabase(page, true, { parityFeatures: true, alreadyCheckedIn: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+
+    const checkIn = page.getByRole('button', { name: /checked in/i });
+    await expect(checkIn).toBeDisabled();
+    await checkIn.click({ force: true });
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/event_checkins')).toHaveLength(0);
+  });
+
+  test('Live Mode resets local check-in state when the event route changes', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+    await page.getByRole('button', { name: /check in/i }).click();
+    await expect(page.getByRole('button', { name: /checked in/i })).toBeDisabled();
+
+    await page.evaluate((eventId) => {
+      history.pushState({}, '', `/app/next/live/${eventId}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, dropEvent.id);
+    await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /check-in opens during the show/i })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /checked in/i })).toHaveCount(0);
+  });
+
+  test('Live Mode does not end an open set when another stage starts', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:45:00.000Z') });
+    await mockSupabase(page, true, { parityFeatures: true, overlappingSetTimes: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+
+    await expect(page.locator('.live-now').getByRole('heading', { name: 'Neon Current' })).toBeVisible();
+  });
+
+  test('Live Mode loads a timed event directly through its full active window', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, activeBeyondGrace: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+
+    await expect(page.getByRole('heading', { name: 'Prism Festival' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /check in/i })).toBeEnabled();
+  });
+
+  test('Live Mode keeps ready content visible during background polling', async ({ page }) => {
+    let setTimeReads = 0;
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/event_set_times') setTimeReads += 1;
+    });
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    await mockSupabase(page, true, { parityFeatures: true, delayedLivePoll: true });
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+    await expect(page.locator('.live-grid')).toBeVisible();
+
+    await page.clock.fastForward(60_000);
+    await expect.poll(() => setTimeReads).toBeGreaterThan(1);
+    await expect(page.locator('.live-grid')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /loading drop/i })).toHaveCount(0);
+  });
+
+  test('starting a plan from event detail uses the atomic backend contract', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await page.goto(`${APP}/`);
+    await page.getByRole('link', { name: /open prism nights/i }).first().click();
+
+    await page.getByRole('button', { name: /start a plan/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/plan/plan-1/?$`));
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/create_or_get_plan').length).toBe(1);
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/plan_members')).toHaveLength(0);
+  });
+
+  test('plan chat requests the latest 100 messages and renders them oldest first', async ({ page }) => {
+    const queries: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/rest/v1/plan_messages' && request.method() === 'GET') queries.push(url.search);
+    });
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/plan/plan-1');
+
+    await expect(page.getByRole('heading', { name: 'Plan chat' })).toBeVisible();
+    await expect(page.locator('.chat-list article p')).toHaveText([
+      'Meet at the entrance.',
+      'I will bring the tickets.',
+    ]);
+    expect(queries.some((query) => query.includes('order=created_at.desc') && query.includes('limit=100'))).toBe(true);
+  });
+
+  test('invited plan members can RSVP and leave through the atomic backend contract', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true, invitedPlan: true });
+    await openAppRoute(page, '/plan/plan-1');
+
+    await expect(page.getByRole('button', { name: /invite night owl/i })).toHaveCount(0);
+    await page.getByRole('button', { name: /^going$/i }).click();
+    await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/plan_members').length).toBe(1);
+    await page.getByRole('button', { name: /leave plan/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/plans/?$`));
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/leave_plan').length).toBe(1);
+    expect(writes.filter((entry) => entry === 'DELETE /rest/v1/plan_members')).toHaveLength(0);
+  });
+
+  test('plan creators can invite accepted friends and leave through the handoff RPC', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/plan/plan-1');
+
+    await page.getByRole('button', { name: /invite night owl/i }).last().click();
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/plan_members').length).toBe(1);
+    await page.getByRole('button', { name: /leave plan/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/plans/?$`));
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/leave_plan').length).toBe(1);
+  });
+
+  test('map uses event coordinates and excludes shows outside the selected area', async ({ page }) => {
+    const eventSelects: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/rest/v1/events' && request.method() === 'GET') {
+        eventSelects.push(url.searchParams.get('select') ?? '');
+      }
+    });
+    await mockSupabase(page, true, { personalized: true });
+    await openAppRoute(page, '/map');
+    await page.getByRole('tab', { name: /^list$/i }).click();
+
+    await expect(page.getByText('Prism Nights', { exact: true })).toBeVisible();
+    await expect(page.getByText('Red Rocks Echo', { exact: true })).toBeVisible();
+    await expect(page.getByText('Coast Frequency', { exact: true })).toHaveCount(0);
+    expect(eventSelects.some((select) => select.includes('lat') && select.includes('lng'))).toBe(true);
+  });
+
+  test('map never renders a venue pin from a city-only fallback', async ({ page }) => {
+    await mockSupabase(page, true, { coordinateMissing: true });
+    await openAppRoute(page, '/map');
+
+    await expect(page.getByRole('link', { name: /prism nights on map/i })).toHaveCount(0);
+    await page.getByRole('tab', { name: /^list$/i }).click();
+    await expect(page.getByText('Prism Nights', { exact: true })).toBeVisible();
+  });
+
+  test('map tiles remain square so geographic pin math matches the rendered grid', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true, { personalized: true });
+    await openAppRoute(page, '/map');
+
+    const tile = page.locator('.map-tiles img').first();
+    await expect(tile).toBeVisible();
+    const box = await tile.boundingBox();
+    expect(box).not.toBeNull();
+    expect(Math.abs((box?.width ?? 0) - (box?.height ?? 0))).toBeLessThan(1);
+  });
+
+  test('friend discovery uses the privacy-safe search contract', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^find$/i }).click();
+    await page.getByRole('textbox', { name: /search drop users/i }).fill('Night');
+    await page.getByRole('main').getByRole('button', { name: /^search$/i }).click();
+
+    await expect(page.getByText('Night Owl', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /added/i })).toBeDisabled();
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/search_public_profiles').length).toBe(1);
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/friendships')).toHaveLength(0);
+  });
+
+  test('failed parity-page loads retry in place', async ({ page }) => {
+    let crewReads = 0;
+    const crewStatuses: number[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/crews' && request.method() === 'GET') crewReads += 1;
+    });
+    page.on('response', (response) => {
+      if (new URL(response.url()).pathname === '/rest/v1/crews') crewStatuses.push(response.status());
+    });
+    await mockSupabase(page, true, { parityFeatures: true, crewReadError: true });
+    await openAppRoute(page, '/crews');
+
+    await expect.poll(() => crewStatuses).toContain(400);
+    await expect(page.getByRole('heading', { name: /couldn’t load this screen/i })).toBeVisible();
+    const beforeRetry = crewReads;
+    await page.getByRole('button', { name: /^retry$/i }).click();
+    await expect.poll(() => crewReads).toBeGreaterThan(beforeRetry);
+  });
+
+  test('friend request filtering controls the visible request rows and empty state', async ({ page }) => {
+    await mockSupabase(page, true, { pendingFriendship: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^requests$/i }).click();
+    await expect(page.getByText('Night Owl', { exact: true })).toBeVisible();
+
+    await page.getByRole('textbox', { name: /filter friends/i }).fill('not this person');
+    await expect(page.getByText('Night Owl', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /no pending requests/i })).toBeVisible();
+  });
+
+  test('past-show lineup conflicts require an explicit merge or separate choice', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { logConflict: true });
+    await page.goto(`${APP}/`);
+    await page.locator('a[href$="/shows"]:visible').click();
+    await page.getByRole('link', { name: /log a past show/i }).click();
+    await page.getByLabel(/artist or event/i).fill('Lane 8');
+    await page.getByLabel(/^date$/i).fill('2025-09-12');
+    await page.getByRole('button', { name: /save show/i }).click();
+
+    await expect(page.getByRole('heading', { name: /is this the same show/i })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${APP}/log-show/?$`));
+    await page.getByRole('button', { name: /keep separate/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/shows/?$`));
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/record_past_show').length).toBe(2);
+  });
+
+  test('blocked users are removed from friends, crews, and live presence', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, blockedFriend: true });
+    await page.goto(`${APP}/`);
+    await page.locator('a[href$="/friends"]:visible').click();
+    await expect(page.getByText('Night Owl', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('link', { name: /^crews$/i }).click();
+    await expect(page.getByText('0 members')).toBeVisible();
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/festivals');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await page.getByRole('link', { name: /^live mode$/i }).click();
+    await expect(page.getByText(/no friends have checked in yet/i)).toBeVisible();
+  });
+
+  test('crew owners can update membership from accepted friends', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/crews');
+
+    await page.getByRole('button', { name: /manage members/i }).click();
+    await page.getByRole('checkbox', { name: 'Night Owl' }).uncheck();
+    await page.getByRole('button', { name: /save members/i }).click();
+    await expect.poll(() => writes.filter((entry) => entry === 'DELETE /rest/v1/crew_members').length).toBe(1);
+  });
+
+  test('crew creation rechecks the live free-tier cap before inserting', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true, crewCapReached: true });
+    await openAppRoute(page, '/crews');
+
+    await page.getByRole('textbox', { name: /new crew name/i }).fill('Sixth crew');
+    await page.getByRole('button', { name: /^create$/i }).click();
+    await expect(page.getByText(/up to five crews/i)).toBeVisible();
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/crews')).toHaveLength(0);
+  });
+
+  test('friend rows open the connected public profile', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true });
+    await page.goto(`${APP}/`);
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/friends');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await page.getByRole('link', { name: 'View' }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/profile/${friendProfile.id}/?$`));
+    await expect(page.getByRole('heading', { name: 'Night Owl' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Going' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /open prism nights/i }).first()).toBeVisible();
+  });
+
+  test('public profiles stay hidden when the profile owner blocked the viewer', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, blockedByProfile: true });
+    await openAppRoute(page, `/profile/${friendProfile.id}`);
+
+    await expect(page.getByRole('heading', { name: 'Profile not found' })).toBeVisible();
+    await expect(page.getByText('Night Owl', { exact: true })).toHaveCount(0);
+  });
+
+  test('public profiles exclude ended shows from Going', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, pastProfileGoing: true });
+    await openAppRoute(page, `/profile/${friendProfile.id}`);
+
+    await expect(page.getByText('No upcoming shows.')).toBeVisible();
+    await expect(page.getByText('Ended Frequency', { exact: true })).toHaveCount(0);
+  });
+
+  test('canonical linked show memories do not duplicate attended events', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, canonicalLogged: true });
+    await page.goto(`${APP}/`);
+    await page.locator('a[href$="/shows"]:visible').click();
+    await page.getByRole('tab', { name: /^past$/i }).click();
+    await expect(page.getByText('Lane 8', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Prism Nights', { exact: true })).toBeVisible();
+  });
+
+  test('ongoing multi-day shows stay in the upcoming lineup', async ({ page }) => {
+    await mockSupabase(page, true, { ongoingEvent: true });
+    await openAppRoute(page, '/shows');
+
+    await expect(page.locator('.shows-page .parity-list').getByText('Prism Festival', { exact: true })).toBeVisible();
+  });
+
+  test('past shows merge canonical and manual history in newest-first order', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/shows');
+    await page.getByRole('tab', { name: /^past$/i }).click();
+
+    const titles = await page.locator('.parity-list .parity-event-row strong').allTextContents();
+    expect(titles.slice(0, 2)).toEqual(['Lane 8', 'Prism Nights']);
+  });
+
+  test('stats default to the current year and offer an all-time range', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/stats');
+
+    await expect(page.getByRole('tab', { name: /^this year$/i })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('heading', { name: 'Your history is waiting' })).toBeVisible();
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+    await expect(page.locator('.stats-grid article').first()).toContainText('2');
+  });
+
+  test('cancelling Wrapped sharing does not surface an unhandled error', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: () => Promise.reject(new DOMException('Share canceled', 'AbortError')),
+      });
+    });
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/wrapped');
+
+    await page.getByRole('button', { name: /^share$/i }).click();
+    await page.waitForTimeout(50);
+    expect(pageErrors).toEqual([]);
+  });
+
+  test('cancelling ticket sharing does not surface an unhandled error', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: () => Promise.reject(new DOMException('Share canceled', 'AbortError')),
+      });
+    });
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/wallet');
+
+    await page.getByRole('button', { name: /^share$/i }).click();
+    await page.waitForTimeout(50);
+    expect(pageErrors).toEqual([]);
+  });
+
+  test('blocked friends are excluded before notification attendance lookup', async ({ page }) => {
+    const requests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/rest/v1/attendance') requests.push(url.search);
+    });
+    await mockSupabase(page, true, { parityFeatures: true, blockedFriend: true });
+    await openAppRoute(page, '/notifications');
+    await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible();
+
+    expect(requests.some((query) => query.includes(friendProfile.id))).toBe(false);
+  });
+
+  test('notifications wait for profile hydration before deriving and marking alerts', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true, delayedProfile: true });
+    await page.goto(`${APP}/`);
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/notifications');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible();
+    await page.waitForTimeout(250);
+    expect(writes.filter((entry) => entry === 'PATCH /rest/v1/alerts')).toHaveLength(0);
+    await expect(page.getByText('Night Owl is going', { exact: true })).toBeVisible();
+    await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/alerts').length).toBe(1);
+  });
+
+  test('stored notification history leaves room for current synthesized alerts', async ({ page }) => {
+    const queries: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/rest/v1/alerts' && request.method() === 'GET') queries.push(url.search);
+    });
+    await mockSupabase(page, true, { parityFeatures: true, alertOverflow: true });
+    await openAppRoute(page, '/notifications');
+
+    await expect(page.getByText('Night Owl is going to Prism Nights')).toBeVisible();
+    expect(queries.some((query) => query.includes('limit=15'))).toBe(true);
+  });
+
+  test('same-day reminders use the event timezone calendar date', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-08-20T15:00:00.000Z') });
+    await mockSupabase(page, true, { parityFeatures: true, sameDayReminder: true });
+    await openAppRoute(page, '/notifications');
+
+    await expect(page.getByText('Prism Nights is today!')).toBeVisible();
+    await expect(page.getByText(/Prism Nights is in 1 day/)).toHaveCount(0);
   });
 
   test('discover loads real event data and event detail is a child route without the tab bar', async ({ page }) => {
