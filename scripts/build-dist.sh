@@ -24,5 +24,9 @@ cp -R .well-known app vendor dist/
 # every production-reachable mobile feature has passed parity QA.
 npm run build:webapp
 
+# Sites serves the same static build through its asset binding.
+mkdir -p dist/server
+cp workers/sites-preview/worker.js dist/server/index.js
+
 echo "dist/ built:"
 find dist -type f | wc -l
