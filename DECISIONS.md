@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-07-29 — The CSV is canonical QA truth; Excel is a generated mirror; mocked UI tests are not authorization proof
+
+`docs/qa/feature-matrix.csv` is the version-controlled source of truth for website features, founder requests, sanitized Apple feedback, stories, defects, evidence, and exact next actions. `scripts/build-qa-workbook.py` validates and generates `docs/qa/drop-website-feature-matrix.xlsx`; edit/upsert the CSV through the generator and preserve stable IDs/history instead of maintaining two independent inventories.
+
+Desktop/mobile Playwright mocks prove client rendering, routing, accessibility, and failure handling only. They cannot prove hosted Auth configuration, RLS/RPC authorization, owner-only access, or server-time invariants. Security-sensitive stories remain blocked until seeded non-production multi-account tests exercise the live service boundary. A passing local suite never authorizes a production merge/deploy, backend/auth/privacy change, CI trust-boundary change, or accepted-risk decision.
+
+Every Passed website row names a passing evidence-run ID from the same audited commit. Original founder/Apple wording hashes are recomputed during generation; a leading apostrophe used only to keep `- ` bullets spreadsheet-safe is excluded from the hashed source text.
+
 ## 2026-07-29 — High-cardinality pickers share one combobox; Stats rows preserve history context
 
 Location, city, artist, venue, event, date, genre, and similar large option sets use the shared accessible combobox behavior: searchable text input, labelled listbox/options, arrow navigation, Enter selection, Escape dismissal, visible focus, and an honest no-results state. Fixed two- or three-choice controls remain segmented controls.

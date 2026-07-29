@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -15,7 +16,8 @@ from zipfile import ZIP_DEFLATED, ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = ROOT / "docs/qa/feature-matrix.csv"
 XLSX_PATH = ROOT / "docs/qa/drop-website-feature-matrix.xlsx"
-WEBSITE_COMMIT = "25512a5c966dbc0ad93302291b768c19cea554ca"
+BASELINE_WEBSITE_COMMIT = "25512a5c966dbc0ad93302291b768c19cea554ca"
+WEBSITE_COMMIT = "a081e702e6a3ab14fede797f13fcc4e67f120b0a"
 MOBILE_COMMIT = "62ba25546b1180969b46f423cc7f2240b9cc8140"
 AUDIT_DATE = "2026-07-29"
 
@@ -51,6 +53,7 @@ def story(
         "Implementation status": implementation,
         "Test type": "Playwright desktop/mobile source-backed journey",
         "Test command or evidence": evidence,
+        "Evidence Run ID": "RUN-012" if test_status == "Passed" else "",
         "Last-tested commit": WEBSITE_COMMIT,
         "Known defects": defects,
         "UX/accessibility issues": ux,
@@ -104,6 +107,8 @@ def defect(
     security: str = "",
     test_status: str = "Failed",
     owner: str = "Website owner",
+    implementation: str = "Defect confirmed",
+    run_id: str | None = None,
 ) -> dict[str, str]:
     return {
         "ID": id_,
@@ -114,9 +119,10 @@ def defect(
         "User story": "",
         "Acceptance criteria": expected,
         "Edge cases": reproduction,
-        "Implementation status": "Defect confirmed",
+        "Implementation status": implementation,
         "Test type": "Source inspection and focused reproduction",
         "Test command or evidence": reproduction,
+        "Evidence Run ID": run_id if run_id is not None else ("RUN-012" if test_status == "Passed" else ""),
         "Last-tested commit": WEBSITE_COMMIT,
         "Known defects": id_,
         "UX/accessibility issues": actual if "A11Y" in id_ else "",
@@ -349,11 +355,11 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want to find and manage friends, so that I can see allowed activity and navigate to their profiles.",
         "Search uses the privacy-safe RPC; blocked profiles are excluded; incoming requests accept/decline with visible success or failure; activity rows open plan/event; profile history respects friendship/privacy/block rules.",
         "search under two characters; no results; duplicate request; mutation denial; blocked user; private profile; timeout/retry",
-        "Implemented", "Failed",
-        "Source inspection webapp/src/parity.tsx:1575-1594: accept/decline and add mutations discard Supabase errors; happy-path Playwright coverage passed.",
-        "Fix WEB-DEF-SOC-001, add failure-path regression coverage, then rerun focused and full suites.",
-        defects="WEB-DEF-SOC-001",
-        security="Profile and activity queries must continue to fail closed for blocks and private history.",
+        "Partial", "Blocked",
+        "npm test passed UI error, pending, out-of-order search, activity, profile, and block cases (291 passed/1 skip); source policy inspection found requester self-accept remains possible.",
+        "Backend/Security owner approves a recipient-only, pending-only friendship-accept RPC/policy; add requester-denial DB and seeded two-account tests before claiming authorization.",
+        defects="WEB-DEF-FRIEND-AUTH-001",
+        security="Client behavior is verified; the current friendship update policy allows either party to update status.",
     ),
     story(
         "WEBAPP-018", "Signed-in website / Blocks and privacy", "Blocked-user exclusion and unblock controls",
@@ -361,10 +367,9 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want blocking to remove another account from social surfaces, so that my privacy choice is consistently enforced.",
         "Blocked IDs are excluded before friends, notification attendance, crew, profile, and live presence render; public profile fails closed; unblock reports success or failure without optimistic drift.",
         "block-list read failure; unblock denial; stale notification; simultaneous friendship; missing profile; duplicate click",
-        "Implemented", "Failed",
-        "npm test proved fail-closed reads and cross-surface exclusion; source inspection parity.tsx:2272-2275 found silent unblock failure.",
-        "Fix WEB-DEF-UTIL-001, add an unblock failure regression test, and rerun the privacy suite.",
-        defects="WEB-DEF-UTIL-001",
+        "Implemented", "Passed",
+        "npm test passed fail-closed reads, cross-surface exclusion, rejected unblock, pending control, and stale-route cases within the 291-pass/1-skip matrix.",
+        "Retain the block/privacy regressions and add seeded hosted policy verification when the non-production account matrix is authorized.",
         security="Block-list read failures must fail closed.",
     ),
     story(
@@ -384,7 +389,7 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want private crews of accepted friends, so that I can reuse a group for plans.",
         "Only accepted friends are selectable; free-tier cap is rechecked before insert; member changes either apply completely or leave the original membership intact; failures are visible.",
         "cap race; add and remove together; one write denied; duplicate member; stale friend edge; interrupted session",
-        "Partial", "Failed",
+        "Partial", "Blocked",
         "npm test passed cap and happy-path membership checks; source inspection parity.tsx:1705-1717 found parallel add/delete can partially apply.",
         "Backend owner designs an atomic crew-membership RPC; obtain backend approval, add contract tests, then update the client.",
         defects="WEB-DEF-CREW-001",
@@ -396,10 +401,9 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want a real festival schedule, so that I can build a personal set list without demo data.",
         "Published festival data opens /schedule/:eventId; official set times group by venue-timezone day and stage; add/remove set persists only on successful write; empty/unpublished and retry states are honest.",
         "no schedule; timezone boundary; overlapping stages; duplicate tap; mutation denial; transient catalog failure",
-        "Implemented", "Failed",
-        "Public festival timezone/retry tests and signed-in connected schedule tests passed; source inspection parity.tsx:1874-1880 found silent mutation failure.",
-        "Fix WEB-DEF-SCHED-001, add a rejected-write test, and rerun festival suites.",
-        defects="WEB-DEF-SCHED-001",
+        "Implemented", "Passed",
+        "npm test passed official timezone grouping, retry, add/remove success, rejected add/remove, pending, and delayed route-change cases within the 291-pass/1-skip matrix.",
+        "Retain the add/remove rejection and interrupted-navigation regressions.",
     ),
     story(
         "WEBAPP-022", "Signed-in website / Live Mode", "Time-bounded set context, crew presence, and check-in",
@@ -407,11 +411,11 @@ WEBSITE_ROWS = [
         "As a signed-in attendee, I want time-bounded Live Mode, so that I can see current/next sets and share presence only during the show.",
         "Check-in is disabled outside the authored event window; existing check-in restores; route changes reset local state; open sets remain correct across stages; failed writes show an error and do not mark checked-in.",
         "outside event window; missing end; another stage starts; route change; background polling; blocked friend; write denial; duplicate tap",
-        "Implemented", "Failed",
-        "npm test passed six Live Mode timing/state cases; source inspection parity.tsx:1932-1936 found silent check-in failure.",
-        "Fix WEB-DEF-LIVE-001, add rejected-write coverage, and rerun Live Mode tests.",
-        defects="WEB-DEF-LIVE-001",
-        security="Presence is time-bounded and block-filtered.",
+        "Partial", "Blocked",
+        "npm test passed client timing, restore, polling, rejected-write, and interrupted-route cases within the 291-pass/1-skip matrix; source inspection found server policy accepts client-authored timestamps without an event-window check.",
+        "Backend/Security owner approves a server-time, event-window check-in RPC/policy; add forged-clock and seeded friend/nonfriend/block DB tests before claiming secure presence.",
+        defects="WEB-DEF-CHECKIN-AUTH-001",
+        security="Client presence UX is verified; authoritative timing is not enforced at the database boundary.",
     ),
     story(
         "WEBAPP-023", "Signed-in website / Notifications and reminders", "Derived notifications, routing, preferences, and on-sale reminders",
@@ -419,10 +423,9 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want honest notifications and reminders, so that relevant plan/event activity routes correctly without fabricating browser push.",
         "Notifications wait for profile hydration, preserve current synthesized alerts, exclude blocked friends, and route to plan/event; reminder dates use event timezone; toggles report failed writes.",
         "no notifications; stale history; profile race; blocked friend; same-day timezone; write denial; browser push unavailable",
-        "Implemented", "Failed",
-        "npm test passed hydration, cap, block, route, and timezone tests; source inspection parity.tsx:2268-2271 found silent reminder failure.",
-        "Fix WEB-DEF-UTIL-001 and keep native push/browser background delivery explicitly out of the web claim.",
-        defects="WEB-DEF-UTIL-001",
+        "Implemented", "Passed",
+        "npm test passed hydration, cap, block, route, timezone, rejected reminder, pending, and interrupted-route cases within the 291-pass/1-skip matrix.",
+        "Retain reminder failure coverage and keep native push/browser background delivery explicitly out of the web claim.",
     ),
     story(
         "WEBAPP-024", "Signed-in website / Profile and settings", "Profile editing, preferences, wallet, utilities, legal, and account deletion",
@@ -430,10 +433,9 @@ WEBSITE_ROWS = [
         "As a signed-in user, I want to manage my profile, preferences, utilities, and account, so that I control my identity and privacy.",
         "Profile values persist with validation; settings remain reachable when profile hydration fails; utility routes show real conditional states; deletion requires DELETE, exposes errors, and keeps keyboard focus inside the modal until closed.",
         "missing profile; duplicate username; photo failure; compliance unavailable; deletion failure; Escape; Tab/Shift+Tab; interrupted deletion",
-        "Implemented", "Failed",
-        "npm test passed profile fallback, compliance fail-closed, and delete confirmation; source inspection App.tsx:880-917 found no focus trap or Escape close.",
-        "Fix WEB-DEF-A11Y-001, add keyboard-modal coverage, then rerun auth/settings tests.",
-        defects="WEB-DEF-A11Y-001",
+        "Implemented", "Passed",
+        "npm test passed profile fallback, compliance fail-closed, confirmation, Tab/Shift+Tab trap, Escape, focus restore, and pending-dialog focus within the 291-pass/1-skip matrix.",
+        "Retain the destructive-dialog keyboard regression and perform physical-device screen-reader QA on the delivered artifact.",
         security="Account deletion behavior itself is approval-gated; this audit changes only modal accessibility.",
     ),
     story(
@@ -453,11 +455,9 @@ WEBSITE_ROWS = [
         "As a keyboard or screen-reader user, I want every large option picker to be typeable, so that I can find and select values efficiently.",
         "One shared combobox supports typing, arrows, Enter, Escape, visible focus, listbox/option semantics, empty results, labels, single/multi-select, and keeps the active option visible.",
         "zero results; long list; filtered active index; multiple selection; blur; disabled state; screen reader; zoom",
-        "Implemented", "Failed",
-        "Keyboard destination tests passed; source inspection Combobox.tsx:50-176 found no scrollIntoView when keyboard movement selects an off-screen option.",
-        "Fix WEB-DEF-A11Y-002, add a long-list keyboard regression test, and rerun desktop/mobile search tests.",
-        defects="WEB-DEF-A11Y-002",
-        ux="Active keyboard option can move outside the scroll viewport.",
+        "Implemented", "Passed",
+        "npm test passed typing, arrows, Enter, Escape, no-results, entity destinations, and long-list active-option scrolling in desktop Chromium and mobile WebKit.",
+        "Retain the shared combobox and long-list keyboard regression; complete physical screen-reader QA on the delivered artifact.",
     ),
     story(
         "WEBAPP-027", "Signed-in website / application states", "Conditional loading, ready, empty, error, and retry behavior",
@@ -583,31 +583,33 @@ WEBSITE_ROWS = [
         "Partial", "Blocked",
         "Local Playwright uses mocked Supabase calls and cannot prove hosted RLS/OAuth or Sites access control.",
         "Owner provisions a seeded non-production account and authorizes read/write QA against the private preview; QA runs the RLS/account matrix without production writes.",
-        defects="WEB-DEF-TEST-001; WEB-DEF-DEPLOY-001",
+        defects="WEB-DEF-TEST-001; WEB-DEF-DEPLOY-001; WEB-DEF-FRIEND-AUTH-001; WEB-DEF-CHECKIN-AUTH-001",
         security="This is the principal remaining authorization evidence gap.",
     ),
     defect(
         "WEB-DEF-MERGE-001", "Website branch integration", "Parity branch omits current reset-password browser fallback",
         "_redirects; dist/_redirects; tests/smoke.spec.ts", "High",
         "The parity branch contains all current origin/main security and recovery fixes before review or merge.",
-        "The parity branch fork predates origin/main commit 006fe8d, so merging it as-is can regress /reset-password to an unsupported route.",
-        "git log --left-right HEAD...origin/main; compare _redirects and smoke recovery tests.",
+        "Current origin/main is merged at 03c08a5; the fallback and its smoke regression are present, and the final 291-pass/1-skip suite passed.",
+        "git merge-base --is-ancestor origin/main HEAD; inspect _redirects and run npm test.",
         "Long-lived parity work diverged while production main continued receiving fixes.",
-        "Unresolved; isolated branch only; no merge or deploy performed.",
-        "Merge current origin/main into the isolated QA branch, resolve docs/tests without dropping parity, then rerun the recovery suite.",
+        "Fixed and verified locally; no production merge or deploy performed.",
+        "Retain the origin/main ancestry and password-recovery smoke checks before any review or approved release.",
         "WEBAPP-001; WEBAPP-037",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-MERGE-002", "Website branch integration", "Parity branch omits confirmation-service waitlist semantics",
         "data.js; download.html; tests/smoke.spec.ts", "High",
         "The parity branch retains the current server-side join-waitlist confirmation path before review or merge.",
-        "The parity branch fork predates origin/main commit 655f54a, so merging it as-is can restore direct REST insertion and weaker confirmation behavior.",
-        "git log --left-right HEAD...origin/main; compare data.js and launch-access tests.",
+        "Current origin/main is merged at 03c08a5; join-waitlist confirmation semantics and duplicate/outage/invalid-email tests are present, and the final suite passed.",
+        "git merge-base --is-ancestor origin/main HEAD; inspect data.js and run npm test.",
         "Long-lived parity work diverged while production main continued receiving fixes.",
-        "Unresolved; isolated branch only; no merge or deploy performed.",
-        "Merge current origin/main into the isolated QA branch and rerun duplicate/outage/invalid-email waitlist tests.",
+        "Fixed and verified locally; no production merge or deploy performed.",
+        "Retain the origin/main ancestry and launch-access regression checks before any review or approved release.",
         "WEB-010; WEBAPP-001",
         security="Do not regress server-side validation/confirmation to a public direct insert.",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-DEPLOY-001", "Website deployment", "Main workflow deploys signed-in /app/next to production",
@@ -623,48 +625,104 @@ WEBSITE_ROWS = [
         test_status="Blocked", owner="Founder/Release owner",
     ),
     defect(
+        "WEB-DEF-FRIEND-AUTH-001", "Shared backend / friendships", "Requester can self-accept a friendship",
+        "drop-mobile-app supabase/02_rls.sql:95-100; supabase/42_perf_wrap_auth_calls_in_rls.sql:83-84; webapp/src/parity.tsx",
+        "High",
+        "Only the pending request recipient can accept a friendship; neither party can forge accepted state through a direct API call.",
+        "The current UPDATE policy permits either requester or recipient to update the row, and the website issues a direct status=accepted update by row ID.",
+        "As the requester, issue an authenticated PATCH for the request row with status=accepted; source policy permits the requester-side update. No production write was attempted.",
+        "Friendship acceptance is represented as a general row update under an either-party policy rather than a recipient-only, pending-only server operation.",
+        "Approval required; authentication/privacy behavior was not changed.",
+        "Backend/Security owner approves a recipient-only, pending-only RPC or policy migration; add requester-denial and recipient-success DB tests, then run a seeded non-production two-account privacy matrix.",
+        "WEBAPP-017; WEBAPP-038",
+        security="Forged accepted state can unlock friend-scoped data paths that trust accepted friendships.",
+        test_status="Blocked", owner="Backend/Security owner",
+    ),
+    defect(
+        "WEB-DEF-CHECKIN-AUTH-001", "Shared backend / Live Mode", "Check-in event window and timestamp are client-controlled",
+        "drop-mobile-app DropApp/supabase/migrations/20260713074503_event_checkins.sql:40-44; webapp/src/parity.tsx",
+        "High",
+        "The server derives auth.uid() and checked_in_at from trusted server time and rejects check-ins outside the authored event window.",
+        "RLS checks only user_id ownership; website and mobile clients submit checked_in_at from the device clock, so a modified request can forge presence outside the show window.",
+        "Submit an authenticated event_checkins upsert with the caller user_id and arbitrary checked_in_at/event_id; source policy has no event-window predicate. No production write was attempted.",
+        "Live Mode timing is enforced by client code, while the authoritative write contract validates only row ownership.",
+        "Approval required; authentication/privacy behavior was not changed.",
+        "Backend/Security owner approves a server-time event-window check-in RPC/policy; add before/during/after, forged-time, friend/nonfriend, and block DB tests before client adoption.",
+        "WEBAPP-022; WEBAPP-038",
+        security="Forged presence can mislead accepted friends about a user's current location/attendance.",
+        test_status="Blocked", owner="Backend/Security owner",
+    ),
+    defect(
         "WEB-DEF-SOC-001", "Signed-in website / Friends", "Friend mutations fail silently",
         "webapp/src/parity.tsx:1575-1594", "Medium",
         "Accept, decline, and add actions expose pending, success, and actionable error states and never refresh as if a rejected write succeeded.",
-        "respond() discards update/delete errors and refreshes; add() leaves the button unchanged with no explanation when insert fails.",
-        "Mock a Supabase mutation error, click Accept/Decline/Add, and observe no role=alert or retry guidance.",
+        "Accept, Decline, and Add now expose disabled pending controls and actionable role=alert failures without removing or falsely refreshing the row.",
+        "npm test exercises rejected Accept, delayed rejected Decline, and rejected Add in desktop Chromium and mobile WebKit.",
         "Mutation results are not checked consistently.",
-        "Unresolved; safe local fix identified.",
-        "Add one shared notice/pending state in FriendsPage, check mutation errors, add focused Playwright failure tests, and rerun the social suite.",
+        "Fixed and verified locally; server authorization remains separately blocked.",
+        "Retain the three failure regressions; resolve WEB-DEF-FRIEND-AUTH-001 before claiming secure acceptance.",
         "WEBAPP-017",
+        test_status="Passed", implementation="Fixed locally",
+    ),
+    defect(
+        "WEB-DEF-SEARCH-001", "Signed-in website / Friends search", "Slower search can overwrite newer results",
+        "webapp/src/parity.tsx; tests/webapp-parity.spec.ts", "Medium",
+        "Only the newest submitted profile search can update results or error state.",
+        "A monotonic request sequence now discards stale completions; an out-of-order regression keeps Fast Friend visible after the slower request finishes.",
+        "Submit Slow, immediately submit Fast, let Fast resolve first and Slow resolve last; npm test verifies the newer result remains.",
+        "Search responses were applied without request identity.",
+        "Fixed and verified locally; not deployed.",
+        "Retain the out-of-order search regression and verify the hosted RPC timeout path after non-production account access is approved.",
+        "WEBAPP-017",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-SCHED-001", "Signed-in website / Festival schedule", "Saved-set mutation fails silently",
         "webapp/src/parity.tsx:1874-1880", "Medium",
         "Rejected add/remove set writes leave UI state unchanged and show an actionable error/retry.",
-        "toggle() changes state only on success but provides no feedback on error.",
-        "Mock my_set_times insert/delete rejection and click a set toggle.",
+        "Rejected add/remove writes now keep prior state, expose a role=alert, and leave the control retryable.",
+        "npm test exercises rejected add and remove plus delayed route navigation in desktop Chromium and mobile WebKit.",
         "The mutation error is ignored.",
-        "Unresolved; safe local fix identified.",
-        "Add local notice/pending handling and one rejected-write regression test, then rerun festival tests.",
+        "Fixed and verified locally; not deployed.",
+        "Retain rejected add/remove and interrupted-route regressions; verify against the owner preview after an approved delivery.",
         "WEBAPP-021",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-LIVE-001", "Signed-in website / Live Mode", "Check-in mutation fails silently",
         "webapp/src/parity.tsx:1932-1936", "Medium",
         "Rejected check-in writes keep the user unchecked and show an actionable error.",
-        "checkIn() ignores the error and leaves the user with no feedback.",
-        "Mock event_checkins upsert rejection during an active event and click check in.",
+        "Rejected writes now keep the user unchecked, expose a role=alert, and stale completions cannot mark another event checked in.",
+        "npm test exercises rejected and delayed route-change writes in desktop Chromium and mobile WebKit.",
         "The mutation error is ignored.",
-        "Unresolved; safe local fix identified.",
-        "Add pending/error state and a rejected-write regression test, then rerun Live Mode tests.",
+        "Fixed and verified locally; authoritative server timing remains separately blocked.",
+        "Retain the UI regressions; resolve WEB-DEF-CHECKIN-AUTH-001 before claiming secure presence.",
         "WEBAPP-022",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-UTIL-001", "Signed-in website / Reminders and blocks", "Reminder and unblock mutations fail silently",
         "webapp/src/parity.tsx:2268-2275", "Medium",
         "Rejected reminder/unblock writes keep prior state and expose an actionable error.",
-        "Both handlers refresh only on success but render no error on rejection.",
-        "Mock onsale_reminders upsert or user_blocks delete rejection and activate the control.",
+        "Rejected reminder/unblock writes now keep prior state, expose a role=alert, disable duplicates while pending, and ignore stale route completions.",
+        "npm test exercises both rejected controls and delayed utility-route navigation in desktop Chromium and mobile WebKit.",
         "The mutation error is ignored.",
-        "Unresolved; safe local fix identified.",
-        "Add one utility-page notice/pending state and focused rejection tests, then rerun notification/privacy tests.",
+        "Fixed and verified locally; not deployed.",
+        "Retain reminder/unblock rejection and interrupted-route regressions; verify against the owner preview after an approved delivery.",
         "WEBAPP-018; WEBAPP-023",
+        test_status="Passed", implementation="Fixed locally",
+    ),
+    defect(
+        "WEB-DEF-ROUTE-001", "Signed-in website / routed mutations", "Delayed mutations can update a different routed entity",
+        "webapp/src/parity.tsx; tests/webapp-parity.spec.ts", "Medium",
+        "A mutation completion updates UI state only while its original event or utility route remains active.",
+        "Schedule, Live Mode, and utility handlers now compare the active route key and ignore stale success/error completions; route changes reset pending notices.",
+        "Start delayed rejected writes, navigate to another schedule/live/utility route before completion, and wait; npm test verifies no stale status or entity state leaks.",
+        "Async handlers captured old route data but applied their completion to a reused React component.",
+        "Fixed and verified locally; not deployed.",
+        "Retain the delayed-navigation regression and repeat it against the owner preview after an approved delivery.",
+        "WEBAPP-018; WEBAPP-021; WEBAPP-022; WEBAPP-023",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-CREW-001", "Signed-in website / Crews", "Crew membership can partially apply",
@@ -683,23 +741,25 @@ WEBSITE_ROWS = [
         "WEB-DEF-A11Y-001", "Signed-in website / Account deletion dialog", "Modal lacks focus trap and Escape close",
         "webapp/src/App.tsx:880-917", "Medium",
         "Opening the destructive modal moves focus inside it; Tab/Shift+Tab stay inside; Escape closes when not pending; close restores invoking-button focus.",
-        "The dialog has aria-modal but no keyboard focus lifecycle or Escape handler.",
-        "Open Delete account, press Tab repeatedly or Escape, and observe focus can leave the dialog and Escape does not close.",
+        "The dialog now moves focus inside, traps Tab/Shift+Tab, closes on Escape when safe, restores trigger focus, and keeps the focusable dialog itself active while all controls are disabled pending deletion.",
+        "npm test opens deletion, exercises both Tab directions, Escape/restore, submits a delayed deletion, and asserts aria-busy plus dialog focus.",
         "ARIA semantics were added without modal focus management.",
-        "Unresolved; safe local accessibility fix identified.",
-        "Add minimal ref/effect keyboard focus management and Playwright keyboard coverage.",
+        "Fixed and verified locally; physical screen-reader QA remains.",
+        "Retain the keyboard/pending regression and complete VoiceOver on the exact delivered artifact.",
         "WEBAPP-024",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-A11Y-002", "Signed-in website / Combobox", "Keyboard-active option can remain off-screen",
         "webapp/src/Combobox.tsx:50-176", "Low",
         "Every ArrowUp/ArrowDown change scrolls the active option into the listbox viewport without moving DOM focus.",
-        "aria-activedescendant updates, but no scrollIntoView call keeps a long-list active option visible.",
-        "Open a long combobox, press ArrowDown beyond the visible rows, and inspect the list scroll position.",
+        "The active option now scrolls into the listbox viewport with block/inline nearest while DOM focus stays on the input.",
+        "npm test presses ArrowDown beyond the visible location rows and asserts list scroll plus active-option containment in both projects.",
         "Visual focus synchronization was omitted.",
-        "Unresolved; safe local accessibility fix identified.",
-        "Add an active-option ref/effect with block=nearest and a long-list keyboard test.",
+        "Fixed and verified locally; physical screen-reader QA remains.",
+        "Retain the long-list keyboard regression and complete VoiceOver on the exact delivered artifact.",
         "WEBAPP-026",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-CI-001", "Website CI", "CI does not run the explicit TypeScript check",
@@ -730,12 +790,13 @@ WEBSITE_ROWS = [
         "WEB-DEF-DOC-001", "Website documentation", "Parity plan lists already implemented history work as remaining",
         "docs/web-parity-plan.md", "Low",
         "Planning docs distinguish shipped/verified routes from remaining gaps.",
-        "The plan predates implemented import, local media, recap, and several navigation routes.",
-        "Compare docs/web-parity-plan.md with App.tsx routes and passing Playwright coverage.",
+        "The plan now records implemented .ics review/import, local media, recap, tags, and points to the canonical route matrix and QA inventory.",
+        "Compare docs/web-parity-plan.md with App.tsx routes, docs/signed-in-route-matrix.md, and the generated inventory.",
         "The planning note was not updated after later parity slices.",
-        "Unresolved; safe documentation fix identified.",
-        "Update the plan to point to the canonical route matrix and current gap list.",
+        "Fixed and verified locally.",
+        "Keep the route matrix, feature inventory, backlog, and parity plan synchronized when a remaining route ships.",
         "WEBAPP-012 through WEBAPP-015",
+        test_status="Passed", implementation="Fixed locally",
     ),
     defect(
         "WEB-DEF-DEP-001", "Website dependencies", "npm audit reports a High React Router RSC advisory",
@@ -748,13 +809,13 @@ WEBSITE_ROWS = [
         "During an approved React Router 8 migration, upgrade to >=8.3.0 and rerun build/typecheck/E2E; do not force a broad major upgrade in this defect pass.",
         "WEBAPP-001 through WEBAPP-038",
         security="Advisory is High upstream but the affected RSC feature is not used.",
-        test_status="Passed", owner="Dependency owner",
+        test_status="Passed", owner="Dependency owner", run_id="RUN-014",
     ),
     defect(
         "WEB-DEF-PERF-001", "Signed-in website / performance", "Main signed-in bundle exceeds Vite warning threshold",
         "webapp build output", "Low",
         "Signed-in routes meet an agreed real-device performance budget.",
-        "npm run build:webapp emitted a 761.75 kB JavaScript chunk (215.38 kB gzip) and the >500 kB warning; no field or device regression has yet been measured.",
+        "npm run build:webapp emitted a 765.14 kB JavaScript chunk (216.14 kB gzip) and the >500 kB warning; no field or device regression has yet been measured.",
         "Run npm run build:webapp and inspect the Vite chunk warning.",
         "All parity routes currently compile into one main chunk.",
         "Unresolved measurement risk; no speculative split added.",
@@ -773,13 +834,20 @@ WEBSITE_ROWS = [
 
 
 TEST_RUNS = [
-    ["RUN-001", AUDIT_DATE, WEBSITE_COMMIT, "npm ci", "Passed", "Exact package-lock install completed; 43 packages."],
-    ["RUN-002", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp", "Passed", "TypeScript completed with no diagnostics."],
-    ["RUN-003", AUDIT_DATE, WEBSITE_COMMIT, "npm run build:webapp", "Passed with warning", "Vite 8.1.5 built 169 modules; JS 761.75 kB / 215.38 kB gzip; >500 kB warning linked to WEB-DEF-PERF-001."],
-    ["RUN-004", AUDIT_DATE, WEBSITE_COMMIT, "npm run test:sites-preview", "Passed", "Sites preview worker contract passed."],
-    ["RUN-005", AUDIT_DATE, WEBSITE_COMMIT, "npm test", "Passed", "271 passed, 1 intentional mobile-project skip; desktop Chromium and mobile WebKit emulation; 55.7 s."],
-    ["RUN-006", AUDIT_DATE, WEBSITE_COMMIT, "npm audit --json", "Failed / classified", "Two High audit findings map to one RSC-only React Router advisory; current client-only architecture proven non-applicable in WEB-DEF-DEP-001."],
-    ["RUN-007", AUDIT_DATE, WEBSITE_COMMIT, "Connected browser selection", "Blocked", "No browser connections available; linked WEB-BLK-BROWSER-001."],
+    ["RUN-001", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm ci", "Passed", "Exact package-lock install completed; 43 packages."],
+    ["RUN-002", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm run typecheck:webapp", "Passed", "TypeScript completed with no diagnostics."],
+    ["RUN-003", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm run build:webapp", "Passed with warning", "Vite 8.1.5 built 169 modules; JS 761.75 kB / 215.38 kB gzip; >500 kB warning linked to WEB-DEF-PERF-001."],
+    ["RUN-004", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm run test:sites-preview", "Passed", "Sites preview worker contract passed."],
+    ["RUN-005", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm test", "Passed", "271 passed, 1 intentional mobile-project skip; desktop Chromium and mobile WebKit emulation; 55.7 s."],
+    ["RUN-006", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm audit --json", "Failed / classified", "Two High audit findings map to one RSC-only React Router advisory; current client-only architecture proven non-applicable in WEB-DEF-DEP-001."],
+    ["RUN-007", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "Connected browser selection", "Blocked", "No browser connections available; linked WEB-BLK-BROWSER-001."],
+    ["RUN-008", AUDIT_DATE, "03c08a5785ea9423b1c3778e1381cd8a9c4f4a9b", "npx playwright test tests/smoke.spec.ts", "Passed", "104 public-site checks passed after merging current origin/main; password recovery and join-waitlist confirmation fixes retained."],
+    ["RUN-009", AUDIT_DATE, WEBSITE_COMMIT, "Focused review regression selection", "Passed", "Rejected writes, pending state, out-of-order search, delayed route navigation, combobox scrolling, and deletion-modal focus passed in desktop Chromium and mobile WebKit; final coverage is superseded by RUN-012."],
+    ["RUN-010", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp", "Passed", "TypeScript completed with no diagnostics after the review fixes."],
+    ["RUN-011", AUDIT_DATE, WEBSITE_COMMIT, "npm run build:webapp", "Passed with warning", "Vite 8.1.5 built 169 modules; JS 765.14 kB / 216.14 kB gzip; >500 kB warning remains WEB-DEF-PERF-001."],
+    ["RUN-012", AUDIT_DATE, WEBSITE_COMMIT, "npm test", "Passed", "Sites preview worker passed; Playwright 291 passed and 1 intentional mobile-project skip across desktop Chromium and mobile WebKit in 55.4 s."],
+    ["RUN-013", AUDIT_DATE, WEBSITE_COMMIT, "git diff --check", "Passed", "No whitespace errors after the verified behavior changes."],
+    ["RUN-014", AUDIT_DATE, WEBSITE_COMMIT, "! rg -n 'unstable_RSC|RSCPayload|react-server-dom|routeRSCServerRequest|createFromReadableStream' webapp package.json package-lock.json", "Passed", "No React Router RSC runtime path exists in the client-only Vite/BrowserRouter app; supports WEB-DEF-DEP-001 applicability classification."],
 ]
 
 
@@ -787,7 +855,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
     required = [
         "ID", "Product surface", "Feature or user journey", "Module", "Dependencies",
         "User story", "Acceptance criteria", "Edge cases", "Implementation status",
-        "Test type", "Test command or evidence", "Last-tested commit", "Known defects",
+        "Test type", "Test command or evidence", "Evidence Run ID", "Last-tested commit", "Known defects",
         "UX/accessibility issues", "Performance concerns", "Security/privacy concerns",
         "Severity", "Resolution status", "Exact next action",
     ]
@@ -798,9 +866,34 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
     duplicates = sorted(id_ for id_, count in Counter(ids).items() if count > 1)
     if duplicates:
         raise SystemExit(f"Duplicate stable IDs: {duplicates}")
+    run_ids = [run[0] for run in TEST_RUNS]
+    duplicate_runs = sorted(id_ for id_, count in Counter(run_ids).items() if count > 1)
+    if duplicate_runs:
+        raise SystemExit(f"Duplicate test run IDs: {duplicate_runs}")
+    runs = {run[0]: run for run in TEST_RUNS}
     story_statuses = {"Passed", "Failed", "Blocked", "Not implemented", "Awaiting device QA"}
+    requirement_statuses = {"Implemented", "Partial", "Missing", "Deprecated", "Duplicate", "Conflicting", "Needs clarification"}
     defects = {row["ID"] for row in rows if row["Row type"] == "Defect"}
+    website_ids = {item["ID"] for item in WEBSITE_ROWS}
+    requirement_ids: set[str] = set()
+    requirements_with_wording: set[str] = set()
     for row in rows:
+        linked_requirements = {
+            item.strip()
+            for item in row["Requirement ID"].split(";")
+            if item.strip().startswith(("REQ-FOUNDER-", "REQ-ASC-"))
+        }
+        requirement_ids.update(linked_requirements)
+        if row["Original requirement wording"].strip():
+            requirements_with_wording.update(linked_requirements)
+            digest = row["Original wording SHA-256"].replace(" ", "")
+            wording = row["Original requirement wording"]
+            # Spreadsheet-safe founder bullets are stored as "'- …"; the hash covers the source "- …".
+            normalized_wording = wording[1:] if re.match(r"^'\s*- ", wording) else wording
+            if not re.fullmatch(r"[0-9a-f]{64}", digest) or digest != hashlib.sha256(normalized_wording.encode()).hexdigest():
+                raise SystemExit(f"{row['ID']}: preserved wording SHA-256 mismatch")
+            if row["Implementation status"] not in requirement_statuses:
+                raise SystemExit(f"{row['ID']}: invalid requirement classification {row['Implementation status']!r}")
         if row["Row type"] == "Story":
             if not re.match(r"^As an? ", row["User story"]):
                 raise SystemExit(f"{row['ID']}: invalid user-story form")
@@ -814,6 +907,22 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
                     raise SystemExit(f"{row['ID']}: failed story lacks a valid linked defect")
             if row["Test status"] in {"Blocked", "Not implemented", "Awaiting device QA"} and not row["Exact next action"].strip():
                 raise SystemExit(f"{row['ID']}: blocked story lacks exact next action")
+        if row["ID"] in website_ids and row["Test status"] == "Passed" and row["Last-tested commit"] != WEBSITE_COMMIT:
+            raise SystemExit(f"{row['ID']}: passed website row is not tied to the audited commit")
+        if row["ID"] in website_ids and row["Test status"] == "Passed":
+            run_id = row["Evidence Run ID"].strip()
+            run = runs.get(run_id)
+            if not run or not run[4].startswith("Passed") or run[2] != row["Last-tested commit"]:
+                raise SystemExit(f"{row['ID']}: invalid same-commit passing Evidence Run ID {run_id!r}")
+            expected_run = "RUN-014" if row["ID"] == "WEB-DEF-DEP-001" else "RUN-012"
+            if run_id != expected_run:
+                raise SystemExit(f"{row['ID']}: Evidence Run ID {run_id!r} is not suitable; expected {expected_run}")
+        if row["ID"] in website_ids and row["Row type"] == "Defect" and row["Resolution status"].startswith("Fixed"):
+            if row["Test status"] != "Passed" or row["Last-tested commit"] != WEBSITE_COMMIT:
+                raise SystemExit(f"{row['ID']}: fixed defect lacks same-commit passing evidence")
+    missing_wording = sorted(requirement_ids - requirements_with_wording)
+    if missing_wording:
+        raise SystemExit(f"Requirements lack preserved original wording: {missing_wording}")
 
 
 def xml_text(value: object) -> str:
@@ -891,6 +1000,7 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
     changes = [
         ["Version", "Date", "Change", "Evidence boundary"],
         ["Inventory v1", AUDIT_DATE, "Reused the 616-row mobile requirements register and appended signed-in website stories, defects, blockers, and current deterministic runs.", "No production writes, deploys, secret writes, CI changes, or raw Apple reconstruction."],
+        ["Inventory v2", AUDIT_DATE, "Merged current origin/main, fixed and regression-tested safe client defects, added server authorization findings, preserved baseline runs, and tied fixed/pass rows to exact commit evidence.", "No production writes, deploys, backend/auth/privacy changes, secret writes, CI changes, or raw Apple reconstruction."],
     ]
     sheets = [
         ("Summary", summary, False),
@@ -972,6 +1082,11 @@ def main() -> None:
         reader = csv.DictReader(source)
         headers = list(reader.fieldnames or [])
         rows = list(reader)
+    if "Evidence Run ID" not in headers:
+        headers.insert(headers.index("Test command or evidence") + 1, "Evidence Run ID")
+    for row in rows:
+        if row["Implementation status"] == "Historical sanitized disposition; current verification incomplete":
+            row["Implementation status"] = "Needs clarification"
     by_id = {row["ID"]: row for row in rows}
     for row in WEBSITE_ROWS:
         by_id[row["ID"]] = {header: row.get(header, "") for header in headers}
