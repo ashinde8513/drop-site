@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut';
 import { BookmarkSimple } from '@phosphor-icons/react/BookmarkSimple';
 import { Buildings } from '@phosphor-icons/react/Buildings';
@@ -23,6 +23,7 @@ import { WarningCircle } from '@phosphor-icons/react/WarningCircle';
 import { X } from '@phosphor-icons/react/X';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from './auth';
+import { SearchableCombobox } from './Combobox';
 import { supabase } from './lib/supabase';
 
 type Artist = {
@@ -129,6 +130,7 @@ const MAX_CATALOG_EVENTS = 5000;
 const PUBLIC_EVENT_URL = 'https://trydropapp.com/event.html';
 const SEARCH_RECENTS_KEY = 'drop.web.search.recents.v2';
 const PRICE_CEILING = 200;
+const EMPTY_SELECTED_VALUES: string[] = [];
 const SEARCH_TYPES = new Set<SearchSuggestion['type']>(['Venues', 'Events', 'Artists', 'Cities', 'Genres']);
 const DISTANCES: { label: string; value: Distance }[] = [
   { label: '5 mi', value: 5 },
@@ -548,7 +550,7 @@ function cityKey(city?: string | null, state?: string | null) {
   return `${(city ?? '').trim().toLocaleLowerCase()}|${(state ?? '').trim().toLocaleLowerCase()}`;
 }
 
-function normalizeState(value?: string | null) {
+export function normalizeState(value?: string | null) {
   const trimmed = value?.trim() ?? '';
   if (!trimmed) return '';
   return STATE_CODES[trimmed.toLocaleLowerCase().replace(/[^a-z]/g, '')] ?? trimmed.toUpperCase();
@@ -569,6 +571,13 @@ function cityKeyLabel(key: string) {
   const title = city.replace(/\b[a-z]/g, (letter) => letter.toLocaleUpperCase());
   return [title, state.toLocaleUpperCase()].filter(Boolean).join(', ');
 }
+
+export const SUPPORTED_LOCATIONS = Object.keys(CITY_COORDS)
+  .map((key) => {
+    const [city, state] = key.split('|');
+    return { value: key, label: cityKeyLabel(key), city: cityKeyLabel(city), state: state.toLocaleUpperCase() };
+  })
+  .sort((left, right) => left.label.localeCompare(right.label));
 
 function eventMatchesCitySelection(event: DropEvent, selection: string) {
   const [city, state = ''] = selection.split('|');
@@ -1008,9 +1017,12 @@ function EventArtwork({ event }: { event: DropEvent }) {
   const [imageIndex, setImageIndex] = useState(0);
   useEffect(() => setImageIndex(0), [event.id, candidateKey]);
   const image = candidates[imageIndex];
-  return image
-    ? <img src={image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setImageIndex((current) => current + 1)} />
-    : <span className="event-artwork__fallback" aria-hidden="true"><ImageSquare size={34} /><b>{event.title}</b></span>;
+  return (
+    <>
+      <span className="event-artwork__fallback" aria-hidden="true"><ImageSquare size={34} /><b>{event.title}</b></span>
+      {image && <img src={image} alt="" decoding="async" referrerPolicy="no-referrer" onError={() => setImageIndex((current) => current + 1)} />}
+    </>
+  );
 }
 
 function EventCard({ event }: { event: DropEvent }) {
@@ -1064,10 +1076,20 @@ export function EventRail({ events, label = 'Events' }: { events: DropEvent[]; l
     element.scrollBy({ left: direction * Math.max(280, Math.round(element.clientWidth * 0.8)), behavior: 'smooth' });
   }
 
+  function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      scroll(event.key === 'ArrowLeft' ? -1 : 1);
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      rail.current?.scrollTo({ left: event.key === 'Home' ? 0 : rail.current.scrollWidth, behavior: 'smooth' });
+    }
+  }
+
   return (
     <div className="event-rail-wrap">
       <button className="event-rail__button event-rail__button--previous" type="button" onClick={() => scroll(-1)} disabled={edges.start} hidden={!edges.overflow} aria-label={`Previous ${label}`}><CaretLeft size={19} weight="bold" /></button>
-      <div className="event-rail" ref={rail} onScroll={measure} aria-label={label}>
+      <div className="event-rail" ref={rail} onScroll={measure} onKeyDown={onKeyDown} tabIndex={0} aria-label={`${label}. Use left and right arrow keys to scroll.`}>
         {events.map((event) => <EventCard key={event.id} event={event} />)}
       </div>
       <button className="event-rail__button event-rail__button--next" type="button" onClick={() => scroll(1)} disabled={edges.end} hidden={!edges.overflow} aria-label={`Next ${label}`}><CaretRight size={19} weight="bold" /></button>
@@ -1173,7 +1195,7 @@ export function DiscoverPage() {
               : <p className="section-empty">Follow artists in Drop to build your personalized feed.</p>)}
           </section>
           <section className="discover-section" aria-labelledby="upcoming-heading">
-            <header className="discover-section__centered-header"><h2 id="upcoming-heading">{discoverGenre ? `${discoverGenre} shows` : 'Upcoming'}</h2><span>{visible.length}</span></header>
+            <header><h2 id="upcoming-heading">{discoverGenre ? `${discoverGenre} shows` : 'Upcoming'}</h2><span>{visible.length}</span></header>
             {visible.length ? <EventGrid events={visible} /> : <StatePanel state="empty" />}
           </section>
           <section className="discover-section" aria-labelledby="festival-heading">
@@ -1206,7 +1228,7 @@ export function DiscoverPage() {
                 </button>
               ))}
             </div>
-            {festivals[0] && <Link className="festival-banner" to={`/event/${festivals[0].id}`}><Flag size={18} /><span><strong>{festivals[0].title}</strong><small>{formatEventDate(festivals[0])} · View festival</small></span><CaretRight size={17} /></Link>}
+            {festivals[0] && <Link className="festival-banner" to={`/schedule/${festivals[0].id}`}><Flag size={18} /><span><strong>{festivals[0].title}</strong><small>{formatEventDate(festivals[0])} · View schedule</small></span><CaretRight size={17} /></Link>}
             {state === 'loading' && <StatePanel state="loading" />}
             {state === 'error' && <StatePanel state="error" />}
             {state === 'ready' && (visible.length ? <EventGrid events={visible} /> : <StatePanel state="empty" />)}
@@ -1229,18 +1251,14 @@ export function DiscoverPage() {
 
 export function SearchPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const { events, state } = useEvents();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParamsKey = searchParams.toString();
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>(() => cityParamKeys(searchParams));
-  const [genreQuery, setGenreQuery] = useState('');
-  const [cityQuery, setCityQuery] = useState('');
-  const [genreOpen, setGenreOpen] = useState(false);
-  const [cityOpen, setCityOpen] = useState(false);
   const [areaActive, setAreaActive] = useState(false);
   const [area, setArea] = useState<Coordinates | null>(null);
   const [areaLabel, setAreaLabel] = useState('');
@@ -1255,8 +1273,6 @@ export function SearchPage() {
   const filterDialogRef = useRef<HTMLElement | null>(null);
   const filterOpenerRef = useRef<HTMLElement | null>(null);
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
-  const searchSuggestionsRef = useRef<HTMLDivElement | null>(null);
-  const searchSuggestionPointerDownRef = useRef(false);
   const usingCurrentLocationRef = useRef(false);
   const [recents, setRecents] = useState<SearchSuggestion[]>(() => {
     try {
@@ -1348,8 +1364,10 @@ export function SearchPage() {
       '[tabindex]:not([tabindex="-1"])',
     ].join(',');
     const frame = window.requestAnimationFrame(() => {
-      const first = filterDialogRef.current?.querySelector<HTMLElement>(focusableSelector);
-      (first ?? filterDialogRef.current)?.focus();
+      const dialog = filterDialogRef.current;
+      if (dialog && !dialog.contains(document.activeElement)) {
+        (dialog.querySelector<HTMLElement>(focusableSelector) ?? dialog).focus();
+      }
     });
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -1402,7 +1420,7 @@ export function SearchPage() {
         value: event.title, eventId: event.id,
       });
       if (event.venue_name) add({
-        key: `venue:${event.venue_name}|${event.city}`, type: 'Venues', label: event.venue_name,
+        key: `venue:${event.venue_name}|${event.city ?? ''}|${normalizeState(event.state)}`, type: 'Venues', label: event.venue_name,
         subtitle: [event.city, event.state].filter(Boolean).join(', ') || 'Venue',
         value: event.venue_name,
       });
@@ -1432,6 +1450,13 @@ export function SearchPage() {
       items: [...items.values()].slice(0, limits[label]),
     })).filter((group) => group.items.length);
   }, [cityCounts, events, query]);
+  const suggestionItems = useMemo(() => suggestions.flatMap((group) => group.items), [suggestions]);
+  const searchOptions = useMemo(() => suggestionItems.map((suggestion) => ({
+    value: suggestion.key,
+    label: suggestion.label,
+    description: suggestion.subtitle,
+    group: suggestion.type,
+  })), [suggestionItems]);
 
   const priceActive = priceMinimum > 0 || priceMaximum < PRICE_CEILING;
   const distanceAvailable = Boolean(area);
@@ -1451,8 +1476,8 @@ export function SearchPage() {
     ? `${summaryParts.slice(0, 2).join(', ')} +${summaryParts.length - 2} more`
     : summaryParts.join(', ');
   const calm = !query.trim() && activeFilterCount === 0;
-  const filteredGenres = genres.filter((item) => item.toLocaleLowerCase().includes(genreQuery.trim().toLocaleLowerCase()));
-  const filteredCities = cities.filter((item) => item.label.toLocaleLowerCase().includes(cityQuery.trim().toLocaleLowerCase()));
+  const genreOptions = useMemo(() => genres.map((item) => ({ value: item, label: item })), [genres]);
+  const cityOptions = useMemo(() => cities.map((item) => ({ value: item.key, label: item.label })), [cities]);
 
   function remember(suggestion: SearchSuggestion) {
     const next = [suggestion, ...recents.filter((item) => item.key !== suggestion.key)].slice(0, 5);
@@ -1479,11 +1504,28 @@ export function SearchPage() {
     const nextQuery = suggestion.type === 'Cities' ? suggestion.label : suggestion.value;
     setQuery(nextQuery);
     syncSearchParams(nextQuery, nextCities);
-    setSearchFocused(false);
   }
 
-  function toggleSelection(value: string, selected: string[], update: (value: string[]) => void) {
-    update(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
+  function openSuggestion(suggestion: SearchSuggestion) {
+    if (suggestion.type === 'Cities' || suggestion.type === 'Genres') {
+      applySuggestion(suggestion);
+      return;
+    }
+    remember(suggestion);
+    if (suggestion.eventId) {
+      setQuery('');
+      syncSearchParams('', selectedCities);
+      navigate(`/event/${suggestion.eventId}`);
+      return;
+    }
+    if (suggestion.type === 'Artists') {
+      navigate(`/artist/${suggestion.key.slice('artist:'.length)}`);
+      return;
+    }
+    if (suggestion.type === 'Venues') {
+      navigate(`/venue/${encodeURIComponent(suggestion.key.slice('venue:'.length))}`);
+      return;
+    }
   }
 
   function syncSearchParams(nextQuery: string, nextCities: string[]) {
@@ -1550,28 +1592,25 @@ export function SearchPage() {
     <section className="discovery-page" aria-labelledby="search-heading">
       <h2 className="sr-only" id="search-heading">Search shows</h2>
       <div className="search-row">
-        <label className="search-input">
-          <MagnifyingGlass size={20} />
-          <input
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              syncSearchParams(event.target.value, selectedCities);
-            }}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={(event) => {
-              if (
-                !searchSuggestionPointerDownRef.current
-                && !searchSuggestionsRef.current?.contains(event.relatedTarget as Node | null)
-              ) {
-                setSearchFocused(false);
-              }
-            }}
-            placeholder="Search artists, venues, events"
-            aria-label="Search artists, venues, and shows"
-            autoComplete="off"
-          />
-        </label>
+        <SearchableCombobox
+          className="search-combobox"
+          label="Search artists, venues, and shows"
+          hideLabel
+          leading={<MagnifyingGlass size={20} />}
+          options={searchOptions}
+          selectedValues={EMPTY_SELECTED_VALUES}
+          queryValue={query}
+          onQueryChange={(value) => {
+            setQuery(value);
+            syncSearchParams(value, selectedCities);
+          }}
+          onSelectOption={(option) => {
+            const suggestion = suggestionItems.find((item) => item.key === option.value);
+            if (suggestion) openSuggestion(suggestion);
+          }}
+          placeholder="Search artists, venues, events"
+          emptyMessage="No artists, venues, events, cities, or genres match"
+        />
         <button
           ref={filterButtonRef}
           className={filterOpen || activeFilterCount ? 'filter-button is-active' : 'filter-button'}
@@ -1589,38 +1628,6 @@ export function SearchPage() {
           <Funnel size={14} /> <span>{filterSummary}</span>
         </button>
       )}
-      {searchFocused && suggestions.length > 0 && (
-        <div
-          ref={searchSuggestionsRef}
-          className="search-suggestions"
-          role="region"
-          aria-label="Search suggestions"
-          onPointerDownCapture={() => { searchSuggestionPointerDownRef.current = true; }}
-          onPointerUpCapture={() => { searchSuggestionPointerDownRef.current = false; }}
-          onPointerCancelCapture={() => { searchSuggestionPointerDownRef.current = false; }}
-        >
-          {suggestions.map((group) => (
-            <div key={group.label}>
-              <p>{group.label}</p>
-              {group.items.map((suggestion) => suggestion.eventId ? (
-                <Link key={suggestion.key} to={`/event/${suggestion.eventId}`} onClick={() => {
-                  remember(suggestion);
-                  setQuery('');
-                  syncSearchParams('', selectedCities);
-                }}>
-                  <span><strong>{suggestion.label}</strong><small>{suggestion.subtitle}</small></span>
-                  <ArrowSquareOut size={16} />
-                </Link>
-              ) : (
-                <button key={suggestion.key} type="button" onClick={() => applySuggestion(suggestion)}>
-                  <span><strong>{suggestion.label}</strong><small>{suggestion.subtitle}</small></span>
-                  <ArrowSquareOut size={16} />
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
       {calm && (
         <div className="search-calm">
           {recents.length > 0 && (
@@ -1635,7 +1642,7 @@ export function SearchPage() {
               <div className="recent-searches">
                 {recents.map((item) => item.eventId
                   ? <Link key={item.key} to={`/event/${item.eventId}`}>{item.label}<span>{item.subtitle}</span></Link>
-                  : <button key={item.key} type="button" onClick={() => applySuggestion(item)}>{item.label}<span>{item.subtitle}</span></button>)}
+                  : <button key={item.key} type="button" onClick={() => openSuggestion(item)}>{item.label}<span>{item.subtitle}</span></button>)}
               </div>
             </section>
           )}
@@ -1702,34 +1709,31 @@ export function SearchPage() {
               <p className="filter-help">Shows without published prices stay visible.</p>
             </div>
             <div className="filter-section">
-              <button className="filter-combo-trigger" type="button" aria-expanded={genreOpen} onClick={() => setGenreOpen((open) => !open)}>
-                <span>Genres</span><strong>{selectedGenres.length ? `${selectedGenres.length} selected` : 'All genres'}</strong>
-              </button>
-              {genreOpen && <>
-                <label className="filter-combo"><span className="sr-only">Find a genre</span><input type="search" value={genreQuery} onChange={(event) => setGenreQuery(event.target.value)} placeholder="Search genres" /></label>
-                <div className="filter-options">
-                  {filteredGenres.map((item) => <label key={item}><input type="checkbox" checked={selectedGenres.includes(item)} onChange={() => toggleSelection(item, selectedGenres, setSelectedGenres)} />{item}</label>)}
-                </div>
-              </>}
+              <SearchableCombobox
+                label="Search genres"
+                options={genreOptions}
+                selectedValues={selectedGenres}
+                onChange={setSelectedGenres}
+                multiple
+                placeholder="All genres"
+                emptyMessage="No genres match"
+              />
             </div>
             <div className="filter-section">
-              <button className="filter-combo-trigger" type="button" aria-expanded={cityOpen} onClick={() => setCityOpen((open) => !open)}>
-                <span>City</span><strong>{selectedCities.length ? `${selectedCities.length} selected` : 'All cities'}</strong>
-              </button>
-              {cityOpen && <>
-                <label className="filter-combo"><span className="sr-only">Find a city</span><input type="search" value={cityQuery} onChange={(event) => setCityQuery(event.target.value)} placeholder="Search cities" /></label>
-                <div className="filter-options">
-                  {filteredCities.map((item) => <label key={item.key}><input type="checkbox" checked={selectedCities.includes(item.key)} onChange={() => {
-                    const next = selectedCities.includes(item.key)
-                      ? selectedCities.filter((city) => city !== item.key)
-                      : [...selectedCities, item.key];
-                    setSelectedCities(next);
-                    syncSearchParams(query, next);
-                    setAreaActive(false);
-                    if (!selectedCities.includes(item.key)) setDistance(null);
-                  }} />{item.label}</label>)}
-                </div>
-              </>}
+              <SearchableCombobox
+                label="Search cities"
+                options={cityOptions}
+                selectedValues={selectedCities}
+                onChange={(next) => {
+                  if (next.length > selectedCities.length) setDistance(null);
+                  setSelectedCities(next);
+                  syncSearchParams(query, next);
+                  setAreaActive(false);
+                }}
+                multiple
+                placeholder="All cities"
+                emptyMessage="No cities match"
+              />
             </div>
             <footer>
               <button className="button button--secondary" type="button" onClick={resetFilters}>Reset</button>
@@ -1792,11 +1796,90 @@ export function ArtistPage() {
             <p>ARTIST</p>
             <h2>{artist.name}</h2>
             <small>{(artist.genres ?? []).slice(0, 3).join(' · ') || 'Electronic artist'}</small>
+            <Link className="button button--secondary button--small catalog-history-link" to={`/history/artist/${encodeURIComponent(artist.id)}?name=${encodeURIComponent(artist.name)}`}>Seen history</Link>
           </div>
         </header>
         <section className="discover-section" aria-labelledby="artist-shows-heading">
           <header><h2 id="artist-shows-heading">Upcoming shows</h2><span>{events.length}</span></header>
           {events.length ? <EventGrid events={events} /> : <p className="section-empty">No upcoming shows announced yet.</p>}
+        </section>
+      </>}
+    </section>
+  );
+}
+
+export function VenuePage() {
+  const auth = useAuth();
+  const { venueKey = '' } = useParams();
+  const [name = '', city = '', stateCode = ''] = venueKey.split('|');
+  const { events, state } = useEvents();
+  const [following, setFollowing] = useState(false);
+  const [followReady, setFollowReady] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState('');
+  const upcoming = useMemo(() => events.filter((event) => (
+    latinFold(event.venue_name).trim() === latinFold(name).trim()
+    && (!city || normalized(event.city) === normalized(city))
+    && (!stateCode || normalizeState(event.state) === normalizeState(stateCode))
+  )), [city, events, name, stateCode]);
+
+  useEffect(() => {
+    let active = true;
+    setFollowReady(false);
+    setNotice('');
+    if (!auth.user || !name) return () => { active = false; };
+    void supabase.from('venue_follows').select('venue_name')
+      .eq('user_id', auth.user.id)
+      .eq('venue_name', name)
+      .eq('city', city)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        setFollowing(Boolean(data));
+        setFollowReady(!error);
+        if (error) setNotice('Venue follow status is unavailable.');
+      });
+    return () => { active = false; };
+  }, [auth.user, city, name]);
+
+  async function toggleFollow() {
+    if (!auth.user || !followReady || pending) return;
+    const previous = following;
+    setFollowing(!previous);
+    setPending(true);
+    setNotice('');
+    const result = previous
+      ? await supabase.from('venue_follows').delete().eq('user_id', auth.user.id).eq('venue_name', name).eq('city', city)
+      : await supabase.from('venue_follows').insert({ user_id: auth.user.id, venue_name: name, city });
+    if (result.error) {
+      setFollowing(previous);
+      setNotice('Could not update this venue.');
+    }
+    setPending(false);
+  }
+
+  const historyKey = encodeURIComponent([name, city, stateCode].join('|'));
+  return (
+    <section className="catalog-page" aria-label="Venue">
+      {!name ? <StatePanel state="empty" message="This venue is not available." /> : <>
+        <header className="catalog-hero">
+          <span>{upcoming[0] ? <EventArtwork event={upcoming[0]} /> : <Buildings size={34} />}</span>
+          <div>
+            <p>VENUE</p>
+            <h2>{name}</h2>
+            <small>{[city, stateCode].filter(Boolean).join(', ') || 'Venue location unavailable'}</small>
+            <div className="catalog-hero__actions">
+              <Link className="button button--secondary button--small" to={`/history/venue/${historyKey}`}>Seen history</Link>
+              <button className={following ? 'button button--secondary button--small is-selected' : 'button button--secondary button--small'} type="button" disabled={!followReady || pending} onClick={() => void toggleFollow()}>{following ? 'Following' : 'Follow venue'}</button>
+            </div>
+            {notice ? <small className="status status--error" role="alert">{notice}</small> : null}
+          </div>
+        </header>
+        <section className="discover-section" aria-labelledby="venue-shows-heading">
+          <header><h2 id="venue-shows-heading">Upcoming shows</h2><span>{state === 'ready' ? upcoming.length : '—'}</span></header>
+          {state === 'loading' ? <StatePanel state="loading" /> : state === 'error'
+            ? <StatePanel state="error" message="Could not load this venue." />
+            : upcoming.length ? <EventGrid events={upcoming} /> : <p className="section-empty">No upcoming shows announced yet.</p>}
         </section>
       </>}
     </section>
@@ -2106,6 +2189,9 @@ export function EventDetailPage() {
   const saleState = presaleState(event);
   const bestOfferId = offers.filter((offer) => estimatedAllIn(offer) != null)
     .sort((a, b) => estimatedAllIn(a)! - estimatedAllIn(b)!)[0]?.id;
+  const venueRoute = event.venue_name
+    ? `/venue/${encodeURIComponent([event.venue_name, event.city ?? '', normalizeState(event.state)].join('|'))}`
+    : '';
 
   return (
     <article className="event-detail">
@@ -2115,7 +2201,7 @@ export function EventDetailPage() {
         <h2>{event.title}</h2>
         <div className="event-detail__facts">
           <p><CalendarDots size={20} /><span><strong>{formatEventDate(event, true)}</strong>{formatEventTime(event)}</span></p>
-          <p><MapPin size={20} /><span><strong>{event.venue_name || 'Venue TBA'}</strong>{[event.city, event.state].filter(Boolean).join(', ')}</span></p>
+          <p><MapPin size={20} /><span><strong>{venueRoute ? <Link to={venueRoute}>{event.venue_name}</Link> : 'Venue TBA'}</strong>{[event.city, event.state].filter(Boolean).join(', ')}</span></p>
           <p><Ticket size={20} /><span><strong>{formatPrice(event)}</strong>Ticket pricing from organizer</span></p>
           {weather && weatherLabel(weather) && <p><CloudSun size={20} /><span><strong>{weatherLabel(weather)}</strong>Forecast for showtime</span></p>}
         </div>
@@ -2145,6 +2231,7 @@ export function EventDetailPage() {
                 setNotice({ tone: 'error', text: 'Could not create the calendar event.' });
               }
             }}><CalendarDots size={18} /> Add to calendar</button>}
+            {venueRoute && <Link className="button button--secondary" to={venueRoute}><Buildings size={18} /> View venue</Link>}
             {event.venue_name && <button
               className={followingVenue ? 'button button--secondary is-selected' : 'button button--secondary'}
               type="button"

@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { AppleLogo } from '@phosphor-icons/react/AppleLogo';
 import { ArrowLeft } from '@phosphor-icons/react/ArrowLeft';
 import { Bell } from '@phosphor-icons/react/Bell';
@@ -48,12 +48,15 @@ import {
   type ProfileUpdate,
 } from './lib/account';
 import { deleteHistoryMediaForUser } from './lib/history';
-import { ArtistPage, DiscoverPage, EventDetailPage, SearchPage } from './discovery';
+import { ArtistPage, DiscoverPage, EventDetailPage, SearchPage, SUPPORTED_LOCATIONS, VenuePage } from './discovery';
+import { SearchableCombobox } from './Combobox';
 import {
   CrewsPage,
   FestivalSchedulePage,
   FestivalsPage,
   FriendsPage,
+  HistoryDrilldownPage,
+  HistoryEntitiesPage,
   HistoryPage,
   ImportShowsPage,
   LiveModePage,
@@ -118,34 +121,22 @@ function Brand({ to }: { to?: string }) {
     : <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">{content}</a>;
 }
 
-const locationChoices = [
-  ['Denver', 'CO'],
-  ['Los Angeles', 'CA'],
-  ['Seattle', 'WA'],
-  ['Portland', 'OR'],
-  ['San Diego', 'CA'],
-  ['Brooklyn', 'NY'],
-  ['New York', 'NY'],
-  ['Chicago', 'IL'],
-  ['Dallas', 'TX'],
-  ['Austin', 'TX'],
-  ['Boston', 'MA'],
-] as const;
-
 function LocationPicker({ place, compact = false }: { place: string; compact?: boolean }) {
   const auth = useAuth();
-  const details = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState('');
   const [error, setError] = useState('');
-  const close = () => details.current?.removeAttribute('open');
+  const selected = SUPPORTED_LOCATIONS.find((option) => option.label.toLocaleLowerCase() === place.toLocaleLowerCase());
 
-  async function selectLocation(city: string, state: string) {
+  async function selectLocation(value: string) {
     if (pending) return;
-    setPending(`${city}, ${state}`);
+    const option = SUPPORTED_LOCATIONS.find((item) => item.value === value);
+    if (!option) return;
+    setPending(option.label);
     setError('');
     try {
-      await auth.updateProfile({ city, state });
-      close();
+      await auth.updateProfile({ city: option.city, state: option.state });
+      setOpen(false);
     } catch (nextError) {
       setError(errorMessage(nextError));
     } finally {
@@ -154,37 +145,37 @@ function LocationPicker({ place, compact = false }: { place: string; compact?: b
   }
 
   return (
-    <details ref={details} className={`location-picker${compact ? ' location-picker--compact' : ''}`}>
-      <summary role="button" aria-label={`Change location, current location ${place}`}>
+    <div className={`location-picker${open ? ' is-open' : ''}${compact ? ' location-picker--compact' : ''}`} onBlur={(event) => {
+      const picker = event.currentTarget;
+      window.requestAnimationFrame(() => {
+        if (!picker.contains(document.activeElement)) setOpen(false);
+      });
+    }}>
+      <button type="button" className="location-picker__trigger" aria-expanded={open} aria-haspopup="dialog" aria-label={`Change location, current location ${place}`} onClick={() => setOpen((value) => !value)}>
         <MapPin size={compact ? 14 : 17} weight="fill" />
         <span className="location-picker__label">{place}</span>
         <CaretDown size={12} weight="bold" />
-      </summary>
-      <div>
+      </button>
+      {open ? <div className="location-picker__panel" role="dialog" aria-label="Change location">
         <strong>{place}</strong>
-        <p>Choose a city to update Discover, Search, and Map. This saves to your Drop profile.</p>
-        <div className="location-picker__options" role="group" aria-label="Choose a city">
-          {locationChoices.map(([city, state]) => {
-            const label = `${city}, ${state}`;
-            const selected = label.toLocaleLowerCase() === place.toLocaleLowerCase();
-            return (
-              <button
-                key={label}
-                type="button"
-                aria-pressed={selected}
-                disabled={Boolean(pending)}
-                onClick={() => void selectLocation(city, state)}
-              >
-                <span>{label}</span>
-                {pending === label ? <CircleNotch className="spin" size={14} /> : selected ? <Check size={14} weight="bold" /> : null}
-              </button>
-            );
-          })}
+        <p>Type a city to update Discover, Search, and Map. This saves to your Drop profile.</p>
+        <div className="location-picker__options">
+          <SearchableCombobox
+            label="Search locations"
+            options={SUPPORTED_LOCATIONS}
+            selectedValues={selected ? [selected.value] : []}
+            onChange={(values) => void selectLocation(values[0])}
+            placeholder="Search a city"
+            emptyMessage="No supported cities match"
+            disabled={Boolean(pending)}
+            autoFocus
+          />
+          {pending ? <p className="location-picker__pending" role="status"><CircleNotch className="spin" size={14} /> Updating {pending}…</p> : null}
         </div>
         {error && <p className="location-picker__error" role="alert">{error}</p>}
-        <Link to="/profile#profile-city" onClick={close}>Use another city</Link>
-      </div>
-    </details>
+        <Link to="/profile#profile-city" onClick={() => setOpen(false)}>Use another city</Link>
+      </div> : null}
+    </div>
   );
 }
 
@@ -506,6 +497,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function pageTitle(pathname: string) {
   if (pathname.startsWith('/profile/')) return 'Profile';
   if (pathname.startsWith('/artist/')) return 'Artist';
+  if (pathname.startsWith('/venue/')) return 'Venue';
   if (pathname.startsWith('/event/')) return 'Event';
   if (pathname.startsWith('/show/')) return 'Show';
   if (pathname.startsWith('/schedule/')) return 'Festival schedule';
@@ -567,6 +559,7 @@ function AppShell() {
             <Route path="search" element={<SearchPage />} />
             <Route path="event/:eventId" element={<EventDetailPage />} />
             <Route path="artist/:artistId" element={<ArtistPage />} />
+            <Route path="venue/:venueKey" element={<VenuePage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="shows" element={<MyShowsPage />} />
             <Route path="show/:showId" element={<LoggedShowPage />} />
@@ -574,6 +567,14 @@ function AppShell() {
             <Route path="import-shows" element={<ImportShowsPage />} />
             <Route path="recap/:eventId" element={<RecapPage />} />
             <Route path="history" element={<HistoryPage />} />
+            <Route path="history/artists" element={<HistoryEntitiesPage kind="artists" />} />
+            <Route path="history/venues" element={<HistoryEntitiesPage kind="venues" />} />
+            <Route path="history/cities" element={<HistoryEntitiesPage kind="cities" />} />
+            <Route path="history/genres" element={<HistoryEntitiesPage kind="genres" />} />
+            <Route path="history/artist/:entityKey" element={<HistoryDrilldownPage kind="artist" />} />
+            <Route path="history/venue/:entityKey" element={<HistoryDrilldownPage kind="venue" />} />
+            <Route path="history/city/:entityKey" element={<HistoryDrilldownPage kind="city" />} />
+            <Route path="history/genre/:entityKey" element={<HistoryDrilldownPage kind="genre" />} />
             <Route path="stats" element={<HistoryPage mode="stats" />} />
             <Route path="wrapped" element={<HistoryPage mode="wrapped" />} />
             <Route path="friends" element={<FriendsPage />} />

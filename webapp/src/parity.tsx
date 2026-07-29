@@ -24,9 +24,9 @@ import { UploadSimple } from '@phosphor-icons/react/UploadSimple';
 import { UserPlus } from '@phosphor-icons/react/UserPlus';
 import { UsersThree } from '@phosphor-icons/react/UsersThree';
 import { WarningCircle } from '@phosphor-icons/react/WarningCircle';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from './auth';
-import { containsDisallowed, coordinatesForCity, EventRail, loadEventById, loadEventCatalog, type DropEvent } from './discovery';
+import { containsDisallowed, coordinatesForCity, EventRail, loadEventById, loadEventCatalog, normalizeState, type DropEvent } from './discovery';
 import {
   addHistoryMedia,
   buildImportCandidates,
@@ -507,6 +507,126 @@ async function loadShows(userId: string) {
     logged: logged.filter((show) => !show.event_id),
     memoryByEvent: new Map(logged.flatMap((show) => show.event_id ? [[show.event_id, show.id] as const] : [])),
   };
+}
+
+type HistoryEntity = { key: string; label: string; count: number; to: string };
+type HistoryStats = {
+  artists: HistoryEntity[];
+  venues: HistoryEntity[];
+  cities: HistoryEntity[];
+  genres: HistoryEntity[];
+};
+
+function rankedHistory(data: typeof EMPTY_SHOWS): HistoryStats {
+  const artistIds = new Map<string, Set<string>>();
+  for (const event of [...data.catalog, ...data.past]) {
+    for (const row of event.event_artists) {
+      if (!row.artists?.name) continue;
+      const key = normalizeHistoryText(row.artists.name);
+      const ids = artistIds.get(key) ?? new Set<string>();
+      if (row.artists.id) ids.add(row.artists.id);
+      artistIds.set(key, ids);
+    }
+  }
+  const artists = new Map<string, { label: string; count: number }>();
+  const venues = new Map<string, { label: string; count: number }>();
+  const venueRoutes = new Map<string, string>();
+  const cities = new Map<string, { label: string; count: number }>();
+  const genres = new Map<string, { label: string; count: number }>();
+  const increment = (map: Map<string, { label: string; count: number }>, key: string, label: string) => {
+    if (!key || !label) return;
+    const current = map.get(key);
+    map.set(key, { label, count: (current?.count ?? 0) + 1 });
+  };
+  for (const event of data.past) {
+    const stateCode = normalizeState(event.state);
+    const cityLabel = event.city ? [event.city, stateCode].filter(Boolean).join(', ') : '';
+    const cityKey = event.city ? [event.city, stateCode].filter(Boolean).join('|') : '';
+    const venueLabel = [event.venue_name, cityLabel].filter(Boolean).join(' · ');
+    const venueKey = event.venue_name ? [event.venue_name, event.city ?? '', stateCode].join('|') : '';
+    const venueIdentity = event.venue_name
+      ? [normalizeHistoryText(event.venue_name), normalizeHistoryText(event.city), stateCode].join('|')
+      : '';
+    if (event.city) increment(cities, normalizeHistoryText(cityKey), cityLabel);
+    if (event.venue_name) {
+      increment(venues, venueIdentity, venueLabel);
+      venueRoutes.set(venueIdentity, venueKey);
+    }
+    const seenGenres = new Set<string>();
+    for (const row of event.event_artists) {
+      if (row.artists?.name) increment(artists, normalizeHistoryText(row.artists.name), row.artists.name);
+      for (const genre of row.artists?.genres ?? []) {
+        const key = normalizeHistoryText(genre);
+        if (!key || seenGenres.has(key)) continue;
+        seenGenres.add(key);
+        increment(genres, key, genre);
+      }
+    }
+  }
+  for (const show of data.logged) {
+    const stateCode = normalizeState(show.state);
+    const cityLabel = show.city ? [show.city, stateCode].filter(Boolean).join(', ') : '';
+    const cityKey = show.city ? [show.city, stateCode].filter(Boolean).join('|') : '';
+    const venueLabel = [show.venue_name, cityLabel].filter(Boolean).join(' · ');
+    const venueKey = show.venue_name ? [show.venue_name, show.city ?? '', stateCode].join('|') : '';
+    const venueIdentity = show.venue_name
+      ? [normalizeHistoryText(show.venue_name), normalizeHistoryText(show.city), stateCode].join('|')
+      : '';
+    increment(artists, normalizeHistoryText(show.artist_name), show.artist_name);
+    if (show.city) increment(cities, normalizeHistoryText(cityKey), cityLabel);
+    if (show.venue_name) {
+      increment(venues, venueIdentity, venueLabel);
+      venueRoutes.set(venueIdentity, venueKey);
+    }
+  }
+  const ranked = (map: Map<string, { label: string; count: number }>, to: (key: string, label: string) => string) => (
+    [...map].map(([key, item]) => ({ key, ...item, to: to(key, item.label) }))
+      .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+  );
+  return {
+    artists: ranked(artists, (key, label) => {
+      const ids = artistIds.get(key);
+      const artistKey = ids?.size === 1 ? ids.values().next().value as string : `name:${label}`;
+      return `/history/artist/${encodeURIComponent(artistKey)}?name=${encodeURIComponent(label)}`;
+    }),
+    venues: ranked(venues, (key) => `/history/venue/${encodeURIComponent(venueRoutes.get(key) ?? '')}`),
+    cities: ranked(cities, (_key, label) => `/history/city/${encodeURIComponent(label.replace(', ', '|'))}`),
+    genres: ranked(genres, (_key, label) => `/history/genre/${encodeURIComponent(label)}`),
+  };
+}
+
+function historyRange(data: typeof EMPTY_SHOWS, range: string | null) {
+  if (!range || !/^\d{4}$/.test(range)) return data;
+  return {
+    ...data,
+    past: data.past.filter((event) => event.date.slice(0, 4) === range),
+    logged: data.logged.filter((show) => show.show_date.slice(0, 4) === range),
+  };
+}
+
+function withHistoryRange(to: string, range: string | null) {
+  return range ? `${to}${to.includes('?') ? '&' : '?'}range=${encodeURIComponent(range)}` : to;
+}
+
+function historyShowRows(data: typeof EMPTY_SHOWS) {
+  return [
+    ...data.past.map((event) => ({
+      date: event.date,
+      title: event.title,
+      place: eventPlace(event),
+      event,
+      logged: null as LoggedShow | null,
+      to: data.memoryByEvent.has(event.id) ? `/show/${data.memoryByEvent.get(event.id)}` : `/event/${event.id}`,
+    })),
+    ...data.logged.map((show) => ({
+      date: show.show_date,
+      title: show.artist_name,
+      place: [show.venue_name, show.city, show.state].filter(Boolean).join(' · '),
+      event: null as DropEvent | null,
+      logged: show,
+      to: `/show/${show.id}`,
+    })),
+  ].sort((left, right) => right.date.localeCompare(left.date));
 }
 
 async function loadImportShows(userId: string) {
@@ -1974,45 +2094,93 @@ export function NotificationsPage() {
   </section>;
 }
 
+function HistoryList({ rows }: { rows: ReturnType<typeof historyShowRows> }) {
+  return <div className="history-list">{rows.map((item) => <Link key={`${item.to}:${item.date}`} to={item.to}><time>{item.date.slice(0, 4)}</time><span><strong>{item.title}</strong><small>{item.date.slice(0, 10)} · {item.place}</small></span><CaretRight size={17} /></Link>)}</div>;
+}
+
+export function HistoryEntitiesPage({ kind }: { kind: keyof HistoryStats }) {
+  const auth = useAuth();
+  const userId = auth.user?.id ?? '';
+  const [searchParams] = useSearchParams();
+  const [state, retry] = useLoad(`history-${kind}:${userId}`, EMPTY_SHOWS, () => loadShows(userId));
+  const range = searchParams.get('range');
+  const entities = rankedHistory(historyRange(state.data, range))[kind];
+  const title = { artists: 'Artists you’ve seen', venues: 'Venues you’ve visited', cities: 'Cities you’ve seen shows in', genres: 'Genres in your history' }[kind];
+  return <section className="parity-page">
+    {pageHeading('DROP STATS', title, 'Ranked from your real attended and manually logged shows.', <Link className="button button--secondary button--small" to={range === 'all' ? '/stats?range=all' : '/stats'}>Back to Stats</Link>)}
+    <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && entities.length === 0 ? { title: 'No history here yet', body: 'Attend or log a show to build this ranking.', icon: <Sparkle size={28} /> } : undefined}>
+      <div className="history-entity-list">{entities.map((entity, index) => <Link key={entity.key} to={withHistoryRange(entity.to, range)} aria-label={`Open ${entity.label} seen history`}><b>{index + 1}</b><span>{entity.label}</span><strong>{entity.count} show{entity.count === 1 ? '' : 's'}</strong><CaretRight size={17} /></Link>)}</div>
+    </PageState>
+  </section>;
+}
+
+export function HistoryDrilldownPage({ kind }: { kind: 'artist' | 'venue' | 'city' | 'genre' }) {
+  const auth = useAuth();
+  const userId = auth.user?.id ?? '';
+  const { entityKey = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const [state, retry] = useLoad(`history-${kind}:${entityKey}:${userId}`, EMPTY_SHOWS, () => loadShows(userId));
+  const parts = entityKey.split('|');
+  const requestedArtist = searchParams.get('name') || (entityKey.startsWith('name:') ? entityKey.slice(5) : '');
+  const catalogArtist = state.data.catalog
+    .flatMap((event) => event.event_artists)
+    .find((row) => row.artists?.id === entityKey)?.artists?.name;
+  const label = kind === 'artist' ? requestedArtist || catalogArtist || 'Artist'
+    : kind === 'venue' ? parts[0] || 'Venue'
+    : kind === 'city' ? [parts[0], parts[1]].filter(Boolean).join(', ') || 'City'
+    : entityKey || 'Genre';
+  const normalizedLabel = normalizeHistoryText(label);
+  const range = searchParams.get('range');
+  const rows = historyShowRows(historyRange(state.data, range)).filter((row) => {
+    if (kind === 'artist') {
+      return row.event
+        ? row.event.event_artists.some((entry) => entityKey.startsWith('name:')
+          ? normalizeHistoryText(entry.artists?.name) === normalizedLabel
+          : entry.artists?.id === entityKey)
+        : normalizeHistoryText(row.logged?.artist_name) === normalizedLabel;
+    }
+    if (kind === 'venue') {
+      const [venue = '', city = '', stateCode = ''] = parts;
+      const event = row.event;
+      const show = row.logged;
+      return normalizeHistoryText(event?.venue_name ?? show?.venue_name) === normalizeHistoryText(venue)
+        && (!city || normalizeHistoryText(event?.city ?? show?.city) === normalizeHistoryText(city))
+        && (!stateCode || normalizeState(event?.state ?? show?.state) === normalizeState(stateCode));
+    }
+    if (kind === 'city') {
+      const [city = '', stateCode = ''] = parts;
+      return normalizeHistoryText(row.event?.city ?? row.logged?.city) === normalizeHistoryText(city)
+        && (!stateCode || normalizeState(row.event?.state ?? row.logged?.state) === normalizeState(stateCode));
+    }
+    return Boolean(row.event?.event_artists.some((entry) => (
+      entry.artists?.genres?.some((genre) => normalizeHistoryText(genre) === normalizeHistoryText(entityKey))
+    )));
+  });
+  const kicker = { artist: 'ARTIST SEEN HISTORY', venue: 'VENUE SEEN HISTORY', city: 'CITY SHOW HISTORY', genre: 'GENRE HISTORY' }[kind];
+  const body = { artist: 'Shows where this artist appears in your seen history.', venue: 'Your attended and logged nights at this venue.', city: 'Your attended and logged nights in this city.', genre: 'Shows in your history with this genre.' }[kind];
+  return <section className="parity-page">
+    {pageHeading(kicker, label, body, <Link className="button button--secondary button--small" to={range === 'all' ? '/stats?range=all' : '/stats'}>Back to Stats</Link>)}
+    <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && rows.length === 0 ? { title: 'No matching shows', body: 'This history is built only from real attended or logged shows.', icon: <Ticket size={28} /> } : undefined}>
+      <HistoryList rows={rows} />
+    </PageState>
+  </section>;
+}
+
 export function HistoryPage({ mode = 'history' }: { mode?: 'history' | 'stats' | 'wrapped' }) {
   const auth = useAuth();
   const userId = auth.user?.id ?? '';
-  const [range, setRange] = useState<'This year' | 'All time'>('This year');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, retry] = useLoad(`${mode}:${userId}`, EMPTY_SHOWS, () => loadShows(userId));
+  const [crewState] = useLoad(`stats-crews:${mode}:${userId}`, [] as Crew[], () => mode === 'stats' ? loadCrews(userId) : Promise.resolve([]));
   const currentYear = new Date().getFullYear();
-  const events = mode === 'history' || range === 'All time'
-    ? state.data.past
-    : state.data.past.filter((event) => new Date(event.date).getFullYear() === currentYear);
-  const logged = mode === 'history' || range === 'All time'
-    ? state.data.logged
-    : state.data.logged.filter((show) => Number(show.show_date.slice(0, 4)) === currentYear);
-  const cityCounts = new Map<string, number>();
-  const artistCounts = new Map<string, number>();
-  const artistIds = new Map<string, Set<string>>();
-  for (const event of [...state.data.catalog, ...events]) {
-    for (const row of event.event_artists) {
-      if (!row.artists?.id || !row.artists.name) continue;
-      const key = row.artists.name.trim().toLocaleLowerCase();
-      const ids = artistIds.get(key) ?? new Set<string>();
-      ids.add(row.artists.id);
-      artistIds.set(key, ids);
-    }
-  }
-  for (const event of events) {
-    const city = [event.city, event.state].filter(Boolean).join(', ');
-    if (city) cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
-    for (const artist of event.event_artists) if (artist.artists?.name) artistCounts.set(artist.artists.name, (artistCounts.get(artist.artists.name) ?? 0) + 1);
-  }
-  for (const show of logged) {
-    const city = [show.city, show.state].filter(Boolean).join(', ');
-    if (city) cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
-    artistCounts.set(show.artist_name, (artistCounts.get(show.artist_name) ?? 0) + 1);
-  }
-  const topCities = [...cityCounts].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const topArtists = [...artistCounts].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const total = events.length + logged.length;
+  const rangeToken = searchParams.get('range') === 'all' ? 'all' : String(currentYear);
+  const range: 'This year' | 'All time' = rangeToken === 'all' ? 'All time' : 'This year';
+  const visibleData = historyRange(state.data, mode === 'history' ? searchParams.get('range') : rangeToken);
+  const rows = historyShowRows(visibleData);
+  const stats = rankedHistory(visibleData);
+  const total = visibleData.past.length + visibleData.logged.length;
   async function share() {
-    const text = `My Drop ${range === 'All time' ? 'all-time' : currentYear} history: ${total} shows, ${artistCounts.size} artists, ${cityCounts.size} cities.`;
+    const text = `My Drop ${range === 'All time' ? 'all-time' : currentYear} history: ${total} shows, ${stats.artists.length} artists, ${stats.cities.length} cities.`;
     try {
       if (navigator.share) await navigator.share({ title: 'My Drop Wrapped', text });
       else await navigator.clipboard.writeText(text);
@@ -2022,16 +2190,21 @@ export function HistoryPage({ mode = 'history' }: { mode?: 'history' | 'stats' |
   }
   return <section className={`parity-page ${mode === 'wrapped' ? 'wrapped-page' : ''}`}>
     {pageHeading(mode === 'history' ? 'SHOW HISTORY' : mode === 'stats' ? 'YOUR NUMBERS' : 'DROP WRAPPED', mode === 'history' ? 'Seen History' : mode === 'stats' ? 'Drop Stats' : range === 'All time' ? 'Your life in shows' : `Your ${currentYear} in shows`, undefined, mode === 'wrapped' ? <button className="button button--primary button--small" type="button" onClick={() => void share()}><ShareNetwork size={16} /> Share</button> : undefined)}
-    {mode !== 'history' && <Tabs options={['This year', 'All time'] as const} value={range} onChange={setRange} label={`${mode} range`} />}
+    {mode !== 'history' && <Tabs options={['This year', 'All time'] as const} value={range} onChange={(next) => setSearchParams(next === 'All time' ? { range: 'all' } : {})} label={`${mode} range`} />}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && total === 0 ? { title: 'Your history is waiting', body: 'Attend or log a show to unlock this screen.', icon: <Sparkle size={28} /> } : undefined}>
-      {mode === 'history' ? <div className="history-list">{[...events.map((event) => ({ date: event.date, title: event.title, place: eventPlace(event), to: state.data.memoryByEvent.has(event.id) ? `/show/${state.data.memoryByEvent.get(event.id)}` : `/event/${event.id}` })), ...logged.map((show) => ({ date: show.show_date, title: show.artist_name, place: [show.venue_name, show.city, show.state].filter(Boolean).join(' · '), to: `/show/${show.id}` }))].sort((a, b) => b.date.localeCompare(a.date)).map((item) => <Link key={`${item.to}:${item.date}`} to={item.to}><time>{item.date.slice(0, 4)}</time><span><strong>{item.title}</strong><small>{item.date.slice(0, 10)} · {item.place}</small></span><CaretRight size={17} /></Link>)}</div> : <div className="stats-grid">
-        <article><strong>{total}</strong><span>Shows</span></article><article><strong>{artistCounts.size}</strong><span>Artists</span></article><article><strong>{cityCounts.size}</strong><span>Cities</span></article>
-        <section><h3>Top artists</h3>{topArtists.map(([name, count], index) => {
-          const ids = artistIds.get(name.trim().toLocaleLowerCase());
-          const artistId = ids?.size === 1 ? ids.values().next().value : undefined;
-          return <Link key={name} to={artistId ? `/artist/${artistId}` : `/search?q=${encodeURIComponent(name)}`} aria-label={`Open ${name}`}><b>{index + 1}</b><span>{name}</span><strong>{count}x</strong><CaretRight size={15} /></Link>;
-        })}</section>
-        <section><h3>Top cities</h3>{topCities.map(([name, count], index) => <Link key={name} to={`/search?city=${encodeURIComponent(name)}`} aria-label={`View shows in ${name}`}><b>{index + 1}</b><span>{name}</span><strong>{count}</strong><CaretRight size={15} /></Link>)}</section>
+      {mode === 'history' ? <HistoryList rows={rows} /> : <div className="stats-grid">
+        <Link className="stats-tile" to={withHistoryRange('/history', rangeToken)} aria-label={`Open show history, ${total} shows`}><strong>{total}</strong><span>Shows</span></Link>
+        <Link className="stats-tile" to={withHistoryRange('/history/artists', rangeToken)} aria-label={`Open artist rankings, ${stats.artists.length} artists`}><strong>{stats.artists.length}</strong><span>Artists</span></Link>
+        <Link className="stats-tile" to={withHistoryRange('/history/venues', rangeToken)} aria-label={`Open venue rankings, ${stats.venues.length} venues`}><strong>{stats.venues.length}</strong><span>Venues</span></Link>
+        <Link className="stats-tile" to={withHistoryRange('/history/cities', rangeToken)} aria-label={`Open city rankings, ${stats.cities.length} cities`}><strong>{stats.cities.length}</strong><span>Cities</span></Link>
+        <Link className="stats-tile" to={withHistoryRange('/history/genres', rangeToken)} aria-label={`Open genre rankings, ${stats.genres.length} genres`}><strong>{stats.genres.length}</strong><span>Genres</span></Link>
+        <Link className="stats-tile" to="/crews" aria-label={`Open crews, ${crewState.status === 'ready' ? crewState.data.length : 'loading'}`}><strong>{crewState.status === 'ready' ? crewState.data.length : '—'}</strong><span>Crews</span></Link>
+        {([
+          ['Top artists', stats.artists.slice(0, 5)],
+          ['Top venues', stats.venues.slice(0, 5)],
+          ['Top cities', stats.cities.slice(0, 5)],
+          ['Top genres', stats.genres.slice(0, 5)],
+        ] as const).map(([heading, entities]) => <section key={heading}><h3>{heading}</h3>{entities.map((entity, index) => <Link key={entity.key} to={withHistoryRange(entity.to, rangeToken)} aria-label={`Open ${entity.label} seen history`}><b>{index + 1}</b><span>{entity.label}</span><strong>{entity.count}x</strong><CaretRight size={15} /></Link>)}</section>)}
       </div>}
     </PageState>
   </section>;

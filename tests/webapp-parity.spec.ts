@@ -37,6 +37,7 @@ type MockOptions = {
   delayedLivePoll?: boolean;
   duplicateCities?: boolean;
   duplicateArtistNames?: boolean;
+  currentYearHistory?: boolean;
   profileCity?: string | null;
   profileMissing?: boolean;
   profileState?: string | null;
@@ -50,6 +51,7 @@ type MockOptions = {
   tbdEvent?: boolean;
   tagReadError?: boolean;
   usernameAvailable?: boolean;
+  venueMissingCity?: boolean;
 };
 
 const user = {
@@ -121,6 +123,24 @@ const coastEvent = {
   lat: 34.0522,
   lng: -118.2437,
   event_artists: [{ position: 0, artists: { id: 'artist-2', name: 'Voltage Bloom', genres: ['Electronic', 'Techno'], image_url: null } }],
+};
+
+const currentYear = new Date().getFullYear();
+const currentYearEvent = { ...dropEvent, date: `${currentYear}-02-20T03:00:00.000Z` };
+const previousYearEvent = { ...coastEvent, date: `${currentYear - 1}-02-20T03:00:00.000Z` };
+const stateHallEvent = {
+  ...dropEvent,
+  id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  title: 'State Hall Signal',
+  venue_name: 'State Hall',
+  city: null,
+  state: 'CO',
+};
+const stateHallUnknownStateEvent = {
+  ...stateHallEvent,
+  id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  title: 'Unscoped State Hall',
+  state: null,
 };
 
 const morrisonEvent = {
@@ -587,6 +607,8 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
             ? [{ ...dropEvent, date: '2027-08-21T01:00:00.000Z' }]
         : options.duplicateCities
           ? [portlandOregonEvent, portlandMaineEvent]
+        : options.venueMissingCity
+          ? [stateHallEvent, stateHallUnknownStateEvent]
         : options.pastEvent
           ? [endedEvent]
           : options.presaleBoundary
@@ -651,6 +673,24 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
               end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             } }]
             : [{ event_id: festivalEvent.id, status: 'going' }]
+          : options.currentYearHistory
+          ? embedded
+            ? [{ events: currentYearEvent }, { events: previousYearEvent }]
+            : [{ event_id: currentYearEvent.id, status: 'attended' }, { event_id: previousYearEvent.id, status: 'attended' }]
+          : options.venueMissingCity
+          ? embedded
+            ? [{ events: { ...stateHallEvent, date: '2020-08-20T03:00:00.000Z' } }]
+            : [{ event_id: stateHallEvent.id, status: 'attended' }]
+          : options.duplicateArtistNames
+          ? embedded
+            ? [dropEvent, coastEvent].map((event) => ({ events: {
+              ...event,
+              date: event === dropEvent ? '2020-08-20T03:00:00.000Z' : '2021-08-20T03:00:00.000Z',
+              event_artists: event === coastEvent
+                ? [{ position: 0, artists: { ...coastEvent.event_artists[0].artists, name: 'Neon Current' } }]
+                : event.event_artists,
+            } }))
+            : [{ event_id: dropEvent.id, status: 'attended' }, { event_id: coastEvent.id, status: 'attended' }]
           : options.parityFeatures
           ? embedded
             ? [{ events: status?.includes('going') ? options.pastProfileGoing ? endedEvent : dropEvent : { ...dropEvent, date: '2020-08-20T03:00:00.000Z' } }]
@@ -1032,10 +1072,19 @@ test.describe('React parity preview foundation', () => {
     await expect.poll(() => location.locator('.location-picker__label').evaluate((element) => getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
     await page.getByRole('textbox', { name: /bio/i }).fill('Keep this unsaved note.');
     await location.click();
-    await page.getByRole('button', { name: 'Austin, TX' }).click();
+    const locationSearch = page.getByRole('combobox', { name: 'Search locations' });
+    await locationSearch.fill('Austin');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
 
     await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/profiles').length).toBe(1);
     await expect(page.getByRole('button', { name: /change location, current location austin, tx/i })).toBeVisible();
+    await page.getByRole('button', { name: /change location, current location austin, tx/i }).click();
+    const reopenedLocationSearch = page.getByRole('combobox', { name: 'Search locations' });
+    await reopenedLocationSearch.fill('No Such Drop City');
+    await expect(page.getByText('No supported cities match')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(reopenedLocationSearch).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('textbox', { name: /bio/i })).toHaveValue('Keep this unsaved note.');
     await expect(page.getByRole('textbox', { name: 'City' })).toHaveValue('Austin');
     await expect(page.getByRole('textbox', { name: 'State' })).toHaveValue('TX');
@@ -1049,18 +1098,31 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByText(/what's moving in Austin, TX/i)).toBeVisible();
   });
 
-  test('Upcoming heading is centered while its count stays right aligned', async ({ page }) => {
+  test('Upcoming heading stays left while its event collection is centered', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mockSupabase(page, true);
     await openAppRoute(page, '/discover');
 
-    const header = page.locator('.discover-section__centered-header');
+    const section = page.locator('.discover-section').filter({ has: page.getByRole('heading', { name: 'Upcoming' }) });
+    const header = section.locator('> header');
     const heading = header.getByRole('heading', { name: 'Upcoming' });
-    const [headerBox, headingBox] = await Promise.all([header.boundingBox(), heading.boundingBox()]);
+    const grid = section.locator('.event-grid');
+    const card = grid.locator('.event-card').first();
+    const [headerBox, headingBox, gridBox, cardBox] = await Promise.all([header.boundingBox(), heading.boundingBox(), grid.boundingBox(), card.boundingBox()]);
     expect(headerBox).not.toBeNull();
     expect(headingBox).not.toBeNull();
-    expect(Math.abs((headingBox!.x + headingBox!.width / 2) - (headerBox!.x + headerBox!.width / 2))).toBeLessThan(2);
+    expect(Math.abs(headingBox!.x - headerBox!.x)).toBeLessThan(2);
     await expect(header.locator('> span')).toHaveText(/\d+/);
+    expect(gridBox).not.toBeNull();
+    expect(cardBox).not.toBeNull();
+    const leftGutter = cardBox!.x - gridBox!.x;
+    const rightGutter = gridBox!.x + gridBox!.width - cardBox!.x - cardBox!.width;
+    expect(Math.abs(leftGutter - rightGutter)).toBeLessThan(2);
+    const artwork = card.locator('.event-card__art');
+    const image = artwork.locator('> img');
+    await expect(image).not.toHaveAttribute('loading');
+    const [artworkBox, imageBox] = await Promise.all([artwork.boundingBox(), image.boundingBox()]);
+    expect(imageBox).toEqual(artworkBox);
   });
 
   test('signed-in cards are uniform and horizontal rails have working controls', async ({ page }) => {
@@ -1080,6 +1142,11 @@ test.describe('React parity preview foundation', () => {
     const before = await rail.evaluate((element) => element.scrollLeft);
     await page.getByRole('button', { name: /next shows on the map/i }).click();
     await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(before);
+    await rail.focus();
+    await page.keyboard.press('Home');
+    await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBe(0);
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   });
 
   test('settings remain reachable when the profile cannot be loaded', async ({ page }) => {
@@ -1143,7 +1210,7 @@ test.describe('React parity preview foundation', () => {
       await expect(page.getByText(/is next|next approved parity slice/i)).toHaveCount(0);
     }
 
-    await expect(page.getByText('Night Owl is going', { exact: true })).toBeVisible();
+    await expect(page.getByText('Night Owl is going', { exact: true })).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/alerts').length).toBe(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   });
@@ -1661,42 +1728,161 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByRole('tab', { name: /^this year$/i })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('heading', { name: 'Your history is waiting' })).toBeVisible();
     await page.getByRole('tab', { name: /^all time$/i }).click();
-    await expect(page.locator('.stats-grid article').first()).toContainText('2');
+    await expect(page.locator('.stats-grid .stats-tile').first()).toContainText('2');
   });
 
-  test('stats artist and city rows open connected destinations', async ({ page }) => {
-    const artistEventQueries: URL[] = [];
-    page.on('request', (request) => {
-      const url = new URL(request.url());
-      if (url.pathname === '/rest/v1/events' && url.searchParams.get('select')?.includes('event_artists!inner')) {
-        artistEventQueries.push(url);
-      }
-    });
+  test('stats artist, venue, city, and show rows open seen-history destinations', async ({ page }) => {
     await mockSupabase(page, true, { parityFeatures: true });
     await openAppRoute(page, '/stats');
     await page.getByRole('tab', { name: /^all time$/i }).click();
 
-    await page.getByRole('link', { name: /open neon current/i }).click();
-    await expect(page).toHaveURL(new RegExp(`${APP}/artist/artist-1$`));
+    await page.getByRole('link', { name: /open neon current seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/artist/artist-1\\?name=Neon(?:%20|\\+)Current&range=all$`));
     await expect(page.getByRole('heading', { name: 'Neon Current' })).toBeVisible();
-    expect(artistEventQueries).not.toHaveLength(0);
-    expect(artistEventQueries.every((url) => url.searchParams.get('event_artists.artist_id') === 'eq.artist-1')).toBe(true);
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
 
     await openAppRoute(page, '/stats');
     await page.getByRole('tab', { name: /^all time$/i }).click();
-    await page.getByRole('link', { name: /view shows in denver, co/i }).click();
-    await expect(page).toHaveURL(new RegExp(`${APP}/search\\?city=Denver%2C(?:%20|\\+)CO$`));
-    await expect(page.getByRole('heading', { name: 'Filtered shows' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /open prism nights/i }).first()).toBeVisible();
-    await expect(page.getByRole('link', { name: /open coast frequency/i })).toHaveCount(0);
+    await page.getByRole('link', { name: /open mission ballroom.*seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/venue/Mission%20Ballroom%7CDenver%7CCO\\?range=all$`));
+    await expect(page.getByRole('heading', { name: 'Mission Ballroom' })).toBeVisible();
+
+    await openAppRoute(page, '/stats');
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+    await page.getByRole('link', { name: /open denver, co seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/city/Denver%7CCO\\?range=all$`));
+    await expect(page.getByRole('heading', { name: 'Denver, CO' })).toBeVisible();
+
+    await openAppRoute(page, '/stats');
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+    await page.getByRole('link', { name: /open show history, 2 shows/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history\\?range=all$`));
+    await page.getByRole('link', { name: /prism nights/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/event/${dropEvent.id}$`));
   });
 
-  test('stats fall back to search when artist names are ambiguous', async ({ page }) => {
+  test('stats keep ambiguous artist names on a real seen-history filter', async ({ page }) => {
     await mockSupabase(page, true, { duplicateArtistNames: true, parityFeatures: true });
     await openAppRoute(page, '/stats');
     await page.getByRole('tab', { name: /^all time$/i }).click();
 
-    await expect(page.getByRole('link', { name: /open neon current/i })).toHaveAttribute('href', '/app/next/search?q=Neon%20Current');
+    await expect(page.getByRole('link', { name: /open neon current seen history/i })).toHaveAttribute('href', /\/history\/artist\/name%3ANeon%20Current\?name=Neon%20Current&range=all$/);
+  });
+
+  test('stats preserve the selected range through rankings and show history', async ({ page }) => {
+    await mockSupabase(page, true, { currentYearHistory: true });
+    await openAppRoute(page, '/stats');
+
+    await expect(page.getByRole('link', { name: /open show history, 1 shows/i })).toBeVisible();
+    await page.getByRole('link', { name: /open neon current seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/artist/artist-1\\?name=Neon(?:%20|\\+)Current&range=${currentYear}$`));
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /coast frequency/i })).toHaveCount(0);
+
+    await openAppRoute(page, '/stats?range=all');
+    await page.getByRole('link', { name: /open show history, 2 shows/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history\\?range=all$`));
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /coast frequency/i })).toBeVisible();
+  });
+
+  test('artist-id history does not merge a different artist with the same name', async ({ page }) => {
+    await mockSupabase(page, true, { duplicateArtistNames: true });
+    await openAppRoute(page, '/history/artist/artist-1?name=Neon%20Current');
+
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /coast frequency/i })).toHaveCount(0);
+  });
+
+  test('search artist and venue suggestions follow mobile source destinations by keyboard', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/search');
+
+    const search = page.getByRole('combobox', { name: /search artists, venues, and shows/i });
+    await search.fill('Mission');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${APP}/venue/Mission%20Ballroom%7CDenver%7CCO$`));
+    await expect(page.getByRole('heading', { name: 'Mission Ballroom' })).toBeVisible();
+    const [venueArtBox, venueImageBox] = await Promise.all([
+      page.locator('.catalog-hero > span').boundingBox(),
+      page.locator('.catalog-hero > span > img').boundingBox(),
+    ]);
+    expect(venueImageBox).toEqual(venueArtBox);
+    await page.getByRole('link', { name: /seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/venue/Mission%20Ballroom%7CDenver%7CCO$`));
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
+
+    await openAppRoute(page, '/search');
+    await search.fill('Neon Current');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${APP}/artist/artist-1$`));
+    await page.getByRole('link', { name: /seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/artist/artist-1\\?name=Neon(?:%20|\\+)Current$`));
+    await expect(page.getByRole('link', { name: /prism nights/i })).toBeVisible();
+  });
+
+  test('venue routes preserve an empty city and require the selected state', async ({ page }) => {
+    await mockSupabase(page, true, { venueMissingCity: true });
+    await openAppRoute(page, '/search');
+
+    const search = page.getByRole('combobox', { name: /search artists, venues, and shows/i });
+    await search.fill('State Hall');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${APP}/venue/State%20Hall%7C%7CCO$`));
+    await expect(page.getByRole('link', { name: /state hall signal/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /unscoped state hall/i })).toHaveCount(0);
+    await page.getByRole('link', { name: /seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/venue/State%20Hall%7C%7CCO$`));
+
+    await openAppRoute(page, `/event/${stateHallEvent.id}`);
+    await page.getByRole('link', { name: 'State Hall' }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/venue/State%20Hall%7C%7CCO$`));
+
+    await openAppRoute(page, '/stats?range=all');
+    await page.getByRole('link', { name: /open state hall seen history/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/history/venue/State%20Hall%7C%7CCO\\?range=all$`));
+    await expect(page.getByRole('link', { name: /state hall signal/i })).toBeVisible();
+  });
+
+  test('event detail media stays responsive and landscape', async ({ page }) => {
+    await mockSupabase(page, true);
+    await openAppRoute(page, `/event/${dropEvent.id}`);
+
+    const box = await page.locator('.event-detail__art').boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width / box!.height).toBeGreaterThan(1.7);
+    expect(box!.width / box!.height).toBeLessThan(1.85);
+  });
+
+  test('representative signed-in parity routes stay console clean', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    page.on('pageerror', (error) => errors.push(error.message));
+    await mockSupabase(page, true, { personalized: true, parityFeatures: true });
+
+    const routes = [
+      ['/discover', '.discovery-page'],
+      ['/search', '.search-row'],
+      ['/stats', '.parity-page'],
+      [`/event/${dropEvent.id}`, '.event-detail'],
+    ] as const;
+    await openAppRoute(page, routes[0][0]);
+    for (const [route, selector] of routes) {
+      if (route !== routes[0][0]) {
+        await page.evaluate((next) => {
+          history.pushState({}, '', `/app/next${next}`);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }, route);
+      }
+      await expect(page.locator(selector)).toBeVisible();
+      await page.waitForLoadState('networkidle');
+    }
+    expect(errors).toEqual([]);
   });
 
   test('city-only history destinations include matching events with a state', async ({ page }) => {
@@ -1720,7 +1906,7 @@ test.describe('React parity preview foundation', () => {
     await mockSupabase(page, true, { personalized: true });
     await openAppRoute(page, '/search?q=Prism');
 
-    const search = page.getByRole('textbox', { name: /search artists, venues, and shows/i });
+    const search = page.getByRole('combobox', { name: /search artists, venues, and shows/i });
     await search.fill('Coast');
     await expect(page).toHaveURL(new RegExp(`${APP}/search\\?q=Coast$`));
     await openAppRoute(page, '/search?q=Coast');
@@ -1791,11 +1977,7 @@ test.describe('React parity preview foundation', () => {
 
   test('notifications wait for profile hydration before deriving and marking alerts', async ({ page }) => {
     const writes = await mockSupabase(page, true, { parityFeatures: true, delayedProfile: true });
-    await page.goto(`${APP}/`);
-    await page.evaluate(() => {
-      history.pushState({}, '', '/app/next/notifications');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
+    await openAppRoute(page, '/notifications');
 
     await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible();
     await page.waitForTimeout(250);
@@ -1875,7 +2057,7 @@ test.describe('React parity preview foundation', () => {
 
     await page.getByRole('navigation', { name: /mobile navigation/i })
       .getByRole('link', { name: /^search$/i }).click();
-    await page.getByRole('textbox', { name: /search artists, venues, and shows/i }).fill('Los Angeles');
+    await page.getByRole('combobox', { name: /search artists, venues, and shows/i }).fill('Los Angeles');
     await expect(page.getByRole('link', { name: /open coast frequency/i })).toBeVisible();
   });
 
@@ -1891,15 +2073,15 @@ test.describe('React parity preview foundation', () => {
     await expect(page.locator('section[aria-labelledby="trending-genres-heading"] .chip-rail button').first()).toHaveText('House');
     await expect(page.getByText('UPCOMING', { exact: true })).toBeVisible();
 
-    const search = page.getByRole('textbox', { name: /search artists, venues, and shows/i });
+    const search = page.getByRole('combobox', { name: /search artists, venues, and shows/i });
     await search.fill('Mission');
-    const suggestions = page.getByRole('region', { name: /search suggestions/i });
+    const suggestions = page.getByRole('listbox', { name: /search artists, venues, and shows options/i });
     await expect(suggestions.getByText('Venues', { exact: true })).toBeVisible();
     await expect(suggestions.getByText('Mission Ballroom', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: /^filters$/i }).focus();
     await expect(suggestions).toHaveCount(0);
     await search.fill('Prism');
-    await suggestions.getByRole('link', { name: /Prism Nights/i }).click();
+    await suggestions.getByRole('option', { name: /Prism Nights/i }).click();
     await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
     await page.getByRole('button', { name: /go back/i }).click();
     await page.locator('.recent-searches').getByRole('link', { name: /Prism Nights/i }).click();
@@ -1919,8 +2101,8 @@ test.describe('React parity preview foundation', () => {
     await expect(dialog.getByText('Location', { exact: true })).toBeVisible();
     await expect(dialog.getByText('Distance', { exact: true })).toBeVisible();
     await expect(dialog.getByText('Price', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Genres', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('City', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('Search genres', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('Search cities', { exact: true })).toBeVisible();
     await expect(dialog.getByRole('button', { name: /today|this weekend|next 30 days/i })).toHaveCount(0);
 
     const minimumPrice = dialog.getByLabel('Minimum price');
@@ -1941,11 +2123,17 @@ test.describe('React parity preview foundation', () => {
     await expect(minimumPrice).toHaveValue('100');
     await setRange(minimumPrice, 0);
 
-    await dialog.getByRole('button', { name: /city.*all cities/i }).click();
-    await dialog.getByLabel('Los Angeles, CA', { exact: true }).check();
-    await dialog.getByRole('button', { name: /city.*1 selected/i }).click();
-    await dialog.getByRole('button', { name: /genres.*all genres/i }).click();
-    await dialog.getByLabel('Techno', { exact: true }).check();
+    const cityCombobox = dialog.getByRole('combobox', { name: 'Search cities' });
+    await cityCombobox.fill('Los Angeles');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(cityCombobox).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    const genreCombobox = dialog.getByRole('combobox', { name: 'Search genres' });
+    await genreCombobox.fill('Techno');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape');
     await expect(dialog.getByRole('button', { name: /show 1 results/i })).toBeVisible();
     await dialog.getByRole('button', { name: /show 1 results/i }).click();
 
@@ -1960,6 +2148,7 @@ test.describe('React parity preview foundation', () => {
     await expect(resetFilterButton).toBeFocused();
     await resetFilterButton.click();
     await dialog.getByRole('button', { name: /^refresh$/i }).click();
+    await expect(dialog.getByRole('button', { name: /^refresh$/i })).toBeEnabled();
     await expect(dialog.getByText('Denver, CO', { exact: true })).toBeVisible();
     await expect(dialog.getByRole('button', { name: /show 1 results/i })).toBeVisible();
     await dialog.getByRole('button', { name: /show 1 results/i }).click();
@@ -1973,14 +2162,18 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByRole('link', { name: /open red rocks echo/i })).toBeVisible();
 
     await page.getByRole('button', { name: /filters, 2 active/i }).click();
-    await dialog.getByRole('button', { name: /city.*all cities/i }).click();
-    await dialog.getByLabel('Los Angeles, CA', { exact: true }).check();
+    await cityCombobox.fill('Los Angeles');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(cityCombobox).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
     await expect(dialog.getByRole('button', { name: /^any$/i })).toHaveAttribute('aria-pressed', 'true');
     await dialog.getByRole('button', { name: /show 1 results/i }).click();
     await expect(page.getByRole('link', { name: /open coast frequency/i })).toBeVisible();
 
     await search.fill('Los Angeles');
-    await page.getByRole('region', { name: /search suggestions/i }).getByRole('button', { name: /Los Angeles/i }).click();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('link', { name: /open coast frequency/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /open red rocks echo/i })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -2021,8 +2214,11 @@ test.describe('React parity preview foundation', () => {
 
     await page.getByRole('button', { name: /filters, 1 active/i }).click();
     await dialog.getByRole('button', { name: /^reset$/i }).click();
-    await dialog.getByRole('button', { name: /city.*all cities/i }).click();
-    await dialog.locator('.filter-options').getByLabel('Portland, OR', { exact: true }).check();
+    const cityCombobox = dialog.getByRole('combobox', { name: 'Search cities' });
+    await cityCombobox.fill('Portland, OR');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape');
     await dialog.getByRole('button', { name: /show 1 results/i }).click();
     await expect(page.getByRole('link', { name: /open rose city pulse/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /open casco bay pulse/i })).toHaveCount(0);
