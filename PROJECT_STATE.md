@@ -31,6 +31,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - **SOCIAL 3A DESIGN COMPLETE (2026-07-25, design only):** Claude.ai project `Website design prompt` now contains four connected signed-in parity states using Foundation 1A: desktop/mobile Friends and Crew Activity. Friends includes Requests and Find subviews, filtering/search, browser invite/copy, Add/Sent and Accept/Decline states, taste-overlap labels, native-only contacts disclosure, person menus, report/block confirmation, and blocked-user filtering. Activity includes going/rated/recap/plan-join feed types, person/event/plan links, icon-based reactions, and honest ready/loading/empty/error states. Desktop/mobile rendering, 390px containment, bottom navigation, tabs, Retry, and reaction picker were visually exercised. No repository implementation, production route, data, or deployment changed.
 - **DISCOVERY 2A DESIGN COMPLETE (2026-07-25, design only):** Claude.ai project `Website design prompt` now contains six connected signed-in parity states using Foundation 1A: desktop/mobile Discover, Search/results, and Event Detail. The slice includes Any-time-first discovery, detailed genre/date/location filters, global festivals, honest data states, artwork-first event cards without RSVP rows, mobile filter sheet, detail-only RSVP/save/follow/calendar/share, weather/presale, and three-seller all-in ticket comparison. Desktop/mobile render and 390px overflow were visually checked; a duplicate state declaration found by Claude verification was fixed. No real reusable map/pin pattern exists in the design file, so Map is explicitly deferred to Discovery 2B instead of represented by a placeholder. No repository implementation, production route, data, or deployment changed.
 - **ISOLATED WEB-PARITY FOUNDATION 1A VERIFIED (2026-07-22, not deployed):** React/Vite preview at `/app/next/` shares the production Supabase account/data contract with mobile; implements auth, compliance, responsive signed-in shell, profile/avatar, privacy, notification preferences, music connection status, logout, and deletion. Desktop stays visually continuous with the public Prism website while mobile uses compact web-native navigation. Full plan: `docs/web-parity-plan.md`.
+- **PASSWORD-RESET BROWSER FALLBACK LIVE (2026-07-24, PR #25):** Supabase recovery links targeting `https://trydropapp.com/reset-password` now 302 to `https://app.trydropapp.com/?mode=reset-password`; browsers preserve the recovery `#hash`, and the SPA renders “Choose a new password.” Merge `006fe8d` passed 104/104 Playwright checks and production workflow `30138096500`. A fresh Resend message was confirmed delivered after deployment; its single-use link was intentionally not consumed during verification.
 - **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
   `aa76a7a` passed the 96/96 GitHub test gate and production deploy run
@@ -317,6 +318,29 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Design:** all four states were created and founder-approved first in the website Claude.ai/design project; paired desktop/mobile reference and implementation QA passed. Desktop preserves the public website's Prism header and visual language.
 - **Verified:** typecheck and production build passed; full Playwright matrix passed 118/118 across desktop Chrome and mobile Safari; `git diff --check` clean; independent security/correctness review found no remaining actionable defects. Production routes, data, and deployments were not changed.
 - **Next:** see Exact next step above.
+
+### 2026-07-25 — Codex — Reliable launch-access client ready to deploy
+- **Cause:** the live form wrote directly from the visitor’s browser to the
+  waitlist table. A failed request was neither queued nor retried, and no code
+  sent a confirmation email; the reported July 24 signup is absent from the
+  live table.
+- **Changed:** `Drop.joinWaitlist` now calls the paired server-side Edge
+  Function; success copy tells visitors to check their inbox, repeat signups
+  receive the same privacy-safe response, and email/quota failures retain the
+  visible retry state. Copy now discloses the immediate confirmation.
+- **Verified:** the complete 104-test Playwright suite passed across desktop
+  Chrome and mobile Safari; source and generated `dist` match. The paired
+  production migration/function are live, and the controlled canary was
+  recorded by the database and delivered by Resend. PR #26 merged as
+  `655f54a`; production workflow `30173794587` passed 104/104 tests and
+  deployed Cloudflare Pages. Live duplicate-safe verification returned “Check
+  your inbox” without sending another confirmation.
+
+### 2026-07-24 — Codex — password-reset browser fallback live
+- **Changed:** added the exact `/reset-password` Cloudflare Pages redirect to the existing SPA reset mode and a regression assertion for the source/dist rule. Kept the native AASA route unchanged. Hardened the existing console collector only against third-party resource-load noise already handled on the active feature branch.
+- **Verified:** local and GitHub Playwright passed 104/104 across desktop Chrome and mobile Safari; PR #25 merged as `006fe8d`; workflow `30138096500` deployed successfully. Live HTTP returns 302 to `https://app.trydropapp.com/?mode=reset-password`, a placeholder recovery hash survives the redirect, and the destination renders “Choose a new password.”
+- **Delivery:** Supabase accepted a fresh recovery request and Resend confirmed the new “Reset your password” email delivered. The real token was not opened because recovery links are single-use.
+
 ### 2026-07-18 — Codex — v1.0.1 hosted legal alignment prepared, not deployed
 - **Changed:** updated canonical Privacy/Terms to July 18, 2026; aligned the 16+ account/social gate and audited data disclosures; removed the SPA's stale embedded 18+ policy and dead bindings; pointed signup/footer and hosted-document links at canonical `/privacy` and `/terms`; added regression coverage for OAuth's no-DOB path, signup consent ordering, stale copy, canonical links, audited disclosures, and the exact AASA route set. Follow-up adversarial review found the live/draft AASA lacked `/reset-password`; this branch now includes that native recovery callback.
 - **Verified:** `dist/` rebuilt byte-for-byte from source; `npm test` passed 100/100 across desktop and mobile Safari; desktop and 390×844 browser review showed no console/page errors; live canonical URLs return 200 while `.html` variants redirect once; the mobile and website AASA sources are byte-identical and parse to event, plan, recovery, and root routes; separate cross-repo `/verify` passed all five criteria before the focused recovery correction.

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -11,9 +12,15 @@ import { test, expect, type Page } from '@playwright/test';
 function trackPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error' && !msg.text().startsWith('Failed to load resource:')) {
-      errors.push(`console.error: ${msg.text()}`);
-    }
+    if (msg.type() !== 'error') return;
+    const url = msg.location().url;
+    // Match requestfailed below: third-party image/font failures are noisy,
+    // but external scripts' own console errors must still fail the suite.
+    const externalResourceNoise = url
+      && !url.includes('localhost')
+      && !url.includes('127.0.0.1')
+      && msg.text().startsWith('Failed to load resource:');
+    if (!externalResourceNoise) errors.push(`console.error: ${msg.text()}`);
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('response', (res) => {
@@ -234,6 +241,13 @@ test.describe('website smoke', () => {
     ]);
   });
 
+  test('password recovery has a browser fallback to the signed-in SPA', () => {
+    const redirects = readFileSync('_redirects', 'utf8');
+    expect(redirects).toContain(
+      '/reset-password https://app.trydropapp.com/?mode=reset-password  302',
+    );
+  });
+
   test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
@@ -379,40 +393,35 @@ test.describe('website smoke', () => {
   });
 
   test('launch-access submit answers inline instead of silently reloading', async ({ page }) => {
-    // Mock the waitlist insert: CI must never write a real row to production.
+    // Mock the function: CI must never write a real row or send a real email.
     let posted: string | undefined;
-    await page.route('**/rest/v1/waitlist**', async (route) => {
+    await page.route('**/functions/v1/join-waitlist', async (route) => {
       posted = route.request().postData() ?? '';
-      await route.fulfill({ status: 201, body: '' });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('Raver@Example.com');
     await page.locator('.wl-submit').click();
     // The tap must produce visible feedback that mentions email — never a
     // bare page reload (founder-reported bug).
-    await expect(page.locator('.wl-msg')).toContainText(/on the list/);
-    await expect(page.locator('.wl-msg')).toContainText(/email/i);
+    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
     expect(page.url()).not.toContain('email_address=');
     // The row goes to our own table, lowercased for the unique constraint.
     expect(posted).toContain('"email":"raver@example.com"');
   });
 
-  test('signing up twice reads as already-on-the-list, not an error', async ({ page }) => {
-    // Supabase answers a repeat email with a unique-constraint 409.
-    await page.route('**/rest/v1/waitlist**', (route) =>
-      route.fulfill({
-        status: 409, contentType: 'application/json',
-        body: JSON.stringify({ code: '23505', message: 'duplicate key value violates unique constraint "waitlist_email_key"' }),
-      }));
+  test('repeat signup gets the same privacy-safe confirmation', async ({ page }) => {
+    await page.route('**/functions/v1/join-waitlist', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('raver@example.com');
     await page.locator('.wl-submit').click();
-    await expect(page.locator('.wl-msg')).toContainText(/already on the list/);
+    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
     await expect(page.locator('.wl-msg')).toHaveClass(/ok/);
   });
 
   test('waitlist outage shows a retry message instead of failing silently', async ({ page }) => {
-    await page.route('**/rest/v1/waitlist**', (route) =>
+    await page.route('**/functions/v1/join-waitlist', (route) =>
       route.fulfill({ status: 500, body: '' }));
     await page.goto('/download.html');
     await page.locator('#wl-email').fill('raver@example.com');

@@ -19,3 +19,4 @@
 /login        https://app.trydropapp.com/?mode=login  302
 /login.html   https://app.trydropapp.com/?mode=login  302
 /account.html https://app.trydropapp.com/  302
+/reset-password https://app.trydropapp.com/?mode=reset-password  302

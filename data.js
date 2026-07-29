@@ -8,6 +8,7 @@
   var SUPA_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
   var SUPA_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
   var REST = SUPA_URL + '/rest/v1/';
+  var FUNCTIONS = SUPA_URL + '/functions/v1/';
 
   // Location — client-side choice, persisted. Denver is densest (~140 upcoming).
   var CITIES = ['Denver', 'Los Angeles', 'Seattle', 'Portland', 'San Diego',
@@ -69,27 +70,20 @@
     });
   }
 
-  // Launch waitlist — the `waitlist` table is INSERT-only for this key (RLS):
-  // visitors can add themselves, nothing can ever be read back client-side.
-  // A repeat signup trips the unique-email constraint (409); that's still a
-  // success from the visitor's side, so report it as {duplicate: true}.
-  // (ON CONFLICT can't express this: on a deny-all-read RLS table Postgres
-  // rejects the arbiter check itself as a read.)
+  // Server-side signup stores the address and sends the confirmation email.
   Drop.joinWaitlist = function (email, source) {
-    return fetch(REST + 'waitlist', {
+    return fetch(FUNCTIONS + 'join-waitlist', {
       method: 'POST',
       headers: {
         apikey: SUPA_KEY,
         Authorization: 'Bearer ' + SUPA_KEY,
         'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
       },
       referrerPolicy: 'no-referrer',
       body: JSON.stringify({ email: email, source: source || null })
     }).then(function (r) {
-      if (r.status === 409) return { duplicate: true };
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      return { duplicate: false };
+      return r.json();
     });
   };
 
