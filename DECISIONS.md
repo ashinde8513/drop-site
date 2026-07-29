@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-29 — Social invariants live at the database boundary and release compatibly
+
+Friendship creation is pending-only and acceptance is a recipient-only pending-to-accepted transition. Live Mode derives `auth.uid()` and `checked_in_at` on the server, enforces the authored event end or the shared 8-hour timed/24-hour TBD fallback, and uses the existing security-definer block helper so either-direction blocks override friend visibility. Crew membership replacement is one owner-checked transaction through `replace_crew_members`; clients do not compose delete/insert invariants.
+
+Exact migration `20260729182349_social_mutation_contracts.sql` uses fixed search paths, least-privilege RPC grants, and deterministic denial/rollback tests. Existing direct crew-table grants remain temporarily for released-client compatibility; revoke them only in a separately reviewed minimum-client cutover. The migration is not applied anywhere hosted, and neither client may release its RPC dependency until an authorized non-production apply and hosted matrix pass. Production requires a later, separate exact-filename approval.
+
 ## 2026-07-29 — The CSV is canonical QA truth; Excel is a generated mirror; mocked UI tests are not authorization proof
 
 `docs/qa/feature-matrix.csv` is the version-controlled source of truth for website features, founder requests, sanitized Apple feedback, stories, defects, evidence, and exact next actions. `scripts/build-qa-workbook.py` validates and generates `docs/qa/drop-website-feature-matrix.xlsx`; edit/upsert the CSV through the generator and preserve stable IDs/history instead of maintaining two independent inventories.
