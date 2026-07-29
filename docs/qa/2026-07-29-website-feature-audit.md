@@ -8,7 +8,7 @@ The owner-only preview and client deployments were not changed. Founder-approved
 
 ## Audited truth
 
-- Website behavior commit: `236b665fd73f97eaef39c9884addf49240b34aef`
+- Website behavior commit: `34630b592d6923760019dc0f0c227c10a58ce064`
 - Mobile/client behavior commit: `94d6b68f2a3541ba956e39d1b51368a6c38b540b`
 - Hosted evidence commit: `105b2d2e83e3373103da71c6b87bfc1ed7ae0608`
 - Exact migration: `20260729182349_social_mutation_contracts.sql`, SHA-256 `3c3857edc73b56f49a01dfe9db5aaad3baaa383ef3396fb216fae025d431e89f`; passed twice on QA project `jrlqozbbrbivmzazuaic`, then applied once to production `ebccwnkmsnhbljxxxdej` as version `20260729200633`, name `v20260729182349_social_mutation_contracts`
@@ -56,12 +56,13 @@ Founder bullets beginning `- ` are stored with a spreadsheet-safe leading apostr
 - Supabase advisors — security ERROR count is zero after test-fixture RLS alignment. Remaining warnings are intentional bounded SECURITY DEFINER RPC/helpers; remaining INFO/performance notices belong to the minimal QA fixture.
 - Production Supabase apply/readback — founder-approved exact hash applied once as version `20260729200633`; project remained `ACTIVE_HEALTHY`. Migration history, RLS, recipient/pending friendship policies, old-policy removal, status-only update grant, enabled server-time/window trigger, either-direction block policy, authenticated-only fixed-search-path crew RPC, and function guards read back. Production security and performance advisors each reported zero ERRORs; target warnings are the intentionally callable bounded crew RPC and the existing own-plus-friends permissive check-in SELECT pair. The migration apply executed no application-row DML and verification queried catalogs only.
 - Final website closeout rerun — `npm run typecheck:webapp` and `npm run build:webapp` passed; `npm test` passed 295 with 1 intentional skip in 55.2 seconds. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed.
+- Replacement website candidate verification — the first PR run exposed a repeatable mobile-WebKit deletion-dialog focus race. Root cause was WebKit blurring the newly disabled submit button after React's state effect had already observed it inside the dialog. The shared submit path now focuses the dialog before disabling child controls. Typecheck and production build passed; the complete suite passed 295 with 1 intentional skip, and both the corrected deletion regression and previously flaky event-action regression passed 20/20 under six-worker CI-style mobile WebKit load.
 - Connected owner-preview smoke — signed-in v10 Discover rendered with zero console warnings/errors. The local candidate then passed representative desktop/mobile navigation with zero console warnings/errors; plans/media/account-utility owner/non-owner authorization remains unavailable.
 - Focused review regressions — rejected writes, pending states, out-of-order search, delayed navigation, combobox scrolling, and deletion-modal focus passed in both projects.
 - `git diff --check` — passed.
 - XLSX ZIP integrity and every worksheet XML document — passed.
 - CSV-to-XLSX Feature Matrix cell equality — passed for all 675 rows.
-- Every Passed story has non-empty evidence and an audited commit; every Passed website row links a passing same-commit run (`RUN-012`, `RUN-014` for `WEB-DEF-DEP-001`, `RUN-018` for production backend defects, or `RUN-020` for the mobile accessibility defect).
+- Every Passed story has non-empty evidence and an audited commit; every Passed website row links a passing same-commit run (`RUN-023`, `RUN-014` for `WEB-DEF-DEP-001`, `RUN-018` for production backend defects, or `RUN-020` for the mobile accessibility defect).
 - Dependency audit — two High package entries map to an RSC-only React Router advisory; this client-only Vite/BrowserRouter architecture does not use the vulnerable feature (`WEB-DEF-DEP-001`).
 - Adversarial code review and behavior/matrix review — findings either fixed or entered as approval-blocked defects.
 
@@ -82,7 +83,7 @@ The screenshots confirm centered uniform event collections with left-aligned hea
 - Added visible pending/error handling for Friends, festival schedule, Live Mode, reminders, and unblock actions.
 - Prevented stale schedule/Live/utility mutation completions from updating another route.
 - Prevented slower friend searches from overwriting newer results.
-- Added full delete-dialog focus lifecycle, including a focus target while destructive controls are disabled.
+- Added full delete-dialog focus lifecycle, including a synchronous focus target before destructive controls become disabled in WebKit.
 - Kept keyboard-active combobox options in view.
 - Added deterministic desktop/mobile regressions for every non-trivial client fix.
 - Corrected stale parity documentation and created the canonical CSV/XLSX audit artifacts.

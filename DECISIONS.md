@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-29 — Destructive pending dialogs take focus before disabling controls
+
+When a destructive dialog enters a state that disables every child control, the shared submit path focuses the dialog itself before applying pending state. A state effect alone is insufficient because WebKit may blur the newly disabled active button after the effect has already observed it inside the dialog.
+
+An immutable candidate tag is never moved after a defect is found. The corrected source receives a new commit, tag, and saved undeployed Sites version; the prior candidate remains historical and must be marked superseded rather than deployed.
+
 ## 2026-07-29 — Social invariants live at the database boundary and release compatibly
 
 Friendship creation is pending-only and acceptance is a recipient-only pending-to-accepted transition. Live Mode derives `auth.uid()` and `checked_in_at` on the server, enforces the authored event end or the shared 8-hour timed/24-hour TBD fallback, and uses the existing security-definer block helper so either-direction blocks override friend visibility. Crew membership replacement is one owner-checked transaction through `replace_crew_members`; clients do not compose delete/insert invariants.

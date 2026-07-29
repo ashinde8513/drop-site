@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = ROOT / "docs/qa/feature-matrix.csv"
 XLSX_PATH = ROOT / "docs/qa/drop-website-feature-matrix.xlsx"
 BASELINE_WEBSITE_COMMIT = "25512a5c966dbc0ad93302291b768c19cea554ca"
-WEBSITE_COMMIT = "236b665fd73f97eaef39c9884addf49240b34aef"
+PRIOR_WEBSITE_COMMIT = "236b665fd73f97eaef39c9884addf49240b34aef"
+WEBSITE_COMMIT = "34630b592d6923760019dc0f0c227c10a58ce064"
 MOBILE_COMMIT = "94d6b68f2a3541ba956e39d1b51368a6c38b540b"
 HOSTED_EVIDENCE_COMMIT = "105b2d2e83e3373103da71c6b87bfc1ed7ae0608"
 PRODUCTION_EVIDENCE_COMMIT = "712bd97cbed680bf0ec38da48a5c538a82e5f190"
@@ -55,7 +56,7 @@ def story(
         "Implementation status": implementation,
         "Test type": "Playwright desktop/mobile source-backed journey",
         "Test command or evidence": evidence,
-        "Evidence Run ID": "RUN-012" if test_status == "Passed" else "",
+        "Evidence Run ID": "RUN-023" if test_status == "Passed" else "",
         "Last-tested commit": WEBSITE_COMMIT,
         "Known defects": defects,
         "UX/accessibility issues": ux,
@@ -133,7 +134,7 @@ def defect(
         "Implementation status": implementation,
         "Test type": "Source inspection and focused reproduction",
         "Test command or evidence": reproduction,
-        "Evidence Run ID": run_id if run_id is not None else ("RUN-012" if test_status == "Passed" else ""),
+        "Evidence Run ID": run_id if run_id is not None else ("RUN-023" if test_status == "Passed" else ""),
         "Last-tested commit": tested_commit,
         "Known defects": id_,
         "UX/accessibility issues": actual if "A11Y" in id_ else "",
@@ -367,7 +368,7 @@ WEBSITE_ROWS = [
         "Search uses the privacy-safe RPC; blocked profiles are excluded; incoming requests accept/decline with visible success or failure; activity rows open plan/event; profile history respects friendship/privacy/block rules.",
         "search under two characters; no results; duplicate request; mutation denial; blocked user; private profile; timeout/retry",
         "Partial", "Blocked",
-        "RUN-012 passed the website client matrix; RUN-017 passed the hosted requester/recipient matrix twice; RUN-018 proves production version 20260729200633 now enforces pending-only creation, recipient-only pending acceptance, and status-only client updates. The corrected website client remains unreleased.",
+        "RUN-023 passed the corrected website client matrix; RUN-017 passed the hosted requester/recipient matrix twice; RUN-018 proves production version 20260729200633 now enforces pending-only creation, recipient-only pending acceptance, and status-only client updates. The corrected website client remains unreleased.",
         "Release/QA obtains separate authorization for the exact website candidate, then runs approved-account friend request, duplicate, blocked, timeout, and retry journeys before delivery.",
         defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
         security="The targeted production friendship boundary is fixed; broader profile/activity privacy and connected-browser behavior remain release-gated.",
@@ -379,7 +380,7 @@ WEBSITE_ROWS = [
         "Blocked IDs are excluded before friends, notification attendance, crew, profile, and live presence render; public profile fails closed; unblock reports success or failure without optimistic drift.",
         "block-list read failure; unblock denial; stale notification; simultaneous friendship; missing profile; duplicate click",
         "Partial", "Blocked",
-        "RUN-012 passed fail-closed client reads; RUN-017 twice passed both block directions in isolated QA; RUN-018 proves production event_checkins_select_friends now calls is_blocked_with. Broader website block surfaces remain unproven with connected accounts.",
+        "RUN-023 passed fail-closed client reads; RUN-017 twice passed both block directions in isolated QA; RUN-018 proves production event_checkins_select_friends now calls is_blocked_with. Broader website block surfaces remain unproven with connected accounts.",
         "Release/QA uses explicitly approved owner/non-owner/blocked accounts to verify Friends, notifications, crews, profiles, and Live Mode before client delivery.",
         defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
         security="The targeted production Live Mode block boundary is fixed; broader connected-browser privacy remains blocked.",
@@ -402,7 +403,7 @@ WEBSITE_ROWS = [
         "Only accepted friends are selectable; free-tier cap is rechecked before insert; member changes either apply completely or leave the original membership intact; failures are visible.",
         "cap race; add and remove together; one write denied; duplicate member; stale friend edge; interrupted session",
         "Partial", "Blocked",
-        "RUN-012 passed website RPC UI behavior; RUN-017 twice passed anonymous/non-owner denial, dedupe, nonfriend/block rejection, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. Deployed clients remain on the legacy multi-write path.",
+        "RUN-023 passed website RPC UI behavior; RUN-017 twice passed anonymous/non-owner denial, dedupe, nonfriend/block rejection, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. Deployed clients remain on the legacy multi-write path.",
         "Release owner separately authorizes the exact mobile and website client candidates; QA then proves successful and rejected crew replacement before any later direct-grant cutover.",
         defects="WEB-DEF-CREW-001",
         security="Atomic owner-only RPC is live; client adoption and later legacy direct-grant revocation remain separately gated.",
@@ -414,7 +415,7 @@ WEBSITE_ROWS = [
         "Published festival data opens /schedule/:eventId; official set times group by venue-timezone day and stage; add/remove set persists only on successful write; empty/unpublished and retry states are honest.",
         "no schedule; timezone boundary; overlapping stages; duplicate tap; mutation denial; transient catalog failure",
         "Implemented", "Passed",
-        "npm test passed official timezone grouping, retry, add/remove success, rejected add/remove, pending, and delayed route-change cases within the 291-pass/1-skip matrix.",
+        "npm test passed official timezone grouping, retry, add/remove success, rejected add/remove, pending, and delayed route-change cases within the 295-pass/1-skip matrix.",
         "Retain the add/remove rejection and interrupted-navigation regressions.",
     ),
     story(
@@ -424,7 +425,7 @@ WEBSITE_ROWS = [
         "Check-in is disabled outside the authored event window; existing check-in restores; route changes reset local state; open sets remain correct across stages; failed writes show an error and do not mark checked-in.",
         "outside event window; missing end; another stage starts; route change; background polling; blocked friend; write denial; duplicate tap",
         "Partial", "Blocked",
-        "RUN-012 passed client timing/failure behavior; RUN-017 passed authored/fallback windows and forged input twice; RUN-018 proves the production trigger derives identity/time, enforces the event window, and hides either-direction blocks. The corrected website client remains unreleased.",
+        "RUN-023 passed client timing/failure behavior; RUN-017 passed authored/fallback windows and forged input twice; RUN-018 proves the production trigger derives identity/time, enforces the event window, and hides either-direction blocks. The corrected website client remains unreleased.",
         "Release/QA obtains separate authorization for the exact website candidate, then runs an approved-account active/outside-window/blocked Live Mode browser journey before delivery.",
         defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
         security="The targeted production check-in boundary is fixed; connected-browser and client-delivery evidence remain gated.",
@@ -436,7 +437,7 @@ WEBSITE_ROWS = [
         "Notifications wait for profile hydration, preserve current synthesized alerts, exclude blocked friends, and route to plan/event; reminder dates use event timezone; toggles report failed writes.",
         "no notifications; stale history; profile race; blocked friend; same-day timezone; write denial; browser push unavailable",
         "Implemented", "Passed",
-        "npm test passed hydration, cap, block, route, timezone, rejected reminder, pending, and interrupted-route cases within the 291-pass/1-skip matrix.",
+        "npm test passed hydration, cap, block, route, timezone, rejected reminder, pending, and interrupted-route cases within the 295-pass/1-skip matrix.",
         "Retain reminder failure coverage and keep native push/browser background delivery explicitly out of the web claim.",
     ),
     story(
@@ -446,7 +447,7 @@ WEBSITE_ROWS = [
         "Profile values persist with validation; settings remain reachable when profile hydration fails; utility routes show real conditional states; deletion requires DELETE, exposes errors, and keeps keyboard focus inside the modal until closed.",
         "missing profile; duplicate username; photo failure; compliance unavailable; deletion failure; Escape; Tab/Shift+Tab; interrupted deletion",
         "Implemented", "Passed",
-        "npm test passed profile fallback, compliance fail-closed, confirmation, Tab/Shift+Tab trap, Escape, focus restore, and pending-dialog focus within the 291-pass/1-skip matrix.",
+        "npm test passed profile fallback, compliance fail-closed, confirmation, Tab/Shift+Tab trap, Escape, focus restore, and pending-dialog focus within the 295-pass/1-skip matrix.",
         "Retain the destructive-dialog keyboard regression and perform physical-device screen-reader QA on the delivered artifact.",
         security="Account deletion behavior itself is approval-gated; this audit changes only modal accessibility.",
     ),
@@ -602,7 +603,7 @@ WEBSITE_ROWS = [
         "WEB-DEF-MERGE-001", "Website branch integration", "Parity branch omits current reset-password browser fallback",
         "_redirects; dist/_redirects; tests/smoke.spec.ts", "High",
         "The parity branch contains all current origin/main security and recovery fixes before review or merge.",
-        "Current origin/main is merged at 03c08a5; the fallback and its smoke regression are present, and the final 291-pass/1-skip suite passed.",
+        "Current origin/main is merged at 03c08a5; the fallback and its smoke regression are present, and the final 295-pass/1-skip suite passed.",
         "git merge-base --is-ancestor origin/main HEAD; inspect _redirects and run npm test.",
         "Long-lived parity work diverged while production main continued receiving fixes.",
         "Fixed and verified locally; no production merge or deploy performed.",
@@ -771,11 +772,11 @@ WEBSITE_ROWS = [
     ),
     defect(
         "WEB-DEF-A11Y-001", "Signed-in website / Account deletion dialog", "Modal lacks focus trap and Escape close",
-        "webapp/src/App.tsx:880-917", "Medium",
+        "webapp/src/App.tsx:881-956", "Medium",
         "Opening the destructive modal moves focus inside it; Tab/Shift+Tab stay inside; Escape closes when not pending; close restores invoking-button focus.",
-        "The dialog now moves focus inside, traps Tab/Shift+Tab, closes on Escape when safe, restores trigger focus, and keeps the focusable dialog itself active while all controls are disabled pending deletion.",
-        "npm test opens deletion, exercises both Tab directions, Escape/restore, submits a delayed deletion, and asserts aria-busy plus dialog focus.",
-        "ARIA semantics were added without modal focus management.",
+        "The shared dialog moves focus inside, traps Tab/Shift+Tab, closes on Escape when safe, restores trigger focus, and synchronously focuses the dialog before pending state disables every child control.",
+        "RUN-023 runs the full desktop/mobile suite, then repeats the delayed deletion focus regression 20/20 under six-worker mobile WebKit load.",
+        "WebKit can blur a focused button after React disables it; the prior state effect observed that still-focused descendant too early and skipped the dialog fallback.",
         "Fixed and verified locally; physical screen-reader QA remains.",
         "Retain the keyboard/pending regression and complete VoiceOver on the exact delivered artifact.",
         "WEBAPP-024",
@@ -877,20 +878,21 @@ TEST_RUNS = [
     ["RUN-006", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "npm audit --json", "Failed / classified", "Two High audit findings map to one RSC-only React Router advisory; current client-only architecture proven non-applicable in WEB-DEF-DEP-001."],
     ["RUN-007", AUDIT_DATE, BASELINE_WEBSITE_COMMIT, "Connected browser selection", "Blocked", "No browser connections available; linked WEB-BLK-BROWSER-001."],
     ["RUN-008", AUDIT_DATE, "03c08a5785ea9423b1c3778e1381cd8a9c4f4a9b", "npx playwright test tests/smoke.spec.ts", "Passed", "104 public-site checks passed after merging current origin/main; password recovery and join-waitlist confirmation fixes retained."],
-    ["RUN-009", AUDIT_DATE, WEBSITE_COMMIT, "Focused review regression selection", "Passed", "Friend exact-row acceptance, server-time check-in payload, atomic crew success/error, rejected writes, routing, combobox, and modal regressions passed in desktop Chromium and mobile WebKit; final coverage is superseded by RUN-012."],
-    ["RUN-010", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp", "Passed", "TypeScript completed with no diagnostics after the review fixes."],
-    ["RUN-011", AUDIT_DATE, WEBSITE_COMMIT, "npm run build:webapp", "Passed with warning", "Vite 8.1.5 built 169 modules; JS 764.85 kB / 216.08 kB gzip; >500 kB warning remains WEB-DEF-PERF-001."],
-    ["RUN-012", AUDIT_DATE, WEBSITE_COMMIT, "npm test", "Passed", "Sites preview worker passed; Playwright 295 passed and 1 intentional mobile-project skip across desktop Chromium and mobile WebKit in 53.8 s."],
-    ["RUN-013", AUDIT_DATE, WEBSITE_COMMIT, "git diff --check", "Passed", "No whitespace errors after the verified behavior changes."],
+    ["RUN-009", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "Focused review regression selection", "Passed", "Friend exact-row acceptance, server-time check-in payload, atomic crew success/error, rejected writes, routing, combobox, and modal regressions passed in desktop Chromium and mobile WebKit; final coverage is superseded by RUN-012."],
+    ["RUN-010", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "npm run typecheck:webapp", "Passed", "TypeScript completed with no diagnostics after the review fixes."],
+    ["RUN-011", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "npm run build:webapp", "Passed with warning", "Vite 8.1.5 built 169 modules; JS 764.85 kB / 216.08 kB gzip; >500 kB warning remains WEB-DEF-PERF-001."],
+    ["RUN-012", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "npm test", "Passed", "Sites preview worker passed; Playwright 295 passed and 1 intentional mobile-project skip across desktop Chromium and mobile WebKit in 53.8 s."],
+    ["RUN-013", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "git diff --check", "Passed", "No whitespace errors after the verified behavior changes."],
     ["RUN-014", AUDIT_DATE, WEBSITE_COMMIT, "! rg -n 'unstable_RSC|RSCPayload|react-server-dom|routeRSCServerRequest|createFromReadableStream' webapp package.json package-lock.json", "Passed", "No React Router RSC runtime path exists in the client-only Vite/BrowserRouter app; supports WEB-DEF-DEP-001 applicability classification."],
     ["RUN-015", AUDIT_DATE, MOBILE_COMMIT, "mobile typecheck + quiet lint + 524 units + 10 PGlite contracts", "Passed", "Recipient/pending friendship, server-time authored/fallback check-ins, friend/nonfriend/reverse-block visibility, and atomic crew rollback passed with exact migration 20260729182349_social_mutation_contracts.sql; no hosted apply."],
     ["RUN-016", AUDIT_DATE, "58a6ff4744baab813cbc77b153235303785f4952", "Connected Browser owner-preview smoke", "Passed / partial boundary", "Owner-authenticated v10 rendered Discover at the private preview with zero console warnings/errors; Supabase dashboard showed production main only and no preview/persistent branches. Non-owner/blocked hosted access remains untested."],
     ["RUN-017", AUDIT_DATE, HOSTED_EVIDENCE_COMMIT, "Supabase QA project apply + hosted SQL authorization/rollback matrix + catalog/residue/advisor readback", "Passed / production approval boundary", "Exact migration SHA-256 3c3857ed…431e89f applied only to QA project jrlqozbbrbivmzazuaic. Fourteen anonymous/requester/recipient/owner/non-owner/friend/nonfriend/both-block-direction/time-window/dedupe/rollback checks passed twice; fixture counts are zero; advisor ERROR count is zero. Production ebccwnkmsnhbljxxxdej is unchanged."],
     ["RUN-018", AUDIT_DATE, PRODUCTION_EVIDENCE_COMMIT, "Exact production apply + migration/catalog/grant/function/project/advisor readback", "Passed / client-release boundary", "Founder-approved exact SHA-256 3c3857ed…431e89f applied once to production ebccwnkmsnhbljxxxdej as version 20260729200633, name v20260729182349_social_mutation_contracts. Recipient/pending policies, old-policy removal, RLS, status-only grant, server-time/window trigger, either-direction block policy, authenticated-only fixed-search-path crew RPC, project health, and zero advisor ERRORs read back. Migration apply executed no application-row DML; verification queried catalogs only; clients remain unreleased."],
-    ["RUN-019", AUDIT_DATE, WEBSITE_COMMIT, "final npm run typecheck:webapp + npm run build:webapp + npm test", "Passed", "TypeScript and Vite production build passed; Playwright rerun passed 295 with 1 intentional mobile-project skip in 55.2 s. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed."],
+    ["RUN-019", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "final npm run typecheck:webapp + npm run build:webapp + npm test", "Passed", "TypeScript and Vite production build passed; Playwright rerun passed 295 with 1 intentional mobile-project skip in 55.2 s. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed."],
     ["RUN-020", AUDIT_DATE, MOBILE_COMMIT, "mobile typecheck + quiet lint + 529 units + focused accessibility contracts + PGlite social contracts + iOS Simulator build/run", "Passed", "Exact mobile candidate passed typecheck, quiet lint, 529 unit tests including three accessibility contracts, the 10-case social contract test, and an iOS 26.5 Simulator build/run. Crew, report/block, unblock, and member-checkbox controls expose explicit assistive roles/names/states."],
     ["RUN-021", AUDIT_DATE, MOBILE_COMMIT, "approved production-account client journey + catalog/residue readback", "Passed / scoped authorization", "Using approved e2ewebqa, ashinde8513, and ravewithmaya accounts, mobile block hid the blocked profile, reverse website profile access was denied, unblock restored it, and a temporary crew was created/deleted. Final readback restored both accepted friendships, zero blocks, the original Bass Squad membership, and zero temporary crews. No production test residue remains."],
-    ["RUN-022", AUDIT_DATE, WEBSITE_COMMIT, "Connected Browser desktop/mobile candidate navigation and accessibility journey", "Passed", "Desktop/mobile Discover alignment and uniform cards, carousel controls/touch-scroll surface/keyboard snapping, searchable location/search combobox empty/Arrow/Enter/Escape states, website-native event detail, Stats show/artist/venue/city drill-downs, map empty state, and zero browser warnings/errors passed."],
+    ["RUN-022", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "Connected Browser desktop/mobile candidate navigation and accessibility journey", "Passed", "Desktop/mobile Discover alignment and uniform cards, carousel controls/touch-scroll surface/keyboard snapping, searchable location/search combobox empty/Arrow/Enter/Escape states, website-native event detail, Stats show/artist/venue/city drill-downs, map empty state, and zero browser warnings/errors passed."],
+    ["RUN-023", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp + npm run build:webapp + npm test + focused mobile WebKit repetition", "Passed", "After CI exposed a WebKit focus-order race, the shared delete dialog moves focus before disabling its controls. TypeScript and Vite production build passed; Playwright passed 295 with 1 intentional mobile-project skip. The deletion regression passed 20/20 and the previously flaky event-action regression passed 20/20 under six-worker CI-style WebKit load."],
 ]
 
 
@@ -968,7 +970,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
                 "RUN-018" if row["ID"] in production_backend_rows
                 else "RUN-020" if row["ID"] in mobile_candidate_rows
                 else "RUN-014" if row["ID"] == "WEB-DEF-DEP-001"
-                else "RUN-012"
+                else "RUN-023"
             )
             if run_id != expected_run:
                 raise SystemExit(f"{row['ID']}: Evidence Run ID {run_id!r} is not suitable; expected {expected_run}")
