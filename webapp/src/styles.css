@@ -285,7 +285,7 @@ button:disabled { cursor: not-allowed; opacity: 0.58; }
 .event-detail__eyebrow { margin-bottom: 10px; }
 .event-detail__content > h2 { margin: 0 0 22px; font: 700 clamp(31px, 5vw, 50px)/1.02 var(--display); letter-spacing: -0.05em; }
 .event-detail__facts { display: grid; gap: 10px; }
-.event-detail__facts > p { display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 13px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--cyan); }
+.event-detail__facts > p { min-width: 0; display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 13px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--cyan); }
 .event-detail__facts > p span { min-width: 0; display: flex; flex-direction: column; gap: 4px; color: var(--dim); font-size: 11px; line-height: 1.35; }
 .event-detail__facts strong { overflow: hidden; color: var(--ink); font: 700 13px/1.2 var(--display); text-overflow: ellipsis; white-space: nowrap; }
 .event-detail__actions { display: flex; gap: 9px; margin: 18px 0 12px; }

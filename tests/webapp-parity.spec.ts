@@ -20,6 +20,7 @@ type MockOptions = {
   loginError?: boolean;
   logConflict?: boolean;
   logoutFailure?: boolean;
+  longEventFact?: boolean;
   ongoingEvent?: boolean;
   overlappingSetTimes?: boolean;
   pastEvent?: boolean;
@@ -626,6 +627,8 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
             }]
             : options.detailFeatures
               ? [featureEvent]
+              : options.longEventFact
+                ? [{ ...dropEvent, venue_name: 'Cervantes’ Masterpiece Ballroom and Cervantes Other Side' }]
               : options.coordinateMissing
                 ? [{ ...dropEvent, lat: null, lng: null }]
                 : options.ongoingEvent
@@ -1848,13 +1851,17 @@ test.describe('React parity preview foundation', () => {
   });
 
   test('event detail media stays responsive and landscape', async ({ page }) => {
-    await mockSupabase(page, true);
+    await mockSupabase(page, true, { longEventFact: true });
     await openAppRoute(page, `/event/${dropEvent.id}`);
 
+    await expect(page.locator('.event-detail__facts')).toBeVisible();
     const box = await page.locator('.event-detail__art').boundingBox();
     expect(box).not.toBeNull();
     expect(box!.width / box!.height).toBeGreaterThan(1.7);
     expect(box!.width / box!.height).toBeLessThan(1.85);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      await page.evaluate(() => window.innerWidth),
+    );
   });
 
   test('representative signed-in parity routes stay console clean', async ({ page }) => {
