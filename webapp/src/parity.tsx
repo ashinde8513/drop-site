@@ -1988,6 +1988,16 @@ export function HistoryPage({ mode = 'history' }: { mode?: 'history' | 'stats' |
     : state.data.logged.filter((show) => Number(show.show_date.slice(0, 4)) === currentYear);
   const cityCounts = new Map<string, number>();
   const artistCounts = new Map<string, number>();
+  const artistIds = new Map<string, Set<string>>();
+  for (const event of [...state.data.catalog, ...events]) {
+    for (const row of event.event_artists) {
+      if (!row.artists?.id || !row.artists.name) continue;
+      const key = row.artists.name.trim().toLocaleLowerCase();
+      const ids = artistIds.get(key) ?? new Set<string>();
+      ids.add(row.artists.id);
+      artistIds.set(key, ids);
+    }
+  }
   for (const event of events) {
     const city = [event.city, event.state].filter(Boolean).join(', ');
     if (city) cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
@@ -2016,8 +2026,12 @@ export function HistoryPage({ mode = 'history' }: { mode?: 'history' | 'stats' |
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && total === 0 ? { title: 'Your history is waiting', body: 'Attend or log a show to unlock this screen.', icon: <Sparkle size={28} /> } : undefined}>
       {mode === 'history' ? <div className="history-list">{[...events.map((event) => ({ date: event.date, title: event.title, place: eventPlace(event), to: state.data.memoryByEvent.has(event.id) ? `/show/${state.data.memoryByEvent.get(event.id)}` : `/event/${event.id}` })), ...logged.map((show) => ({ date: show.show_date, title: show.artist_name, place: [show.venue_name, show.city, show.state].filter(Boolean).join(' · '), to: `/show/${show.id}` }))].sort((a, b) => b.date.localeCompare(a.date)).map((item) => <Link key={`${item.to}:${item.date}`} to={item.to}><time>{item.date.slice(0, 4)}</time><span><strong>{item.title}</strong><small>{item.date.slice(0, 10)} · {item.place}</small></span><CaretRight size={17} /></Link>)}</div> : <div className="stats-grid">
         <article><strong>{total}</strong><span>Shows</span></article><article><strong>{artistCounts.size}</strong><span>Artists</span></article><article><strong>{cityCounts.size}</strong><span>Cities</span></article>
-        <section><h3>Top artists</h3>{topArtists.map(([name, count], index) => <p key={name}><b>{index + 1}</b><span>{name}</span><strong>{count}x</strong></p>)}</section>
-        <section><h3>Top cities</h3>{topCities.map(([name, count], index) => <p key={name}><b>{index + 1}</b><span>{name}</span><strong>{count}</strong></p>)}</section>
+        <section><h3>Top artists</h3>{topArtists.map(([name, count], index) => {
+          const ids = artistIds.get(name.trim().toLocaleLowerCase());
+          const artistId = ids?.size === 1 ? ids.values().next().value : undefined;
+          return <Link key={name} to={artistId ? `/artist/${artistId}` : `/search?q=${encodeURIComponent(name)}`} aria-label={`Open ${name}`}><b>{index + 1}</b><span>{name}</span><strong>{count}x</strong><CaretRight size={15} /></Link>;
+        })}</section>
+        <section><h3>Top cities</h3>{topCities.map(([name, count], index) => <Link key={name} to={`/search?city=${encodeURIComponent(name)}`} aria-label={`View shows in ${name}`}><b>{index + 1}</b><span>{name}</span><strong>{count}</strong><CaretRight size={15} /></Link>)}</section>
       </div>}
     </PageState>
   </section>;

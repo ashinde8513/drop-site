@@ -45,9 +45,10 @@ import {
   type MusicConnection,
   type NotificationPrefs,
   type Profile,
+  type ProfileUpdate,
 } from './lib/account';
 import { deleteHistoryMediaForUser } from './lib/history';
-import { DiscoverPage, EventDetailPage, SearchPage } from './discovery';
+import { ArtistPage, DiscoverPage, EventDetailPage, SearchPage } from './discovery';
 import {
   CrewsPage,
   FestivalSchedulePage,
@@ -117,22 +118,71 @@ function Brand({ to }: { to?: string }) {
     : <a className="brand" href="https://trydropapp.com/" aria-label="Drop home">{content}</a>;
 }
 
+const locationChoices = [
+  ['Denver', 'CO'],
+  ['Los Angeles', 'CA'],
+  ['Seattle', 'WA'],
+  ['Portland', 'OR'],
+  ['San Diego', 'CA'],
+  ['Brooklyn', 'NY'],
+  ['New York', 'NY'],
+  ['Chicago', 'IL'],
+  ['Dallas', 'TX'],
+  ['Austin', 'TX'],
+  ['Boston', 'MA'],
+] as const;
+
 function LocationPicker({ place, compact = false }: { place: string; compact?: boolean }) {
+  const auth = useAuth();
   const details = useRef<HTMLDetailsElement>(null);
+  const [pending, setPending] = useState('');
+  const [error, setError] = useState('');
   const close = () => details.current?.removeAttribute('open');
+
+  async function selectLocation(city: string, state: string) {
+    if (pending) return;
+    setPending(`${city}, ${state}`);
+    setError('');
+    try {
+      await auth.updateProfile({ city, state });
+      close();
+    } catch (nextError) {
+      setError(errorMessage(nextError));
+    } finally {
+      setPending('');
+    }
+  }
 
   return (
     <details ref={details} className={`location-picker${compact ? ' location-picker--compact' : ''}`}>
       <summary role="button" aria-label={`Change location, current location ${place}`}>
         <MapPin size={compact ? 14 : 17} weight="fill" />
-        <span>{place}</span>
+        <span className="location-picker__label">{place}</span>
         <CaretDown size={12} weight="bold" />
       </summary>
       <div>
         <strong>{place}</strong>
-        <p>Drop uses your home city to tailor shows and the map.</p>
-        <Link to="/profile#profile-city" onClick={close}>Change city</Link>
-        <Link to="/search" onClick={close}>Search another place</Link>
+        <p>Choose a city to update Discover, Search, and Map. This saves to your Drop profile.</p>
+        <div className="location-picker__options" role="group" aria-label="Choose a city">
+          {locationChoices.map(([city, state]) => {
+            const label = `${city}, ${state}`;
+            const selected = label.toLocaleLowerCase() === place.toLocaleLowerCase();
+            return (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={selected}
+                disabled={Boolean(pending)}
+                onClick={() => void selectLocation(city, state)}
+              >
+                <span>{label}</span>
+                {pending === label ? <CircleNotch className="spin" size={14} /> : selected ? <Check size={14} weight="bold" /> : null}
+              </button>
+            );
+          })}
+        </div>
+        {error && <p className="location-picker__error" role="alert">{error}</p>}
+        <Link to="/profile#profile-city" onClick={close}>Use another city</Link>
       </div>
     </details>
   );
@@ -455,6 +505,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 function pageTitle(pathname: string) {
   if (pathname.startsWith('/profile/')) return 'Profile';
+  if (pathname.startsWith('/artist/')) return 'Artist';
   if (pathname.startsWith('/event/')) return 'Event';
   if (pathname.startsWith('/show/')) return 'Show';
   if (pathname.startsWith('/schedule/')) return 'Festival schedule';
@@ -515,6 +566,7 @@ function AppShell() {
             <Route path="discover" element={<DiscoverPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="event/:eventId" element={<EventDetailPage />} />
+            <Route path="artist/:artistId" element={<ArtistPage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="shows" element={<MyShowsPage />} />
             <Route path="show/:showId" element={<LoggedShowPage />} />
@@ -557,6 +609,7 @@ function ProfilePage() {
   const [values, setValues] = useState(() => ({
     display_name: field(profile?.display_name), username: field(profile?.username), bio: field(profile?.bio), city: field(profile?.city), state: field(profile?.state),
   }));
+  const [dirty, setDirty] = useState(() => new Set<keyof typeof values>());
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const name = displayName(profile, user?.email);
@@ -570,7 +623,17 @@ function ProfilePage() {
       city: field(profile.city),
       state: field(profile.state),
     });
+    setDirty(new Set());
   }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile) return;
+    setValues((current) => ({
+      ...current,
+      city: field(profile.city),
+      state: field(profile.state),
+    }));
+  }, [profile?.city, profile?.state]);
 
   useEffect(() => {
     if (!profile || location.hash !== '#profile-city') return;
@@ -588,6 +651,7 @@ function ProfilePage() {
 
   function update(key: keyof typeof values, value: string) {
     setValues((current) => ({ ...current, [key]: value }));
+    setDirty((current) => new Set(current).add(key));
   }
 
   async function save(event: FormEvent) {
@@ -596,7 +660,17 @@ function ProfilePage() {
     setPending(true);
     setNotice(null);
     try {
-      await auth.updateProfile({ ...values, username: values.username.replace(/^@/, '').trim(), display_name: values.display_name.trim(), bio: values.bio.trim(), city: values.city.trim(), state: values.state.trim() });
+      const normalized = {
+        ...values,
+        username: values.username.replace(/^@/, '').trim(),
+        display_name: values.display_name.trim(),
+        bio: values.bio.trim(),
+        city: values.city.trim(),
+        state: values.state.trim(),
+      };
+      const updates = Object.fromEntries([...dirty].map((key) => [key, normalized[key]])) as ProfileUpdate;
+      if (dirty.size) await auth.updateProfile(updates);
+      setDirty(new Set());
       setNotice({ tone: 'success', text: 'Profile saved.' });
     } catch (error) {
       setNotice({ tone: 'error', text: errorMessage(error) });
@@ -632,13 +706,15 @@ function ProfilePage() {
       </div>
       <form className="settings-card" onSubmit={save}>
         <h2>Profile</h2>
-        <label className="field" htmlFor="profile-name"><span>Display name</span><input id="profile-name" value={values.display_name} onChange={(event) => update('display_name', event.target.value)} autoComplete="name" maxLength={80} /></label>
-        <label className="field" htmlFor="profile-username"><span>Username</span><input id="profile-username" value={values.username} onChange={(event) => update('username', event.target.value)} autoComplete="username" maxLength={30} /></label>
-        <label className="field" htmlFor="profile-bio"><span>Bio <em>· 200 max</em></span><textarea id="profile-bio" value={values.bio} onChange={(event) => update('bio', event.target.value)} maxLength={200} rows={4} /></label>
-        <div className="field-row">
-          <label className="field" htmlFor="profile-city"><span>City</span><input id="profile-city" value={values.city} onChange={(event) => update('city', event.target.value)} autoComplete="address-level2" /></label>
-          <label className="field field--state" htmlFor="profile-state"><span>State</span><input id="profile-state" value={values.state} onChange={(event) => update('state', event.target.value)} autoComplete="address-level1" maxLength={30} /></label>
-        </div>
+        <fieldset disabled={pending}>
+          <label className="field" htmlFor="profile-name"><span>Display name</span><input id="profile-name" value={values.display_name} onChange={(event) => update('display_name', event.target.value)} autoComplete="name" maxLength={80} /></label>
+          <label className="field" htmlFor="profile-username"><span>Username</span><input id="profile-username" value={values.username} onChange={(event) => update('username', event.target.value)} autoComplete="username" maxLength={30} /></label>
+          <label className="field" htmlFor="profile-bio"><span>Bio <em>· 200 max</em></span><textarea id="profile-bio" value={values.bio} onChange={(event) => update('bio', event.target.value)} maxLength={200} rows={4} /></label>
+          <div className="field-row">
+            <label className="field" htmlFor="profile-city"><span>City</span><input id="profile-city" value={values.city} onChange={(event) => update('city', event.target.value)} autoComplete="address-level2" /></label>
+            <label className="field field--state" htmlFor="profile-state"><span>State</span><input id="profile-state" value={values.state} onChange={(event) => update('state', event.target.value)} autoComplete="address-level1" maxLength={30} /></label>
+          </div>
+        </fieldset>
         <StatusNotice notice={notice} />
         <div className="form-actions"><button className="button button--primary" type="submit" disabled={pending}>{pending ? <><CircleNotch className="spin" size={18} /> Saving…</> : 'Save changes'}</button></div>
       </form>

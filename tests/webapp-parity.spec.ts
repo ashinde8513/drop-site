@@ -31,10 +31,12 @@ type MockOptions = {
   detailFeatures?: boolean;
   delayedActionWrite?: boolean;
   delayedProfile?: boolean;
+  delayedProfileWrite?: boolean;
   delayedSaved?: boolean;
   delayedWeather?: boolean;
   delayedLivePoll?: boolean;
   duplicateCities?: boolean;
+  duplicateArtistNames?: boolean;
   profileCity?: string | null;
   profileMissing?: boolean;
   profileState?: string | null;
@@ -203,6 +205,11 @@ const friendProfile = {
 
 async function mockSupabase(page: Page, authenticated = false, options: MockOptions = {}) {
   const mockedWrites: string[] = [];
+  let currentProfile = {
+    ...profile,
+    city: Object.prototype.hasOwnProperty.call(options, 'profileCity') ? options.profileCity : profile.city,
+    state: Object.prototype.hasOwnProperty.call(options, 'profileState') ? options.profileState : profile.state,
+  };
   let setTimeReads = 0;
   let recapRating = 0;
   let recapSeenArtists: Array<{ id: string; artist_id: null; artist_name: string }> = [];
@@ -371,15 +378,23 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
     }
     if (url.pathname === '/rest/v1/profiles') {
       if (options.delayedProfile) await new Promise((resolve) => setTimeout(resolve, 1_500));
+      if (method === 'PATCH') {
+        if (options.delayedProfileWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+        currentProfile = { ...currentProfile, ...(request.postDataJSON() as Partial<typeof currentProfile>) };
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(currentProfile) });
+      }
+      if (url.searchParams.get('select') === 'id' && url.searchParams.has('username')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(options.usernameAvailable === false ? [{ id: friendProfile.id }] : []),
+        });
+      }
       return route.fulfill({
         status: 200,
         headers: { 'content-range': '0-0/1' },
         contentType: 'application/json',
-        body: JSON.stringify(options.profileMissing ? [] : [{
-          ...profile,
-          city: Object.prototype.hasOwnProperty.call(options, 'profileCity') ? options.profileCity : profile.city,
-          state: Object.prototype.hasOwnProperty.call(options, 'profileState') ? options.profileState : profile.state,
-        }]),
+        body: JSON.stringify(options.profileMissing ? [] : [currentProfile]),
       });
     }
     if (url.pathname === '/rest/v1/artist_follows') {
@@ -390,6 +405,14 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/artists') {
+      const artistId = url.searchParams.get('id')?.replace(/^eq\./, '');
+      if (artistId) {
+        const match = [dropEvent, coastEvent, morrisonEvent]
+          .flatMap((event) => event.event_artists)
+          .map((row) => row.artists)
+          .find((artist) => artist.id === artistId) ?? null;
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(match) });
+      }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -589,6 +612,11 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
                     date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
                     end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
                   }]
+              : options.duplicateArtistNames
+                ? [dropEvent, {
+                  ...coastEvent,
+                  event_artists: [{ position: 0, artists: { ...coastEvent.event_artists[0].artists, name: 'Neon Current' } }],
+                }]
               : options.parityFeatures
                 ? [dropEvent, festivalEvent]
               : options.personalized
@@ -980,12 +1008,59 @@ test.describe('React parity preview foundation', () => {
     const location = page.getByRole('button', { name: /change location, current location austin/i });
     await expect(location).toHaveText(/Austin/);
     await location.click();
-    await expect(page.getByRole('link', { name: /change city/i })).toBeVisible();
-    await page.getByRole('link', { name: /change city/i }).click();
+    await expect(page.getByRole('link', { name: /use another city/i })).toBeVisible();
+    await page.getByRole('link', { name: /use another city/i }).click();
     await expect(page).toHaveURL(new RegExp(`${APP}/profile#profile-city$`));
     await expect(page.locator('#profile-city')).toBeFocused();
-    await expect(page.getByRole('link', { name: /change city/i })).toBeHidden();
+    await expect(page.getByRole('link', { name: /use another city/i })).toBeHidden();
     await expect(page.getByText('Austin, CO', { exact: true })).toHaveCount(0);
+  });
+
+  test('location picker uses Prism emphasis and updates profile-driven Discover', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const profilePatches: Record<string, unknown>[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/profiles' && request.method() === 'PATCH') {
+        profilePatches.push(request.postDataJSON() as Record<string, unknown>);
+      }
+    });
+    const writes = await mockSupabase(page, true, { delayedProfileWrite: true, usernameAvailable: true });
+    await openAppRoute(page, '/profile');
+
+    const location = page.getByRole('button', { name: /change location, current location denver, co/i });
+    await expect(location.locator('.location-picker__label')).toHaveText('Denver, CO');
+    await expect.poll(() => location.locator('.location-picker__label').evaluate((element) => getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
+    await page.getByRole('textbox', { name: /bio/i }).fill('Keep this unsaved note.');
+    await location.click();
+    await page.getByRole('button', { name: 'Austin, TX' }).click();
+
+    await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/profiles').length).toBe(1);
+    await expect(page.getByRole('button', { name: /change location, current location austin, tx/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /bio/i })).toHaveValue('Keep this unsaved note.');
+    await expect(page.getByRole('textbox', { name: 'City' })).toHaveValue('Austin');
+    await expect(page.getByRole('textbox', { name: 'State' })).toHaveValue('TX');
+    const save = page.getByRole('button', { name: /save changes/i });
+    await save.click();
+    await expect(page.getByRole('textbox', { name: /bio/i })).toBeDisabled();
+    await expect.poll(() => writes.filter((entry) => entry === 'PATCH /rest/v1/profiles').length).toBe(2);
+    await expect(page.getByRole('textbox', { name: /bio/i })).toBeEnabled();
+    expect(profilePatches[1]).toEqual({ bio: 'Keep this unsaved note.' });
+    await page.getByRole('link', { name: /^discover$/i }).first().click();
+    await expect(page.getByText(/what's moving in Austin, TX/i)).toBeVisible();
+  });
+
+  test('Upcoming heading is centered while its count stays right aligned', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true);
+    await openAppRoute(page, '/discover');
+
+    const header = page.locator('.discover-section__centered-header');
+    const heading = header.getByRole('heading', { name: 'Upcoming' });
+    const [headerBox, headingBox] = await Promise.all([header.boundingBox(), heading.boundingBox()]);
+    expect(headerBox).not.toBeNull();
+    expect(headingBox).not.toBeNull();
+    expect(Math.abs((headingBox!.x + headingBox!.width / 2) - (headerBox!.x + headerBox!.width / 2))).toBeLessThan(2);
+    await expect(header.locator('> span')).toHaveText(/\d+/);
   });
 
   test('signed-in cards are uniform and horizontal rails have working controls', async ({ page }) => {
@@ -1150,7 +1225,7 @@ test.describe('React parity preview foundation', () => {
     await mockSupabase(page, true, { parityFeatures: true, activeBeyondGrace: true });
     await openAppRoute(page, `/live/${festivalEvent.id}`);
 
-    await expect(page.getByRole('heading', { name: 'Prism Festival' })).toBeVisible();
+    await expect(page.locator('.live-page').getByRole('heading', { name: 'Prism Festival' })).toBeVisible();
     await expect(page.getByRole('button', { name: /check in/i })).toBeEnabled();
   });
 
@@ -1587,6 +1662,84 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByRole('heading', { name: 'Your history is waiting' })).toBeVisible();
     await page.getByRole('tab', { name: /^all time$/i }).click();
     await expect(page.locator('.stats-grid article').first()).toContainText('2');
+  });
+
+  test('stats artist and city rows open connected destinations', async ({ page }) => {
+    const artistEventQueries: URL[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/rest/v1/events' && url.searchParams.get('select')?.includes('event_artists!inner')) {
+        artistEventQueries.push(url);
+      }
+    });
+    await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, '/stats');
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+
+    await page.getByRole('link', { name: /open neon current/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/artist/artist-1$`));
+    await expect(page.getByRole('heading', { name: 'Neon Current' })).toBeVisible();
+    expect(artistEventQueries).not.toHaveLength(0);
+    expect(artistEventQueries.every((url) => url.searchParams.get('event_artists.artist_id') === 'eq.artist-1')).toBe(true);
+
+    await openAppRoute(page, '/stats');
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+    await page.getByRole('link', { name: /view shows in denver, co/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/search\\?city=Denver%2C(?:%20|\\+)CO$`));
+    await expect(page.getByRole('heading', { name: 'Filtered shows' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /open prism nights/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /open coast frequency/i })).toHaveCount(0);
+  });
+
+  test('stats fall back to search when artist names are ambiguous', async ({ page }) => {
+    await mockSupabase(page, true, { duplicateArtistNames: true, parityFeatures: true });
+    await openAppRoute(page, '/stats');
+    await page.getByRole('tab', { name: /^all time$/i }).click();
+
+    await expect(page.getByRole('link', { name: /open neon current/i })).toHaveAttribute('href', '/app/next/search?q=Neon%20Current');
+  });
+
+  test('city-only history destinations include matching events with a state', async ({ page }) => {
+    await mockSupabase(page, true);
+    await openAppRoute(page, '/search?city=Denver');
+
+    await expect(page.getByRole('heading', { name: 'Filtered shows' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /open prism nights/i }).first()).toBeVisible();
+    await expect(page.locator('.filter-summary')).toContainText('Denver');
+    await expect(page.locator('.filter-summary')).not.toContainText('|');
+    await page.getByRole('button', { name: /filters, 1 active/i }).click();
+    const dialog = page.getByRole('dialog', { name: /^filters$/i });
+    await dialog.getByRole('button', { name: /^reset$/i }).click();
+    await dialog.getByRole('button', { name: /close filters/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/search$`));
+    await openAppRoute(page, '/search');
+    await expect(page.getByRole('heading', { name: 'All cities' })).toBeVisible();
+  });
+
+  test('edited URL-backed search queries survive reload without restoring the old value', async ({ page }) => {
+    await mockSupabase(page, true, { personalized: true });
+    await openAppRoute(page, '/search?q=Prism');
+
+    const search = page.getByRole('textbox', { name: /search artists, venues, and shows/i });
+    await search.fill('Coast');
+    await expect(page).toHaveURL(new RegExp(`${APP}/search\\?q=Coast$`));
+    await openAppRoute(page, '/search?q=Coast');
+    await expect(search).toHaveValue('Coast');
+    await expect(page.getByRole('link', { name: /open coast frequency/i }).first()).toBeVisible();
+  });
+
+  test('geolocation clears a conflicting URL-backed city filter', async ({ page }) => {
+    await page.context().grantPermissions(['geolocation']);
+    await page.context().setGeolocation({ latitude: 39.7392, longitude: -104.9903 });
+    await mockSupabase(page, true, { personalized: true });
+    await openAppRoute(page, '/search?city=Los%20Angeles%2C%20CA');
+
+    await page.getByRole('button', { name: /filters, 1 active/i }).click();
+    const dialog = page.getByRole('dialog', { name: /^filters$/i });
+    await dialog.getByRole('button', { name: /^refresh$/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/search$`));
+    await expect(dialog.getByText('Denver, CO', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /show 1 results/i })).toBeVisible();
   });
 
   test('cancelling Wrapped sharing does not surface an unhandled error', async ({ page }) => {
