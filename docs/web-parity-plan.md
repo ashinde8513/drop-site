@@ -17,13 +17,13 @@ Status: Foundation, Discovery, and the broad visible-core parity runtime are imp
 3. **Catalog and identity:** artists, venues, taste profile, wallet, and rewards.
 4. **Social/Plans core — complete:** friends, requests, privacy-safe browser search, activity, blocks/safety, crews, plans, chat, RSVP, meetup spots, and creator-scoped invites are connected. Taste match, richer reactions, contacts, and deeper realtime behavior remain specialist slices.
 5. **Festival/live core — complete:** personal schedules, picks, check-ins, presence, and Live Mode are connected. Richer clash handling and offline festival behavior remain native/specialist work.
-6. **Show history core — complete:** canonical attendance plus manual history, logged-show detail, Seen history, Stats, and Wrapped are connected. Calendar/ticket imports, local media, recap authoring, and tags remain specialist slices.
+6. **Show history — complete for the current browser contract:** canonical attendance, manual history, local `.ics` review/import, logged-show detail/editing, friend tags, user/show-scoped IndexedDB media, attended-only recap authoring, Seen history, Stats drill-downs, and Wrapped are connected. Mailbox or ticket-account imports remain separate credentialed product decisions.
 7. **Notifications core — complete:** shared alert history, current synthesized alerts, reminders, preferences, and retryable states are connected. Browser push waits for web subscription infrastructure.
 8. **Owner/admin:** promoter and artist-owner tools, community submission, moderation, and admin surfaces.
 
 ## Current preview boundary
 
-The runtime now covers the current app's broad visible core. It does not yet implement every one of the 48 designed specialist states. Remaining families are taste match, imports/media/recap authoring, activation, promoter/admin, and deeper realtime/social. These stay queued until founder QA chooses their priority.
+The source-backed trigger matrix is canonical at `docs/signed-in-route-matrix.md`; the audited story/defect inventory is canonical at `docs/qa/feature-matrix.csv`. Remaining route families are Submit Event, event-specific crew building, Tagged Shows, dedicated invites, direct Discover/Map Near me and Everywhere modes, Taste Match, activation, promoter/admin, and deeper realtime/social. These stay queued until product/security owners approve their exact contracts.
 
 ## Browser adapters
 

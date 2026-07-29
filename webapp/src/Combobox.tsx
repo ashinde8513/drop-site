@@ -1,4 +1,4 @@
-import { Fragment, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check } from '@phosphor-icons/react/Check';
 
 export type ComboboxOption = {
@@ -68,6 +68,10 @@ export function SearchableCombobox({
   const displayValue = queryValue !== undefined ? query : multiple || open ? query : selectedOption?.label ?? '';
   const listOpen = open && Boolean(filtered.length || query.trim());
   const active = listOpen && activeIndex >= 0 && filtered.length ? Math.min(activeIndex, filtered.length - 1) : -1;
+
+  useEffect(() => {
+    if (active >= 0) document.getElementById(`${id}-option-${active}`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [active, id]);
 
   function close() {
     setOpenState(false);

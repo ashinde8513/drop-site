@@ -30,6 +30,7 @@ type MockOptions = {
   parityFeatures?: boolean;
   presaleBoundary?: boolean;
   detailFeatures?: boolean;
+  checkInMutationError?: boolean;
   delayedActionWrite?: boolean;
   delayedProfile?: boolean;
   delayedProfileWrite?: boolean;
@@ -43,14 +44,20 @@ type MockOptions = {
   profileMissing?: boolean;
   profileState?: string | null;
   invitedPlan?: boolean;
+  friendMutationError?: boolean;
+  outOfOrderFriendSearch?: boolean;
   crewCapReached?: boolean;
   activeBeyondGrace?: boolean;
   ambiguousArchive?: boolean;
   sameDayReminder?: boolean;
+  reminderCandidate?: boolean;
   savedEvent?: boolean;
+  savedSetTime?: boolean;
+  scheduleMutationError?: boolean;
   singleUnlinkedOffer?: boolean;
   tbdEvent?: boolean;
   tagReadError?: boolean;
+  utilityMutationError?: boolean;
   usernameAvailable?: boolean;
   venueMissingCity?: boolean;
 };
@@ -298,6 +305,7 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
     }
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: options.logoutFailure ? 500 : 204, contentType: 'application/json', body: options.logoutFailure ? '{"message":"mock logout failure"}' : '' });
     if (url.pathname === '/functions/v1/delete-account') {
+      if (options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     }
     if (url.pathname === '/functions/v1/event-weather') {
@@ -392,7 +400,12 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       return route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
     }
     if (url.pathname === '/rest/v1/rpc/search_public_profiles') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([friendProfile]) });
+      const query = String((request.postDataJSON() as { p_query?: string } | null)?.p_query ?? '');
+      if (options.outOfOrderFriendSearch && query === 'Slow') await new Promise((resolve) => setTimeout(resolve, 300));
+      const result = options.outOfOrderFriendSearch && query === 'Fast'
+        ? [{ ...friendProfile, id: '00000000-0000-4000-8000-000000000003', username: 'fastfriend', display_name: 'Fast Friend' }]
+        : [friendProfile];
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
     }
     if (url.pathname === '/rest/v1/rpc/get_friend_review_activity') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -441,6 +454,14 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/friendships') {
+      if (method !== 'GET') {
+        if (options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+        return route.fulfill({
+          status: options.friendMutationError ? 500 : 201,
+          contentType: 'application/json',
+          body: options.friendMutationError ? '{"message":"friend mutation unavailable"}' : '[]',
+        });
+      }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -464,6 +485,14 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/user_blocks') {
+      if (method !== 'GET') {
+        if (options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+        return route.fulfill({
+          status: options.utilityMutationError ? 500 : 204,
+          contentType: 'application/json',
+          body: options.utilityMutationError ? '{"message":"unblock unavailable"}' : '',
+        });
+      }
       if (options.blockError) {
         return route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"blocks unavailable"}' });
       }
@@ -606,6 +635,8 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
           ? [{ ...festivalEvent, date: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(), end_date: null }]
           : options.sameDayReminder
             ? [{ ...dropEvent, date: '2027-08-21T01:00:00.000Z' }]
+          : options.reminderCandidate
+            ? [{ ...dropEvent, presale_start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }]
         : options.duplicateCities
           ? [portlandOregonEvent, portlandMaineEvent]
         : options.venueMissingCity
@@ -845,9 +876,20 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/my_set_times') {
-      return route.fulfill({ status: method === 'GET' ? 200 : 201, contentType: 'application/json', body: '[]' });
+      if (method !== 'GET' && options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+      return route.fulfill({
+        status: method !== 'GET' && options.scheduleMutationError ? 500 : method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: method !== 'GET' && options.scheduleMutationError
+          ? '{"message":"schedule unavailable"}'
+          : JSON.stringify(method === 'GET' && options.savedSetTime ? [{ set_time_id: 'set-1' }] : []),
+      });
     }
     if (url.pathname === '/rest/v1/event_checkins') {
+      if (method !== 'GET' && options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+      if (method !== 'GET' && options.checkInMutationError) {
+        return route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"check-in unavailable"}' });
+      }
       return route.fulfill({
         status: method === 'GET' ? 200 : 201,
         contentType: 'application/json',
@@ -892,6 +934,14 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         status: 200,
         contentType: 'application/json',
         body: '{"artist_announcements":true,"friend_activity":true,"show_reminders":true,"sale_alerts":true,"comment_alerts":true,"plan_messages":true,"recap_alerts":true}',
+      });
+    }
+    if (url.pathname === '/rest/v1/onsale_reminders') {
+      if (method !== 'GET' && options.delayedActionWrite) await new Promise((resolve) => setTimeout(resolve, 300));
+      return route.fulfill({
+        status: method !== 'GET' && options.utilityMutationError ? 500 : method === 'GET' ? 200 : 201,
+        contentType: 'application/json',
+        body: method !== 'GET' && options.utilityMutationError ? '{"message":"reminder unavailable"}' : '[]',
       });
     }
     if (url.pathname === '/rest/v1/logged_shows') {
@@ -1101,6 +1151,25 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByText(/what's moving in Austin, TX/i)).toBeVisible();
   });
 
+  test('combobox keyboard navigation keeps the active option visible', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mockSupabase(page, true);
+    await openAppRoute(page, '/discover');
+    await page.getByRole('button', { name: /change location, current location denver, co/i }).click();
+
+    const input = page.getByRole('combobox', { name: 'Search locations' });
+    const list = page.getByRole('listbox', { name: /search locations options/i });
+    await expect(input).toBeFocused();
+    for (let index = 0; index < 12; index += 1) await page.keyboard.press('ArrowDown');
+
+    await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const [listBox, activeBox] = await Promise.all([list.boundingBox(), list.locator('[role="option"].is-active').boundingBox()]);
+    expect(listBox).not.toBeNull();
+    expect(activeBox).not.toBeNull();
+    expect(activeBox!.y).toBeGreaterThanOrEqual(listBox!.y);
+    expect(activeBox!.y + activeBox!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
+  });
+
   test('Upcoming heading stays left while its event collection is centered', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mockSupabase(page, true);
@@ -1244,6 +1313,89 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByText(/Night Owl/)).toBeVisible();
     await page.getByRole('button', { name: /check in/i }).click();
     await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/event_checkins').length).toBe(1);
+  });
+
+  test('festival schedule and Live Mode surface rejected writes without optimistic drift', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    await mockSupabase(page, true, {
+      parityFeatures: true,
+      scheduleMutationError: true,
+      checkInMutationError: true,
+    });
+    await openAppRoute(page, `/schedule/${festivalEvent.id}`);
+
+    const addSet = page.getByRole('button', { name: /add neon current/i });
+    await addSet.click();
+    await expect(page.getByRole('alert')).toContainText(/could not update your schedule/i);
+    await expect(addSet).toHaveAccessibleName(/add neon current/i);
+
+    await page.evaluate((eventId) => {
+      history.pushState({}, '', `/app/next/live/${eventId}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, festivalEvent.id);
+    const checkIn = page.getByRole('button', { name: /check in/i });
+    await checkIn.click();
+    await expect(page.getByRole('alert')).toContainText(/could not check you in/i);
+    await expect(checkIn).toHaveAccessibleName(/check in/i);
+  });
+
+  test('festival schedule preserves a saved set when removal is rejected', async ({ page }) => {
+    await mockSupabase(page, true, {
+      parityFeatures: true,
+      savedSetTime: true,
+      scheduleMutationError: true,
+    });
+    await openAppRoute(page, `/schedule/${festivalEvent.id}`);
+
+    const removeSet = page.getByRole('button', { name: /remove neon current/i });
+    await removeSet.click();
+    await expect(page.getByRole('alert')).toContainText(/could not update your schedule/i);
+    await expect(removeSet).toHaveAccessibleName(/remove neon current/i);
+  });
+
+  test('delayed schedule, Live Mode, and utility mutations cannot leak across routes', async ({ page }) => {
+    await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
+    await mockSupabase(page, true, {
+      blockedFriend: true,
+      checkInMutationError: true,
+      delayedActionWrite: true,
+      parityFeatures: true,
+      scheduleMutationError: true,
+      utilityMutationError: true,
+    });
+
+    await openAppRoute(page, `/schedule/${festivalEvent.id}`);
+    await page.getByRole('button', { name: /add neon current/i }).click();
+    await page.evaluate((eventId) => {
+      history.pushState({}, '', `/app/next/schedule/${eventId}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, dropEvent.id);
+    await expect(page.getByRole('heading', { name: 'Prism Nights' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /add neon current/i })).toBeEnabled();
+    await page.waitForTimeout(350);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    await openAppRoute(page, `/live/${festivalEvent.id}`);
+    await page.getByRole('button', { name: /check in/i }).click();
+    await page.evaluate((eventId) => {
+      history.pushState({}, '', `/app/next/live/${eventId}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, dropEvent.id);
+    const closedCheckIn = page.getByRole('button', { name: /check-in opens during the show/i });
+    await expect(closedCheckIn).toBeVisible();
+    await page.waitForTimeout(350);
+    await expect(closedCheckIn).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    await openAppRoute(page, '/blocked');
+    await page.getByRole('button', { name: /^unblock$/i }).click();
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/wallet');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await expect(page.getByRole('main').getByRole('heading', { name: /ticket wallet/i })).toBeVisible();
+    await page.waitForTimeout(350);
+    await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
   test('Live Mode blocks check-ins outside the event window', async ({ page }) => {
@@ -1421,6 +1573,65 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByRole('button', { name: /added/i })).toBeDisabled();
     await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/search_public_profiles').length).toBe(1);
     expect(writes.filter((entry) => entry === 'POST /rest/v1/friendships')).toHaveLength(0);
+  });
+
+  test('friend request mutations surface failures and keep the request actionable', async ({ page }) => {
+    await mockSupabase(page, true, { pendingFriendship: true, friendMutationError: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^requests$/i }).click();
+
+    await page.getByRole('button', { name: /^accept$/i }).click();
+    await expect(page.getByRole('alert')).toContainText(/could not update that friend request/i);
+    await expect(page.getByText('Night Owl', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^accept$/i })).toBeEnabled();
+  });
+
+  test('declining a friend request exposes pending and rejected states', async ({ page }) => {
+    await mockSupabase(page, true, {
+      pendingFriendship: true,
+      friendMutationError: true,
+      delayedActionWrite: true,
+    });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^requests$/i }).click();
+
+    const decline = page.getByRole('button', { name: /^decline$/i });
+    await decline.click();
+    await expect(decline).toBeDisabled();
+    await expect(page.getByRole('button', { name: /^accept$/i })).toBeDisabled();
+    await expect(page.getByRole('alert')).toContainText(/could not update that friend request/i);
+    await expect(decline).toBeEnabled();
+    await expect(page.getByText('Night Owl', { exact: true })).toBeVisible();
+  });
+
+  test('sending a friend request surfaces a rejected write', async ({ page }) => {
+    await mockSupabase(page, true, { friendMutationError: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^find$/i }).click();
+    await page.getByRole('textbox', { name: /search drop users/i }).fill('Night');
+    await page.getByRole('main').getByRole('button', { name: /^search$/i }).click();
+
+    const add = page.getByRole('button', { name: /^add$/i });
+    await add.click();
+    await expect(page.getByRole('alert')).toContainText(/could not send that friend request/i);
+    await expect(add).toBeEnabled();
+  });
+
+  test('newer friend search results cannot be overwritten by a slower request', async ({ page }) => {
+    await mockSupabase(page, true, { outOfOrderFriendSearch: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^find$/i }).click();
+    const search = page.getByRole('textbox', { name: /search drop users/i });
+    const submit = page.getByRole('main').getByRole('button', { name: /^search$/i });
+
+    await search.fill('Slow');
+    await submit.click();
+    await search.fill('Fast');
+    await submit.click();
+    await expect(page.getByText('Fast Friend', { exact: true })).toBeVisible();
+    await page.waitForTimeout(350);
+    await expect(page.getByText('Fast Friend', { exact: true })).toBeVisible();
+    await expect(page.getByText('Night Owl', { exact: true })).toHaveCount(0);
   });
 
   test('failed parity-page loads retry in place', async ({ page }) => {
@@ -2015,6 +2226,30 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByText(/Prism Nights is in 1 day/)).toHaveCount(0);
   });
 
+  test('reminder and unblock controls surface rejected writes', async ({ page }) => {
+    await mockSupabase(page, true, {
+      blockedFriend: true,
+      reminderCandidate: true,
+      savedEvent: true,
+      utilityMutationError: true,
+    });
+    await openAppRoute(page, '/reminders');
+
+    const reminder = page.getByRole('switch', { name: /remind me about prism nights/i });
+    await reminder.click();
+    await expect(page.getByRole('alert')).toContainText(/could not update that reminder/i);
+    await expect(reminder).toHaveAttribute('aria-checked', 'true');
+
+    await page.evaluate(() => {
+      history.pushState({}, '', '/app/next/blocked');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    const unblock = page.getByRole('button', { name: /^unblock$/i });
+    await unblock.click();
+    await expect(page.getByRole('alert')).toContainText(/could not unblock that account/i);
+    await expect(unblock).toBeEnabled();
+  });
+
   test('discover loads real event data and event detail is a child route without the tab bar', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const mockedWrites = await mockSupabase(page, true);
@@ -2489,7 +2724,7 @@ test.describe('React parity preview foundation', () => {
 
   test('delete-account dialog validates confirmation and only calls the mocked function', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    const mockedWrites = await mockSupabase(page, true, { logoutFailure: true });
+    const mockedWrites = await mockSupabase(page, true, { logoutFailure: true, delayedActionWrite: true });
     await page.goto(`${APP}/`);
     await page.evaluate((userId) => new Promise<void>((resolve, reject) => {
       const request = indexedDB.open('drop-history-media', 2);
@@ -2518,10 +2753,24 @@ test.describe('React parity preview foundation', () => {
     await page.getByRole('navigation', { name: /^primary$/i })
       .getByRole('link', { name: /^profile$/i }).click();
     await page.getByRole('link', { name: /^settings$/i }).click();
-    await page.getByRole('button', { name: /delete account/i }).click();
+    const openDelete = page.getByRole('button', { name: /delete account/i });
+    await openDelete.focus();
+    await openDelete.click();
 
     const dialog = page.getByRole('dialog', { name: /delete account/i });
     await expect(dialog).toBeVisible();
+    const close = dialog.getByRole('button', { name: /close delete account dialog/i });
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: /^cancel$/i })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(openDelete).toBeFocused();
+    await openDelete.click();
+    await expect(dialog).toBeVisible();
+
     const confirm = dialog.getByRole('button', { name: /^permanently delete account$/i });
     await expect(confirm).toBeDisabled();
     await dialog.getByLabel(/type delete|confirmation/i).fill('delete');
@@ -2529,6 +2778,8 @@ test.describe('React parity preview foundation', () => {
     expect(mockedWrites.filter((entry) => entry.includes('/delete-account'))).toEqual([]);
 
     await confirm.click();
+    await expect(dialog).toHaveAttribute('aria-busy', 'true');
+    await expect(dialog).toBeFocused();
     await expect.poll(() => mockedWrites.filter((entry) => entry.includes('/delete-account')).length).toBe(1);
     await expect(page).toHaveURL(new RegExp(`${APP}/login/?$`));
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();

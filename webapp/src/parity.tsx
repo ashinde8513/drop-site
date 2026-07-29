@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Bell } from '@phosphor-icons/react/Bell';
 import { BookmarkSimple } from '@phosphor-icons/react/BookmarkSimple';
 import { CalendarDots } from '@phosphor-icons/react/CalendarDots';
@@ -1569,28 +1569,47 @@ export function FriendsPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [sent, setSent] = useState(new Set<string>());
+  const [pending, setPending] = useState('');
+  const [notice, setNotice] = useState('');
+  const searchSequence = useRef(0);
   const [refresh, setRefresh] = useState(0);
   const [state, retry] = useLoad(`friends:${userId}:${refresh}`, EMPTY_FRIENDS, () => loadFriendEdges(userId));
 
   async function respond(id: string, accept: boolean) {
+    if (pending) return;
+    setPending(id);
+    setNotice('');
     const request = accept
       ? supabase.from('friendships').update({ status: 'accepted' }).eq('id', id)
       : supabase.from('friendships').delete().eq('id', id);
-    await request;
-    setRefresh((value) => value + 1);
+    const { error } = await request;
+    if (error) setNotice('Could not update that friend request. Please try again.');
+    else setRefresh((value) => value + 1);
+    setPending('');
   }
   async function findPeople(event: FormEvent) {
     event.preventDefault();
     const term = query.trim();
     if (term.length < 2) return setResults([]);
+    const sequence = ++searchSequence.current;
+    setNotice('');
     const { data, error } = await supabase.rpc('search_public_profiles', { p_query: term, p_limit: 20 });
-    setResults(error
-      ? []
-      : ((data ?? []) as Profile[]).filter((profile) => profile.id !== userId && !state.data.blocked.has(profile.id)));
+    if (sequence !== searchSequence.current) return;
+    if (error) {
+      setResults([]);
+      setNotice('Could not search Drop users. Please try again.');
+      return;
+    }
+    setResults(((data ?? []) as Profile[]).filter((profile) => profile.id !== userId && !state.data.blocked.has(profile.id)));
   }
   async function add(profile: Profile) {
+    if (pending) return;
+    setPending(profile.id);
+    setNotice('');
     const { error } = await supabase.from('friendships').insert({ requester_id: userId, recipient_id: profile.id, status: 'pending' });
-    if (!error) setSent((current) => new Set(current).add(profile.id));
+    if (error) setNotice('Could not send that friend request. Please try again.');
+    else setSent((current) => new Set(current).add(profile.id));
+    setPending('');
   }
   const matchesQuery = (edge: FriendEdge) => personName(edge.profile).toLowerCase().includes(query.trim().toLowerCase());
   const friends = state.data.friends.filter(matchesQuery);
@@ -1604,6 +1623,7 @@ export function FriendsPage() {
     <Tabs options={['Friends', 'Requests', 'Find', 'Activity'] as const} value={tab} onChange={setTab} label="Friends" />
     {tab !== 'Activity' && <label className="inline-search"><MagnifyingGlass size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === 'Find' ? 'Search Drop users' : 'Filter by name'} aria-label={tab === 'Find' ? 'Search Drop users' : 'Filter friends'} /></label>}
     {tab === 'Find' && <form onSubmit={findPeople}><button className="button button--primary button--small" type="submit">Search</button></form>}
+    {notice && <p className="status status--error" role="alert">{notice}</p>}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && count === 0 ? {
       title: tab === 'Friends' ? 'Your crew starts here' : tab === 'Requests' ? 'No pending requests' : tab === 'Find' ? 'Search by name or username' : 'No crew activity yet',
       body: tab === 'Friends' ? 'Invite friends to see who is going to every show.' : tab === 'Activity' ? 'Friend RSVPs and shared recaps will appear here.' : 'Nothing to review right now.',
@@ -1611,9 +1631,9 @@ export function FriendsPage() {
     } : undefined}>
       <div className="person-list">
         {tab === 'Friends' && friends.map((edge) => <PersonRow key={edge.id} edge={edge} actions={<Link className="text-link" to={`/profile/${edge.profile.id}`}>View</Link>} />)}
-        {tab === 'Requests' && incoming.map((edge) => <PersonRow key={edge.id} edge={edge} actions={<span className="row-actions"><button className="button button--primary button--small" type="button" onClick={() => void respond(edge.id, true)}>Accept</button><button className="button button--secondary button--small" type="button" onClick={() => void respond(edge.id, false)}>Decline</button></span>} />)}
+        {tab === 'Requests' && incoming.map((edge) => <PersonRow key={edge.id} edge={edge} actions={<span className="row-actions"><button className="button button--primary button--small" type="button" disabled={Boolean(pending)} onClick={() => void respond(edge.id, true)}>Accept</button><button className="button button--secondary button--small" type="button" disabled={Boolean(pending)} onClick={() => void respond(edge.id, false)}>Decline</button></span>} />)}
         {tab === 'Requests' && outgoing.map((edge) => <PersonRow key={edge.id} edge={edge} actions={<span className="status-pill">Sent</span>} />)}
-        {tab === 'Find' && results.map((profile) => <PersonRow key={profile.id} edge={{ id: profile.id, profile, status: 'pending', direction: 'outgoing', created_at: '' }} actions={<button className="button button--secondary button--small" type="button" disabled={existing.has(profile.id) || sent.has(profile.id)} onClick={() => void add(profile)}><UserPlus size={15} /> {existing.has(profile.id) ? 'Added' : sent.has(profile.id) ? 'Sent' : 'Add'}</button>} />)}
+        {tab === 'Find' && results.map((profile) => <PersonRow key={profile.id} edge={{ id: profile.id, profile, status: 'pending', direction: 'outgoing', created_at: '' }} actions={<button className="button button--secondary button--small" type="button" disabled={Boolean(pending) || existing.has(profile.id) || sent.has(profile.id)} onClick={() => void add(profile)}><UserPlus size={15} /> {existing.has(profile.id) ? 'Added' : sent.has(profile.id) ? 'Sent' : 'Add'}</button>} />)}
         {tab === 'Activity' && state.data.activity.map((item) => {
           const copy = item.type === 'going' ? 'is going to'
             : item.type === 'rated' ? `rated ${item.rating ?? 'a show'}`
@@ -1861,6 +1881,14 @@ export function FestivalSchedulePage() {
   const userId = auth.user?.id ?? '';
   const { eventId = '' } = useParams();
   const [mine, setMine] = useState(new Set<string>());
+  const [pending, setPending] = useState('');
+  const [notice, setNotice] = useState('');
+  const activeEventId = useRef(eventId);
+  activeEventId.current = eventId;
+  useEffect(() => {
+    setPending('');
+    setNotice('');
+  }, [eventId]);
   const [state, retry] = useLoad(`schedule:${eventId}`, { event: null as DropEvent | null, times: [] as SetTime[] }, async () => {
     const [catalog, timesResult, mineResult] = await Promise.all([
       loadEventCatalog(),
@@ -1872,19 +1900,32 @@ export function FestivalSchedulePage() {
     return { event: catalog.find((event) => event.id === eventId) ?? null, times: (timesResult.data ?? []) as SetTime[] };
   });
   async function toggle(id: string) {
+    if (pending) return;
+    const requestEventId = eventId;
     const active = mine.has(id);
-    const { error } = active
-      ? await supabase.from('my_set_times').delete().eq('user_id', userId).eq('set_time_id', id)
-      : await supabase.from('my_set_times').insert({ user_id: userId, set_time_id: id });
-    if (!error) setMine((current) => { const next = new Set(current); active ? next.delete(id) : next.add(id); return next; });
+    setPending(id);
+    setNotice('');
+    try {
+      const { error } = active
+        ? await supabase.from('my_set_times').delete().eq('user_id', userId).eq('set_time_id', id)
+        : await supabase.from('my_set_times').insert({ user_id: userId, set_time_id: id });
+      if (activeEventId.current !== requestEventId) return;
+      if (error) setNotice('Could not update your schedule. Please try again.');
+      else setMine((current) => { const next = new Set(current); active ? next.delete(id) : next.add(id); return next; });
+    } catch {
+      if (activeEventId.current === requestEventId) setNotice('Could not update your schedule. Please try again.');
+    } finally {
+      if (activeEventId.current === requestEventId) setPending('');
+    }
   }
   const days = groupBy(state.data.times, setTimeDay);
   return <section className="parity-page">
     {pageHeading('FESTIVAL SCHEDULE', state.data.event?.title ?? 'Schedule', state.data.event ? `${formatEventDate(state.data.event)} · ${eventPlace(state.data.event)}` : undefined)}
+    {notice && <p className="status status--error" role="alert">{notice}</p>}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && state.data.times.length === 0 ? { title: 'Schedule not published yet', body: 'Official set times will appear here as soon as the festival releases them.', icon: <CalendarDots size={28} /> } : undefined}>
       <div className="schedule">{Object.entries(days).map(([day, dayTimes]) => <section className="schedule-day" key={day}>
         <h2>{day}</h2>
-        {Object.entries(groupBy(dayTimes, (time) => time.stage || 'Schedule')).map(([stage, times]) => <section key={`${day}:${stage}`}><h3><span />{stage}</h3>{times.map((time) => <article className={mine.has(time.id) ? 'is-picked' : ''} key={time.id}><time>{formatSetTime(time)}</time><strong>{time.artist_name}</strong><button type="button" onClick={() => void toggle(time.id)} aria-label={`${mine.has(time.id) ? 'Remove' : 'Add'} ${time.artist_name} from my schedule`}>{mine.has(time.id) ? <Check size={17} /> : <Plus size={17} />}</button></article>)}</section>)}
+        {Object.entries(groupBy(dayTimes, (time) => time.stage || 'Schedule')).map(([stage, times]) => <section key={`${day}:${stage}`}><h3><span />{stage}</h3>{times.map((time) => <article className={mine.has(time.id) ? 'is-picked' : ''} key={time.id}><time>{formatSetTime(time)}</time><strong>{time.artist_name}</strong><button type="button" disabled={Boolean(pending)} onClick={() => void toggle(time.id)} aria-label={`${mine.has(time.id) ? 'Remove' : 'Add'} ${time.artist_name} from my schedule`}>{pending === time.id ? <CircleNotch className="spin" size={17} /> : mine.has(time.id) ? <Check size={17} /> : <Plus size={17} />}</button></article>)}</section>)}
       </section>)}</div>
     </PageState>
   </section>;
@@ -1895,8 +1936,16 @@ export function LiveModePage() {
   const userId = auth.user?.id ?? '';
   const { eventId = '' } = useParams();
   const [checkedInNow, setCheckedInNow] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [notice, setNotice] = useState('');
+  const activeEventId = useRef(eventId);
+  activeEventId.current = eventId;
   const [clock, setClock] = useState(Date.now());
-  useEffect(() => setCheckedInNow(false), [eventId]);
+  useEffect(() => {
+    setCheckedInNow(false);
+    setCheckingIn(false);
+    setNotice('');
+  }, [eventId]);
   useEffect(() => {
     const interval = window.setInterval(() => setClock(Date.now()), 30_000);
     return () => window.clearInterval(interval);
@@ -1930,9 +1979,20 @@ export function LiveModePage() {
   const canCheckIn = Boolean(interval && interval.start <= clock && clock <= interval.end);
   const checkedIn = checkedInNow || state.data.checkedIn;
   async function checkIn() {
-    if (!canCheckIn) return;
-    const { error } = await supabase.from('event_checkins').upsert({ user_id: userId, event_id: eventId, checked_in_at: new Date().toISOString() }, { onConflict: 'user_id,event_id' });
-    if (!error) setCheckedInNow(true);
+    if (!canCheckIn || checkingIn) return;
+    const requestEventId = eventId;
+    setCheckingIn(true);
+    setNotice('');
+    try {
+      const { error } = await supabase.from('event_checkins').upsert({ user_id: userId, event_id: eventId, checked_in_at: new Date().toISOString() }, { onConflict: 'user_id,event_id' });
+      if (activeEventId.current !== requestEventId) return;
+      if (error) setNotice('Could not check you in. Please try again.');
+      else setCheckedInNow(true);
+    } catch {
+      if (activeEventId.current === requestEventId) setNotice('Could not check you in. Please try again.');
+    } finally {
+      if (activeEventId.current === requestEventId) setCheckingIn(false);
+    }
   }
   const current = state.data.times.find((time) => {
     const start = Date.parse(time.start_time);
@@ -1943,12 +2003,13 @@ export function LiveModePage() {
   const next = state.data.times.find((time) => Date.parse(time.start_time) > clock);
   return <section className="parity-page live-page">
     {pageHeading('LIVE', state.data.event?.title ?? 'Live Mode', state.data.event ? eventPlace(state.data.event) : undefined)}
+    {notice && <p className="status status--error" role="alert">{notice}</p>}
     <PageState status={state.status} onRetry={retry}>
       <div className="live-grid">
         <section className="parity-panel live-now"><p>NOW</p><h3>{current?.artist_name ?? 'No set is live right now'}</h3>{current && <span>{current.stage}</span>}{next && <small>Next: {next.artist_name} · {formatSetTime(next)}</small>}</section>
         <section className="live-map"><MapSurface events={state.data.event ? [state.data.event] : []} city={state.data.event?.city} state={state.data.event?.state} compact /></section>
         <section className="parity-panel"><h3>Crew here now</h3><p>{state.data.checkins.length ? state.data.checkins.map((row) => personName(row.profiles)).join(', ') : 'No friends have checked in yet.'}</p></section>
-        <section className="parity-panel live-checkin"><h3>At the show?</h3><button className="button button--primary" type="button" disabled={checkedIn || !canCheckIn} onClick={() => void checkIn()}>{checkedIn ? <><Check size={17} /> Checked in</> : canCheckIn ? 'I’m here — check in' : 'Check-in opens during the show'}</button></section>
+        <section className="parity-panel live-checkin"><h3>At the show?</h3><button className="button button--primary" type="button" disabled={checkedIn || checkingIn || !canCheckIn} onClick={() => void checkIn()}>{checkedIn ? <><Check size={17} /> Checked in</> : checkingIn ? <><CircleNotch className="spin" size={17} /> Checking in…</> : canCheckIn ? 'I’m here — check in' : 'Check-in opens during the show'}</button></section>
       </div>
     </PageState>
   </section>;
@@ -2219,6 +2280,14 @@ export function UtilityPage({ kind }: { kind: 'wallet' | 'reminders' | 'blocked'
     blocked: { kicker: 'PRIVACY', title: 'Blocked accounts', empty: 'Accounts you block will appear here.', icon: <UsersThree size={28} /> },
   }[kind];
   const [refresh, setRefresh] = useState(0);
+  const [pending, setPending] = useState('');
+  const [notice, setNotice] = useState('');
+  const activeKind = useRef(kind);
+  activeKind.current = kind;
+  useEffect(() => {
+    setPending('');
+    setNotice('');
+  }, [kind]);
   const [state, retry] = useLoad(`${kind}:${userId}:${refresh}`, [] as any[], async () => {
     if (kind === 'wallet') {
       const { data, error } = await supabase.from('user_tickets')
@@ -2266,12 +2335,36 @@ export function UtilityPage({ kind }: { kind: 'wallet' | 'reminders' | 'blocked'
     return (blocks ?? []).map((row) => ({ ...row, profile: byId.get(row.blocked_id) ?? null }));
   });
   async function toggleReminder(row: any) {
-    const { error } = await supabase.from('onsale_reminders').upsert({ user_id: userId, event_id: row.event_id, enabled: !row.enabled }, { onConflict: 'user_id,event_id' });
-    if (!error) setRefresh((value) => value + 1);
+    if (pending) return;
+    const requestKind = kind;
+    setPending(row.event_id);
+    setNotice('');
+    try {
+      const { error } = await supabase.from('onsale_reminders').upsert({ user_id: userId, event_id: row.event_id, enabled: !row.enabled }, { onConflict: 'user_id,event_id' });
+      if (activeKind.current !== requestKind) return;
+      if (error) setNotice('Could not update that reminder. Please try again.');
+      else setRefresh((value) => value + 1);
+    } catch {
+      if (activeKind.current === requestKind) setNotice('Could not update that reminder. Please try again.');
+    } finally {
+      if (activeKind.current === requestKind) setPending('');
+    }
   }
   async function unblock(row: any) {
-    const { error } = await supabase.from('user_blocks').delete().eq('blocker_id', userId).eq('blocked_id', row.blocked_id);
-    if (!error) setRefresh((value) => value + 1);
+    if (pending) return;
+    const requestKind = kind;
+    setPending(row.blocked_id);
+    setNotice('');
+    try {
+      const { error } = await supabase.from('user_blocks').delete().eq('blocker_id', userId).eq('blocked_id', row.blocked_id);
+      if (activeKind.current !== requestKind) return;
+      if (error) setNotice('Could not unblock that account. Please try again.');
+      else setRefresh((value) => value + 1);
+    } catch {
+      if (activeKind.current === requestKind) setNotice('Could not unblock that account. Please try again.');
+    } finally {
+      if (activeKind.current === requestKind) setPending('');
+    }
   }
   async function shareTicket(row: any) {
     const event = row.events;
@@ -2285,20 +2378,21 @@ export function UtilityPage({ kind }: { kind: 'wallet' | 'reminders' | 'blocked'
   }
   return <section className="parity-page">
     {pageHeading(config.kicker, config.title)}
+    {notice && <p className="status status--error" role="alert">{notice}</p>}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && state.data.length === 0 ? { title: `No ${config.title.toLowerCase()} yet`, body: config.empty, icon: config.icon } : undefined}>
       <div className="parity-list">{state.data.map((row) => {
         const event = row.events as DropEvent | null | undefined;
         if (kind === 'blocked') return <div className="utility-row" key={row.id}>
           <span className="person-row__avatar">{personName(row.profile).slice(0, 1).toUpperCase()}</span>
           <span className="utility-row__copy"><strong>{personName(row.profile)}</strong><small>{row.profile?.username ? `@${row.profile.username}` : 'Blocked account'}</small></span>
-          <button className="button button--secondary button--small" type="button" onClick={() => void unblock(row)}>Unblock</button>
+          <button className="button button--secondary button--small" type="button" disabled={Boolean(pending)} onClick={() => void unblock(row)}>{pending === row.blocked_id ? 'Unblocking…' : 'Unblock'}</button>
         </div>;
         return <div className="utility-row" key={row.id ?? row.event_id}>
           <span className="parity-event-row__art">{event?.image_url ? <img src={event.image_url} alt="" /> : config.icon}</span>
           <span className="utility-row__copy"><strong>{event?.title ?? 'Event'}</strong><small>{event ? `${formatEventDate(event)} · ${event.venue_name ?? 'Venue TBA'}` : 'Event details unavailable'}</small>{kind === 'wallet' && <small>{row.seller}{row.order_ref ? ` · Order #${row.order_ref}` : row.shot_path ? ' · Screenshot attached' : ''}</small>}</span>
           {kind === 'wallet'
             ? <button className="button button--secondary button--small" type="button" onClick={() => void shareTicket(row)}>Share</button>
-            : <button className={`toggle ${row.enabled ? 'is-on' : ''}`} type="button" role="switch" aria-checked={row.enabled} aria-label={`Remind me about ${event?.title ?? 'this event'}`} onClick={() => void toggleReminder(row)}><span /></button>}
+            : <button className={`toggle ${row.enabled ? 'is-on' : ''}`} type="button" role="switch" aria-checked={row.enabled} aria-label={`Remind me about ${event?.title ?? 'this event'}`} disabled={Boolean(pending)} onClick={() => void toggleReminder(row)}><span /></button>}
         </div>;
       })}</div>
     </PageState>

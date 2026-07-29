@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { AppleLogo } from '@phosphor-icons/react/AppleLogo';
 import { ArrowLeft } from '@phosphor-icons/react/ArrowLeft';
 import { Bell } from '@phosphor-icons/react/Bell';
@@ -737,6 +737,7 @@ function SettingsPage() {
   const user = auth.user;
   const [notice, setNotice] = useState<Notice>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteTrigger = useRef<HTMLButtonElement>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const privacyRows = [
     { key: 'recap_includable', title: 'Friends’ recaps', body: 'Allow friends to include your shared show activity in their recaps.' },
@@ -775,8 +776,8 @@ function SettingsPage() {
       <NotificationPreferences />
       {profile && <section className="settings-section" aria-labelledby="privacy-heading"><div className="section-heading"><h3 id="privacy-heading">Privacy</h3><p>Choose what other people can see.</p></div><div className="settings-card settings-list">{privacyRows.map(({ key, title, body }) => <ToggleRow key={key} title={title} body={body} checked={profile[key]} onChange={(checked) => toggle(key, checked)} />)}</div></section>}
       <MusicConnections />
-      <section className="settings-section" aria-labelledby="account-heading"><div className="section-heading"><h3 id="account-heading">Account</h3><p>Manage this shared Drop account.</p></div><div className="settings-card settings-list"><div className="setting-row setting-row--static"><div><h4>Email</h4><p>{user?.email ?? 'No email available'}</p></div></div><button className="setting-row setting-row--button" type="button" onClick={logout} disabled={loggingOut}><span className="setting-row__icon"><SignOut size={20} /></span><span><strong>{loggingOut ? 'Logging out…' : 'Log out'}</strong><small>Log out of Drop on all devices.</small></span></button><button className="setting-row setting-row--button setting-row--danger" type="button" onClick={() => setDeleteOpen(true)}><span className="setting-row__icon"><Trash size={20} /></span><span><strong>Delete account</strong><small>Permanently delete your Drop account and associated data.</small></span></button></div></section>
-      {deleteOpen && <DeleteAccountDialog onClose={() => setDeleteOpen(false)} />}
+      <section className="settings-section" aria-labelledby="account-heading"><div className="section-heading"><h3 id="account-heading">Account</h3><p>Manage this shared Drop account.</p></div><div className="settings-card settings-list"><div className="setting-row setting-row--static"><div><h4>Email</h4><p>{user?.email ?? 'No email available'}</p></div></div><button className="setting-row setting-row--button" type="button" onClick={logout} disabled={loggingOut}><span className="setting-row__icon"><SignOut size={20} /></span><span><strong>{loggingOut ? 'Logging out…' : 'Log out'}</strong><small>Log out of Drop on all devices.</small></span></button><button ref={deleteTrigger} className="setting-row setting-row--button setting-row--danger" type="button" onClick={() => setDeleteOpen(true)}><span className="setting-row__icon"><Trash size={20} /></span><span><strong>Delete account</strong><small>Permanently delete your Drop account and associated data.</small></span></button></div></section>
+      {deleteOpen && <DeleteAccountDialog returnFocus={deleteTrigger.current} onClose={() => setDeleteOpen(false)} />}
     </section>
   );
 }
@@ -877,13 +878,51 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? 'recently' : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
 
-function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+function DeleteAccountDialog({ onClose, returnFocus }: { onClose: () => void; returnFocus?: HTMLElement | null }) {
   const auth = useAuth();
   const navigate = useNavigate();
+  const dialog = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [state, setState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const confirmed = confirmation.trim().toUpperCase() === 'DELETE';
+
+  useEffect(() => {
+    previousFocus.current = returnFocus ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    dialog.current?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')?.focus();
+    return () => previousFocus.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!dialog.current?.contains(document.activeElement)) {
+      (dialog.current?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]') ?? dialog.current)?.focus();
+    }
+  }, [state]);
+
+  function trapFocus(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape' && state !== 'pending') {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = [...(dialog.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]') ?? [])];
+    if (!focusable.length) {
+      event.preventDefault();
+      dialog.current?.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !dialog.current?.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   async function removeAccount() {
     if (!confirmed || !auth.deleteAccount) return;
@@ -910,7 +949,7 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && state !== 'pending') onClose(); }}>
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description">
+      <div ref={dialog} className="dialog" role="dialog" aria-modal="true" aria-busy={state === 'pending'} aria-labelledby="delete-title" aria-describedby="delete-description" tabIndex={-1} onKeyDown={trapFocus}>
         {state === 'success' ? <div className="dialog-success"><span><CheckCircle size={30} weight="fill" /></span><h2 id="delete-title">Account deleted</h2><p id="delete-description">{message || 'Your Drop account deletion completed successfully, including show media stored in this browser.'}</p><button className="button button--primary button--block" type="button" onClick={() => navigate('/login', { replace: true })}>Return to login</button></div> : <><button className="dialog__close" type="button" onClick={onClose} disabled={state === 'pending'} aria-label="Close delete account dialog"><X size={20} /></button><span className="dialog__danger"><Trash size={24} /></span><h2 id="delete-title">Delete account?</h2><p id="delete-description">This permanently removes your profile, RSVPs, saved shows, crews, plans, Drop history, and show media stored in this browser. This cannot be undone.</p><label className="field" htmlFor="delete-confirmation"><span>Type DELETE to confirm</span><input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" placeholder="DELETE" disabled={state === 'pending'} /></label>{state === 'error' && <p className="status status--error" role="alert"><WarningCircle size={18} weight="fill" />{message}</p>}<div className="dialog__actions"><button className="button button--secondary" type="button" onClick={onClose} disabled={state === 'pending'}>Cancel</button><button className="button button--danger" type="button" onClick={removeAccount} disabled={!confirmed || state === 'pending'}>{state === 'pending' ? <><CircleNotch className="spin" size={18} /> Deleting…</> : 'Permanently delete account'}</button></div></>}
       </div>
     </div>
@@ -925,6 +964,7 @@ function CompleteProfilePage() {
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteTrigger = useRef<HTMLButtonElement>(null);
 
   if (auth.loading || (auth.user && auth.signupCompliance === 'unknown')) return <LoadingScreen />;
   if (!auth.user) return <Navigate to="/login" replace />;
@@ -951,8 +991,8 @@ function CompleteProfilePage() {
         <button className="button button--primary button--block" type="submit" disabled={pending}>{pending ? <><CircleNotch className="spin" size={18} /> Saving…</> : 'Finish setup'}</button>
       </form>
       <button className="button button--ghost button--block" type="button" onClick={() => void auth.signOut()}>Log out</button>
-      <button className="button button--ghost button--block" type="button" onClick={() => setDeleteOpen(true)}>Delete account</button>
-      {deleteOpen && <DeleteAccountDialog onClose={() => setDeleteOpen(false)} />}
+      <button ref={deleteTrigger} className="button button--ghost button--block" type="button" onClick={() => setDeleteOpen(true)}>Delete account</button>
+      {deleteOpen && <DeleteAccountDialog returnFocus={deleteTrigger.current} onClose={() => setDeleteOpen(false)} />}
     </AuthLayout>
   );
 }
