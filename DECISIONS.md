@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-29 — High-cardinality pickers share one combobox; Stats rows preserve history context
+
+Location, city, artist, venue, event, date, genre, and similar large option sets use the shared accessible combobox behavior: searchable text input, labelled listbox/options, arrow navigation, Enter selection, Escape dismissal, visible focus, and an honest no-results state. Fixed two- or three-choice controls remain segmented controls.
+
+Stats destinations are derived from real attended-show records and preserve the selected time range. Shows open event/show detail; artists open exact artist seen history; venues open structured venue seen history; genres open filtered seen shows; and cities open website-native filtered history because the current native source has no dedicated city-history screen. Missing entity identity must disable or safely redirect a row rather than guessing, and no history data may be fabricated.
+
 ## 2026-07-28 — Calendar history is local-first; only exact canonical matches auto-import
 
 The website parses Apple/Google `.ics` exports in the browser. Before confirmation, calendar-derived show details do not leave the device. After confirmation, selected details may be used to search Drop's published archive; only one unambiguous same-day identity match is marked attended automatically. Ambiguous and unmatched entries stay unsaved for manual review.
