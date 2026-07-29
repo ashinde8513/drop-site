@@ -927,6 +927,7 @@ function DeleteAccountDialog({ onClose, returnFocus }: { onClose: () => void; re
   async function removeAccount() {
     if (!confirmed || !auth.deleteAccount) return;
     const userId = auth.user?.id;
+    dialog.current?.focus();
     setState('pending');
     setMessage('');
     try {
