@@ -16,6 +16,7 @@ type MockOptions = {
   commentError?: boolean;
   commentOverflow?: boolean;
   coordinateMissing?: boolean;
+  crewMutationError?: boolean;
   crewReadError?: boolean;
   loginError?: boolean;
   logConflict?: boolean;
@@ -375,6 +376,13 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
     if (url.pathname === '/rest/v1/rpc/replace_logged_show_openers' || url.pathname === '/rest/v1/rpc/delete_past_show') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
     }
+    if (url.pathname === '/rest/v1/rpc/replace_crew_members') {
+      return route.fulfill({
+        status: options.crewMutationError ? 500 : 200,
+        contentType: 'application/json',
+        body: options.crewMutationError ? '{"message":"crew update unavailable"}' : '0',
+      });
+    }
     if (url.pathname === '/rest/v1/rpc/is_blocked_with') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(options.blockedByProfile === true) });
     }
@@ -459,7 +467,11 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         return route.fulfill({
           status: options.friendMutationError ? 500 : 201,
           contentType: 'application/json',
-          body: options.friendMutationError ? '{"message":"friend mutation unavailable"}' : '[]',
+          body: options.friendMutationError
+            ? '{"message":"friend mutation unavailable"}'
+            : method === 'PATCH'
+              ? '{"id":"friendship-pending"}'
+              : '[]',
         });
       }
       return route.fulfill({
@@ -1290,6 +1302,12 @@ test.describe('React parity preview foundation', () => {
   test('festival schedule and Live Mode use connected set times and check-in writes', async ({ page }) => {
     await page.clock.install({ time: new Date('2027-09-05T01:30:00.000Z') });
     const writes = await mockSupabase(page, true, { parityFeatures: true });
+    let checkInPayload: Record<string, unknown> | null = null;
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/event_checkins' && request.method() === 'POST') {
+        checkInPayload = request.postDataJSON() as Record<string, unknown>;
+      }
+    });
     await openAppRoute(page, '/festivals');
 
     await expect(page.getByRole('link', { name: /^schedule$/i })).toBeVisible();
@@ -1313,6 +1331,8 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByText(/Night Owl/)).toBeVisible();
     await page.getByRole('button', { name: /check in/i }).click();
     await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/event_checkins').length).toBe(1);
+    expect(checkInPayload).toMatchObject({ user_id: user.id, event_id: festivalEvent.id });
+    expect(checkInPayload).not.toHaveProperty('checked_in_at');
   });
 
   test('festival schedule and Live Mode surface rejected writes without optimistic drift', async ({ page }) => {
@@ -1584,6 +1604,22 @@ test.describe('React parity preview foundation', () => {
     await expect(page.getByRole('alert')).toContainText(/could not update that friend request/i);
     await expect(page.getByText('Night Owl', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /^accept$/i })).toBeEnabled();
+  });
+
+  test('friend acceptance requests the exact updated row from the hardened policy', async ({ page }) => {
+    let acceptUrl = '';
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/friendships' && request.method() === 'PATCH') {
+        acceptUrl = request.url();
+      }
+    });
+    await mockSupabase(page, true, { pendingFriendship: true });
+    await openAppRoute(page, '/friends');
+    await page.getByRole('tab', { name: /^requests$/i }).click();
+
+    await page.getByRole('button', { name: /^accept$/i }).click();
+    await expect.poll(() => acceptUrl).toContain('select=id');
+    expect(new URL(acceptUrl).searchParams.get('id')).toBe('eq.friendship-pending');
   });
 
   test('declining a friend request exposes pending and rejected states', async ({ page }) => {
@@ -1861,12 +1897,33 @@ test.describe('React parity preview foundation', () => {
 
   test('crew owners can update membership from accepted friends', async ({ page }) => {
     const writes = await mockSupabase(page, true, { parityFeatures: true });
+    let payload: Record<string, unknown> | null = null;
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/rest/v1/rpc/replace_crew_members') {
+        payload = request.postDataJSON() as Record<string, unknown>;
+      }
+    });
     await openAppRoute(page, '/crews');
 
     await page.getByRole('button', { name: /manage members/i }).click();
     await page.getByRole('checkbox', { name: 'Night Owl' }).uncheck();
     await page.getByRole('button', { name: /save members/i }).click();
-    await expect.poll(() => writes.filter((entry) => entry === 'DELETE /rest/v1/crew_members').length).toBe(1);
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/replace_crew_members').length).toBe(1);
+    expect(payload).toEqual({ p_crew_id: 'crew-1', p_user_ids: [] });
+    expect(writes.filter((entry) => entry.endsWith('/rest/v1/crew_members'))).toHaveLength(0);
+  });
+
+  test('crew membership stays editable when the atomic replacement is rejected', async ({ page }) => {
+    await mockSupabase(page, true, { parityFeatures: true, crewMutationError: true });
+    await openAppRoute(page, '/crews');
+
+    await page.getByRole('button', { name: /manage members/i }).click();
+    const member = page.getByRole('checkbox', { name: 'Night Owl' });
+    await member.uncheck();
+    await page.getByRole('button', { name: /save members/i }).click();
+    await expect(page.getByRole('alert')).toContainText(/crew update unavailable/i);
+    await expect(member).toBeVisible();
+    await expect(member).not.toBeChecked();
   });
 
   test('crew creation rechecks the live free-tier cap before inserting', async ({ page }) => {

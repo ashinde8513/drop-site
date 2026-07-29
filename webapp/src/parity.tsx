@@ -1580,7 +1580,7 @@ export function FriendsPage() {
     setPending(id);
     setNotice('');
     const request = accept
-      ? supabase.from('friendships').update({ status: 'accepted' }).eq('id', id)
+      ? supabase.from('friendships').update({ status: 'accepted' }).eq('id', id).select('id').single()
       : supabase.from('friendships').delete().eq('id', id);
     const { error } = await request;
     if (error) setNotice('Could not update that friend request. Please try again.');
@@ -1723,14 +1723,10 @@ export function CrewsPage() {
     setNotice('');
   }
   async function saveMembers(crew: Crew) {
-    const current = new Set(crew.members.map((member) => member.id));
-    const add = [...selected].filter((id) => !current.has(id));
-    const remove = [...current].filter((id) => !selected.has(id));
-    const [added, removed] = await Promise.all([
-      add.length ? supabase.from('crew_members').insert(add.map((id) => ({ crew_id: crew.id, user_id: id }))) : Promise.resolve({ error: null }),
-      remove.length ? supabase.from('crew_members').delete().eq('crew_id', crew.id).in('user_id', remove) : Promise.resolve({ error: null }),
-    ]);
-    const error = added.error || removed.error;
+    const { error } = await supabase.rpc('replace_crew_members', {
+      p_crew_id: crew.id,
+      p_user_ids: [...selected],
+    });
     if (error) return setNotice(error.message);
     setEditing(null);
     setNotice('');
@@ -1984,7 +1980,7 @@ export function LiveModePage() {
     setCheckingIn(true);
     setNotice('');
     try {
-      const { error } = await supabase.from('event_checkins').upsert({ user_id: userId, event_id: eventId, checked_in_at: new Date().toISOString() }, { onConflict: 'user_id,event_id' });
+      const { error } = await supabase.from('event_checkins').upsert({ user_id: userId, event_id: eventId }, { onConflict: 'user_id,event_id' });
       if (activeEventId.current !== requestEventId) return;
       if (error) setNotice('Could not check you in. Please try again.');
       else setCheckedInNow(true);
