@@ -46,6 +46,7 @@ import {
   type NotificationPrefs,
   type Profile,
 } from './lib/account';
+import { deleteHistoryMediaForUser } from './lib/history';
 import { DiscoverPage, EventDetailPage, SearchPage } from './discovery';
 import {
   CrewsPage,
@@ -53,6 +54,7 @@ import {
   FestivalsPage,
   FriendsPage,
   HistoryPage,
+  ImportShowsPage,
   LiveModePage,
   LoggedShowPage,
   LogShowPage,
@@ -62,6 +64,7 @@ import {
   PersonProfilePage,
   PlanDetailPage,
   PlansPage,
+  RecapPage,
   UtilityPage,
 } from './parity';
 import brandMark from '../../favicon.svg?url';
@@ -457,6 +460,8 @@ function pageTitle(pathname: string) {
   if (pathname.startsWith('/schedule/')) return 'Festival schedule';
   if (pathname.startsWith('/live/')) return 'Live Mode';
   if (pathname.startsWith('/plan/')) return 'Plan';
+  if (pathname.startsWith('/recap/')) return 'Show recap';
+  if (pathname.startsWith('/import-shows')) return 'Import history';
   if (pathname.startsWith('/log-show')) return 'Log a show';
   if (pathname.startsWith('/history')) return 'Seen History';
   if (pathname.startsWith('/stats')) return 'Drop Stats';
@@ -514,6 +519,8 @@ function AppShell() {
             <Route path="shows" element={<MyShowsPage />} />
             <Route path="show/:showId" element={<LoggedShowPage />} />
             <Route path="log-show" element={<LogShowPage />} />
+            <Route path="import-shows" element={<ImportShowsPage />} />
+            <Route path="recap/:eventId" element={<RecapPage />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="stats" element={<HistoryPage mode="stats" />} />
             <Route path="wrapped" element={<HistoryPage mode="wrapped" />} />
@@ -803,12 +810,20 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
 
   async function removeAccount() {
     if (!confirmed || !auth.deleteAccount) return;
+    const userId = auth.user?.id;
     setState('pending');
     setMessage('');
     try {
       const result = await auth.deleteAccount();
       const error = resultError(result);
       if (error) throw new Error(error);
+      if (userId) {
+        try {
+          await deleteHistoryMediaForUser(userId);
+        } catch {
+          setMessage('Account deleted, but this browser could not clear its device-local show media.');
+        }
+      }
       setState('success');
     } catch (error) {
       setState('error');
@@ -819,7 +834,7 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && state !== 'pending') onClose(); }}>
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description">
-        {state === 'success' ? <div className="dialog-success"><span><CheckCircle size={30} weight="fill" /></span><h2 id="delete-title">Account deleted</h2><p id="delete-description">Your Drop account deletion completed successfully.</p><button className="button button--primary button--block" type="button" onClick={() => navigate('/login', { replace: true })}>Return to login</button></div> : <><button className="dialog__close" type="button" onClick={onClose} disabled={state === 'pending'} aria-label="Close delete account dialog"><X size={20} /></button><span className="dialog__danger"><Trash size={24} /></span><h2 id="delete-title">Delete account?</h2><p id="delete-description">This permanently removes your profile, RSVPs, saved shows, crews, plans, and Drop history. This cannot be undone.</p><label className="field" htmlFor="delete-confirmation"><span>Type DELETE to confirm</span><input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" placeholder="DELETE" disabled={state === 'pending'} /></label>{state === 'error' && <p className="status status--error" role="alert"><WarningCircle size={18} weight="fill" />{message}</p>}<div className="dialog__actions"><button className="button button--secondary" type="button" onClick={onClose} disabled={state === 'pending'}>Cancel</button><button className="button button--danger" type="button" onClick={removeAccount} disabled={!confirmed || state === 'pending'}>{state === 'pending' ? <><CircleNotch className="spin" size={18} /> Deleting…</> : 'Permanently delete account'}</button></div></>}
+        {state === 'success' ? <div className="dialog-success"><span><CheckCircle size={30} weight="fill" /></span><h2 id="delete-title">Account deleted</h2><p id="delete-description">{message || 'Your Drop account deletion completed successfully, including show media stored in this browser.'}</p><button className="button button--primary button--block" type="button" onClick={() => navigate('/login', { replace: true })}>Return to login</button></div> : <><button className="dialog__close" type="button" onClick={onClose} disabled={state === 'pending'} aria-label="Close delete account dialog"><X size={20} /></button><span className="dialog__danger"><Trash size={24} /></span><h2 id="delete-title">Delete account?</h2><p id="delete-description">This permanently removes your profile, RSVPs, saved shows, crews, plans, Drop history, and show media stored in this browser. This cannot be undone.</p><label className="field" htmlFor="delete-confirmation"><span>Type DELETE to confirm</span><input id="delete-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" placeholder="DELETE" disabled={state === 'pending'} /></label>{state === 'error' && <p className="status status--error" role="alert"><WarningCircle size={18} weight="fill" />{message}</p>}<div className="dialog__actions"><button className="button button--secondary" type="button" onClick={onClose} disabled={state === 'pending'}>Cancel</button><button className="button button--danger" type="button" onClick={removeAccount} disabled={!confirmed || state === 'pending'}>{state === 'pending' ? <><CircleNotch className="spin" size={18} /> Deleting…</> : 'Permanently delete account'}</button></div></>}
       </div>
     </div>
   );

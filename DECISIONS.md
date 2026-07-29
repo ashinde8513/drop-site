@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-07-28 — Calendar history is local-first; only exact canonical matches auto-import
+
+The website parses Apple/Google `.ics` exports in the browser. Before confirmation, calendar-derived show details do not leave the device. After confirmation, selected details may be used to search Drop's published archive; only one unambiguous same-day identity match is marked attended automatically. Ambiguous and unmatched entries stay unsaved for manual review.
+
+Calendar-file copy must distinguish the local file from the selected details used for confirmed matching. Bulk import must not create public events or silently merge ambiguous history.
+
+## 2026-07-28 — Personal show media stays device-local; recap export does not auto-publish
+
+History photos/videos live in user- and show-scoped IndexedDB storage, with per-file and per-show limits. Account deletion purges that user's local history media from the browser. Recap export rechecks the server's consent-scoped crew result immediately before generating the image.
+
+Creating or downloading a recap does not insert an activity post until the backend has a relationship- and privacy-scoped publishing contract. Local export is complete without public feed publication.
+
 ## 2026-07-28 — Native iOS keeps Apple Maps; web uses an attributed dark web-map provider
 
 The native Drop app continues to use Apple Maps through its native map implementation. The signed-in website uses CARTO dark tiles with OpenStreetMap data, separate required attribution links, price pins, and a card rail containing only events that have real map coordinates.

@@ -15,6 +15,7 @@ import { MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass';
 import { MapPin } from '@phosphor-icons/react/MapPin';
 import { PaperPlaneTilt } from '@phosphor-icons/react/PaperPlaneTilt';
 import { ShareNetwork } from '@phosphor-icons/react/ShareNetwork';
+import { Sparkle } from '@phosphor-icons/react/Sparkle';
 import { Ticket } from '@phosphor-icons/react/Ticket';
 import { Trash } from '@phosphor-icons/react/Trash';
 import { UsersThree } from '@phosphor-icons/react/UsersThree';
@@ -1674,7 +1675,7 @@ export function EventDetailPage() {
   const { eventId = '' } = useParams();
   const [event, setEvent] = useState<DropEvent | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [attendance, setAttendance] = useState<'going' | 'interested' | null>(null);
+  const [attendance, setAttendance] = useState<'going' | 'interested' | 'attended' | null>(null);
   const [attendanceReady, setAttendanceReady] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedReady, setSavedReady] = useState(false);
@@ -1741,7 +1742,7 @@ export function EventDetailPage() {
       ]);
       if (!active) return;
       const status = attendanceResponse.data?.status;
-      setAttendance(status === 'going' || status === 'interested' ? status : null);
+      setAttendance(status === 'going' || status === 'interested' || status === 'attended' ? status : null);
       setAttendanceReady(Boolean(userId && !attendanceResponse.error));
       setSaved(Boolean(saveResponse.data));
       setSavedReady(Boolean(userId && !saveResponse.error));
@@ -1786,7 +1787,7 @@ export function EventDetailPage() {
     return () => window.clearTimeout(timeout);
   }, [event, presaleClock]);
 
-  async function changeAttendance(next: 'going' | 'interested') {
+  async function changeAttendance(next: 'going' | 'interested' | 'attended') {
     if (!auth.user || !attendanceReady || saving) return;
     const previous = attendance;
     const value = attendance === next ? null : next;
@@ -1989,6 +1990,8 @@ export function EventDetailPage() {
             {attendance === 'going' && <CheckCircle size={18} weight="fill" />} Going
           </button>}
           {!past && <button className={attendance === 'interested' ? 'button button--primary' : 'button button--secondary'} type="button" disabled={!attendanceReady || saving} onClick={() => void changeAttendance('interested')}>Interested</button>}
+          {past && attendance !== 'attended' && <button className="button button--primary" type="button" disabled={!attendanceReady || saving} onClick={() => void changeAttendance('attended')}><CheckCircle size={18} /> I was there</button>}
+          {past && attendance === 'attended' && <Link className="button button--primary" to={`/recap/${event.id}`}><Sparkle size={18} /> Create recap</Link>}
           <button className="button button--secondary button--icon" type="button" onClick={() => void share()} aria-label="Share show"><ShareNetwork size={19} /></button>
           {!past && <button className={saved ? 'button button--secondary is-selected' : 'button button--secondary'} type="button" disabled={!savedReady || Boolean(actionPending)} onClick={() => void toggleSaved()}>
             <BookmarkSimple size={18} weight={saved ? 'fill' : 'regular'} /> {saved ? 'Saved' : 'Save show'}

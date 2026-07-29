@@ -13,10 +13,11 @@ Last updated: 2026-07-28
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — owner-only signed-in parity preview v6 is live; production is unchanged
+**Status:** ACTIVE — design-first History parity slice in progress; production is unchanged
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None. Last session: Codex corrected the signed-in Claude design and owner-only runtime preview with the full Prism brand/location picker, working event rails, dark attributed web map, and uniform image-forward event cards. No production route, backend schema, or data changed.
+- **Owner:** Codex (`codex-2026-07-28-web-show-history`)
+- **Working on:** revising the existing Claude History 4A/4B states first, then extending the current My Shows/history layouts with browser-native `.ics` import, editable local show media, and recap authoring. Production routes, backend schema/data, and the public website remain out of scope.
 
 ## Current status
 ### What works

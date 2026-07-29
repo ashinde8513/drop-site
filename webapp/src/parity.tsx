@@ -1,26 +1,47 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Bell } from '@phosphor-icons/react/Bell';
 import { BookmarkSimple } from '@phosphor-icons/react/BookmarkSimple';
 import { CalendarDots } from '@phosphor-icons/react/CalendarDots';
 import { CaretRight } from '@phosphor-icons/react/CaretRight';
 import { ChatCircleDots } from '@phosphor-icons/react/ChatCircleDots';
 import { Check } from '@phosphor-icons/react/Check';
+import { CheckCircle } from '@phosphor-icons/react/CheckCircle';
 import { CircleNotch } from '@phosphor-icons/react/CircleNotch';
 import { Clock } from '@phosphor-icons/react/Clock';
+import { DownloadSimple } from '@phosphor-icons/react/DownloadSimple';
 import { FlagBanner } from '@phosphor-icons/react/FlagBanner';
+import { ImageSquare } from '@phosphor-icons/react/ImageSquare';
 import { MapPin } from '@phosphor-icons/react/MapPin';
 import { MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass';
+import { PencilSimple } from '@phosphor-icons/react/PencilSimple';
 import { Plus } from '@phosphor-icons/react/Plus';
 import { ShareNetwork } from '@phosphor-icons/react/ShareNetwork';
 import { Sparkle } from '@phosphor-icons/react/Sparkle';
 import { Star } from '@phosphor-icons/react/Star';
 import { Ticket } from '@phosphor-icons/react/Ticket';
+import { Trash } from '@phosphor-icons/react/Trash';
+import { UploadSimple } from '@phosphor-icons/react/UploadSimple';
 import { UserPlus } from '@phosphor-icons/react/UserPlus';
 import { UsersThree } from '@phosphor-icons/react/UsersThree';
 import { WarningCircle } from '@phosphor-icons/react/WarningCircle';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
 import { containsDisallowed, coordinatesForCity, EventRail, loadEventById, loadEventCatalog, type DropEvent } from './discovery';
+import {
+  addHistoryMedia,
+  buildImportCandidates,
+  composeRatedNote,
+  createRecapPng,
+  downloadBlob,
+  eventCalendarDate,
+  listHistoryMedia,
+  normalizeHistoryText,
+  parseIcs,
+  parseRatedNote,
+  removeHistoryMedia,
+  type HistoryMedia,
+  type ImportCandidate,
+} from './lib/history';
 import { supabase } from './lib/supabase';
 import type { Profile } from './lib/account';
 
@@ -122,6 +143,12 @@ const EMPTY_SHOWS = {
   saved: new Set<string>(),
   past: [] as DropEvent[],
   logged: [] as LoggedShow[],
+  memoryByEvent: new Map<string, string>(),
+};
+const EMPTY_IMPORT_SHOWS = {
+  ...EMPTY_SHOWS,
+  artists: [] as Array<{ name: string }>,
+  venues: [] as Array<{ venue_name: string; city: string | null; state: string | null }>,
 };
 
 function useLoad<T>(key: string, empty: T, loader: () => Promise<T>, background = false) {
@@ -471,13 +498,99 @@ async function loadShows(userId: string) {
     supabase.from('logged_shows').select('id,event_id,artist_name,venue_name,city,state,show_date,notes').eq('user_id', userId).order('show_date', { ascending: false }),
   ]);
   if (attendanceResult.error || savedResult.error || pastResult.error || loggedResult.error) throw attendanceResult.error || savedResult.error || pastResult.error || loggedResult.error;
+  const logged = (loggedResult.data ?? []) as LoggedShow[];
   return {
     catalog,
     attendance: new Map((attendanceResult.data ?? []).map((row) => [row.event_id, row.status])),
     saved: new Set((savedResult.data ?? []).map((row) => row.event_id)),
     past: (pastResult.data ?? []).map((row: any) => row.events).filter(Boolean).map(eventFromRow),
-    logged: (loggedResult.data ?? []).filter((show) => !show.event_id) as LoggedShow[],
+    logged: logged.filter((show) => !show.event_id),
+    memoryByEvent: new Map(logged.flatMap((show) => show.event_id ? [[show.event_id, show.id] as const] : [])),
   };
+}
+
+async function loadImportShows(userId: string) {
+  const [shows, artists, knownVenues] = await Promise.all([
+    loadShows(userId),
+    supabase.from('artists').select('name').is('canonical_artist_id', null).order('name').limit(5000),
+    supabase.rpc('list_known_venues', { p_city_hint: null }),
+  ]);
+  if (artists.error) throw artists.error;
+  let venues = knownVenues.error ? null : knownVenues.data;
+  if (!venues) {
+    const fallback = await supabase.from('events').select('venue_name,city,state').not('venue_name', 'is', null).order('date', { ascending: false }).limit(1000);
+    if (fallback.error) throw fallback.error;
+    const seen = new Set<string>();
+    venues = (fallback.data ?? []).filter((row) => {
+      const key = `${row.venue_name?.trim().toLowerCase()}|${row.city?.trim().toLowerCase()}`;
+      if (!row.venue_name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  return {
+    ...shows,
+    artists: (artists.data ?? []) as Array<{ name: string }>,
+    venues: venues as Array<{ venue_name: string; city: string | null; state: string | null }>,
+  };
+}
+
+async function saveQuickRating(userId: string, eventId: string, rating: number) {
+  const existing = await supabase.from('show_ratings')
+    .select('notes,is_public,is_anonymous')
+    .eq('user_id', userId)
+    .eq('event_id', eventId)
+    .maybeSingle();
+  if (existing.error) return existing.error;
+  const result = await supabase.from('show_ratings').upsert({
+    user_id: userId,
+    event_id: eventId,
+    rating,
+    is_public: existing.data?.notes?.trim() ? existing.data.is_public : false,
+    is_anonymous: existing.data?.notes?.trim() ? existing.data.is_anonymous : false,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,event_id' });
+  return result.error;
+}
+
+async function linkPastImportCandidates(candidates: ImportCandidate[]) {
+  const linked = candidates.map((candidate) => ({ ...candidate, eventId: null }));
+  const queue = candidates.map((candidate, index) => ({ candidate, index }));
+  await Promise.all(Array.from({ length: Math.min(5, queue.length) }, async () => {
+    for (let item = queue.shift(); item; item = queue.shift()) {
+      const terms = [item.candidate.artist, item.candidate.venue, item.candidate.title]
+        .filter((term): term is string => Boolean(term))
+        .map((term) => term.trim().replace(/[,()%*\\]/g, ''))
+        .filter((term) => term.length >= 3);
+      if (!terms.length) continue;
+      const day = new Date(`${item.candidate.date}T00:00:00Z`);
+      const from = new Date(day.getTime() - 12 * HOUR_MS).toISOString();
+      const to = new Date(day.getTime() + 36 * HOUR_MS).toISOString();
+      const result = await supabase.from('events')
+        .select('id,title,date,timezone,venue_name,event_artists(artists(name))')
+        .eq('status', 'published')
+        .lt('date', new Date().toISOString())
+        .gte('date', from)
+        .lt('date', to)
+        .or(terms.flatMap((term) => [`title.ilike.%${term}%`, `venue_name.ilike.%${term}%`]).join(','))
+        .limit(101);
+      if (result.error || !result.data?.length || result.data.length > 100) continue;
+      const identityTerms = [item.candidate.artist, item.candidate.title]
+        .filter((term): term is string => Boolean(term))
+        .map(normalizeHistoryText)
+        .filter((term) => term.length >= 3);
+      const matches = result.data.filter((event: any) => {
+        if (eventCalendarDate(event) !== item.candidate.date) return false;
+        const identity = [
+          event.title,
+          ...(event.event_artists ?? []).map((row: any) => row.artists?.name ?? ''),
+        ].map(normalizeHistoryText).filter(Boolean);
+        return identityTerms.some((term) => identity.some((value) => value.includes(term) || term.includes(value)));
+      });
+      if (matches.length === 1) linked[item.index] = { ...item.candidate, eventId: matches[0].id };
+    }
+  }));
+  return linked;
 }
 
 async function loadPlans(userId: string): Promise<PlanSummary[]> {
@@ -646,7 +759,10 @@ export function MyShowsPage() {
   const totalPast = past.length;
 
   return <section className="parity-page shows-page">
-    {pageHeading('YOUR LINEUP', 'My Shows', undefined, <Link className="button button--primary button--small" to="/log-show"><Plus size={16} /> Log a past show</Link>)}
+    {pageHeading('YOUR LINEUP', 'My Shows', undefined, <div className="heading-actions">
+      <Link className="button button--secondary button--small" to="/import-shows"><UploadSimple size={16} /> Import history</Link>
+      <Link className="button button--primary button--small" to="/log-show"><Plus size={16} /> Log a past show</Link>
+    </div>)}
     <Tabs options={['Upcoming', 'Saved', 'Past'] as const} value={tab} onChange={setTab} label="My Shows" />
     {state.status === 'ready' && tab === 'Upcoming' && events.length > 0 && <p className="parity-banner">You have <strong>{events.length}</strong> upcoming {events.length === 1 ? 'show' : 'shows'}.</p>}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && ((tab === 'Past' ? totalPast : events.length) === 0) ? {
@@ -656,13 +772,20 @@ export function MyShowsPage() {
     } : undefined}>
       <div className="parity-list">
         {tab !== 'Past' && events.map((event) => <EventRow key={event.id} event={event} to={`/event/${event.id}`} trailing={<span className="status-pill">{state.data.attendance.get(event.id) ?? 'Saved'}</span>} />)}
-        {tab === 'Past' && past.map((row) => row.kind === 'event'
-          ? <EventRow key={row.event.id} event={row.event} to={`/event/${row.event.id}`} trailing={<span className="status-pill">Attended</span>} />
-          : <Link className="parity-event-row" key={row.show.id} to={`/show/${row.show.id}`}>
-            <span className="parity-event-row__art"><Clock size={24} /></span>
-            <span className="parity-event-row__copy"><strong>{row.show.artist_name}</strong><small>{row.show.show_date} · {[row.show.venue_name, row.show.city, row.show.state].filter(Boolean).join(' · ')}</small></span>
-            <CaretRight size={18} />
-          </Link>)}
+        {tab === 'Past' && past.map((row, index) => {
+          const year = row.date.slice(0, 4);
+          const previousYear = past[index - 1]?.date.slice(0, 4);
+          return <div className="past-show-row" key={row.kind === 'event' ? row.event.id : row.show.id}>
+            {year !== previousYear && <h3>{year}</h3>}
+            {row.kind === 'event'
+              ? <EventRow event={row.event} to={state.data.memoryByEvent.has(row.event.id) ? `/show/${state.data.memoryByEvent.get(row.event.id)}` : `/event/${row.event.id}`} trailing={<span className="status-pill">Attended</span>} />
+              : <Link className="parity-event-row" to={`/show/${row.show.id}`}>
+                <span className="parity-event-row__art"><Clock size={24} /></span>
+                <span className="parity-event-row__copy"><strong>{row.show.artist_name}</strong><small>{row.show.show_date} · {[row.show.venue_name, row.show.city, row.show.state].filter(Boolean).join(' · ')}</small></span>
+                <CaretRight size={18} />
+              </Link>}
+          </div>;
+        })}
       </div>
     </PageState>
     <div className="feature-links">
@@ -670,6 +793,121 @@ export function MyShowsPage() {
       <Link to="/stats"><Star size={18} /> Drop Stats</Link>
       <Link to="/wrapped"><Sparkle size={18} /> Drop Wrapped</Link>
     </div>
+  </section>;
+}
+
+export function ImportShowsPage() {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const userId = auth.user?.id ?? '';
+  const [shows, retryShows] = useLoad(`import-shows:${userId}`, EMPTY_IMPORT_SHOWS, () => loadImportShows(userId));
+  const [candidates, setCandidates] = useState<ImportCandidate[]>([]);
+  const [selected, setSelected] = useState(new Set<string>());
+  const [fileName, setFileName] = useState('');
+  const [alreadyLogged, setAlreadyLogged] = useState(0);
+  const [notice, setNotice] = useState('');
+  const [pending, setPending] = useState(false);
+
+  async function readCalendar(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setNotice('');
+    if (file.size > 5 * 1024 * 1024 || (!file.name.toLowerCase().endsWith('.ics') && file.type !== 'text/calendar')) {
+      setNotice('Choose an .ics calendar file up to 5 MB.');
+      return;
+    }
+    try {
+      setPending(true);
+      const entries = parseIcs(await file.text());
+      const existing = [
+        ...shows.data.past.map((item) => ({ date: eventCalendarDate(item), title: item.title })),
+        ...shows.data.logged.map((item) => ({ date: item.show_date, title: item.artist_name })),
+      ];
+      const result = buildImportCandidates(entries, shows.data.catalog, existing, shows.data.artists, shows.data.venues);
+      setCandidates(result.candidates);
+      setSelected(new Set(result.candidates.filter((item) => item.confidence !== 'keyword').map((item) => item.key)));
+      setFileName(file.name);
+      setAlreadyLogged(result.alreadyLogged);
+      if (!result.candidates.length) setNotice(entries.length ? 'No likely past shows were found in that calendar.' : 'That file did not contain readable calendar events.');
+    } catch {
+      setNotice('Drop could not read that calendar file.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function toggle(key: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function importSelected() {
+    if (!userId || pending) return;
+    const rows = candidates.filter((item) => selected.has(item.key));
+    if (!rows.length) return setNotice('Choose at least one show to import.');
+    setPending(true);
+    setNotice('');
+    const linkedRows = await linkPastImportCandidates(rows);
+    let imported = 0;
+    let needsReview = 0;
+    for (const item of linkedRows) {
+      if (!item.eventId) {
+        needsReview += 1;
+        continue;
+      }
+      const result = await supabase.from('attendance').upsert(
+        { user_id: userId, event_id: item.eventId, status: 'attended' },
+        { onConflict: 'user_id,event_id' },
+      );
+      if (result.error) {
+        needsReview += 1;
+        continue;
+      }
+      imported += 1;
+    }
+    setPending(false);
+    if (needsReview) {
+      setNotice(`${imported} imported. ${needsReview} ${needsReview === 1 ? 'entry needs' : 'entries need'} manual review.`);
+      return;
+    }
+    navigate('/shows');
+  }
+
+  const grouped = candidates.reduce<Record<string, ImportCandidate[]>>((groups, item) => {
+    (groups[item.date.slice(0, 4)] ??= []).push(item);
+    return groups;
+  }, {});
+
+  return <section className="parity-page import-page">
+    {pageHeading('SHOW HISTORY', 'Import past shows', 'Your calendar file stays in this browser. After you confirm, selected show details are used to find matching Drop events.')}
+    {shows.status === 'error' ? <div className="parity-state parity-state--error" role="alert"><WarningCircle size={27} /><h2>Couldn’t prepare calendar import</h2><p>Drop could not load the private matching index.</p><button className="button button--secondary button--small" type="button" onClick={retryShows}>Retry</button></div> : <section className="import-dropzone">
+      <UploadSimple size={30} />
+      <h3>{fileName || 'Choose a calendar export'}</h3>
+      <p>.ics only · up to 5 MB</p>
+      <label className={`button button--primary${shows.status !== 'ready' ? ' is-disabled' : ''}`}>
+        <input type="file" accept=".ics,text/calendar" disabled={shows.status !== 'ready' || pending} onChange={(event) => void readCalendar(event)} />
+        {pending ? 'Matching…' : 'Browse files'}
+      </label>
+    </section>}
+    {alreadyLogged > 0 && <p className="parity-banner"><strong>{alreadyLogged}</strong> already logged {alreadyLogged === 1 ? 'show was' : 'shows were'} skipped.</p>}
+    {candidates.length > 0 && <section className="import-review" aria-labelledby="import-review-title">
+      <header><div><p>REVIEW</p><h3 id="import-review-title">{candidates.length} likely {candidates.length === 1 ? 'show' : 'shows'} found</h3></div><span>{selected.size} selected</span></header>
+      {Object.entries(grouped).map(([year, rows]) => <div className="import-year" key={year}>
+        <h4>{year}</h4>
+        {rows.map((item) => <label className="import-candidate" key={item.key}>
+          <input type="checkbox" checked={selected.has(item.key)} onChange={() => toggle(item.key)} aria-label={`Import ${item.title}`} />
+          <span><strong>{item.title}</strong><small>{item.date} · {item.location || item.venue || 'Location unavailable'}</small></span>
+          <em>{item.eventId ? 'Matched on Drop' : item.confidence === 'artist' ? 'Artist match' : item.confidence === 'venue' ? 'Venue match' : 'Possible show'}</em>
+        </label>)}
+      </div>)}
+      <footer><p>Only checked shows will be matched against Drop after confirmation. Existing matches import automatically; the rest stay unsaved for manual review.</p><button className="button button--primary" type="button" disabled={pending || !selected.size} onClick={() => void importSelected()}>{pending ? 'Importing…' : `Import ${selected.size} ${selected.size === 1 ? 'show' : 'shows'}`}</button></footer>
+    </section>}
+    {notice && <p className="status status--error" role="alert"><WarningCircle size={18} />{notice}</p>}
   </section>;
 }
 
@@ -758,22 +996,449 @@ export function LogShowPage() {
   </section>;
 }
 
-export function LoggedShowPage() {
-  const { showId = '' } = useParams();
-  const [state, retry] = useLoad(`logged:${showId}`, null as LoggedShow | null, async () => {
-    const { data, error } = await supabase.from('logged_shows').select('id,event_id,artist_name,venue_name,city,state,show_date,notes').eq('id', showId).maybeSingle();
-    if (error) throw error;
-    return data as LoggedShow | null;
+function useHistoryMedia(userId: string, showKey: string) {
+  const [media, setMedia] = useState<HistoryMedia[]>([]);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    void listHistoryMedia(userId, showKey)
+      .then((items) => { if (active) setMedia(items); })
+      .catch(() => { if (active) setError('Local media is unavailable in this browser.'); });
+    return () => { active = false; };
+  }, [showKey, userId]);
+  const urls = useMemo(() => media.map((item) => ({ item, url: URL.createObjectURL(item.blob) })), [media]);
+  useEffect(() => () => { for (const item of urls) URL.revokeObjectURL(item.url); }, [urls]);
+  return {
+    media,
+    urls,
+    error,
+    async add(files: File[]) {
+      try {
+        const result = await addHistoryMedia(userId, showKey, files);
+        setMedia(result.items);
+        setError(result.rejected ? `${result.rejected} ${result.rejected === 1 ? 'file was' : 'files were'} not saved. Use supported photos or videos within the 250 MB per-show limit.` : '');
+      } catch (nextError) {
+        setError(nextError instanceof Error ? `Those files could not be saved locally: ${nextError.message}` : 'Those files could not be saved locally.');
+      }
+    },
+    async remove(id: string) {
+      try {
+        await removeHistoryMedia(id);
+        setMedia((current) => current.filter((item) => item.id !== id));
+      } catch {
+        setError('That file could not be removed.');
+      }
+    },
+  };
+}
+
+function LocalMediaEditor({ history, imagesOnly = false, limit }: {
+  history: ReturnType<typeof useHistoryMedia>;
+  imagesOnly?: boolean;
+  limit?: number;
+}) {
+  const visible = limit ? history.urls.slice(0, limit) : history.urls;
+  return <section className="memory-section">
+    <header><div><p>ON THIS DEVICE</p><h3>Photos & videos</h3></div><label className="button button--secondary button--small"><input type="file" accept={imagesOnly ? 'image/*' : 'image/*,video/*'} multiple onChange={(event) => {
+      void history.add(Array.from(event.target.files ?? []));
+      event.target.value = '';
+    }} /><ImageSquare size={16} /> Add media</label></header>
+    <p className="privacy-note">Private to this browser. Drop does not upload this media.</p>
+    {visible.length
+      ? <div className="memory-media">{visible.map(({ item, url }) => <figure key={item.id}>
+        {item.type.startsWith('video/') ? <video src={url} controls preload="metadata" /> : <img src={url} alt="" />}
+        <button type="button" onClick={() => void history.remove(item.id)} aria-label={`Remove ${item.name}`}><Trash size={15} /></button>
+      </figure>)}</div>
+      : <div className="memory-media-empty"><ImageSquare size={25} /><span>Add a favorite moment from the night.</span></div>}
+    {limit && history.media.length > limit && <p className="privacy-note">The first {limit} photos are used in the recap.</p>}
+    {history.error && <p className="status status--error" role="alert">{history.error}</p>}
+  </section>;
+}
+
+type LoggedShowMemory = { show: LoggedShow; openers: string[]; rating: number };
+
+function LoggedShowContent({ memory }: { memory: LoggedShowMemory }) {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const userId = auth.user?.id ?? '';
+  const [show, setShow] = useState(memory.show);
+  const rated = useMemo(
+    () => show.event_id ? { rating: memory.rating, note: show.notes ?? '' } : parseRatedNote(show.notes),
+    [memory.rating, show.event_id, show.notes],
+  );
+  const [editing, setEditing] = useState(false);
+  const [artist, setArtist] = useState(show.artist_name);
+  const [venue, setVenue] = useState(show.venue_name ?? '');
+  const [city, setCity] = useState(show.city ?? '');
+  const [region, setRegion] = useState(show.state ?? '');
+  const [date, setDate] = useState(show.show_date.slice(0, 10));
+  const [note, setNote] = useState(rated.note);
+  const [rating, setRating] = useState(rated.rating);
+  const [openers, setOpeners] = useState(memory.openers.join(', '));
+  const [notice, setNotice] = useState('');
+  const [pending, setPending] = useState(false);
+  const [tagged, setTagged] = useState(new Set<string>());
+  const [tagStatus, setTagStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const friends = useLoad(`show-friends:${userId}`, EMPTY_FRIENDS, () => loadFriendEdges(userId, false))[0];
+  const history = useHistoryMedia(userId, show.event_id ? `event:${show.event_id}` : `logged:${show.id}`);
+  const tagColumn = show.event_id ? 'event_id' : 'logged_show_id';
+  const tagTarget = show.event_id ?? show.id;
+
+  useEffect(() => {
+    let active = true;
+    setTagStatus('loading');
+    void supabase.from('show_tags').select('tagged_user_id').eq('tagger_id', userId).eq(tagColumn, tagTarget)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setTagStatus('error');
+          return;
+        }
+        setTagged(new Set((data ?? []).map((row) => row.tagged_user_id)));
+        setTagStatus('ready');
+      });
+    return () => { active = false; };
+  }, [tagColumn, tagTarget, userId]);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    const cleanArtist = artist.trim();
+    if (!cleanArtist || !date) return setNotice('Artist and date are required.');
+    setPending(true);
+    setNotice('');
+    const next: LoggedShow = show.event_id
+      ? { ...show, notes: note.trim() || null }
+      : {
+        ...show,
+        artist_name: cleanArtist,
+        venue_name: venue.trim() || null,
+        city: city.trim() || null,
+        state: region.trim() || null,
+        show_date: date,
+        notes: composeRatedNote(rating, note),
+      };
+    const update = await supabase.from('logged_shows').update(show.event_id ? { notes: next.notes } : {
+      artist_name: next.artist_name,
+      venue_name: next.venue_name,
+      city: next.city,
+      state: next.state,
+      show_date: next.show_date,
+      notes: next.notes,
+    }).eq('id', show.id).eq('user_id', userId);
+    if (update.error) {
+      setPending(false);
+      setNotice(update.error.message);
+      return;
+    }
+    if (show.event_id && rating > 0) {
+      const ratingError = await saveQuickRating(userId, show.event_id, rating);
+      if (ratingError) {
+        setShow(next);
+        setPending(false);
+        setNotice(`Private note saved, but rating could not be updated: ${ratingError.message}`);
+        return;
+      }
+    }
+    if (!show.event_id) {
+      const openerRows = openers.split(/[\n,]/).map((name) => name.trim()).filter((name) => name && name.toLowerCase() !== cleanArtist.toLowerCase())
+        .map((artistName) => ({ artist_id: null, artist_name: artistName }));
+      const openerResult = await supabase.rpc('replace_logged_show_openers', { p_show_id: show.id, p_openers: openerRows });
+      if (openerResult.error) {
+        setShow(next);
+        setPending(false);
+        setNotice(`Show details saved, but lineup could not be updated: ${openerResult.error.message}`);
+        return;
+      }
+    }
+    if (tagStatus !== 'ready') {
+      setShow(next);
+      setPending(false);
+      setEditing(false);
+      setNotice('Show saved, but friend tags were unavailable and were left unchanged.');
+      return;
+    }
+    const existing = await supabase.from('show_tags').select('tagged_user_id').eq('tagger_id', userId).eq(tagColumn, tagTarget);
+    if (existing.error) {
+      setShow(next);
+      setPending(false);
+      setEditing(false);
+      setNotice(`Show saved, but friend tags could not be checked: ${existing.error.message}`);
+      return;
+    }
+    const before = new Set((existing.data ?? []).map((row) => row.tagged_user_id));
+    const added = [...tagged].filter((id) => !before.has(id));
+    const removed = [...before].filter((id) => !tagged.has(id));
+    const addResult = added.length ? await supabase.from('show_tags').insert(added.map((taggedUserId) => ({
+      tagger_id: userId,
+      tagged_user_id: taggedUserId,
+      logged_show_id: show.event_id ? null : show.id,
+      event_id: show.event_id,
+      artist_name: next.artist_name,
+      venue_name: next.venue_name,
+      city: next.city,
+      state: next.state,
+      show_date: next.show_date,
+      status: 'pending',
+    }))) : { error: null };
+    const removeResult = !addResult.error && removed.length
+      ? await supabase.from('show_tags').delete().eq('tagger_id', userId).eq(tagColumn, tagTarget).in('tagged_user_id', removed)
+      : { error: null };
+    if (removeResult.error && added.length) {
+      await supabase.from('show_tags').delete().eq('tagger_id', userId).eq(tagColumn, tagTarget).in('tagged_user_id', added);
+    }
+    setShow(next);
+    setPending(false);
+    setEditing(false);
+    const tagError = removeResult.error || addResult.error;
+    setNotice(tagError ? `Show saved, but friend tags could not be updated: ${tagError.message}` : 'Show memory saved.');
+  }
+
+  async function shareShow() {
+    const shareData = { title: `${show.artist_name} · Drop`, text: `${show.artist_name} at ${show.venue_name || 'a live show'} on ${show.show_date}`, url: window.location.href };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setNotice('Link copied.');
+    } catch {
+      setNotice('Could not share this show.');
+    }
+  }
+
+  async function removeShow() {
+    if (!window.confirm('Remove this show from your history? Local photos and videos stay on this device.')) return;
+    setPending(true);
+    const { error } = await supabase.rpc('delete_past_show', { p_logged_show_id: show.id });
+    setPending(false);
+    if (error) return setNotice(error.message);
+    navigate('/shows');
+  }
+
+  const toggleTag = (id: string) => setTagged((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
   });
-  return <section className="parity-page">
+
+  return <>
+    <article className="show-memory">
+      <p>SHOW MEMORY · {show.show_date}</p>
+      <h2>{show.artist_name}</h2>
+      <span>{[show.venue_name, show.city, show.state].filter(Boolean).join(' · ')}</span>
+      {rating > 0 && <strong className="memory-rating">{rating / 2}/5 ★</strong>}
+      {rated.note && <blockquote>{rated.note}</blockquote>}
+      <div className="memory-actions">
+        <button className="button button--primary" type="button" onClick={() => setEditing(true)}><PencilSimple size={17} /> Edit memory</button>
+        <button className="button button--secondary" type="button" onClick={() => void shareShow()}><ShareNetwork size={17} /> Share</button>
+        {show.event_id && <Link className="button button--secondary" to={`/recap/${show.event_id}`}><Sparkle size={17} /> Create recap</Link>}
+      </div>
+    </article>
+    {editing && <form className="parity-form memory-form" onSubmit={(event) => void save(event)}>
+      <header><h3>Edit show details</h3><button type="button" onClick={() => setEditing(false)} aria-label="Close edit form">Cancel</button></header>
+      {show.event_id
+        ? <p className="privacy-note">Shared event details stay unchanged. Your rating, private note, friend tags, and device media remain editable.</p>
+        : <>
+          <label><span>Artist or event</span><input value={artist} required maxLength={120} onChange={(event) => setArtist(event.target.value)} /></label>
+          <label><span>Other artists</span><input value={openers} maxLength={500} placeholder="Comma-separated" onChange={(event) => setOpeners(event.target.value)} /></label>
+          <label><span>Date</span><input type="date" value={date} required onChange={(event) => setDate(event.target.value)} /></label>
+          <label><span>Venue</span><input value={venue} maxLength={120} onChange={(event) => setVenue(event.target.value)} /></label>
+          <div className="field-row"><label><span>City</span><input value={city} maxLength={80} onChange={(event) => setCity(event.target.value)} /></label><label><span>State</span><input value={region} maxLength={30} onChange={(event) => setRegion(event.target.value)} /></label></div>
+        </>}
+      <label><span>Rating</span><select aria-label="Rating" value={rating} onChange={(event) => setRating(Number(event.target.value))}><option value={0} disabled={Boolean(show.event_id && rating > 0)}>Not rated</option>{Array.from({ length: 10 }, (_, index) => <option key={index + 1} value={index + 1}>{(index + 1) / 2}/5</option>)}</select></label>
+      <label><span>Private note</span><textarea value={note} rows={4} maxLength={500} onChange={(event) => setNote(event.target.value)} /></label>
+      {tagStatus === 'ready' && friends.data.friends.length > 0 && <fieldset className="friend-picker"><legend>Who were you with?</legend>{friends.data.friends.map((edge) => <label key={edge.profile.id}><input type="checkbox" checked={tagged.has(edge.profile.id)} onChange={() => toggleTag(edge.profile.id)} />{personName(edge.profile)}</label>)}</fieldset>}
+      {tagStatus !== 'ready' && <p className="privacy-note">{tagStatus === 'loading' ? 'Loading friend tags…' : 'Friend tags are unavailable. Saving will leave existing tags unchanged.'}</p>}
+      <button className="button button--primary" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save changes'}</button>
+    </form>}
+    <LocalMediaEditor history={history} />
+    {notice && <p className={`status ${notice.endsWith('saved.') || notice.endsWith('copied.') ? 'status--success' : 'status--error'}`} role="status">{notice}</p>}
+    <button className="text-danger" type="button" disabled={pending} onClick={() => void removeShow()}><Trash size={15} /> Remove from history</button>
+  </>;
+}
+
+export function LoggedShowPage() {
+  const auth = useAuth();
+  const { showId = '' } = useParams();
+  const userId = auth.user?.id ?? '';
+  const [state, retry] = useLoad(`logged:${showId}:${userId}`, null as LoggedShowMemory | null, async () => {
+    const [showResult, openerResult] = await Promise.all([
+      supabase.from('logged_shows').select('id,event_id,artist_name,venue_name,city,state,show_date,notes').eq('id', showId).maybeSingle(),
+      supabase.from('logged_show_artists').select('artist_name').eq('logged_show_id', showId),
+    ]);
+    if (showResult.error || openerResult.error) throw showResult.error || openerResult.error;
+    if (!showResult.data) return null;
+    const show = showResult.data as LoggedShow;
+    const ratingResult = show.event_id
+      ? await supabase.from('show_ratings').select('rating').eq('user_id', userId).eq('event_id', show.event_id).maybeSingle()
+      : { data: null, error: null };
+    if (ratingResult.error) throw ratingResult.error;
+    return { show, openers: (openerResult.data ?? []).map((row) => row.artist_name), rating: Number(ratingResult.data?.rating ?? 0) };
+  });
+  return <section className="parity-page memory-page">
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && !state.data ? { title: 'Show not found', body: 'This logged show is no longer available.' } : undefined}>
-      {state.data && <article className="show-memory">
-        <p>SHOW MEMORY · {state.data.show_date}</p>
-        <h2>{state.data.artist_name}</h2>
-        <span>{[state.data.venue_name, state.data.city, state.data.state].filter(Boolean).join(' · ')}</span>
-        {state.data.notes && <blockquote>{state.data.notes}</blockquote>}
-      </article>}
+      {state.data && <LoggedShowContent memory={state.data} />}
     </PageState>
+  </section>;
+}
+
+type RecapSeenArtist = { id: string; artist_id: string | null; artist_name: string };
+type RecapData = {
+  event: DropEvent;
+  attended: boolean;
+  rating: number;
+  artists: RecapSeenArtist[];
+  crew: Array<{ id: string; first_name?: string; display_name?: string; confirmed?: boolean }>;
+};
+
+export function RecapPage() {
+  const auth = useAuth();
+  const { eventId = '' } = useParams();
+  const userId = auth.user?.id ?? '';
+  const [refresh, setRefresh] = useState(0);
+  const [artistDraft, setArtistDraft] = useState('');
+  const [notice, setNotice] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [state, retry] = useLoad(`recap:${eventId}:${userId}:${refresh}`, null as RecapData | null, async () => {
+    const [event, attendance, rating, seen, crew] = await Promise.all([
+      loadEventById(eventId),
+      supabase.from('attendance').select('status').eq('user_id', userId).eq('event_id', eventId).maybeSingle(),
+      supabase.from('show_ratings').select('rating').eq('user_id', userId).eq('event_id', eventId).maybeSingle(),
+      supabase.from('event_seen_artists').select('id,artist_id,artist_name').eq('user_id', userId).eq('event_id', eventId).order('created_at'),
+      supabase.rpc('recap_crew_for', { p_event: eventId }),
+    ]);
+    if (attendance.error || rating.error || seen.error) throw attendance.error || rating.error || seen.error;
+    return event ? {
+      event,
+      attended: attendance.data?.status === 'attended',
+      rating: Number(rating.data?.rating ?? 0),
+      artists: (seen.data ?? []) as RecapSeenArtist[],
+      crew: (crew.error ? [] : crew.data ?? []) as RecapData['crew'],
+    } : null;
+  });
+  const history = useHistoryMedia(userId, `event:${eventId}`);
+  const event = state.data?.event;
+  const recapAvailable = Boolean(event && eventInterval(event).end < Date.now());
+  const lineup = event?.event_artists.map((row) => row.artists?.name).filter((name): name is string => Boolean(name)) ?? [];
+  const allArtists = [...lineup, ...(state.data?.artists.map((item) => item.artist_name) ?? [])];
+  const crewNames = state.data?.crew.filter((item) => item.confirmed === true).map((item) => item.first_name || item.display_name || '').filter(Boolean) ?? [];
+  const recapUrls = history.urls.filter(({ item }) => item.type.startsWith('image/')).slice(0, 4);
+  const sharingNavigator = navigator as unknown as {
+    share?: (data: ShareData) => Promise<void>;
+    canShare?: (data: ShareData) => boolean;
+  };
+  const shareFilesAvailable = typeof sharingNavigator.share === 'function' && typeof sharingNavigator.canShare === 'function';
+
+  async function confirmAttendance() {
+    if (!event || eventInterval(event).end >= Date.now()) return setNotice('Recaps unlock after the show ends.');
+    const { error } = await supabase.from('attendance').upsert({ user_id: userId, event_id: eventId, status: 'attended' }, { onConflict: 'user_id,event_id' });
+    if (error) return setNotice(error.message);
+    setRefresh((value) => value + 1);
+  }
+
+  async function setRating(value: number) {
+    const error = await saveQuickRating(userId, eventId, value);
+    if (error) return setNotice(error.message);
+    setRefresh((current) => current + 1);
+  }
+
+  async function addArtist(event: FormEvent) {
+    event.preventDefault();
+    const name = artistDraft.trim();
+    if (!name) return;
+    const { error } = await supabase.from('event_seen_artists').insert({ user_id: userId, event_id: eventId, artist_id: null, artist_name: name });
+    if (error) return setNotice(error.message);
+    setArtistDraft('');
+    setRefresh((value) => value + 1);
+  }
+
+  async function removeArtist(id: string) {
+    const { error } = await supabase.from('event_seen_artists').delete().eq('id', id).eq('user_id', userId);
+    if (error) return setNotice(error.message);
+    setRefresh((value) => value + 1);
+  }
+
+  async function shareRecap() {
+    if (!event || sharing) return;
+    setSharing(true);
+    setNotice('');
+    try {
+      const freshCrew = await supabase.rpc('recap_crew_for', { p_event: eventId });
+      const exportCrew = (freshCrew.error ? [] : freshCrew.data ?? [])
+        .filter((item: any) => item.confirmed === true)
+        .map((item: any) => item.first_name || item.display_name || '')
+        .filter(Boolean);
+      const blob = await createRecapPng({
+        title: event.title,
+        venue: event.venue_name || 'Venue TBA',
+        date: formatEventDate(event, true),
+        rating: state.data?.rating ?? 0,
+        artists: allArtists,
+        crew: exportCrew,
+        media: history.media,
+      });
+      const file = new File([blob], 'drop-recap.png', { type: 'image/png' });
+      const canShareFile = shareFilesAvailable && sharingNavigator.canShare!({ files: [file] });
+      let shared = false;
+      if (canShareFile) {
+        try {
+          await sharingNavigator.share!({ title: `${event.title} recap`, text: 'From that night on Drop', files: [file] });
+          shared = true;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+          downloadBlob(blob, `${event.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-drop-recap.png`);
+        }
+      } else {
+        downloadBlob(blob, `${event.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-drop-recap.png`);
+      }
+      setNotice(shared ? 'Recap shared.' : 'Recap downloaded.');
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) setNotice('Could not create that recap.');
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return <section className="parity-page recap-page">
+    <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && !state.data ? { title: 'Show not found', body: 'This event is unavailable.' } : undefined}>
+      {state.data && !recapAvailable && <section className="recap-gate">
+        <Sparkle size={30} />
+        <h2>Recaps unlock after the show</h2>
+        <p>Come back after {formatEventDate(state.data.event, true)} to save the night.</p>
+      </section>}
+      {state.data && recapAvailable && !state.data.attended && <section className="recap-gate">
+        <Sparkle size={30} />
+        <h2>Were you at {state.data.event.title}?</h2>
+        <p>Confirm you attended before creating a recap.</p>
+        <button className="button button--primary" type="button" onClick={() => void confirmAttendance()}>I was there</button>
+      </section>}
+      {state.data?.attended && recapAvailable && <div className="recap-layout">
+        <div className="recap-preview">
+          <div className={`recap-preview__media recap-preview__media--${Math.min(4, Math.max(1, recapUrls.length))}`}>
+            {recapUrls.map(({ item, url }) => <img key={item.id} src={url} alt="" />)}
+          </div>
+          <div className="recap-preview__copy"><p>FROM THAT NIGHT · DROP</p><h2>{state.data.event.title}</h2><span>{formatEventDate(state.data.event, true)} · {state.data.event.venue_name || 'Venue TBA'}</span><strong>{state.data.rating ? `${state.data.rating / 2}/5 ★` : 'A night worth remembering'}</strong></div>
+        </div>
+        <div className="recap-controls">
+          {pageHeading('SHOW RECAP', 'Build your recap', 'Choose moments from this device, add what you saw, then share or download.')}
+          <LocalMediaEditor history={history} imagesOnly limit={4} />
+          <section className="memory-section"><header><div><p>YOUR RATING</p><h3>How was the night?</h3></div></header><div className="rating-strip">{Array.from({ length: 10 }, (_, index) => <button className={state.data?.rating === index + 1 ? 'is-active' : ''} type="button" key={index + 1} onClick={() => void setRating(index + 1)} aria-label={`Rate ${(index + 1) / 2} out of 5`}>{(index + 1) / 2}</button>)}</div></section>
+          <section className="memory-section"><header><div><p>ARTISTS YOU SAW</p><h3>{allArtists.join(' · ') || 'Add the lineup'}</h3></div></header>
+            {state.data.artists.length > 0 && <div className="seen-artists">{state.data.artists.map((item) => <span key={item.id}>{item.artist_name}<button type="button" onClick={() => void removeArtist(item.id)} aria-label={`Remove ${item.artist_name}`}><Trash size={13} /></button></span>)}</div>}
+            <form className="quick-create" onSubmit={(submitEvent) => void addArtist(submitEvent)}><input value={artistDraft} onChange={(inputEvent) => setArtistDraft(inputEvent.target.value)} maxLength={120} placeholder="Surprise guest or opener" aria-label="Add an artist you saw" /><button className="button button--secondary button--small" type="submit">Add</button></form>
+          </section>
+          {crewNames.length > 0 && <p className="privacy-note">Crew: {crewNames.join(', ')}. Consent is rechecked before export.</p>}
+          <button className="button button--primary recap-share" type="button" disabled={sharing} onClick={() => void shareRecap()}>{sharing ? <CircleNotch className="spin" size={18} /> : shareFilesAvailable ? <ShareNetwork size={18} /> : <DownloadSimple size={18} />}{sharing ? 'Creating…' : shareFilesAvailable ? 'Share recap' : 'Download recap'}</button>
+        </div>
+      </div>}
+    </PageState>
+    {notice && <p className={`status ${notice.endsWith('shared.') || notice.endsWith('downloaded.') ? 'status--success' : 'status--error'}`} role="status">{notice}</p>}
   </section>;
 }
 
@@ -1349,7 +2014,7 @@ export function HistoryPage({ mode = 'history' }: { mode?: 'history' | 'stats' |
     {pageHeading(mode === 'history' ? 'SHOW HISTORY' : mode === 'stats' ? 'YOUR NUMBERS' : 'DROP WRAPPED', mode === 'history' ? 'Seen History' : mode === 'stats' ? 'Drop Stats' : range === 'All time' ? 'Your life in shows' : `Your ${currentYear} in shows`, undefined, mode === 'wrapped' ? <button className="button button--primary button--small" type="button" onClick={() => void share()}><ShareNetwork size={16} /> Share</button> : undefined)}
     {mode !== 'history' && <Tabs options={['This year', 'All time'] as const} value={range} onChange={setRange} label={`${mode} range`} />}
     <PageState status={state.status} onRetry={retry} empty={state.status === 'ready' && total === 0 ? { title: 'Your history is waiting', body: 'Attend or log a show to unlock this screen.', icon: <Sparkle size={28} /> } : undefined}>
-      {mode === 'history' ? <div className="history-list">{[...events.map((event) => ({ date: event.date, title: event.title, place: eventPlace(event), to: `/event/${event.id}` })), ...logged.map((show) => ({ date: show.show_date, title: show.artist_name, place: [show.venue_name, show.city, show.state].filter(Boolean).join(' · '), to: `/show/${show.id}` }))].sort((a, b) => b.date.localeCompare(a.date)).map((item) => <Link key={`${item.to}:${item.date}`} to={item.to}><time>{item.date.slice(0, 4)}</time><span><strong>{item.title}</strong><small>{item.date.slice(0, 10)} · {item.place}</small></span><CaretRight size={17} /></Link>)}</div> : <div className="stats-grid">
+      {mode === 'history' ? <div className="history-list">{[...events.map((event) => ({ date: event.date, title: event.title, place: eventPlace(event), to: state.data.memoryByEvent.has(event.id) ? `/show/${state.data.memoryByEvent.get(event.id)}` : `/event/${event.id}` })), ...logged.map((show) => ({ date: show.show_date, title: show.artist_name, place: [show.venue_name, show.city, show.state].filter(Boolean).join(' · '), to: `/show/${show.id}` }))].sort((a, b) => b.date.localeCompare(a.date)).map((item) => <Link key={`${item.to}:${item.date}`} to={item.to}><time>{item.date.slice(0, 4)}</time><span><strong>{item.title}</strong><small>{item.date.slice(0, 10)} · {item.place}</small></span><CaretRight size={17} /></Link>)}</div> : <div className="stats-grid">
         <article><strong>{total}</strong><span>Shows</span></article><article><strong>{artistCounts.size}</strong><span>Artists</span></article><article><strong>{cityCounts.size}</strong><span>Cities</span></article>
         <section><h3>Top artists</h3>{topArtists.map(([name, count], index) => <p key={name}><b>{index + 1}</b><span>{name}</span><strong>{count}x</strong></p>)}</section>
         <section><h3>Top cities</h3>{topCities.map(([name, count], index) => <p key={name}><b>{index + 1}</b><span>{name}</span><strong>{count}</strong></p>)}</section>

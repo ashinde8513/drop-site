@@ -6,6 +6,7 @@ const STORAGE_KEY = 'sb-ebccwnkmsnhbljxxxdej-auth-token';
 type MockOptions = {
   actionReadError?: boolean;
   alreadyCheckedIn?: boolean;
+  attendedEvent?: boolean;
   alertOverflow?: boolean;
   blockError?: boolean;
   blockedFriend?: boolean;
@@ -40,10 +41,12 @@ type MockOptions = {
   invitedPlan?: boolean;
   crewCapReached?: boolean;
   activeBeyondGrace?: boolean;
+  ambiguousArchive?: boolean;
   sameDayReminder?: boolean;
   savedEvent?: boolean;
   singleUnlinkedOffer?: boolean;
   tbdEvent?: boolean;
+  tagReadError?: boolean;
   usernameAvailable?: boolean;
 };
 
@@ -201,6 +204,8 @@ const friendProfile = {
 async function mockSupabase(page: Page, authenticated = false, options: MockOptions = {}) {
   const mockedWrites: string[] = [];
   let setTimeReads = 0;
+  let recapRating = 0;
+  let recapSeenArtists: Array<{ id: string; artist_id: null; artist_name: string }> = [];
   let commentRows = options.commentOverflow
     ? Array.from({ length: 101 }, (_, index) => ({
       id: `comment-${index + 1}`,
@@ -302,7 +307,17 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(options.personalized ? [{ id: '00000000-0000-4000-8000-000000000002' }] : []),
+        body: JSON.stringify(options.personalized ? [
+          { id: friendProfile.id, display_name: friendProfile.display_name, confirmed: true },
+          { id: '00000000-0000-4000-8000-000000000003', display_name: 'Opted Out', confirmed: false },
+        ] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/rpc/list_known_venues') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ venue_name: 'Mission Ballroom', city: 'Denver', state: 'CO' }]),
       });
     }
     if (url.pathname === '/rest/v1/rpc/record_past_show') {
@@ -320,6 +335,9 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         });
       }
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"recorded","logged_show_id":"logged-1"}' });
+    }
+    if (url.pathname === '/rest/v1/rpc/replace_logged_show_openers' || url.pathname === '/rest/v1/rpc/delete_past_show') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
     }
     if (url.pathname === '/rest/v1/rpc/is_blocked_with') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(options.blockedByProfile === true) });
@@ -527,10 +545,18 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
     }
     if (url.pathname === '/rest/v1/events') {
+      const idFilter = url.searchParams.get('id');
       const dateFilters = url.searchParams.getAll('date');
       const isOfferCandidateQuery = dateFilters.some((value) => value.startsWith('gte.'))
         && dateFilters.some((value) => value.startsWith('lte.'));
-      const eventRows = isOfferCandidateQuery && options.detailFeatures
+      const isPastArchiveQuery = dateFilters.filter((value) => value.startsWith('lt.')).length >= 2
+        && dateFilters.some((value) => value.startsWith('gte.'));
+      const eventRows = isPastArchiveQuery && options.parityFeatures
+        ? [
+          { ...endedEvent, date: '2025-09-13T02:00:00.000Z' },
+          ...(options.ambiguousArchive ? [{ ...endedEvent, id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2025-09-13T02:00:00.000Z' }] : []),
+        ]
+        : isOfferCandidateQuery && options.detailFeatures
         ? [featureEvent, siblingFeatureEvent, wrongStateFeatureEvent]
         : options.activeBeyondGrace
           ? [{ ...festivalEvent, date: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(), end_date: null }]
@@ -568,7 +594,6 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
               : options.personalized
                 ? [dropEvent, coastEvent, morrisonEvent]
                 : [dropEvent];
-      const idFilter = url.searchParams.get('id');
       const filteredRows = idFilter ? eventRows.filter((event) => idFilter.includes(event.id)) : eventRows;
       return route.fulfill({
         status: 200,
@@ -588,6 +613,8 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
         contentType: 'application/json',
         body: JSON.stringify(withProfiles && options.parityFeatures
           ? [{ event_id: dropEvent.id, user_id: friendProfile.id, profiles: friendProfile }]
+          : options.attendedEvent
+          ? embedded ? [{ events: endedEvent }] : [{ event_id: endedEvent.id, status: 'attended' }]
           : options.ongoingEvent
           ? embedded
             ? [{ events: {
@@ -797,19 +824,56 @@ async function mockSupabase(page: Page, authenticated = false, options: MockOpti
       });
     }
     if (url.pathname === '/rest/v1/logged_shows') {
+      const row = {
+        id: 'logged-1',
+        event_id: options.canonicalLogged ? dropEvent.id : null,
+        artist_name: 'Lane 8',
+        venue_name: 'Red Rocks',
+        city: 'Morrison',
+        state: 'CO',
+        show_date: '2025-09-12',
+        notes: 'Sunset set.',
+      };
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(options.parityFeatures ? [{
-          id: 'logged-1',
-          event_id: options.canonicalLogged ? dropEvent.id : null,
-          artist_name: 'Lane 8',
-          venue_name: 'Red Rocks',
-          city: 'Morrison',
-          state: 'CO',
-          show_date: '2025-09-12',
-          notes: 'Sunset set.',
-        }] : []),
+        body: JSON.stringify(options.parityFeatures ? url.searchParams.has('id') ? row : [row] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/logged_show_artists') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(options.parityFeatures ? [{ artist_name: 'Sultan + Shepard' }] : []) });
+    }
+    if (url.pathname === '/rest/v1/show_ratings') {
+      if (method === 'POST' && (request.postDataJSON() as { event_id?: string }).event_id === endedEvent.id) {
+        recapRating = Number((request.postDataJSON() as { rating?: number }).rating ?? 0);
+        return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+      }
+      if (method === 'GET' && url.searchParams.get('event_id')?.includes(endedEvent.id)) return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(recapRating ? [{ rating: recapRating }] : []),
+      });
+    }
+    if (url.pathname === '/rest/v1/event_seen_artists' && (url.searchParams.get('event_id')?.includes(endedEvent.id) || method === 'POST')) {
+      if (method === 'POST') {
+        const body = request.postDataJSON() as { artist_name: string };
+        recapSeenArtists = [...recapSeenArtists, { id: `seen-${recapSeenArtists.length + 1}`, artist_id: null, artist_name: body.artist_name }];
+        return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(recapSeenArtists) });
+    }
+    if (url.pathname === '/rest/v1/show_tags' && method === 'GET' && options.tagReadError) {
+      return route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: '{"code":"PGRST000","details":null,"hint":null,"message":"mock unavailable"}',
+      });
+    }
+    if (url.pathname === '/rest/v1/show_tags' || url.pathname === '/rest/v1/event_seen_artists' || url.pathname === '/rest/v1/show_ratings' || url.pathname === '/rest/v1/recap_posts') {
+      return route.fulfill({
+        status: method === 'GET' ? 200 : method === 'DELETE' ? 204 : 201,
+        contentType: 'application/json',
+        body: method === 'DELETE' ? '' : '[]',
       });
     }
     if (url.pathname === '/rest/v1/user_tickets') {
@@ -1260,6 +1324,169 @@ test.describe('React parity preview foundation', () => {
     await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/rpc/record_past_show').length).toBe(2);
   });
 
+  test('calendar history import stays local until confirmed and saves only checked shows', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+    await openAppRoute(page, '/import-shows');
+    await expect(page.getByText(/selected show details are used to find matching Drop events/i)).toBeVisible();
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'concerts.ics',
+      mimeType: 'text/calendar',
+      buffer: Buffer.from([
+        'BEGIN:VCALENDAR',
+        'BEGIN:VEVENT',
+        'UID:neon-current-2025',
+        'DTSTART;TZID=America/Denver:20250912T200000',
+        'SUMMARY:Neon Current concert',
+        'LOCATION:Mission Ballroom',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n')),
+    });
+
+    await expect(page.getByRole('heading', { name: '1 likely show found' })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /import neon current concert/i })).toBeChecked();
+    await expect(page.getByText(/2025-09-12 · Mission Ballroom/)).toBeVisible();
+    expect(requests.some((url) => decodeURIComponent(url).includes('Neon Current concert'))).toBe(false);
+    await page.getByRole('button', { name: /import 1 show/i }).click();
+    await expect(page).toHaveURL(new RegExp(`${APP}/shows/?$`));
+    await expect.poll(() => writes.filter((entry) => entry === 'POST /rest/v1/attendance').length).toBe(1);
+  });
+
+  test('calendar history leaves ambiguous archive matches for manual review', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true, ambiguousArchive: true });
+    await openAppRoute(page, '/import-shows');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'concerts.ics',
+      mimeType: 'text/calendar',
+      buffer: Buffer.from([
+        'BEGIN:VCALENDAR',
+        'BEGIN:VEVENT',
+        'DTSTART;TZID=America/Denver:20250912T200000',
+        'SUMMARY:Neon Current concert',
+        'LOCATION:Mission Ballroom',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n')),
+    });
+    await page.getByRole('button', { name: /import 1 show/i }).click();
+    await expect(page.getByText(/1 entry needs manual review/i)).toBeVisible();
+    expect(writes).not.toContain('POST /rest/v1/attendance');
+  });
+
+  test('manual show memories can edit details, rating, lineup, tags, and device-local media', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    const payloads: Array<{ path: string; body: any }> = [];
+    page.on('request', (request) => {
+      const path = new URL(request.url()).pathname;
+      if (['/rest/v1/logged_shows', '/rest/v1/rpc/replace_logged_show_openers', '/rest/v1/show_tags'].includes(path) && request.method() !== 'GET') {
+        payloads.push({ path, body: request.postDataJSON() });
+      }
+    });
+    await openAppRoute(page, '/show/logged-1');
+
+    await expect(page.getByRole('heading', { name: 'Lane 8' })).toBeVisible();
+    await page.getByRole('button', { name: /edit memory/i }).click();
+    await page.getByLabel(/^venue$/i).fill('Mission Ballroom');
+    await page.getByLabel(/^rating$/i).selectOption('8');
+    await page.getByRole('checkbox', { name: 'Night Owl' }).check();
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByText('Show memory saved.')).toBeVisible();
+    await expect.poll(() => writes).toContain('PATCH /rest/v1/logged_shows');
+    await expect.poll(() => writes).toContain('POST /rest/v1/rpc/replace_logged_show_openers');
+    expect(payloads.find((item) => item.path === '/rest/v1/logged_shows')?.body).toMatchObject({
+      venue_name: 'Mission Ballroom',
+      notes: 'Rated 4/5 ★ — Sunset set.',
+    });
+    expect(payloads.find((item) => item.path === '/rest/v1/rpc/replace_logged_show_openers')?.body.p_openers).toEqual([
+      { artist_id: null, artist_name: 'Sultan + Shepard' },
+    ]);
+    expect(payloads.find((item) => item.path === '/rest/v1/show_tags')?.body[0]).toMatchObject({
+      tagged_user_id: friendProfile.id,
+      artist_name: 'Lane 8',
+    });
+
+    await page.locator('.memory-section input[type="file"]').setInputFiles({
+      name: 'night.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+    });
+    await expect(page.locator('.memory-media figure')).toHaveCount(1);
+    await page.locator('.memory-section input[type="file"]').setInputFiles({
+      name: 'not-media.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('not media'),
+    });
+    await expect(page.getByText(/1 file was not saved/i)).toBeVisible();
+    await expect(page.locator('.memory-media figure')).toHaveCount(1);
+  });
+
+  test('show memory saves leave existing tags unchanged when hydration fails', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true, tagReadError: true });
+    await openAppRoute(page, '/show/logged-1');
+    await page.getByRole('button', { name: /edit memory/i }).click();
+    await expect(page.getByText(/friend tags are unavailable/i)).toBeVisible();
+    await page.getByLabel(/^venue$/i).fill('Mission Ballroom');
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByText(/existing tags unchanged/i)).toBeVisible();
+    expect(writes.filter((entry) => entry.endsWith('/show_tags'))).toHaveLength(0);
+  });
+
+  test('direct recap access cannot mark a future show attended', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { parityFeatures: true });
+    await openAppRoute(page, `/recap/${dropEvent.id}`);
+    await expect(page.getByRole('heading', { name: /recaps unlock after the show/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /i was there/i })).toHaveCount(0);
+    expect(writes).not.toContain('POST /rest/v1/attendance');
+  });
+
+  test('attended shows create a privacy-safe local-first downloadable recap', async ({ page }) => {
+    const writes = await mockSupabase(page, true, { pastEvent: true, attendedEvent: true, personalized: true });
+    const payloads: Array<{ path: string; body: any }> = [];
+    page.on('request', (request) => {
+      const path = new URL(request.url()).pathname;
+      if (['/rest/v1/show_ratings', '/rest/v1/event_seen_artists'].includes(path) && request.method() === 'POST') {
+        payloads.push({ path, body: request.postDataJSON() });
+      }
+    });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async () => { throw new Error('mock share failure'); } });
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+    });
+    await openAppRoute(page, `/recap/${endedEvent.id}`);
+
+    await expect(page.getByRole('heading', { name: 'Build your recap' })).toBeVisible();
+    await expect(page.getByText(/Crew: Night Owl.*rechecked before export/i)).toBeVisible();
+    await expect(page.getByText('Opted Out', { exact: true })).toHaveCount(0);
+    const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+    await page.locator('.memory-section input[type="file"]').setInputFiles(Array.from({ length: 4 }, (_, index) => ({
+      name: `recap-${index + 1}.png`,
+      mimeType: 'image/png',
+      buffer: image,
+    })));
+    await expect(page.locator('.recap-preview__media img')).toHaveCount(4);
+    await page.getByRole('button', { name: 'Rate 4 out of 5' }).click();
+    await expect(page.getByRole('button', { name: 'Rate 4 out of 5' })).toHaveClass(/is-active/);
+    await page.getByRole('textbox', { name: /add an artist you saw/i }).fill('Surprise Guest');
+    await page.getByRole('button', { name: /^add$/i }).click();
+    await expect(page.getByRole('heading', { name: /Neon Current · Surprise Guest/ })).toBeVisible();
+    const crewReadsBeforeExport = writes.filter((entry) => entry === 'POST /rest/v1/rpc/recap_crew_for').length;
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: /share recap/i }).click();
+    const exported = await download;
+    const stream = await exported.createReadStream();
+    let bytes = 0;
+    for await (const chunk of stream) bytes += chunk.length;
+    expect(bytes).toBeGreaterThan(1_000);
+    await expect(page.getByText('Recap downloaded.')).toBeVisible();
+    expect(payloads.find((item) => item.path === '/rest/v1/show_ratings')?.body).toMatchObject({ rating: 8 });
+    expect(payloads.find((item) => item.path === '/rest/v1/event_seen_artists')?.body).toMatchObject({ artist_name: 'Surprise Guest' });
+    expect(writes.filter((entry) => entry === 'POST /rest/v1/rpc/recap_crew_for').length).toBeGreaterThan(crewReadsBeforeExport);
+    expect(writes).not.toContain('POST /rest/v1/recap_posts');
+  });
+
   test('blocked users are removed from friends, crews, and live presence', async ({ page }) => {
     await mockSupabase(page, true, { parityFeatures: true, blockedFriend: true });
     await page.goto(`${APP}/`);
@@ -1333,6 +1560,7 @@ test.describe('React parity preview foundation', () => {
     await page.getByRole('tab', { name: /^past$/i }).click();
     await expect(page.getByText('Lane 8', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Prism Nights', { exact: true })).toBeVisible();
+    await expect(page.locator('a[href$="/show/logged-1"]').filter({ hasText: 'Prism Nights' })).toBeVisible();
   });
 
   test('ongoing multi-day shows stay in the upcoming lineup', async ({ page }) => {
@@ -1907,6 +2135,29 @@ test.describe('React parity preview foundation', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const mockedWrites = await mockSupabase(page, true, { logoutFailure: true });
     await page.goto(`${APP}/`);
+    await page.evaluate((userId) => new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('drop-history-media', 2);
+      request.onupgradeneeded = () => {
+        const store = request.result.createObjectStore('media', { keyPath: 'id' });
+        store.createIndex('by-show', ['userId', 'showKey']);
+      };
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const transaction = request.result.transaction('media', 'readwrite');
+        transaction.objectStore('media').put({
+          id: 'delete-me',
+          userId,
+          showKey: 'logged:delete-me',
+          name: 'private.png',
+          type: 'image/png',
+          size: 1,
+          addedAt: Date.now(),
+          bytes: new ArrayBuffer(1),
+        });
+        transaction.oncomplete = () => { request.result.close(); resolve(); };
+        transaction.onerror = () => reject(transaction.error);
+      };
+    }), user.id);
 
     await page.getByRole('navigation', { name: /^primary$/i })
       .getByRole('link', { name: /^profile$/i }).click();
@@ -1925,5 +2176,14 @@ test.describe('React parity preview foundation', () => {
     await expect.poll(() => mockedWrites.filter((entry) => entry.includes('/delete-account')).length).toBe(1);
     await expect(page).toHaveURL(new RegExp(`${APP}/login/?$`));
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
+    await expect.poll(() => page.evaluate((userId) => new Promise<number>((resolve, reject) => {
+      const request = indexedDB.open('drop-history-media', 2);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const count = request.result.transaction('media').objectStore('media').index('by-show').count(IDBKeyRange.bound([userId, ''], [userId, '\uffff']));
+        count.onsuccess = () => { request.result.close(); resolve(count.result); };
+        count.onerror = () => reject(count.error);
+      };
+    }), user.id)).toBe(0);
   });
 });
