@@ -4,14 +4,15 @@
 
 No known actionable Critical, High, or Medium issue is unclassified within the audited scope. Every such issue is either fixed/invalid with evidence or explicitly approval-blocked with an owner and exact next action. This is not a claim that Drop has no defects.
 
-The owner-only preview and production were not changed. The verified client fixes are isolated on `qa/website-feature-matrix-20260729`; the matching migration/mobile changes are isolated on `qa/security-contracts-20260729`.
+The owner-only preview and client deployments were not changed. Founder-approved exact migration `20260729182349_social_mutation_contracts.sql` is now live in production Supabase; verified client fixes remain isolated on `qa/website-feature-matrix-20260729` and `qa/security-contracts-20260729`.
 
 ## Audited truth
 
 - Website behavior commit: `236b665fd73f97eaef39c9884addf49240b34aef`
 - Mobile/backend behavior commit: `b538a130af3940cd6a9cb01a37f07199fe117ad2`
 - Hosted evidence commit: `105b2d2e83e3373103da71c6b87bfc1ed7ae0608`
-- Exact migration: `20260729182349_social_mutation_contracts.sql`, SHA-256 `3c3857edc73b56f49a01dfe9db5aaad3baaa383ef3396fb216fae025d431e89f`; applied only to QA project `jrlqozbbrbivmzazuaic`, unapplied to production `ebccwnkmsnhbljxxxdej`
+- Exact migration: `20260729182349_social_mutation_contracts.sql`, SHA-256 `3c3857edc73b56f49a01dfe9db5aaad3baaa383ef3396fb216fae025d431e89f`; passed twice on QA project `jrlqozbbrbivmzazuaic`, then applied once to production `ebccwnkmsnhbljxxxdej` as version `20260729200633`, name `v20260729182349_social_mutation_contracts`
+- Production evidence commit: `712bd97cbed680bf0ec38da48a5c538a82e5f190`
 - Website `origin/main` merged into the audit branch: `7b9081118e3c95d89d7d127b367fba84ac3a3405`
 - Mobile reference `origin/main`, read-only: `62ba25546b1180969b46f423cc7f2240b9cc8140`
 - Canonical inventory: `docs/qa/feature-matrix.csv`
@@ -32,7 +33,7 @@ The dirty primary mobile checkout and unrelated TicketSauce adapter files were u
 - Founder source coverage: all `262/262` non-empty bullet requests are preserved exactly, including both nested bullets
 - Original-wording requirement-linked rows with SHA-256: 439 (`391` stories, `48` defect records)
 - Defects/blockers: 96 (`1` Critical, `10` High, `57` Medium, `28` Low)
-- Disposition: 17 fixed/invalid, 77 blocked/approval-required, 2 open Low measurement/maintenance risks. The three social defects pass local and isolated hosted QA but stay blocked because production is unchanged.
+- Disposition: 19 fixed/invalid, 75 blocked/approval-required, 2 open Low measurement/maintenance risks. Friendship acceptance and check-in authorization are fixed in production; crew remains blocked on corrected-client delivery because legacy direct grants and deployed multi-write clients remain.
 
 Historical requirements use only the requested classifications: Implemented, Partial, Missing, Deprecated, Duplicate, Conflicting, or Needs clarification. Sanitized historical Apple dispositions without current direct evidence are classified Needs clarification rather than being promoted to Passed.
 
@@ -50,6 +51,8 @@ Founder bullets beginning `- ` are stored with a spreadsheet-safe leading apostr
 - Hosted Supabase QA — Free-plan branching was unavailable, so a separate $0/month clean project `jrlqozbbrbivmzazuaic` was created. Target-dependent schema signatures were compared with production catalogs; exact migration hash `3c3857ed…431e89f` applied only there.
 - Hosted authorization/rollback matrix — 14 anonymous/requester/recipient/owner/non-owner/friend/nonfriend/both-block-direction/time-window/dedupe/failure-rollback checks passed twice. All fixture counts read back zero; catalog checks proved policies, trigger, column grants, fixed search path, and bounded RPC execution.
 - Supabase advisors — security ERROR count is zero after test-fixture RLS alignment. Remaining warnings are intentional bounded SECURITY DEFINER RPC/helpers; remaining INFO/performance notices belong to the minimal QA fixture.
+- Production Supabase apply/readback — founder-approved exact hash applied once as version `20260729200633`; project remained `ACTIVE_HEALTHY`. Migration history, RLS, recipient/pending friendship policies, old-policy removal, status-only update grant, enabled server-time/window trigger, either-direction block policy, authenticated-only fixed-search-path crew RPC, and function guards read back. Production security and performance advisors each reported zero ERRORs; target warnings are the intentionally callable bounded crew RPC and the existing own-plus-friends permissive check-in SELECT pair. The migration apply executed no application-row DML and verification queried catalogs only.
+- Final website closeout rerun — `npm run typecheck:webapp` and `npm run build:webapp` passed; `npm test` passed 295 with 1 intentional skip in 55.2 seconds. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed.
 - Connected owner-preview smoke — signed-in v10 Discover rendered with zero console warnings/errors. Full non-owner browser and full-schema authorization remain unavailable.
 - Focused review regressions — rejected writes, pending states, out-of-order search, delayed navigation, combobox scrolling, and deletion-modal focus passed in both projects.
 - `git diff --check` — passed.
@@ -83,16 +86,15 @@ The screenshots confirm centered uniform event collections with left-aligned hea
 - Added the exact recipient/pending friendship, server-time/event-window check-in, reverse-block privacy, and atomic crew contracts plus rollback tests in the isolated mobile/backend branch.
 - Updated both clients to require an accepted friendship row, omit client-authored check-in timestamps while the server overrides identity/time, and use the atomic crew RPC.
 - Reused the app's shared active-event fallback in Live Mode and disabled check-in outside the server-matching window.
-- Added versioned hosted baseline/matrix SQL, applied the exact migration only to isolated QA, and recorded twice-passing zero-residue authorization/rollback evidence.
+- Added versioned hosted baseline/matrix SQL, first applied the exact migration to isolated QA, and recorded twice-passing zero-residue authorization/rollback evidence.
+- Applied the separately approved exact hash once to production and recorded migration/catalog/grant/function/project/advisor readback without executing production application-row DML or delivering clients.
 
 ## Approval-required findings
 
-- `WEB-DEF-FRIEND-AUTH-001` (High): recipient/pending tests pass locally and in isolated hosted QA, but production remains exploitable. Founder must separately approve exact file `20260729182349_social_mutation_contracts.sql` for production project `ebccwnkmsnhbljxxxdej`.
-- `WEB-DEF-CHECKIN-AUTH-001` (High): server-time/window and both-block-direction privacy pass locally and in isolated hosted QA, but production remains exploitable. Same separate exact-file/project approval is required.
 - `WEB-DEF-DEPLOY-001` (High): a non-doc push to `main` enters the production deployment workflow; owner-only access is external. Founder/Release owner must decide the release lane.
-- `WEB-DEF-CREW-001` (Medium): atomic RPC and rollback tests pass locally and in isolated hosted QA, but production exposes no RPC. Separate exact-file/project approval and production readback must precede coordinated release.
+- `WEB-DEF-CREW-001` (Medium): atomic RPC and rollback tests pass and the RPC is live in production, but deployed clients still use the legacy multi-write path. Release owner must separately authorize exact corrected client heads; later direct-grant revocation is a separate reviewed cutover.
 - `WEB-DEF-CI-001` (Medium): explicit TypeScript checking is not in CI. Repository/CI owner approval is required; runner labels and trust boundaries must not change.
-- `WEB-DEF-TEST-001` and `WEB-BLK-BROWSER-001` (Medium): targeted social Auth-role/RLS/RPC and connected owner-preview smoke pass, but Free-plan QA is not a full schema clone; remaining history/plans/media/profile and non-owner browser authorization need approved test accounts after backend apply or a Pro/full-schema non-production target.
+- `WEB-DEF-TEST-001` and `WEB-BLK-BROWSER-001` (Medium): targeted social Auth-role/RLS/RPC is live and connected owner-preview smoke passes, but remaining history/plans/media/profile and non-owner browser authorization need explicitly approved test accounts before client release or a Pro/full-schema non-production target.
 
 The inherited mobile/backend requirement register contains additional approval-gated Critical/High/Medium findings. Their owners, reasons, and exact actions remain preserved row-by-row in the canonical matrix.
 
@@ -103,10 +105,10 @@ The inherited mobile/backend requirement register contains additional approval-g
 - End-to-end OAuth provider completion in the private preview.
 - Connected mobile-viewport preview screenshots and multi-account owner-only enforcement. The connected desktop owner/console smoke passed.
 - Original/raw Apple beta comments, screenshots, metadata, and a post-July-27 refresh.
-- Production data, migrations, functions, access controls, and deployment.
+- Production user-data behavior and multi-account browser journeys. Only the exact migration and catalog-level readback were performed; no application rows were queried or mutated by verification.
 
 ## Exact next three actions
 
-1. Founder explicitly approves applying exact file `20260729182349_social_mutation_contracts.sql` to production project `ebccwnkmsnhbljxxxdej`; non-production approval is not reusable.
-2. Backend/Security applies the exact SQL and reads back migration history, policies, trigger, column/function grants, plus a safe post-apply authorization smoke.
-3. Only after production evidence passes, coordinate the verified backend/mobile branch and owner-only website release; run remaining approved-account browser authorization journeys before widening access.
+1. Prepare immutable mobile/backend and owner-only website candidates from the verified branches; run required deterministic and self-hosted CI gates.
+2. With explicit test-account authorization, run owner/non-owner/blocked friendship, crew, Live Mode, profile/history, plan, and private-preview browser journeys; otherwise retain the linked blocked rows.
+3. Present exact heads/versions for separate merge, OTA, and owner-only Sites delivery authorization. Do not reuse the consumed database approval or widen production website exposure.

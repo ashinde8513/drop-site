@@ -20,6 +20,7 @@ BASELINE_WEBSITE_COMMIT = "25512a5c966dbc0ad93302291b768c19cea554ca"
 WEBSITE_COMMIT = "236b665fd73f97eaef39c9884addf49240b34aef"
 MOBILE_COMMIT = "b538a130af3940cd6a9cb01a37f07199fe117ad2"
 HOSTED_EVIDENCE_COMMIT = "105b2d2e83e3373103da71c6b87bfc1ed7ae0608"
+PRODUCTION_EVIDENCE_COMMIT = "712bd97cbed680bf0ec38da48a5c538a82e5f190"
 AUDIT_DATE = "2026-07-29"
 
 
@@ -115,7 +116,7 @@ def defect(
 ) -> dict[str, str]:
     tested_commit = last_tested_commit or WEBSITE_COMMIT
     source = f"drop-website-parity {WEBSITE_COMMIT}; read-only audit {AUDIT_DATE}"
-    if tested_commit in {MOBILE_COMMIT, HOSTED_EVIDENCE_COMMIT}:
+    if tested_commit in {MOBILE_COMMIT, HOSTED_EVIDENCE_COMMIT, PRODUCTION_EVIDENCE_COMMIT}:
         source = (
             f"drop-website-parity {WEBSITE_COMMIT}; drop-mobile-app {tested_commit}; "
             f"read-only audit {AUDIT_DATE}"
@@ -366,10 +367,10 @@ WEBSITE_ROWS = [
         "Search uses the privacy-safe RPC; blocked profiles are excluded; incoming requests accept/decline with visible success or failure; activity rows open plan/event; profile history respects friendship/privacy/block rules.",
         "search under two characters; no results; duplicate request; mutation denial; blocked user; private profile; timeout/retry",
         "Partial", "Blocked",
-        "RUN-012 passed the website client matrix; RUN-015 passed local contracts; RUN-017 applied exact hash 3c3857ed…431e89f only to QA project jrlqozbbrbivmzazuaic and twice passed requester denial, recipient accept-once, anonymous denial, and status-only grant checks with zero residue. Production is unchanged.",
-        "Founder separately approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; Backend/Security applies and reads back the policy/grants before either client releases.",
-        defects="WEB-DEF-FRIEND-AUTH-001",
-        security="The contract is verified locally and in isolated hosted QA; production remains vulnerable until a separate exact-file/project approval and apply.",
+        "RUN-012 passed the website client matrix; RUN-017 passed the hosted requester/recipient matrix twice; RUN-018 proves production version 20260729200633 now enforces pending-only creation, recipient-only pending acceptance, and status-only client updates. The corrected website client remains unreleased.",
+        "Release/QA obtains separate authorization for the exact website candidate, then runs approved-account friend request, duplicate, blocked, timeout, and retry journeys before delivery.",
+        defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
+        security="The targeted production friendship boundary is fixed; broader profile/activity privacy and connected-browser behavior remain release-gated.",
     ),
     story(
         "WEBAPP-018", "Signed-in website / Blocks and privacy", "Blocked-user exclusion and unblock controls",
@@ -378,10 +379,10 @@ WEBSITE_ROWS = [
         "Blocked IDs are excluded before friends, notification attendance, crew, profile, and live presence render; public profile fails closed; unblock reports success or failure without optimistic drift.",
         "block-list read failure; unblock denial; stale notification; simultaneous friendship; missing profile; duplicate click",
         "Partial", "Blocked",
-        "RUN-012 passed fail-closed client reads. RUN-017 twice passed friend/nonfriend plus both blocker→blocked and blocked→blocker presence denial against exact migration hash 3c3857ed…431e89f in isolated QA; all fixtures rolled back. Production is unchanged.",
-        "Founder separately approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; Backend/Security applies and reads back is_blocked_with policy use before client release.",
-        defects="WEB-DEF-CHECKIN-AUTH-001",
-        security="Isolated hosted QA proves both block directions; production Live Mode policy remains vulnerable until approved apply.",
+        "RUN-012 passed fail-closed client reads; RUN-017 twice passed both block directions in isolated QA; RUN-018 proves production event_checkins_select_friends now calls is_blocked_with. Broader website block surfaces remain unproven with connected accounts.",
+        "Release/QA uses explicitly approved owner/non-owner/blocked accounts to verify Friends, notifications, crews, profiles, and Live Mode before client delivery.",
+        defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
+        security="The targeted production Live Mode block boundary is fixed; broader connected-browser privacy remains blocked.",
     ),
     story(
         "WEBAPP-019", "Signed-in website / Plans", "Plan creation, detail, RSVP, invite, chat, share, and leave",
@@ -401,10 +402,10 @@ WEBSITE_ROWS = [
         "Only accepted friends are selectable; free-tier cap is rechecked before insert; member changes either apply completely or leave the original membership intact; failures are visible.",
         "cap race; add and remove together; one write denied; duplicate member; stale friend edge; interrupted session",
         "Partial", "Blocked",
-        "RUN-012 passed website RPC UI behavior; RUN-015 passed local contracts; RUN-017 twice passed anonymous/non-owner denial, owner dedupe, nonfriend/block rejection, and injected post-delete insert-failure rollback in isolated QA with zero residue. Production has no RPC yet.",
-        "Founder separately approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; Backend/Security applies and reads back the bounded RPC before coordinated client release.",
+        "RUN-012 passed website RPC UI behavior; RUN-017 twice passed anonymous/non-owner denial, dedupe, nonfriend/block rejection, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. Deployed clients remain on the legacy multi-write path.",
+        "Release owner separately authorizes the exact mobile and website client candidates; QA then proves successful and rejected crew replacement before any later direct-grant cutover.",
         defects="WEB-DEF-CREW-001",
-        security="Atomic owner-only RPC is verified locally and in isolated hosted QA; production adoption remains exact-approval blocked.",
+        security="Atomic owner-only RPC is live; client adoption and later legacy direct-grant revocation remain separately gated.",
     ),
     story(
         "WEBAPP-021", "Signed-in website / Festivals", "Festival list, official schedule, day/stage grouping, and saved sets",
@@ -423,10 +424,10 @@ WEBSITE_ROWS = [
         "Check-in is disabled outside the authored event window; existing check-in restores; route changes reset local state; open sets remain correct across stages; failed writes show an error and do not mark checked-in.",
         "outside event window; missing end; another stage starts; route change; background polling; blocked friend; write denial; duplicate tap",
         "Partial", "Blocked",
-        "RUN-012 passed client timing and failure behavior. RUN-017 twice passed authored/fallback windows, forged-time overwrite/rejection, server-owned identity, friend/nonfriend, and both block-direction visibility in isolated QA; all fixtures rolled back. Production is unchanged.",
-        "Founder separately approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; Backend/Security applies and reads back trigger/policy behavior before release.",
-        defects="WEB-DEF-CHECKIN-AUTH-001",
-        security="Hosted QA contract is authoritative for the targeted mutation; production database remains unchanged.",
+        "RUN-012 passed client timing/failure behavior; RUN-017 passed authored/fallback windows and forged input twice; RUN-018 proves the production trigger derives identity/time, enforces the event window, and hides either-direction blocks. The corrected website client remains unreleased.",
+        "Release/QA obtains separate authorization for the exact website candidate, then runs an approved-account active/outside-window/blocked Live Mode browser journey before delivery.",
+        defects="WEB-DEF-DEPLOY-001; WEB-DEF-TEST-001",
+        security="The targeted production check-in boundary is fixed; connected-browser and client-delivery evidence remain gated.",
     ),
     story(
         "WEBAPP-023", "Signed-in website / Notifications and reminders", "Derived notifications, routing, preferences, and on-sale reminders",
@@ -592,10 +593,10 @@ WEBSITE_ROWS = [
         "A seeded non-production account matrix proves owner/non-owner/blocked/anonymous behavior for history, plans, crews, attendance, media metadata, profile privacy, and account utilities; preview access is owner-only.",
         "expired token; anonymous request; owner mismatch; blocked pair; revoked membership; retry after timeout",
         "Partial", "Blocked",
-        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 applied exact social migration hash 3c3857ed…431e89f only to isolated QA project jrlqozbbrbivmzazuaic and twice passed 14 Auth-role/RLS/RPC cases with zero residue. Full history/plans/media/profile and non-owner browser journeys remain unproven because the Free-plan QA project is a targeted fixture, not a full schema clone.",
-        "After separate production approval/apply, QA uses approved test accounts to run remaining owner/non-owner/blocked website journeys before release; if production test accounts are not allowed, Founder/Security provisions a Pro/full-schema non-production target instead.",
-        defects="WEB-DEF-TEST-001; WEB-DEF-DEPLOY-001; WEB-DEF-FRIEND-AUTH-001; WEB-DEF-CHECKIN-AUTH-001; WEB-DEF-CREW-001",
-        security="Targeted social authorization passes hosted QA; broader connected-browser authorization remains blocked.",
+        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted Auth-role/RLS/RPC cases with zero residue; RUN-018 proves the same exact hash is live in production. Full history/plans/media/profile and non-owner browser journeys remain unproven because no approved full-schema multi-account target was exercised.",
+        "QA uses explicitly approved production test accounts before client release; if production test accounts are not allowed, Founder/Security provisions a Pro/full-schema non-production target instead.",
+        defects="WEB-DEF-TEST-001; WEB-DEF-DEPLOY-001; WEB-DEF-CREW-001",
+        security="Targeted social authorization is live in production; broader connected-browser authorization remains blocked.",
     ),
     defect(
         "WEB-DEF-MERGE-001", "Website branch integration", "Parity branch omits current reset-password browser fallback",
@@ -640,32 +641,32 @@ WEBSITE_ROWS = [
         "drop-mobile-app DropApp/supabase/migrations/20260729182349_social_mutation_contracts.sql; supabase/tests/social_mutation_contracts.test.ts; webapp/src/parity.tsx",
         "High",
         "Only the pending request recipient can accept a friendship; neither party can forge accepted state through a direct API call.",
-        "Exact migration hash 3c3857ed…431e89f is applied only to QA project jrlqozbbrbivmzazuaic. RUN-017 twice passed anonymous/requester denial, recipient accept-once, and status-only column grants with zero residue; production remains exploitable.",
-        "RUN-017 applies the exact hash in isolated QA, runs anonymous/requester/recipient checks twice, reads back policies/grants, and verifies zero fixture residue.",
+        "Exact hash 3c3857ed…431e89f passed RUN-017 twice, then applied once to production as version 20260729200633. RUN-018 proves pending-only insert, recipient-only pending acceptance, status-only authenticated update, old-policy removal, RLS, healthy project state, and zero advisor ERRORs.",
+        "RUN-017 executes anonymous/requester/recipient behavior twice against the exact hash; RUN-018 reads production migration history, policies, table/column grants, RLS, project health, and advisors after that hash is applied.",
         "Friendship acceptance is represented as a general row update under an either-party policy rather than a recipient-only, pending-only server operation.",
-        "Fix verified locally and in isolated hosted QA; production exact-filename/project approval required.",
-        "Founder explicitly approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; then Backend/Security applies and reads back recipient/pending policies and status-only grants.",
+        "Fixed and verified in production.",
+        "Retain RUN-017/RUN-018 as regression evidence; do not reapply the migration. Verify the separately authorized client friend-request journey before delivery.",
         "WEBAPP-017; WEBAPP-038",
-        security="The live policy remains exploitable until the reviewed migration is applied.",
-        test_status="Blocked", owner="Backend/Security owner", implementation="Fix verified in non-production",
-        run_id="RUN-017", last_tested_commit=HOSTED_EVIDENCE_COMMIT,
-        environment="Supabase QA project jrlqozbbrbivmzazuaic; production ebccwnkmsnhbljxxxdej unchanged, 2026-07-29",
+        security="Production now enforces the reviewed recipient/pending policy and least-privilege column grant.",
+        test_status="Passed", owner="Backend/Security owner", implementation="Fixed and verified in production",
+        run_id="RUN-018", last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
+        environment="Supabase production ebccwnkmsnhbljxxxdej, version 20260729200633; catalog-only readback, 2026-07-29",
     ),
     defect(
         "WEB-DEF-CHECKIN-AUTH-001", "Shared backend / Live Mode", "Check-in event window and timestamp are client-controlled",
         "drop-mobile-app DropApp/supabase/migrations/20260729182349_social_mutation_contracts.sql; supabase/tests/social_mutation_contracts.test.ts; webapp/src/parity.tsx",
         "High",
         "The server derives auth.uid() and checked_in_at from trusted server time and rejects check-ins outside the authored event window.",
-        "Exact migration hash 3c3857ed…431e89f is applied only to QA project jrlqozbbrbivmzazuaic. RUN-017 twice passed server identity/time, authored/fallback windows, friend/nonfriend, and both block directions with zero residue; production remains exploitable.",
-        "RUN-017 submits forged future/past/active timestamps and another user ID, exercises authored/fallback windows, reads as friend/nonfriend/both block directions, and verifies rollback residue.",
+        "Exact hash 3c3857ed…431e89f passed RUN-017 twice, then applied once to production as version 20260729200633. RUN-018 proves the enabled trigger, server identity/time guards, 8h/24h fallbacks, fixed search path, either-direction block policy, RLS, healthy project state, and zero advisor ERRORs.",
+        "RUN-017 executes forged identity/time/window and both-block-direction behavior twice against the exact hash; RUN-018 reads production migration history, trigger/function definitions, function grants, policy expression, RLS, project health, and advisors after that hash is applied.",
         "Client-authored presence and a referenced-table RLS block subquery were trusted at the database boundary.",
-        "Fix verified locally and in isolated hosted QA; production exact-filename/project approval required.",
-        "Founder explicitly approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; then Backend/Security applies and reads back trigger/window/block policy behavior.",
+        "Fixed and verified in production.",
+        "Retain RUN-017/RUN-018 as regression evidence; do not reapply the migration. Verify the separately authorized client Live Mode journey before delivery.",
         "WEBAPP-022; WEBAPP-038",
-        security="Forged or reverse-block-leaked presence remains possible on the live policy until migration apply.",
-        test_status="Blocked", owner="Backend/Security owner", implementation="Fix verified in non-production",
-        run_id="RUN-017", last_tested_commit=HOSTED_EVIDENCE_COMMIT,
-        environment="Supabase QA project jrlqozbbrbivmzazuaic; production ebccwnkmsnhbljxxxdej unchanged, 2026-07-29",
+        security="Production now derives identity/time at the database boundary and checks either block direction.",
+        test_status="Passed", owner="Backend/Security owner", implementation="Fixed and verified in production",
+        run_id="RUN-018", last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
+        environment="Supabase production ebccwnkmsnhbljxxxdej, version 20260729200633; catalog-only readback, 2026-07-29",
     ),
     defect(
         "WEB-DEF-SOC-001", "Signed-in website / Friends", "Friend mutations fail silently",
@@ -743,16 +744,16 @@ WEBSITE_ROWS = [
         "WEB-DEF-CREW-001", "Signed-in website / Crews", "Crew membership can partially apply",
         "DropApp/supabase/migrations/20260729182349_social_mutation_contracts.sql; webapp/src/parity.tsx; DropApp/src/data/index.ts", "Medium",
         "One authorized atomic operation applies the full requested membership set or none of it.",
-        "Both clients call one owner-only replace_crew_members RPC. RUN-017 twice proves anonymous/non-owner denial, dedupe, nonfriend/block rejection, and injected post-delete insert-failure rollback in isolated QA; production has no RPC yet.",
-        "RUN-017 replaces a member set, rejects anonymous/non-owner/nonfriend/blocked callers, injects an insert failure after DELETE, verifies original rows remain, and confirms zero fixture residue.",
+        "Both candidate clients call one owner-only replace_crew_members RPC. RUN-017 twice proves denial, dedupe, friend/block validation, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. Deployed clients still compose legacy writes.",
+        "RUN-017 exercises full authorization/rollback behavior; RUN-018 reads production migration history, RPC definition/grants, RLS, project health, and advisors.",
         "The client composes a multi-write invariant without a transaction/RPC.",
-        "Fix verified locally and in isolated hosted QA; production exact-filename/project approval required.",
-        "Founder explicitly approves exact file 20260729182349_social_mutation_contracts.sql for production project ebccwnkmsnhbljxxxdej; then Backend/Security applies and reads back authenticated-only fixed-search-path RPC grants.",
+        "Backend fixed and verified in production; client release approval required.",
+        "Release owner separately authorizes exact mobile and website candidate heads; QA proves successful and rejected crew replacement before any later direct-table-grant cutover.",
         "WEBAPP-020",
-        security="The deployed clients remain multi-write until coordinated backend/client release.",
-        test_status="Blocked", owner="Backend/Security owner", implementation="Fix verified in non-production",
-        run_id="RUN-017", last_tested_commit=HOSTED_EVIDENCE_COMMIT,
-        environment="Supabase QA project jrlqozbbrbivmzazuaic; production ebccwnkmsnhbljxxxdej unchanged, 2026-07-29",
+        security="The bounded production RPC is live, but legacy direct table grants and deployed multi-write clients remain until a separately reviewed client adoption/cutover.",
+        test_status="Blocked", owner="Backend/Security owner", implementation="Backend fixed in production; client unreleased",
+        run_id="RUN-018", last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
+        environment="Supabase production ebccwnkmsnhbljxxxdej version 20260729200633; corrected clients remain unreleased, 2026-07-29",
     ),
     defect(
         "WEB-DEF-A11Y-001", "Signed-in website / Account deletion dialog", "Modal lacks focus trap and Escape close",
@@ -794,17 +795,17 @@ WEBSITE_ROWS = [
         "WEB-DEF-TEST-001", "Signed-in website / authorization evidence", "Mocked E2E cannot prove live RLS or owner-only access",
         "tests/webapp-parity.spec.ts; Supabase; Sites access control", "Medium",
         "A seeded non-production two-account matrix proves server authorization and private preview access without production writes.",
-        "RUN-017 proves the targeted social RLS/RPC boundary in isolated QA, and RUN-016 proves owner-preview rendering. The Free-plan QA project is a targeted fixture rather than a full schema clone, so history/plans/media/profile and non-owner browser journeys remain unproven.",
-        "Run RUN-017's hosted SQL Auth-role matrix and RUN-016's connected owner-preview smoke; compare remaining acceptance surfaces with the targeted QA schema.",
+        "RUN-017 proves the targeted social RLS/RPC boundary in isolated QA, RUN-018 proves that exact hash is live in production, and RUN-016 proves owner-preview rendering. History/plans/media/profile and non-owner browser journeys remain unproven.",
+        "Compare RUN-016 through RUN-018 with the remaining full-browser acceptance surfaces; no approved multi-account full-schema browser target was exercised.",
         "Supabase Free lacks schema-cloned branches; the clean QA project reproduces only current production objects required by the exact social migration.",
-        "Targeted hosted evidence passed; broader connected-browser authorization remains blocked.",
-        "After approved production apply, run remaining owner/non-owner/blocked website journeys with approved test accounts before release; otherwise provision a Pro/full-schema non-production target.",
+        "Targeted production evidence passed; broader connected-browser authorization remains blocked.",
+        "Use explicitly approved production test accounts before client release; otherwise provision a Pro/full-schema non-production target.",
         "WEBAPP-013; WEBAPP-019; WEBAPP-020; WEBAPP-038",
         security="Targeted social authorization is proven; broader website authorization remains unproven.",
         test_status="Blocked", owner="Founder/Security owner",
-        implementation="Partial hosted evidence", run_id="RUN-017",
-        last_tested_commit=HOSTED_EVIDENCE_COMMIT,
-        environment="Supabase QA project jrlqozbbrbivmzazuaic plus owner-only Sites v10; production backend unchanged, 2026-07-29",
+        implementation="Partial production evidence", run_id="RUN-018",
+        last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
+        environment="Supabase production social contracts plus owner-only Sites v10; no approved multi-account browser run, 2026-07-29",
     ),
     defect(
         "WEB-DEF-DOC-001", "Website documentation", "Parity plan lists already implemented history work as remaining",
@@ -845,8 +846,8 @@ WEBSITE_ROWS = [
     blocker(
         "WEB-BLK-BROWSER-001", "Private owner-only preview", "Multi-account hosted authorization verification unavailable",
         "The connected owner browser opens the preview and checks console output; an authorized non-production matrix proves owner/non-owner/blocked access without production writes.",
-        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted social Auth-role/RLS/RPC cases in isolated QA with zero residue; non-owner browser access and full-schema authorization remain untested.",
-        "After approved production apply, run owner/non-owner/blocked browser journeys with approved test accounts before release; otherwise provision a Pro/full-schema non-production target.",
+        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted social Auth-role/RLS/RPC cases with zero residue; RUN-018 proves that exact hash is live in production. Non-owner browser access and full-schema authorization remain untested.",
+        "Use explicitly approved production test accounts before client release; otherwise provision a Pro/full-schema non-production target.",
         "WEBAPP-002; WEBAPP-004; WEBAPP-007; WEBAPP-016; WEBAPP-038",
         "Founder/QA environment",
     ),
@@ -871,6 +872,8 @@ TEST_RUNS = [
     ["RUN-015", AUDIT_DATE, MOBILE_COMMIT, "mobile typecheck + quiet lint + 524 units + 10 PGlite contracts", "Passed", "Recipient/pending friendship, server-time authored/fallback check-ins, friend/nonfriend/reverse-block visibility, and atomic crew rollback passed with exact migration 20260729182349_social_mutation_contracts.sql; no hosted apply."],
     ["RUN-016", AUDIT_DATE, "58a6ff4744baab813cbc77b153235303785f4952", "Connected Browser owner-preview smoke", "Passed / partial boundary", "Owner-authenticated v10 rendered Discover at the private preview with zero console warnings/errors; Supabase dashboard showed production main only and no preview/persistent branches. Non-owner/blocked hosted access remains untested."],
     ["RUN-017", AUDIT_DATE, HOSTED_EVIDENCE_COMMIT, "Supabase QA project apply + hosted SQL authorization/rollback matrix + catalog/residue/advisor readback", "Passed / production approval boundary", "Exact migration SHA-256 3c3857ed…431e89f applied only to QA project jrlqozbbrbivmzazuaic. Fourteen anonymous/requester/recipient/owner/non-owner/friend/nonfriend/both-block-direction/time-window/dedupe/rollback checks passed twice; fixture counts are zero; advisor ERROR count is zero. Production ebccwnkmsnhbljxxxdej is unchanged."],
+    ["RUN-018", AUDIT_DATE, PRODUCTION_EVIDENCE_COMMIT, "Exact production apply + migration/catalog/grant/function/project/advisor readback", "Passed / client-release boundary", "Founder-approved exact SHA-256 3c3857ed…431e89f applied once to production ebccwnkmsnhbljxxxdej as version 20260729200633, name v20260729182349_social_mutation_contracts. Recipient/pending policies, old-policy removal, RLS, status-only grant, server-time/window trigger, either-direction block policy, authenticated-only fixed-search-path crew RPC, project health, and zero advisor ERRORs read back. Migration apply executed no application-row DML; verification queried catalogs only; clients remain unreleased."],
+    ["RUN-019", AUDIT_DATE, WEBSITE_COMMIT, "final npm run typecheck:webapp + npm run build:webapp + npm test", "Passed", "TypeScript and Vite production build passed; Playwright rerun passed 295 with 1 intentional mobile-project skip in 55.2 s. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed."],
 ]
 
 
@@ -898,6 +901,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
     requirement_statuses = {"Implemented", "Partial", "Missing", "Deprecated", "Duplicate", "Conflicting", "Needs clarification"}
     defects = {row["ID"] for row in rows if row["Row type"] == "Defect"}
     website_ids = {item["ID"] for item in WEBSITE_ROWS}
+    production_backend_rows = {"WEB-DEF-FRIEND-AUTH-001", "WEB-DEF-CHECKIN-AUTH-001"}
     requirement_ids: set[str] = set()
     requirements_with_wording: set[str] = set()
     for row in rows:
@@ -930,18 +934,23 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
                     raise SystemExit(f"{row['ID']}: failed story lacks a valid linked defect")
             if row["Test status"] in {"Blocked", "Not implemented", "Awaiting device QA"} and not row["Exact next action"].strip():
                 raise SystemExit(f"{row['ID']}: blocked story lacks exact next action")
-        if row["ID"] in website_ids and row["Test status"] == "Passed" and row["Last-tested commit"] != WEBSITE_COMMIT:
-            raise SystemExit(f"{row['ID']}: passed website row is not tied to the audited commit")
+        expected_commit = PRODUCTION_EVIDENCE_COMMIT if row["ID"] in production_backend_rows else WEBSITE_COMMIT
+        if row["ID"] in website_ids and row["Test status"] == "Passed" and row["Last-tested commit"] != expected_commit:
+            raise SystemExit(f"{row['ID']}: passed website row is not tied to the audited evidence commit")
         if row["ID"] in website_ids and row["Test status"] == "Passed":
             run_id = row["Evidence Run ID"].strip()
             run = runs.get(run_id)
             if not run or not run[4].startswith("Passed") or run[2] != row["Last-tested commit"]:
                 raise SystemExit(f"{row['ID']}: invalid same-commit passing Evidence Run ID {run_id!r}")
-            expected_run = "RUN-014" if row["ID"] == "WEB-DEF-DEP-001" else "RUN-012"
+            expected_run = (
+                "RUN-018" if row["ID"] in production_backend_rows
+                else "RUN-014" if row["ID"] == "WEB-DEF-DEP-001"
+                else "RUN-012"
+            )
             if run_id != expected_run:
                 raise SystemExit(f"{row['ID']}: Evidence Run ID {run_id!r} is not suitable; expected {expected_run}")
         if row["ID"] in website_ids and row["Row type"] == "Defect" and row["Resolution status"].startswith("Fixed"):
-            if row["Test status"] != "Passed" or row["Last-tested commit"] != WEBSITE_COMMIT:
+            if row["Test status"] != "Passed" or row["Last-tested commit"] != expected_commit:
                 raise SystemExit(f"{row['ID']}: fixed defect lacks same-commit passing evidence")
     missing_wording = sorted(requirement_ids - requirements_with_wording)
     if missing_wording:
@@ -1000,6 +1009,7 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
         ["Audited website commit", WEBSITE_COMMIT],
         ["Audited mobile commit", MOBILE_COMMIT],
         ["Hosted Supabase evidence commit", HOSTED_EVIDENCE_COMMIT],
+        ["Production Supabase evidence commit", PRODUCTION_EVIDENCE_COMMIT],
         ["Audit date", AUDIT_DATE],
         ["Total stories", len(stories)],
         ["Passed", status["Passed"]],
@@ -1026,6 +1036,7 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
         ["Inventory v1", AUDIT_DATE, "Reused the 616-row mobile requirements register and appended signed-in website stories, defects, blockers, and current deterministic runs.", "No production writes, deploys, secret writes, CI changes, or raw Apple reconstruction."],
         ["Inventory v2", AUDIT_DATE, "Merged current origin/main, fixed and regression-tested safe client defects, added server authorization findings, preserved baseline runs, and tied fixed/pass rows to exact commit evidence.", "No production writes, deploys, backend/auth/privacy changes, secret writes, CI changes, or raw Apple reconstruction."],
         ["Inventory v3", AUDIT_DATE, "Recorded isolated hosted Supabase social authorization evidence, zero-residue rollback proof, and the separate exact production approval boundary.", "QA project only; production, Auth settings, secrets, clients, preview deployment, and raw Apple evidence unchanged."],
+        ["Inventory v4", AUDIT_DATE, "Recorded the exact production social-contract migration version and catalog/grant/function/advisor readback; reclassified the two server-enforced High defects as fixed while retaining client/browser release blockers.", "Exact approved schema/policy change only; no production application-row DML executed, Auth/secret change, client merge, OTA, Sites deployment, App Store action, or raw Apple reconstruction."],
     ]
     sheets = [
         ("Summary", summary, False),
