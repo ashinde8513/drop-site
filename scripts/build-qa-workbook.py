@@ -18,7 +18,7 @@ CSV_PATH = ROOT / "docs/qa/feature-matrix.csv"
 XLSX_PATH = ROOT / "docs/qa/drop-website-feature-matrix.xlsx"
 BASELINE_WEBSITE_COMMIT = "25512a5c966dbc0ad93302291b768c19cea554ca"
 WEBSITE_COMMIT = "236b665fd73f97eaef39c9884addf49240b34aef"
-MOBILE_COMMIT = "b538a130af3940cd6a9cb01a37f07199fe117ad2"
+MOBILE_COMMIT = "94d6b68f2a3541ba956e39d1b51368a6c38b540b"
 HOSTED_EVIDENCE_COMMIT = "105b2d2e83e3373103da71c6b87bfc1ed7ae0608"
 PRODUCTION_EVIDENCE_COMMIT = "712bd97cbed680bf0ec38da48a5c538a82e5f190"
 AUDIT_DATE = "2026-07-29"
@@ -593,10 +593,10 @@ WEBSITE_ROWS = [
         "A seeded non-production account matrix proves owner/non-owner/blocked/anonymous behavior for history, plans, crews, attendance, media metadata, profile privacy, and account utilities; preview access is owner-only.",
         "expired token; anonymous request; owner mismatch; blocked pair; revoked membership; retry after timeout",
         "Partial", "Blocked",
-        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted Auth-role/RLS/RPC cases with zero residue; RUN-018 proves the same exact hash is live in production. Full history/plans/media/profile and non-owner browser journeys remain unproven because no approved full-schema multi-account target was exercised.",
-        "QA uses explicitly approved production test accounts before client release; if production test accounts are not allowed, Founder/Security provisions a Pro/full-schema non-production target instead.",
+        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted Auth-role/RLS/RPC cases with zero residue; RUN-018 proves the same exact hash is live in production. RUN-021 then used approved production test accounts to prove block/unblock profile privacy and temporary crew create/delete with exact cleanup; RUN-022 proved representative desktop/mobile routes and zero browser warnings/errors. Full plans/media/account-utility owner/non-owner journeys remain unproven.",
+        "QA runs the remaining approved owner/non-owner plans, media, and account-utility journeys on an exact delivered candidate; use a Pro/full-schema non-production target instead if further production test-account use is not approved.",
         defects="WEB-DEF-TEST-001; WEB-DEF-DEPLOY-001; WEB-DEF-CREW-001",
-        security="Targeted social authorization is live in production; broader connected-browser authorization remains blocked.",
+        security="Targeted social authorization and client privacy behavior are proven; broader plans/media/account-utility authorization remains blocked.",
     ),
     defect(
         "WEB-DEF-MERGE-001", "Website branch integration", "Parity branch omits current reset-password browser fallback",
@@ -744,16 +744,30 @@ WEBSITE_ROWS = [
         "WEB-DEF-CREW-001", "Signed-in website / Crews", "Crew membership can partially apply",
         "DropApp/supabase/migrations/20260729182349_social_mutation_contracts.sql; webapp/src/parity.tsx; DropApp/src/data/index.ts", "Medium",
         "One authorized atomic operation applies the full requested membership set or none of it.",
-        "Both candidate clients call one owner-only replace_crew_members RPC. RUN-017 twice proves denial, dedupe, friend/block validation, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. Deployed clients still compose legacy writes.",
-        "RUN-017 exercises full authorization/rollback behavior; RUN-018 reads production migration history, RPC definition/grants, RLS, project health, and advisors.",
+        "Both candidate clients call one owner-only replace_crew_members RPC. RUN-017 twice proves denial, dedupe, friend/block validation, and injected-failure rollback; RUN-018 proves the authenticated-only fixed-search-path RPC is live in production. RUN-021 created and deleted a temporary crew through the mobile client and read back exact original production membership with zero residue. Deployed clients still compose legacy writes.",
+        "RUN-017 exercises full authorization/rollback behavior; RUN-018 reads production migration history, RPC definition/grants, RLS, project health, and advisors; RUN-021 exercises client create/delete and exact cleanup.",
         "The client composes a multi-write invariant without a transaction/RPC.",
         "Backend fixed and verified in production; client release approval required.",
-        "Release owner separately authorizes exact mobile and website candidate heads; QA proves successful and rejected crew replacement before any later direct-table-grant cutover.",
+        "Release owner separately authorizes the exact mobile merge and owner-only website version; after merge, QA requests a distinct exact-tag OTA authorization before publication.",
         "WEBAPP-020",
         security="The bounded production RPC is live, but legacy direct table grants and deployed multi-write clients remain until a separately reviewed client adoption/cutover.",
         test_status="Blocked", owner="Backend/Security owner", implementation="Backend fixed in production; client unreleased",
         run_id="RUN-018", last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
-        environment="Supabase production ebccwnkmsnhbljxxxdej version 20260729200633; corrected clients remain unreleased, 2026-07-29",
+        environment="Supabase production ebccwnkmsnhbljxxxdej version 20260729200633 plus approved mobile client journey; corrected clients remain unreleased, 2026-07-29",
+    ),
+    defect(
+        "WEB-DEF-MOBILE-A11Y-001", "Mobile / Friends and crews", "Social controls were hidden or unnamed for assistive technology",
+        "DropApp/app/(tabs)/friends.tsx; DropApp/app/blocked-accounts.tsx; DropApp/src/components/FriendPicker.tsx; DropApp/src/components/ListRow.tsx; DropApp/src/components/ReportBlockSheet.tsx", "Medium",
+        "Crew actions, report/block actions, unblock controls, and member-selection checkboxes expose a stable role, accessible name, and selected/checked state without static parents swallowing child controls.",
+        "The exact mobile candidate adds button/checkbox semantics in the shared components and callers; RUN-020 passed three deterministic accessibility contracts, 529 unit tests, typecheck, lint, the social contract test, and an iOS Simulator build/run.",
+        "Open Friends, a report/block sheet, Blocked accounts, and the crew member picker with the accessibility tree; inspect each action's role, name, and state, then run the focused accessibility contract.",
+        "Static row containers and pressable controls lacked explicit accessibility boundaries and labels.",
+        "Fixed and verified locally; physical VoiceOver QA remains.",
+        "Retain the three accessibility contract tests and complete VoiceOver on the exact merged/delivered iOS artifact.",
+        "WEBAPP-017; WEBAPP-020; WEBAPP-023",
+        test_status="Passed", owner="Mobile client owner", implementation="Fixed locally",
+        run_id="RUN-020", last_tested_commit=MOBILE_COMMIT,
+        environment="Isolated mobile worktree, iOS 26.5 Simulator, exact candidate 94d6b68f2a3541ba956e39d1b51368a6c38b540b, 2026-07-29",
     ),
     defect(
         "WEB-DEF-A11Y-001", "Signed-in website / Account deletion dialog", "Modal lacks focus trap and Escape close",
@@ -795,17 +809,17 @@ WEBSITE_ROWS = [
         "WEB-DEF-TEST-001", "Signed-in website / authorization evidence", "Mocked E2E cannot prove live RLS or owner-only access",
         "tests/webapp-parity.spec.ts; Supabase; Sites access control", "Medium",
         "A seeded non-production two-account matrix proves server authorization and private preview access without production writes.",
-        "RUN-017 proves the targeted social RLS/RPC boundary in isolated QA, RUN-018 proves that exact hash is live in production, and RUN-016 proves owner-preview rendering. History/plans/media/profile and non-owner browser journeys remain unproven.",
-        "Compare RUN-016 through RUN-018 with the remaining full-browser acceptance surfaces; no approved multi-account full-schema browser target was exercised.",
+        "RUN-017 proves the targeted social RLS/RPC boundary in isolated QA, RUN-018 proves that exact hash is live in production, RUN-021 proves approved block/unblock profile privacy and crew cleanup, and RUN-022 proves representative candidate browser behavior. Plans/media/account utilities and full non-owner browser journeys remain unproven.",
+        "Compare RUN-016 through RUN-022 with the remaining plans/media/account-utility acceptance surfaces; the approved production-account run intentionally stayed within social/profile/crew scope.",
         "Supabase Free lacks schema-cloned branches; the clean QA project reproduces only current production objects required by the exact social migration.",
-        "Targeted production evidence passed; broader connected-browser authorization remains blocked.",
-        "Use explicitly approved production test accounts before client release; otherwise provision a Pro/full-schema non-production target.",
+        "Approved targeted production client evidence passed; broader connected-browser authorization remains blocked.",
+        "Run the remaining plans/media/account-utility owner/non-owner journeys on an exact delivered candidate with explicit production-test-account approval; otherwise provision a Pro/full-schema non-production target.",
         "WEBAPP-013; WEBAPP-019; WEBAPP-020; WEBAPP-038",
         security="Targeted social authorization is proven; broader website authorization remains unproven.",
         test_status="Blocked", owner="Founder/Security owner",
         implementation="Partial production evidence", run_id="RUN-018",
         last_tested_commit=PRODUCTION_EVIDENCE_COMMIT,
-        environment="Supabase production social contracts plus owner-only Sites v10; no approved multi-account browser run, 2026-07-29",
+        environment="Supabase production social contracts, approved e2ewebqa/ashinde8513/ravewithmaya client journey, and local website candidate; broader owner/non-owner matrix unrun, 2026-07-29",
     ),
     defect(
         "WEB-DEF-DOC-001", "Website documentation", "Parity plan lists already implemented history work as remaining",
@@ -844,10 +858,10 @@ WEBSITE_ROWS = [
         "WEBAPP-002 through WEBAPP-028",
     ),
     blocker(
-        "WEB-BLK-BROWSER-001", "Private owner-only preview", "Multi-account hosted authorization verification unavailable",
+        "WEB-BLK-BROWSER-001", "Private owner-only preview", "Full-schema multi-account hosted authorization remains incomplete",
         "The connected owner browser opens the preview and checks console output; an authorized non-production matrix proves owner/non-owner/blocked access without production writes.",
-        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted social Auth-role/RLS/RPC cases with zero residue; RUN-018 proves that exact hash is live in production. Non-owner browser access and full-schema authorization remain untested.",
-        "Use explicitly approved production test accounts before client release; otherwise provision a Pro/full-schema non-production target.",
+        "RUN-016 opened owner-only v10 signed in with zero console errors. RUN-017 twice passed 14 targeted social Auth-role/RLS/RPC cases with zero residue; RUN-018 proves that exact hash is live in production. RUN-021 proved approved multi-account block/unblock profile privacy and crew cleanup, and RUN-022 proved representative candidate browser behavior. Plans/media/account-utility owner/non-owner authorization remains untested.",
+        "Run the remaining approved plans/media/account-utility owner/non-owner matrix on an exact delivered candidate; otherwise provision a Pro/full-schema non-production target.",
         "WEBAPP-002; WEBAPP-004; WEBAPP-007; WEBAPP-016; WEBAPP-038",
         "Founder/QA environment",
     ),
@@ -874,6 +888,9 @@ TEST_RUNS = [
     ["RUN-017", AUDIT_DATE, HOSTED_EVIDENCE_COMMIT, "Supabase QA project apply + hosted SQL authorization/rollback matrix + catalog/residue/advisor readback", "Passed / production approval boundary", "Exact migration SHA-256 3c3857ed…431e89f applied only to QA project jrlqozbbrbivmzazuaic. Fourteen anonymous/requester/recipient/owner/non-owner/friend/nonfriend/both-block-direction/time-window/dedupe/rollback checks passed twice; fixture counts are zero; advisor ERROR count is zero. Production ebccwnkmsnhbljxxxdej is unchanged."],
     ["RUN-018", AUDIT_DATE, PRODUCTION_EVIDENCE_COMMIT, "Exact production apply + migration/catalog/grant/function/project/advisor readback", "Passed / client-release boundary", "Founder-approved exact SHA-256 3c3857ed…431e89f applied once to production ebccwnkmsnhbljxxxdej as version 20260729200633, name v20260729182349_social_mutation_contracts. Recipient/pending policies, old-policy removal, RLS, status-only grant, server-time/window trigger, either-direction block policy, authenticated-only fixed-search-path crew RPC, project health, and zero advisor ERRORs read back. Migration apply executed no application-row DML; verification queried catalogs only; clients remain unreleased."],
     ["RUN-019", AUDIT_DATE, WEBSITE_COMMIT, "final npm run typecheck:webapp + npm run build:webapp + npm test", "Passed", "TypeScript and Vite production build passed; Playwright rerun passed 295 with 1 intentional mobile-project skip in 55.2 s. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed."],
+    ["RUN-020", AUDIT_DATE, MOBILE_COMMIT, "mobile typecheck + quiet lint + 529 units + focused accessibility contracts + PGlite social contracts + iOS Simulator build/run", "Passed", "Exact mobile candidate passed typecheck, quiet lint, 529 unit tests including three accessibility contracts, the 10-case social contract test, and an iOS 26.5 Simulator build/run. Crew, report/block, unblock, and member-checkbox controls expose explicit assistive roles/names/states."],
+    ["RUN-021", AUDIT_DATE, MOBILE_COMMIT, "approved production-account client journey + catalog/residue readback", "Passed / scoped authorization", "Using approved e2ewebqa, ashinde8513, and ravewithmaya accounts, mobile block hid the blocked profile, reverse website profile access was denied, unblock restored it, and a temporary crew was created/deleted. Final readback restored both accepted friendships, zero blocks, the original Bass Squad membership, and zero temporary crews. No production test residue remains."],
+    ["RUN-022", AUDIT_DATE, WEBSITE_COMMIT, "Connected Browser desktop/mobile candidate navigation and accessibility journey", "Passed", "Desktop/mobile Discover alignment and uniform cards, carousel controls/touch-scroll surface/keyboard snapping, searchable location/search combobox empty/Arrow/Enter/Escape states, website-native event detail, Stats show/artist/venue/city drill-downs, map empty state, and zero browser warnings/errors passed."],
 ]
 
 
@@ -902,6 +919,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
     defects = {row["ID"] for row in rows if row["Row type"] == "Defect"}
     website_ids = {item["ID"] for item in WEBSITE_ROWS}
     production_backend_rows = {"WEB-DEF-FRIEND-AUTH-001", "WEB-DEF-CHECKIN-AUTH-001"}
+    mobile_candidate_rows = {"WEB-DEF-MOBILE-A11Y-001"}
     requirement_ids: set[str] = set()
     requirements_with_wording: set[str] = set()
     for row in rows:
@@ -934,7 +952,11 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
                     raise SystemExit(f"{row['ID']}: failed story lacks a valid linked defect")
             if row["Test status"] in {"Blocked", "Not implemented", "Awaiting device QA"} and not row["Exact next action"].strip():
                 raise SystemExit(f"{row['ID']}: blocked story lacks exact next action")
-        expected_commit = PRODUCTION_EVIDENCE_COMMIT if row["ID"] in production_backend_rows else WEBSITE_COMMIT
+        expected_commit = (
+            PRODUCTION_EVIDENCE_COMMIT if row["ID"] in production_backend_rows
+            else MOBILE_COMMIT if row["ID"] in mobile_candidate_rows
+            else WEBSITE_COMMIT
+        )
         if row["ID"] in website_ids and row["Test status"] == "Passed" and row["Last-tested commit"] != expected_commit:
             raise SystemExit(f"{row['ID']}: passed website row is not tied to the audited evidence commit")
         if row["ID"] in website_ids and row["Test status"] == "Passed":
@@ -944,6 +966,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
                 raise SystemExit(f"{row['ID']}: invalid same-commit passing Evidence Run ID {run_id!r}")
             expected_run = (
                 "RUN-018" if row["ID"] in production_backend_rows
+                else "RUN-020" if row["ID"] in mobile_candidate_rows
                 else "RUN-014" if row["ID"] == "WEB-DEF-DEP-001"
                 else "RUN-012"
             )
