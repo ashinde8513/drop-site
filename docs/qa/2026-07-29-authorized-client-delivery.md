@@ -53,11 +53,12 @@ The browser viewport override was reset after mobile verification. The final con
 
 ## Inventory reconciliation
 
-`docs/qa/feature-matrix.csv` is 676 rows and 578 stories:
+`docs/qa/feature-matrix.csv` is 677 rows and 578 stories:
 
 `578 = 46 passed + 24 failed + 468 blocked + 13 not implemented + 27 awaiting device QA`
 
 Delivery evidence is `RUN-024`. Existing blocked rows now point to their actual next actions instead of the completed merge/Sites authorization gate.
+Tooling evidence `RUN-026` verifies consecutive workbook generations are byte-identical and remain equal to the canonical CSV.
 
 ## Post-push CI evidence
 

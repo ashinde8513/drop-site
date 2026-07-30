@@ -21,6 +21,7 @@ WEBSITE_COMMIT = "34630b592d6923760019dc0f0c227c10a58ce064"
 MOBILE_COMMIT = "94d6b68f2a3541ba956e39d1b51368a6c38b540b"
 HOSTED_EVIDENCE_COMMIT = "105b2d2e83e3373103da71c6b87bfc1ed7ae0608"
 PRODUCTION_EVIDENCE_COMMIT = "712bd97cbed680bf0ec38da48a5c538a82e5f190"
+QA_TOOLING_COMMIT = "2cb72e3e8b4964a193178429aeae952ae67ae8e0"
 AUDIT_DATE = "2026-07-29"
 
 
@@ -50,6 +51,7 @@ TEST_RUNS = [
     ["RUN-023", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp + npm run build:webapp + npm test + focused mobile WebKit repetition", "Passed", "After CI exposed a WebKit focus-order race, the shared delete dialog moves focus before disabling its controls. TypeScript and Vite production build passed; Playwright passed 295 with 1 intentional mobile-project skip. The deletion regression passed 20/20 and the previously flaky event-action regression passed 20/20 under six-worker CI-style WebKit load."],
     ["RUN-024", AUDIT_DATE, "website 7162be246177b646ff7c28dc4b0fec004d7e1e0f; mobile 21ce9b618979f298374d21c232bb3e04f92d7e6b", "Authorized Drop-App merge + owner-only Sites v12 deploy + live browser/access/log and runtime verification", "Passed / native-build boundary", "PR #290 exact head 16f9463 merged with a merge commit; main and release-train-31-21ce9b6 resolve to 21ce9b6; release-train, closeout, and tagged web-deploy passed. Sites v12 exact source 7162be2 deployed with custom access only for ashinde8513@gmail.com. Desktop/mobile event, combobox, Profile/Stats/history, console/page-error, and Worker-error checks passed. Release-ref preflight passed, but exact-tag runtime a904ccc60ecf3ff7ab907769b1cdfc7281592806 differs from latest production iOS build b913963d-23ef-4575-ac5c-aa8e2726d58e runtime d42ed9dc7445172d9d0ca08124fd0443d0eaa433, so OTA is blocked and a separately authorized native build is required."],
     ["RUN-025", AUDIT_DATE, "a91098abfdb7d24c96dac9cfcedd2c9a857c7bcf", "Local npm test + GitHub Actions run 30517391362 attempts 1 and 2", "Passed locally and on CI retry / flake classified", "Exact head passed locally 295 with 1 intentional skip in 54.7 seconds. CI attempt 1 ended 281 passed, 4 flaky, 10 failed, and 1 skip after mobile WebKit timeouts under five workers. The single non-deploying failed-job retry succeeded 292 passed, 3 flaky, and 1 skip. WEB-DEF-CI-FLAKE-001 retains the approval-required worker-cap action; no workflow or trust-boundary change was made."],
+    ["RUN-026", AUDIT_DATE, QA_TOOLING_COMMIT, "Two generator runs + SHA-256 equality + XML/CSV comparison + unzip -t", "Passed", "Unchanged canonical CSV produced identical XLSX SHA-256 6d0826d7264da70235b9095b46f004045372a38d93cb90b294cf51a7b04af04b across consecutive runs. All archive XML parsed, the Feature Matrix sheet equaled every CSV row, and unzip integrity passed."],
 ]
 
 
@@ -83,6 +85,7 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
     }
     production_backend_rows = {"WEB-DEF-FRIEND-AUTH-001", "WEB-DEF-CHECKIN-AUTH-001"}
     mobile_candidate_rows = {"WEB-DEF-MOBILE-A11Y-001"}
+    qa_tooling_rows = {"WEB-DEF-QA-XLSX-001"}
     requirement_ids: set[str] = set()
     requirements_with_wording: set[str] = set()
     for row in rows:
@@ -116,7 +119,8 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
             if row["Test status"] in {"Blocked", "Not implemented", "Awaiting device QA"} and not row["Exact next action"].strip():
                 raise SystemExit(f"{row['ID']}: blocked story lacks exact next action")
         expected_commit = (
-            PRODUCTION_EVIDENCE_COMMIT if row["ID"] in production_backend_rows
+            QA_TOOLING_COMMIT if row["ID"] in qa_tooling_rows
+            else PRODUCTION_EVIDENCE_COMMIT if row["ID"] in production_backend_rows
             else MOBILE_COMMIT if row["ID"] in mobile_candidate_rows
             else WEBSITE_COMMIT
         )
@@ -128,7 +132,8 @@ def validate(headers: list[str], rows: list[dict[str, str]]) -> None:
             if not run or not run[4].startswith("Passed") or run[2] != row["Last-tested commit"]:
                 raise SystemExit(f"{row['ID']}: invalid same-commit passing Evidence Run ID {run_id!r}")
             expected_run = (
-                "RUN-018" if row["ID"] in production_backend_rows
+                "RUN-026" if row["ID"] in qa_tooling_rows
+                else "RUN-018" if row["ID"] in production_backend_rows
                 else "RUN-020" if row["ID"] in mobile_candidate_rows
                 else "RUN-014" if row["ID"] == "WEB-DEF-DEP-001"
                 else "RUN-023"
@@ -233,6 +238,7 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
         ["Inventory v4", AUDIT_DATE, "Recorded the exact production social-contract migration version and catalog/grant/function/advisor readback; reclassified the two server-enforced High defects as fixed while retaining client/browser release blockers.", "Exact approved schema/policy change only; no production application-row DML executed, Auth/secret change, client merge, OTA, Sites deployment, App Store action, or raw Apple reconstruction."],
         ["Inventory v5", AUDIT_DATE, "Recorded exact Drop-App PR #290 merge/tag automation and owner-only Sites v12 delivery/live verification; replaced completed authorization gates with current native-build and connected-journey actions.", "No OTA, production website merge/deploy, Auth/secret change, production data mutation, CI trust-boundary change, or raw Apple reconstruction."],
         ["Inventory v6", AUDIT_DATE, "Recorded the exact local pass, initial GitHub-hosted WebKit timeout failure, successful single retry, and approval-required CI stabilization defect.", "No workflow, runner, trust-boundary, deployment, production, Auth, secret, or application-data change."],
+        ["Inventory v7", AUDIT_DATE, "Recorded and verified deterministic dependency-free XLSX generation from the canonical CSV.", "QA tooling only; no runtime, workflow, runner, deployment, production, Auth, secret, or application-data change."],
     ]
     sheets = [
         ("Summary", summary, False),
