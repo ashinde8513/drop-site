@@ -1,13 +1,14 @@
-# Authorized client delivery evidence — 2026-07-29
+# Authorized client delivery evidence — 2026-07-29 through 2026-07-30
 
 ## Outcome
 
-The two separately authorized actions completed against their exact immutable inputs:
+Three separately authorized actions completed against their exact immutable inputs:
 
 - Drop-App PR #290 head `16f9463bc7834e52a0489ef52d6c8b35e746cd09` merged into `main` with a merge commit, producing `21ce9b618979f298374d21c232bb3e04f92d7e6b`.
 - Owner-only Sites v12 deployed from exact source `7162be246177b646ff7c28dc4b0fec004d7e1e0f`.
+- `production-release` action `build-and-submit` ran for exact tag `release-train-31-21ce9b6`, producing iOS 1.0.1 (16) and submitting that exact build to TestFlight.
 
-No production OTA was authorized or published. The production Drop website repository/route was not merged or deployed.
+No OTA or App Store production release was authorized or performed. The production Drop website repository/route was not merged or deployed.
 
 ## Mobile provenance
 
@@ -23,11 +24,14 @@ No production OTA was authorized or published. The production Drop website repos
 - PR-target reconciliation: run `30515570568`, success
 - Main closeout check: run `30515570608`, success
 - Tagged web deployment: run `30515582111`, success; exact-clean-tag verification, build, environment guard, and Cloudflare deployment all passed
-- Latest `production-release` run remains `30487062427`, created before this merge. No post-merge production-release/OTA run exists.
-- Exact-tag release-ref preflight passed.
-- Exact-tag iOS fingerprint: `a904ccc60ecf3ff7ab907769b1cdfc7281592806`.
-- Latest finished production iOS build: `b913963d-23ef-4575-ac5c-aa8e2726d58e`, runtime `d42ed9dc7445172d9d0ca08124fd0443d0eaa433`.
-- The runtimes do not match. The sanctioned OTA guard therefore requires a new native production build; an OTA for this tag must not be dispatched.
+- Authorized `production-release` run: `30520238695`; action `build-and-submit`; exact release tag above.
+- EAS Build: `0cc12512-5999-4c40-b595-671ac2991a9a`, `FINISHED`; iOS 1.0.1 (16); distribution `store`; profile/channel `production`.
+- Build source: `21ce9b618979f298374d21c232bb3e04f92d7e6b`; runtime `d42ed9dc7445172d9d0ca08124fd0443d0eaa433`; error `null`.
+- EAS submission: `914d5987-682d-42ff-bb35-388a199926cb`, `FINISHED`; platform iOS; App Store Connect app `6790662825`; error `null`; linked to exact Build 16.
+- Apple processing evidence: TestFlight email `Drop - EDM Events 1.0.1 (16) for iOS is now available to test.` received at `2026-07-30T06:51:01Z`.
+- Fingerprint correction: the earlier documented `a904ccc60ecf3ff7ab907769b1cdfc7281592806` value was not generated with the exact tag's locked dependency tree. After `npm ci`, the workflow's exact `npx --no-install @expo/fingerprint fingerprint:generate --platform ios | jq -r .hash` command returned `d42ed9dc7445172d9d0ca08124fd0443d0eaa433`, matching Build 16. The prior mismatch conclusion is superseded.
+- The final GitHub run conclusion was not independently re-read after local GitHub CLI authentication expired and browser monitoring became unavailable. Terminal EAS build/submission readback and Apple's availability message are the delivery evidence.
+- No OTA was dispatched. No external Beta Review/group or App Store production-release action was taken.
 
 ## Owner-only Sites provenance
 
@@ -55,10 +59,10 @@ The browser viewport override was reset after mobile verification. The final con
 
 `docs/qa/feature-matrix.csv` is 677 rows and 578 stories:
 
-`578 = 46 passed + 24 failed + 468 blocked + 13 not implemented + 27 awaiting device QA`
+`578 = 46 passed + 24 failed + 467 blocked + 13 not implemented + 28 awaiting device QA`
 
-Delivery evidence is `RUN-024`. Existing blocked rows now point to their actual next actions instead of the completed merge/Sites authorization gate.
-Tooling evidence `RUN-026` verifies consecutive workbook generations are byte-identical and remain equal to the canonical CSV.
+Merge/Sites evidence is `RUN-024`; native Build 16/TestFlight evidence is `RUN-027`. `WEBAPP-020` now awaits physical-device QA instead of a completed build authorization.
+Tooling evidence `RUN-026` verifies the deterministic generator contract. After the release evidence update, two consecutive generations were again byte-identical at SHA-256 `f3fe71710f96fcddc00cf6ff431fa045b222cbd6a8bc3056a87b807a751c95ec`; every XML member parsed, ZIP integrity passed, and the Feature Matrix sheet equaled all 677 CSV rows.
 
 ## Post-push CI evidence
 
@@ -69,8 +73,9 @@ Tooling evidence `RUN-026` verifies consecutive workbook generations are byte-id
 
 ## Remaining boundaries
 
-- Founder must explicitly choose and authorize `production-release` action `build-only` or `build-and-submit` for exact tag `release-train-31-21ce9b6`, including any EAS build usage and, for `build-and-submit`, the TestFlight submission. OTA is not compatible with the current production build runtime.
+- Founder/QA must install TestFlight Build 16 and run Settings provenance, atomic crew replacement/rollback, VoiceOver/Dynamic Type, Universal Links, provider callbacks, photo-library, offline/retry, interruption, and relaunch-persistence checks.
 - Repository/CI owner must separately approve a CI-only Playwright two-worker cap and two consecutive zero-flake runs; the existing trusted runner and deploy condition must remain unchanged.
-- Physical-device/TestFlight QA has not run for this merged source.
+- Physical-device/TestFlight QA has not run for Build 16.
+- OTA, external TestFlight access changes, and App Store production release remain separately gated.
 - `drop-site` PR #28 remains unmerged; production website routes and access remain unchanged.
 - Plans, media, account-utility, and complete Live Mode owner/non-owner/blocked connected journeys remain classified with exact actions in the matrix.

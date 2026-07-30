@@ -4,12 +4,14 @@
 
 No known actionable Critical, High, or Medium issue is unclassified within the audited scope. Every such issue is either fixed/invalid with evidence or explicitly approval-blocked with an owner and exact next action. This is not a claim that Drop has no defects.
 
-The owner-only preview and client deployments were not changed. Founder-approved exact migration `20260729182349_social_mutation_contracts.sql` is live in production Supabase; verified client candidates remain isolated on `qa/website-feature-matrix-20260729` and `qa/security-contracts-20260729`.
+Founder-approved exact migration `20260729182349_social_mutation_contracts.sql` is live in production Supabase. The corrected website is delivered only to owner-only Sites v12, and exact mobile source `21ce9b6` is available as TestFlight Build 16. The production website, OTA channel, external TestFlight access, and App Store production release remain unchanged; the QA evidence branches remain isolated.
 
 ## Audited truth
 
 - Website behavior commit: `34630b592d6923760019dc0f0c227c10a58ce064`
 - Mobile/client behavior commit: `94d6b68f2a3541ba956e39d1b51368a6c38b540b`
+- Delivered mobile source/tag: `21ce9b618979f298374d21c232bb3e04f92d7e6b` / `release-train-31-21ce9b6`
+- TestFlight artifact: iOS 1.0.1 (16), EAS Build `0cc12512-5999-4c40-b595-671ac2991a9a`, submission `914d5987-682d-42ff-bb35-388a199926cb`
 - Hosted evidence commit: `105b2d2e83e3373103da71c6b87bfc1ed7ae0608`
 - Exact migration: `20260729182349_social_mutation_contracts.sql`, SHA-256 `3c3857edc73b56f49a01dfe9db5aaad3baaa383ef3396fb216fae025d431e89f`; passed twice on QA project `jrlqozbbrbivmzazuaic`, then applied once to production `ebccwnkmsnhbljxxxdej` as version `20260729200633`, name `v20260729182349_social_mutation_contracts`
 - Production evidence commit: `712bd97cbed680bf0ec38da48a5c538a82e5f190`
@@ -25,15 +27,15 @@ The dirty primary mobile checkout and unrelated TicketSauce adapter files were u
 
 ## Inventory reconciliation
 
-- Rows: 675
+- Rows: 677
 - Stories: 578
-- Story result: `578 = 46 passed + 24 failed + 468 blocked + 13 not implemented + 27 awaiting device QA`
+- Story result: `578 = 46 passed + 24 failed + 467 blocked + 13 not implemented + 28 awaiting device QA`
 - Signed-in website stories: 38
 - Unique preserved primary Requirement IDs: 358 (`267` founder, `91` Apple)
 - Founder source coverage: all `262/262` non-empty bullet requests are preserved exactly, including both nested bullets
 - Original-wording requirement-linked rows with SHA-256: 439 (`391` stories, `48` defect records)
-- Defects/blockers: 97 (`1` Critical, `10` High, `58` Medium, `28` Low)
-- Disposition: 20 fixed/invalid, 75 blocked/approval-required, 2 open Low measurement/maintenance risks. Friendship acceptance and check-in authorization are fixed in production; the mobile social-control accessibility defect is fixed in the candidate; crew remains blocked on corrected-client delivery because legacy direct grants and deployed multi-write clients remain.
+- Defects/blockers: 99 (`1` Critical, `10` High, `59` Medium, `29` Low)
+- Test status: 21 passed, 15 failed with classified resolution/next action, and 63 blocked. Friendship acceptance and check-in authorization are fixed in production; the mobile social-control accessibility defect is in Build 16; crew awaits physical atomicity QA and a separately reviewed legacy direct-grant cutover.
 
 Historical requirements use only the requested classifications: Implemented, Partial, Missing, Deprecated, Duplicate, Conflicting, or Needs clarification. Sanitized historical Apple dispositions without current direct evidence are classified Needs clarification rather than being promoted to Passed.
 
@@ -58,10 +60,12 @@ Founder bullets beginning `- ` are stored with a spreadsheet-safe leading apostr
 - Final website closeout rerun — `npm run typecheck:webapp` and `npm run build:webapp` passed; `npm test` passed 295 with 1 intentional skip in 55.2 seconds. The first unprivileged attempt stopped before tests because the sandbox blocked its localhost server; the approved localhost rerun passed.
 - Replacement website candidate verification — the first PR run exposed a repeatable mobile-WebKit deletion-dialog focus race. Root cause was WebKit blurring the newly disabled submit button after React's state effect had already observed it inside the dialog. The shared submit path now focuses the dialog before disabling child controls. Typecheck and production build passed; the complete suite passed 295 with 1 intentional skip, and both the corrected deletion regression and previously flaky event-action regression passed 20/20 under six-worker CI-style mobile WebKit load.
 - Connected owner-preview smoke — signed-in v10 Discover rendered with zero console warnings/errors. The local candidate then passed representative desktop/mobile navigation with zero console warnings/errors; plans/media/account-utility owner/non-owner authorization remains unavailable.
+- Native delivery — authorized `production-release` run `30520238695` used exact tag `release-train-31-21ce9b6`; EAS Build 16 and submission finished, and Apple confirmed availability to test at `2026-07-30T06:51:01Z`. No OTA, external TestFlight access change, or App Store production release occurred.
+- Post-release evidence closeout — `python3 -B scripts/build-qa-workbook.py`, `npm run typecheck:webapp`, and `npm run build:webapp` passed; the build retained the tracked >500 kB warning. The approved local-server `npm test` rerun passed 295 with 1 intentional skip in 2.1 minutes after the restricted attempt stopped before Playwright because its web server could not start (`RUN-028`).
 - Focused review regressions — rejected writes, pending states, out-of-order search, delayed navigation, combobox scrolling, and deletion-modal focus passed in both projects.
 - `git diff --check` — passed.
 - XLSX ZIP integrity and every worksheet XML document — passed.
-- CSV-to-XLSX Feature Matrix cell equality — passed for all 675 rows.
+- CSV-to-XLSX Feature Matrix cell equality — passed for all 677 rows. Two consecutive post-release generations were byte-identical at SHA-256 `f3fe71710f96fcddc00cf6ff431fa045b222cbd6a8bc3056a87b807a751c95ec`.
 - Every Passed story has non-empty evidence and an audited commit; every Passed website row links a passing same-commit run (`RUN-023`, `RUN-014` for `WEB-DEF-DEP-001`, `RUN-018` for production backend defects, or `RUN-020` for the mobile accessibility defect).
 - Dependency audit — two High package entries map to an RSC-only React Router advisory; this client-only Vite/BrowserRouter architecture does not use the vulnerable feature (`WEB-DEF-DEP-001`).
 - Adversarial code review and behavior/matrix review — findings either fixed or entered as approval-blocked defects.
