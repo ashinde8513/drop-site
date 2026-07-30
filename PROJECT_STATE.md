@@ -13,14 +13,14 @@ Last updated: 2026-07-30
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE — Twilio SMS opt-in proof is locally verified; production publish awaits founder approval
+**Status:** IDLE — SMS opt-in proof is live; corrected Twilio toll-free registration is In Review
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- **Owner:** Codex session `019fb16a-3f21-7232-8d17-9779e4c17d50`
-- **Working on:** privacy-safe public SMS opt-in proof for Twilio toll-free registration.
+- None.
 
 ## Current status
 ### What works
+- **TWILIO SMS OPT-IN PROOF LIVE + VERIFICATION IN REVIEW (2026-07-30, PRs #29/#30):** `https://trydropapp.com/sms-opt-in` returns HTTP 200 with the shipped one-time verification consent, “Text me a code,” the no-recurring/promotional-text disclosure, Privacy/Terms links, and `noindex, nofollow`. PR #29 merged the page as `3c6dcd9`; PR #30 isolated the browser gate from third-party font/catalog latency and merged as `b39b216`. Exact production workflow `30523124634` passed 108/108 Playwright checks and deployed Cloudflare Pages. Twilio initially rejected the registration because the legal name and `SOLE_PROPRIETOR` classification disagreed; the legal name was corrected to the CP575-exact `ARYA A SHINDE`, resubmitted, and the fresh checklist now reports `In Review`.
 - **PASSWORD-RESET BROWSER FALLBACK LIVE (2026-07-24, PR #25):** Supabase recovery links targeting `https://trydropapp.com/reset-password` now 302 to `https://app.trydropapp.com/?mode=reset-password`; browsers preserve the recovery `#hash`, and the SPA renders “Choose a new password.” Merge `006fe8d` passed 104/104 Playwright checks and production workflow `30138096500`. A fresh Resend message was confirmed delivered after deployment; its single-use link was intentionally not consumed during verification.
 - **v1.0.1 HOSTED LEGAL + RECOVERY AASA ALIGNMENT LIVE (2026-07-18, PR #19):** merged to `main` as `9399fad`; workflow `29663058803` passed the complete browser matrix and deployed production. Canonical Privacy/Terms show July 18 and scope 16+ to accounts/social features; public event browsing remains open. The SPA routes to canonical `/privacy` and `/terms`; AASA directly serves the current app id plus `/event/*`, `/plan/*`, `/reset-password`, and root. Legacy `.html` paths and `www` redirect correctly. Exact mobile Build 10 is now VALID in internal TestFlight; physical-iPhone recovery-link completion remains the only AASA release check.
 - **EVENT ART + FESTIVAL RELEASE LIVE (2026-07-18, PR #17):** merge
@@ -40,20 +40,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- **Twilio SMS opt-in proof:** `sms-opt-in.html` and its smoke coverage are ready on isolated branch `codex/twilio-opt-in-proof-20260730`. Local build, 108/108 Playwright checks, mobile/desktop browser geometry, and independent review pass. No public deploy or Twilio registration submission has occurred; both await founder action-time approval.
+- None.
 ### Blocked / waiting on
+- Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
+  submission is `In Review`. Do not claim approval. After approval, obtain
+  destination-specific authorization before configuring production Supabase
+  Phone Auth and running founder SMS QA.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After founder action-time approval, commit and merge the verified Twilio
-  opt-in proof through the standard PR → `main` workflow, verify
-  `https://trydropapp.com/sms-opt-in` live, then use that URL to finish and
-  submit toll-free registration for Drop's `(855) 741-1140` sender.**
-- **Merge PR #26 through the standard PR → `main` workflow, submit the
-  already-confirmed controlled address on the live page, and verify the page
-  says “Check your inbox” without sending a duplicate confirmation.**
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -243,6 +240,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-07-30 — Codex — Twilio SMS opt-in proof live
+- **Changed:** added the public, privacy-safe SMS verification consent proof and smoke coverage in PR #29. After two post-merge production attempts timed out waiting for mobile WebKit's `load` event, PR #30 made the test harness deterministic by stubbing Google Fonts and providing explicit Supabase REST fallbacks; production behavior was not changed by the CI fix.
+- **Verified:** local Playwright passed 108/108; the exact mobile-Safari failure paths passed 45/45 across five repeats; the generated build, secret scan, diff checks, and independent adversarial review passed. PR #30 exact-head run `30522969554` passed, then production run `30523124634` passed its full test and Cloudflare deploy jobs at main `b39b216`.
+- **Live result:** `https://trydropapp.com/sms-opt-in` returns HTTP 200 and contains the exact one-time consent, “Text me a code,” no recurring/promotional-text disclosure, Privacy/Terms links, and `noindex, nofollow`. Twilio initially rejected a mismatched legal-name/entity pairing; the legal name was corrected to CP575-exact `ARYA A SHINDE`, resubmitted with company type `SOLE_PROPRIETOR`, and the fresh checklist reports `In Review`. Supabase secret/config writes remain separately approval-gated.
+
 ### 2026-07-25 — Codex — Reliable launch-access client ready to deploy
 - **Cause:** the live form wrote directly from the visitor’s browser to the
   waitlist table. A failed request was neither queued nor retried, and no code
