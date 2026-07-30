@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMS verification consent — Drop</title>
+  <meta name="description" content="Drop's in-app consent flow for one-time phone verification texts." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://trydropapp.com/sms-opt-in" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+  <style>
+    .proof {
+      min-height: 100vh;
+      padding: 28px 24px 72px;
+    }
+    .proof__nav,
+    .proof__layout {
+      width: 100%;
+      max-width: 1040px;
+      margin-inline: auto;
+    }
+    .proof__nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 44px;
+    }
+    .proof__legal {
+      display: flex;
+      gap: 18px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .proof__legal a:hover,
+    .proof__legal a:focus-visible {
+      color: var(--text);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+    .proof__layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+      gap: clamp(44px, 8vw, 92px);
+      align-items: center;
+    }
+    .proof__copy {
+      max-width: 620px;
+    }
+    .proof__status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+      color: var(--brand-cyan);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .proof__status::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-cyan);
+      content: "";
+    }
+    .proof h1 {
+      max-width: 12ch;
+      margin-bottom: 20px;
+      font-family: var(--font-display);
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      text-wrap: balance;
+    }
+    .proof__lede {
+      max-width: 58ch;
+      color: var(--text-secondary);
+      text-wrap: pretty;
+    }
+    .proof__facts {
+      display: grid;
+      gap: 18px;
+      margin-top: 34px;
+      list-style: none;
+    }
+    .proof__facts li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .proof__facts strong {
+      display: block;
+      margin-bottom: 3px;
+      font-family: var(--font-display);
+      font-size: 15px;
+    }
+    .proof__facts p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .proof__check {
+      color: var(--brand-lime);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .phone {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+    .phone__screen {
+      min-height: 610px;
+      padding: 18px 20px 24px;
+      border-radius: 10px;
+      background: var(--bg);
+    }
+    .phone__bar {
+      display: grid;
+      grid-template-columns: 32px 1fr 32px;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .phone__back {
+      color: var(--text-secondary);
+      font-size: 22px;
+      text-align: left;
+    }
+    .phone__content {
+      padding-top: 52px;
+    }
+    .phone__icon {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 20px;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(77, 226, 255, 0.12);
+      color: var(--brand-cyan);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .phone h2 {
+      margin-bottom: 10px;
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1.15;
+      text-align: center;
+    }
+    .phone__body {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .phone__field {
+      margin-top: 32px;
+    }
+    .phone__label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .phone__input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--surface-alt);
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+    .phone__hint {
+      margin: 8px 0 18px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .phone__button {
+      width: 100%;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: var(--r-pill);
+      background: var(--grad-glow-fill);
+      color: var(--text-on-brand);
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .phone__note {
+      margin-top: 16px;
+      color: var(--text-muted);
+      font-size: 11px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .proof__footer {
+      max-width: 1040px;
+      margin: 64px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    @media (max-width: 760px) {
+      .proof__nav {
+        padding-bottom: 34px;
+      }
+      .proof__layout {
+        grid-template-columns: 1fr;
+      }
+      .proof h1 {
+        max-width: 14ch;
+      }
+      .phone {
+        max-width: 390px;
+        margin-inline: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+  <main class="proof" id="main">
+    <nav class="proof__nav" aria-label="Drop">
+      <a class="wordmark" href="/index.html" aria-label="Drop home"><span class="droplet" aria-hidden="true"></span>drop</a>
+      <div class="proof__legal">
+        <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+      </div>
+    </nav>
+
+    <div class="proof__layout">
+      <section class="proof__copy" aria-labelledby="proof-title">
+        <p class="proof__status">Transactional OTP only · No marketing</p>
+        <h1 id="proof-title">SMS verification consent</h1>
+        <p class="proof__lede">
+          This hosted document reproduces Drop's in-app consent screen for a one-time phone
+          verification text. The screen is available only to a signed-in user who chooses to
+          add a verified phone number.
+        </p>
+        <ul class="proof__facts">
+          <li>
+            <span class="proof__check" aria-hidden="true">✓</span>
+            <div>
+              <strong>Explicit request</strong>
+              <p>The user enters their own phone number and taps “Text me a code” before any SMS is sent.</p>
+            </div>
+          </li>
+          <li>
+            <span class="proof__check" aria-hidden="true">✓</span>
+            <div>
+              <strong>One verification message</strong>
+              <p>Drop sends a six-digit verification code that expires after 10 minutes. Message and data rates may apply.</p>
+            </div>
+          </li>
+          <li>
+            <span class="proof__check" aria-hidden="true">✓</span>
+            <div>
+              <strong>No recurring or promotional texts</strong>
+              <p>The number is used for account verification only. Phone-based contact discovery remains off unless the user separately enables it after verification.</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="phone" aria-label="Current in-app phone verification consent screen">
+        <div class="phone__screen">
+          <div class="phone__bar">
+            <span class="phone__back" aria-hidden="true">‹</span>
+            <span>Verify phone</span>
+            <span></span>
+          </div>
+          <div class="phone__content">
+            <div class="phone__icon" aria-hidden="true">SMS</div>
+            <h2>Add a verified phone</h2>
+            <p class="phone__body">
+              Drop uses a one-time text to prove this number belongs to you.
+              One phone can belong to only one Drop account.
+            </p>
+            <div class="phone__field">
+              <p class="phone__label">Phone number</p>
+              <div class="phone__input" aria-label="Example phone number">(303) 555-0100</div>
+              <p class="phone__hint">International number? Include the + country code.</p>
+              <div class="phone__button">Text me a code</div>
+            </div>
+            <p class="phone__note">
+              The example number above is a non-operational placeholder. No information entered on this document is collected or sent.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="proof__footer">
+      Drop is operated by Resonance Ventures LLC. Questions:
+      <a href="mailto:trydropapp@gmail.com">trydropapp@gmail.com</a>.
+    </footer>
+  </main>
+</body>
+</html>
