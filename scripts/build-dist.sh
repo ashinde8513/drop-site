@@ -20,5 +20,23 @@ cp _headers _redirects dist/
 # Directories the live site serves.
 cp -R .well-known app vendor dist/
 
+# Signed-in parity preview. This stays beside the current /app runtime until
+# every production-reachable mobile feature has passed parity QA.
+npm run build:webapp
+
+# Sites serves the same static build through its asset binding.
+mkdir -p dist/server
+cp workers/sites-preview/worker.js dist/server/index.js
+
+# Sites binds static files from dist/client; Cloudflare Pages still serves dist/.
+mkdir -p dist/client
+for site_path in dist/* dist/.well-known; do
+  case "$site_path" in
+    dist/client|dist/server) continue ;;
+  esac
+  cp -R "$site_path" dist/client/
+done
+test -f dist/client/app/next/index.html
+
 echo "dist/ built:"
 find dist -type f | wc -l

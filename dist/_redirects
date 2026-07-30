@@ -10,6 +10,7 @@
 
 # /app* redirect removed — the standalone post-login web app (ported Prism
 # design SPA) is served natively by Pages from /app/.
+/app/next/*  /app/next/index.html  200
 
 # Login/account live in the post-login SPA on app.trydropapp.com; the old
 # static /account.html shell is retired. 302s keep old bookmarks + pending

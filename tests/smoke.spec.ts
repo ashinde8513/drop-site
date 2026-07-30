@@ -23,6 +23,12 @@ function trackPageErrors(page: Page): string[] {
     if (!externalResourceNoise) errors.push(`console.error: ${msg.text()}`);
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
+  page.on('response', (res) => {
+    const url = res.url();
+    if ((url.includes('localhost') || url.includes('127.0.0.1')) && res.status() >= 400) {
+      errors.push(`response ${res.status()}: ${url}`);
+    }
+  });
   page.on('requestfailed', (req) => {
     // Ignore third-party (fonts, ConvertKit) flakiness; only flag same-origin assets.
     const url = req.url();

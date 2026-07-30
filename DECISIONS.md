@@ -1,5 +1,69 @@
 # Decisions
 
+## 2026-07-29 — Destructive pending dialogs take focus before disabling controls
+
+When a destructive dialog enters a state that disables every child control, the shared submit path focuses the dialog itself before applying pending state. A state effect alone is insufficient because WebKit may blur the newly disabled active button after the effect has already observed it inside the dialog.
+
+An immutable candidate tag is never moved after a defect is found. The corrected source receives a new commit, tag, and saved undeployed Sites version; the prior candidate remains historical and must be marked superseded rather than deployed.
+
+## 2026-07-29 — Social invariants live at the database boundary and release compatibly
+
+Friendship creation is pending-only and acceptance is a recipient-only pending-to-accepted transition. Live Mode derives `auth.uid()` and `checked_in_at` on the server, enforces the authored event end or the shared 8-hour timed/24-hour TBD fallback, and uses the existing security-definer block helper so either-direction blocks override friend visibility. Crew membership replacement is one owner-checked transaction through `replace_crew_members`; clients do not compose delete/insert invariants.
+
+Exact migration `20260729182349_social_mutation_contracts.sql` uses fixed search paths, least-privilege RPC grants, and deterministic denial/rollback tests. Exact hash `3c3857ed…431e89f` passed the 14-case hosted matrix twice with zero residue on isolated QA project `jrlqozbbrbivmzazuaic`, then applied once under exact filename/project approval to production `ebccwnkmsnhbljxxxdej` as version `20260729200633`, name `v20260729182349_social_mutation_contracts`. Production catalog, policy, trigger, RLS, grant, function-definition, project-health, and advisor readback passed with zero advisor ERRORs. Existing direct crew-table grants remain temporarily for released-client compatibility; revoke them only in a separately reviewed minimum-client cutover. The consumed database approval does not authorize client merge, OTA, Sites deployment, App Store, Auth/secret, CI, or production data actions.
+
+## 2026-07-29 — The CSV is canonical QA truth; Excel is a generated mirror; mocked UI tests are not authorization proof
+
+`docs/qa/feature-matrix.csv` is the version-controlled source of truth for website features, founder requests, sanitized Apple feedback, stories, defects, evidence, and exact next actions. `scripts/build-qa-workbook.py` validates and generates `docs/qa/drop-website-feature-matrix.xlsx`; edit/upsert the CSV through the generator and preserve stable IDs/history instead of maintaining two independent inventories.
+
+Desktop/mobile Playwright mocks prove client rendering, routing, accessibility, and failure handling only. Hosted SQL Auth-role tests prove the targeted friendship/check-in/crew RLS/RPC/server-time boundary, but not full browser Auth, all website ownership policies, or owner-only access. Security-sensitive stories remain blocked outside the tested subset. A passing local or QA suite never authorizes a production merge/deploy, backend/Auth/privacy change, CI trust-boundary change, or accepted-risk decision.
+
+## 2026-07-29 — Client candidates require three distinct delivery gates
+
+Approved production test accounts may prove narrowly scoped client behavior only when every temporary row is named and exact cleanup is read back. The completed block/unblock profile-privacy and crew create/delete journey does not promote unrun plans/media/account-utility ownership cases to Passed. The verified mobile and website candidates remain immutable and unreleased: Founder must separately authorize the mobile release-train merge and owner-only Sites version deployment, then separately authorize the exact immutable OTA tag produced after merge and provenance checks. The consumed database approval authorizes none of these actions.
+
+The first two delivery gates were separately consumed on 2026-07-29: mobile PR #290 merged as `21ce9b6`, producing `release-train-31-21ce9b6`, and owner-only Sites v12 deployed exact source `7162be2`. Neither approval authorized OTA or a production website merge. Exact-tag preflight then proved runtime `a904ccc…` differs from the latest production build runtime `d42ed9d…`; the sanctioned guard must block OTA and require a separately authorized native build (and separately explicit TestFlight submission choice). Future releases retain the same independent approval boundaries.
+
+Every Passed website row names a passing evidence-run ID from the same audited commit. Original founder/Apple wording hashes are recomputed during generation; a leading apostrophe used only to keep `- ` bullets spreadsheet-safe is excluded from the hashed source text.
+
+## 2026-07-29 — High-cardinality pickers share one combobox; Stats rows preserve history context
+
+Location, city, artist, venue, event, date, genre, and similar large option sets use the shared accessible combobox behavior: searchable text input, labelled listbox/options, arrow navigation, Enter selection, Escape dismissal, visible focus, and an honest no-results state. Fixed two- or three-choice controls remain segmented controls.
+
+Stats destinations are derived from real attended-show records and preserve the selected time range. Shows open event/show detail; artists open exact artist seen history; venues open structured venue seen history; genres open filtered seen shows; and cities open website-native filtered history because the current native source has no dedicated city-history screen. Missing entity identity must disable or safely redirect a row rather than guessing, and no history data may be fabricated.
+
+## 2026-07-28 — Calendar history is local-first; only exact canonical matches auto-import
+
+The website parses Apple/Google `.ics` exports in the browser. Before confirmation, calendar-derived show details do not leave the device. After confirmation, selected details may be used to search Drop's published archive; only one unambiguous same-day identity match is marked attended automatically. Ambiguous and unmatched entries stay unsaved for manual review.
+
+Calendar-file copy must distinguish the local file from the selected details used for confirmed matching. Bulk import must not create public events or silently merge ambiguous history.
+
+## 2026-07-28 — Personal show media stays device-local; recap export does not auto-publish
+
+History photos/videos live in user- and show-scoped IndexedDB storage, with per-file and per-show limits. Account deletion purges that user's local history media from the browser. Recap export rechecks the server's consent-scoped crew result immediately before generating the image.
+
+Creating or downloading a recap does not insert an activity post until the backend has a relationship- and privacy-scoped publishing contract. Local export is complete without public feed publication.
+
+## 2026-07-28 — Native iOS keeps Apple Maps; web uses an attributed dark web-map provider
+
+The native Drop app continues to use Apple Maps through its native map implementation. The signed-in website uses CARTO dark tiles with OpenStreetMap data, separate required attribution links, price pins, and a card rail containing only events that have real map coordinates.
+
+Do not label the website map as Apple Maps unless MapKit JS is deliberately adopted with its required Apple developer token and web integration. Map-provider differences may remain platform-native; event selection, filtering, pin membership, and Drop's Prism presentation must remain behaviorally aligned.
+
+## 2026-07-26 — Core web parity is a product surface, not an app-download penalty
+
+The signed-in website should provide Drop's complete core jobs instead of withholding useful features to force an app download. Artificially weakening the web experience would reduce activation, sharing, search discovery, and trust.
+
+The native app earns preference through capabilities the browser cannot match as reliably: push notifications, verified contact discovery, local-media discovery, calendar and deep-link integration, background location, offline behavior, and faster native interaction. Website prompts to install the app must be contextual to those advantages, not generic gates.
+
+The complete current-app feature set is designed first in Claude.ai project `Website design prompt`; the founder approved isolated implementation on 2026-07-26. Work remains under `/app/next/` until the full acceptance and explicit production-cutover gates pass.
+
+## 2026-07-22 — Website parity is shared behavior with a website-native interface
+
+The signed-in website must expose the mobile app's supported features through the same production Supabase accounts, data, RLS, Edge Functions, and business rules. It is not a separate account system or a desktop copy of the phone layout. Desktop stays visibly continuous with the public Prism website; mobile uses compact browser-native navigation and controls.
+
+Each new parity slice is designed and founder-approved first in Claude.ai/design project `Website design prompt` (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`). The React/Vite implementation lives at isolated preview route `/app/next/`; existing production website and `/app` routes are not replaced until the full parity checklist and cutover approval are complete.
+
 ## 2026-07-18 — Hosted legal pages are canonical; embedded SPA copies are retired
 
 `https://trydropapp.com/privacy` and `https://trydropapp.com/terms` are the canonical Privacy Policy and Terms for the website, web app, and mobile app. The SPA must link to those documents instead of maintaining an embedded duplicate. The native app may render an aligned in-app copy for review accessibility, but its version/date and disclosures must match the hosted documents and it must expose the canonical links. The `.html` URLs remain compatibility redirects, not link targets.
