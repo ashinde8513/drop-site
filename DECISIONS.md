@@ -22,6 +22,8 @@ Desktop/mobile Playwright mocks prove client rendering, routing, accessibility, 
 
 Approved production test accounts may prove narrowly scoped client behavior only when every temporary row is named and exact cleanup is read back. The completed block/unblock profile-privacy and crew create/delete journey does not promote unrun plans/media/account-utility ownership cases to Passed. The verified mobile and website candidates remain immutable and unreleased: Founder must separately authorize the mobile release-train merge and owner-only Sites version deployment, then separately authorize the exact immutable OTA tag produced after merge and provenance checks. The consumed database approval authorizes none of these actions.
 
+The first two delivery gates were separately consumed on 2026-07-29: mobile PR #290 merged as `21ce9b6`, producing `release-train-31-21ce9b6`, and owner-only Sites v12 deployed exact source `7162be2`. Neither approval authorized OTA or a production website merge. Exact-tag preflight then proved runtime `a904ccc…` differs from the latest production build runtime `d42ed9d…`; the sanctioned guard must block OTA and require a separately authorized native build (and separately explicit TestFlight submission choice). Future releases retain the same independent approval boundaries.
+
 Every Passed website row names a passing evidence-run ID from the same audited commit. Original founder/Apple wording hashes are recomputed during generation; a leading apostrophe used only to keep `- ` bullets spreadsheet-safe is excluded from the hashed source text.
 
 ## 2026-07-29 — High-cardinality pickers share one combobox; Stats rows preserve history context
