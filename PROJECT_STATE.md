@@ -13,7 +13,7 @@ Last updated: 2026-07-30
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — deterministic public-catalog pagination proof is ready on `qa/pagination-proof-20260730`; no production code changed
+**Status:** IDLE — draft PR #33 carries deterministic public-catalog pagination proof; required checks pending; no production code changed
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
@@ -52,7 +52,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Review the draft pagination-proof PR, require its full 110-test Playwright check, and merge only when the unchanged-site deployment is authorized.** The new hermetic regression proves a signed-out user can traverse a 50-event catalog 24 rows at a time through the final page and back on desktop Chrome and mobile Safari.
+- **Review draft PR #33, require its full 110-test Playwright check, and merge only when the unchanged-site deployment is authorized.** The new hermetic regression proves a signed-out user can traverse a 50-event catalog 24 rows at a time through the final page and back on desktop Chrome and mobile Safari.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -245,7 +245,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 ### 2026-07-30 — Codex — deterministic full-catalog pagination proof
 - **Changed:** added one hermetic signed-out homepage regression with a 50-event mocked catalog. It checks the 24-event first page, forward navigation to pages 2 and 3, final-page `Next` disabling, and backward navigation to page 2 without touching production data.
 - **Verified:** focused Playwright passed 2/2 and the complete website suite passed 110/110 across desktop Chrome and mobile Safari from fresh `origin/main` worktree branch `qa/pagination-proof-20260730`. No website runtime source, generated asset, dependency, secret, database, or deployment changed.
-- **Remaining:** draft PR review and required GitHub check; VoiceOver, Dynamic Type, offline/timeout/retry rendering, and physical-device behavior remain separate QA layers.
+- **Remaining:** draft PR #33 review and required GitHub check; VoiceOver, Dynamic Type, offline/timeout/retry rendering, and physical-device behavior remain separate QA layers.
 
 ### 2026-07-30 — Codex — Twilio SMS opt-in proof live
 - **Changed:** added the public, privacy-safe SMS verification consent proof and smoke coverage in PR #29. After two post-merge production attempts timed out waiting for mobile WebKit's `load` event, PR #30 made the test harness deterministic by stubbing Google Fonts and providing explicit Supabase REST fallbacks; production behavior was not changed by the CI fix.
