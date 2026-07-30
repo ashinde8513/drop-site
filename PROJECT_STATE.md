@@ -9,14 +9,15 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-24
+Last updated: 2026-07-30
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** NO ACTIVE SESSION — reliable launch-access confirmation is live
+**Status:** ACTIVE — Twilio SMS opt-in proof is locally verified; production publish awaits founder approval
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- **Owner:** Codex session `019fb16a-3f21-7232-8d17-9779e4c17d50`
+- **Working on:** privacy-safe public SMS opt-in proof for Twilio toll-free registration.
 
 ## Current status
 ### What works
@@ -39,12 +40,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
+- **Twilio SMS opt-in proof:** `sms-opt-in.html` and its smoke coverage are ready on isolated branch `codex/twilio-opt-in-proof-20260730`. Local build, 108/108 Playwright checks, mobile/desktop browser geometry, and independent review pass. No public deploy or Twilio registration submission has occurred; both await founder action-time approval.
 ### Blocked / waiting on
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **After founder action-time approval, commit and merge the verified Twilio
+  opt-in proof through the standard PR → `main` workflow, verify
+  `https://trydropapp.com/sms-opt-in` live, then use that URL to finish and
+  submit toll-free registration for Drop's `(855) 741-1140` sender.**
 - **Merge PR #26 through the standard PR → `main` workflow, submit the
   already-confirmed controlled address on the live page, and verify the page
   says “Check your inbox” without sending a duplicate confirmation.**

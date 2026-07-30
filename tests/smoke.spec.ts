@@ -48,6 +48,7 @@ const PAGES = [
   { path: '/share-plan.html', title: /Drop/ },
   { path: '/share-recap.html', title: /Drop/ },
   { path: '/share-wrapped.html', title: /Drop/ },
+  { path: '/sms-opt-in.html', title: /SMS verification consent/ },
   // ponytail: app/index.html is in-scope per INGEST_PLAN (track A) but owned
   // by a different in-flight track — add its PAGES entry in that track's commit.
 ];
@@ -209,6 +210,16 @@ test.describe('website smoke', () => {
       const res = await page.request.get(href);
       expect(res.status(), `${href} reachable`).toBeLessThan(400);
     }
+  });
+
+  test('SMS opt-in proof mirrors the shipped one-time verification consent', async ({ page }) => {
+    await page.goto('/sms-opt-in.html');
+    await expect(page.getByText('Drop uses a one-time text to prove this number belongs to you. One phone can belong to only one Drop account.')).toBeVisible();
+    await expect(page.getByText('Text me a code', { exact: true })).toBeVisible();
+    await expect(page.getByText('No recurring or promotional texts', { exact: true })).toBeVisible();
+    await expect(page.locator('a[href="/terms.html"]')).toHaveCount(1);
+    await expect(page.locator('a[href="/privacy.html"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   });
 
   test('AASA covers every native universal-link route including password recovery', async ({ request }) => {
