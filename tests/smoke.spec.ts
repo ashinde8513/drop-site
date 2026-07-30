@@ -69,6 +69,21 @@ test.describe('website smoke', () => {
     await page.addInitScript(() => {
       try { localStorage.setItem('drop.cookie-consent', 'essential'); } catch {}
     });
+    // Keep smoke tests independent of third-party latency. Tests that exercise
+    // catalog behavior register a more specific route after this fallback.
+    await page.route('https://fonts.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+    await page.route('**/rest/v1/**', (route) => {
+      const body = new URL(route.request().url()).pathname.endsWith('/event_cities')
+        ? JSON.stringify([{ city: 'Denver' }, { city: 'Seattle' }])
+        : '[]';
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'content-range': '*/0' },
+        body,
+      });
+    });
   });
 
   for (const { path, title } of PAGES) {
