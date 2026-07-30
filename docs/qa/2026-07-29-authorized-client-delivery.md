@@ -53,15 +53,23 @@ The browser viewport override was reset after mobile verification. The final con
 
 ## Inventory reconciliation
 
-`docs/qa/feature-matrix.csv` remains 675 rows and 578 stories:
+`docs/qa/feature-matrix.csv` is 676 rows and 578 stories:
 
 `578 = 46 passed + 24 failed + 468 blocked + 13 not implemented + 27 awaiting device QA`
 
 Delivery evidence is `RUN-024`. Existing blocked rows now point to their actual next actions instead of the completed merge/Sites authorization gate.
 
+## Post-push CI evidence
+
+- Exact evidence head `a91098abfdb7d24c96dac9cfcedd2c9a857c7bcf` passed local `npm test`: 295 passed and 1 intentional skip in 54.7 seconds.
+- GitHub Actions run `30517391362` attempt 1 failed under five-worker mobile WebKit load: 281 passed, 4 flaky, 10 timed out, and 1 intentionally skipped. PR deploy remained skipped.
+- Its single failed-job retry succeeded: 292 passed, 3 flaky, and 1 intentionally skipped. PR deploy again remained skipped.
+- `WEB-DEF-CI-FLAKE-001` records the Medium CI reliability defect and exact approval-required two-worker verification action. No workflow, runner, trust-boundary, or deployment change was made.
+
 ## Remaining boundaries
 
 - Founder must explicitly choose and authorize `production-release` action `build-only` or `build-and-submit` for exact tag `release-train-31-21ce9b6`, including any EAS build usage and, for `build-and-submit`, the TestFlight submission. OTA is not compatible with the current production build runtime.
+- Repository/CI owner must separately approve a CI-only Playwright two-worker cap and two consecutive zero-flake runs; the existing trusted runner and deploy condition must remain unchanged.
 - Physical-device/TestFlight QA has not run for this merged source.
 - `drop-site` PR #28 remains unmerged; production website routes and access remain unchanged.
 - Plans, media, account-utility, and complete Live Mode owner/non-owner/blocked connected journeys remain classified with exact actions in the matrix.

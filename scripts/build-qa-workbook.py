@@ -9,7 +9,7 @@ import re
 from collections import Counter
 from html import escape
 from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +49,7 @@ TEST_RUNS = [
     ["RUN-022", AUDIT_DATE, PRIOR_WEBSITE_COMMIT, "Connected Browser desktop/mobile candidate navigation and accessibility journey", "Passed", "Desktop/mobile Discover alignment and uniform cards, carousel controls/touch-scroll surface/keyboard snapping, searchable location/search combobox empty/Arrow/Enter/Escape states, website-native event detail, Stats show/artist/venue/city drill-downs, map empty state, and zero browser warnings/errors passed."],
     ["RUN-023", AUDIT_DATE, WEBSITE_COMMIT, "npm run typecheck:webapp + npm run build:webapp + npm test + focused mobile WebKit repetition", "Passed", "After CI exposed a WebKit focus-order race, the shared delete dialog moves focus before disabling its controls. TypeScript and Vite production build passed; Playwright passed 295 with 1 intentional mobile-project skip. The deletion regression passed 20/20 and the previously flaky event-action regression passed 20/20 under six-worker CI-style WebKit load."],
     ["RUN-024", AUDIT_DATE, "website 7162be246177b646ff7c28dc4b0fec004d7e1e0f; mobile 21ce9b618979f298374d21c232bb3e04f92d7e6b", "Authorized Drop-App merge + owner-only Sites v12 deploy + live browser/access/log and runtime verification", "Passed / native-build boundary", "PR #290 exact head 16f9463 merged with a merge commit; main and release-train-31-21ce9b6 resolve to 21ce9b6; release-train, closeout, and tagged web-deploy passed. Sites v12 exact source 7162be2 deployed with custom access only for ashinde8513@gmail.com. Desktop/mobile event, combobox, Profile/Stats/history, console/page-error, and Worker-error checks passed. Release-ref preflight passed, but exact-tag runtime a904ccc60ecf3ff7ab907769b1cdfc7281592806 differs from latest production iOS build b913963d-23ef-4575-ac5c-aa8e2726d58e runtime d42ed9dc7445172d9d0ca08124fd0443d0eaa433, so OTA is blocked and a separately authorized native build is required."],
+    ["RUN-025", AUDIT_DATE, "a91098abfdb7d24c96dac9cfcedd2c9a857c7bcf", "Local npm test + GitHub Actions run 30517391362 attempts 1 and 2", "Passed locally and on CI retry / flake classified", "Exact head passed locally 295 with 1 intentional skip in 54.7 seconds. CI attempt 1 ended 281 passed, 4 flaky, 10 failed, and 1 skip after mobile WebKit timeouts under five workers. The single non-deploying failed-job retry succeeded 292 passed, 3 flaky, and 1 skip. WEB-DEF-CI-FLAKE-001 retains the approval-required worker-cap action; no workflow or trust-boundary change was made."],
 ]
 
 
@@ -184,6 +185,14 @@ def worksheet_xml(table: list[list[object]], *, filter_row: bool = True) -> str:
     )
 
 
+def write_zip_member(archive: ZipFile, name: str, content: str) -> None:
+    info = ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = ZIP_DEFLATED
+    info.create_system = 3
+    info.external_attr = 0o600 << 16
+    archive.writestr(info, content)
+
+
 def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
     stories = [row for row in rows if row["Row type"] == "Story"]
     issues = [row for row in rows if row["Row type"] in {"Defect", "Blocker"}]
@@ -223,6 +232,7 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
         ["Inventory v3", AUDIT_DATE, "Recorded isolated hosted Supabase social authorization evidence, zero-residue rollback proof, and the separate exact production approval boundary.", "QA project only; production, Auth settings, secrets, clients, preview deployment, and raw Apple evidence unchanged."],
         ["Inventory v4", AUDIT_DATE, "Recorded the exact production social-contract migration version and catalog/grant/function/advisor readback; reclassified the two server-enforced High defects as fixed while retaining client/browser release blockers.", "Exact approved schema/policy change only; no production application-row DML executed, Auth/secret change, client merge, OTA, Sites deployment, App Store action, or raw Apple reconstruction."],
         ["Inventory v5", AUDIT_DATE, "Recorded exact Drop-App PR #290 merge/tag automation and owner-only Sites v12 delivery/live verification; replaced completed authorization gates with current native-build and connected-journey actions.", "No OTA, production website merge/deploy, Auth/secret change, production data mutation, CI trust-boundary change, or raw Apple reconstruction."],
+        ["Inventory v6", AUDIT_DATE, "Recorded the exact local pass, initial GitHub-hosted WebKit timeout failure, successful single retry, and approval-required CI stabilization defect.", "No workflow, runner, trust-boundary, deployment, production, Auth, secret, or application-data change."],
     ]
     sheets = [
         ("Summary", summary, False),
@@ -289,14 +299,18 @@ def write_xlsx(rows: list[dict[str, str]], headers: list[str]) -> None:
         '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
         'Target="xl/workbook.xml"/></Relationships>'
     )
-    with ZipFile(XLSX_PATH, "w", ZIP_DEFLATED) as workbook_zip:
-        workbook_zip.writestr("[Content_Types].xml", "".join(content_types))
-        workbook_zip.writestr("_rels/.rels", root_rels)
-        workbook_zip.writestr("xl/workbook.xml", workbook)
-        workbook_zip.writestr("xl/_rels/workbook.xml.rels", workbook_rels)
-        workbook_zip.writestr("xl/styles.xml", styles)
+    with ZipFile(XLSX_PATH, "w") as workbook_zip:
+        write_zip_member(workbook_zip, "[Content_Types].xml", "".join(content_types))
+        write_zip_member(workbook_zip, "_rels/.rels", root_rels)
+        write_zip_member(workbook_zip, "xl/workbook.xml", workbook)
+        write_zip_member(workbook_zip, "xl/_rels/workbook.xml.rels", workbook_rels)
+        write_zip_member(workbook_zip, "xl/styles.xml", styles)
         for index, (_, table, filter_row) in enumerate(sheets, 1):
-            workbook_zip.writestr(f"xl/worksheets/sheet{index}.xml", worksheet_xml(table, filter_row=filter_row))
+            write_zip_member(
+                workbook_zip,
+                f"xl/worksheets/sheet{index}.xml",
+                worksheet_xml(table, filter_row=filter_row),
+            )
 
 
 def main() -> None:
