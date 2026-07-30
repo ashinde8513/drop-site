@@ -103,6 +103,26 @@
     });
   };
 
+  Drop.submitCreatorApplication = function (application) {
+    return fetch(FUNCTIONS + 'submit-creator-application', {
+      method: 'POST',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(application)
+    }).then(function (r) {
+      if (!r.ok) {
+        var error = new Error('HTTP ' + r.status);
+        error.status = r.status;
+        throw error;
+      }
+      return r.json();
+    });
+  };
+
   var EVENT_COLS =
     'id,title,description,date,end_date,venue_name,city,state,image_url,ticket_url,' +
     'price_min,price_max,currency,is_festival,time_tbd,timezone,status,created_at';

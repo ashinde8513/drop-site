@@ -1,7 +1,8 @@
-node_modules/
+node_modules
 test-results/
 playwright-report/
 playwright/.cache/
+node_modules/
 .DS_Store
 dist/
 supabase/.temp/
