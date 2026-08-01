@@ -18,7 +18,7 @@ cp sitemap.xml robots.txt llms.txt dist/
 cp _headers _redirects dist/
 
 # Directories the live site serves.
-cp -R .well-known app vendor dist/
+cp -R .well-known app assets vendor dist/
 
 echo "dist/ built:"
 find dist -type f | wc -l
