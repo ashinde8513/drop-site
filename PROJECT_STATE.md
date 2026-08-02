@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-07-30
+Last updated: 2026-08-01
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — SMS opt-in proof is live; corrected Twilio toll-free registration is In Review
+**Status:** IDLE — homepage catalog proof + ticket-source strip verified locally; publish awaits founder authorization
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
 
 ## Current status
 ### What works
+- **HOMEPAGE CATALOG PROOF + OFFICIAL TICKET SOURCES VERIFIED LOCALLY (2026-08-01; NOT LIVE):** branch `codex/homepage-trust-live-data` renders an overlap-aware live count from the public catalog (2,290 events / 235 cities at browser QA time), keeps qualified offline fallbacks, and adds self-hosted Ticketmaster, SeatGeek, and Etix logos under neutral source wording. The deploy build contains all three assets. Full Chrome/WebKit Playwright coverage is 110/110; desktop and 390×844 browser QA found no overflow or console warnings/errors; final independent review found no actionable issue.
 - **TWILIO SENDER ASSOCIATION VERIFIED (2026-07-30):** toll-free number `(855) 741-1140` (`PNbd8be89e2ffdf5c70d63e5f8a66eba17`) is attached to the existing Messaging Service `Drop Phone Verification` (`MGe2d6e639033b34c6535bb7deaf7d3bfd`). The number configuration readback shows “Selected messaging service: Drop Phone Verification.” This association does not change Toll-Free Verification's separate `In Review` status.
 - **TWILIO SMS OPT-IN PROOF LIVE + VERIFICATION IN REVIEW (2026-07-30, PRs #29/#30):** `https://trydropapp.com/sms-opt-in` returns HTTP 200 with the shipped one-time verification consent, “Text me a code,” the no-recurring/promotional-text disclosure, Privacy/Terms links, and `noindex, nofollow`. PR #29 merged the page as `3c6dcd9`; PR #30 isolated the browser gate from third-party font/catalog latency and merged as `b39b216`. Exact production workflow `30523124634` passed 108/108 Playwright checks and deployed Cloudflare Pages. Twilio initially rejected the registration because the legal name and `SOLE_PROPRIETOR` classification disagreed; the legal name was corrected to the CP575-exact `ARYA A SHINDE`, resubmitted, and the fresh checklist now reports `In Review`.
 - **PASSWORD-RESET BROWSER FALLBACK LIVE (2026-07-24, PR #25):** Supabase recovery links targeting `https://trydropapp.com/reset-password` now 302 to `https://app.trydropapp.com/?mode=reset-password`; browsers preserve the recovery `#hash`, and the SPA renders “Choose a new password.” Merge `006fe8d` passed 104/104 Playwright checks and production workflow `30138096500`. A fresh Resend message was confirmed delivered after deployment; its single-use link was intentionally not consumed during verification.
@@ -43,6 +44,8 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
+- Founder authorization to publish branch `codex/homepage-trust-live-data`, open
+  its draft PR, and later merge it through the standard CI auto-deploy path.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
   destination-specific authorization before configuring production Supabase
@@ -52,6 +55,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **After founder authorizes website publishing, commit and push `codex/homepage-trust-live-data`, open a draft PR to `main`, wait for the full GitHub test gate, then request merge authorization.** After merge/deploy, verify the live exact count, all three local logo assets, desktop/mobile footer layout, and the corrected Excision event card.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -67,6 +71,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Resubmit sitemap in GSC** (27 URLs) + standing Bing Webmaster import (founder OAuth).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-08-01 — Codex — homepage live counts and official ticket-source trust strip
+- **Changed locally:** replaced stale hard-coded homepage proof with exact public-catalog event/city totals, including ongoing multi-day events; added qualified offline fallbacks; added a responsive Ticketmaster/SeatGeek/Etix source strip with self-hosted SVGs and existing affiliate disclosure preserved.
+- **Verified:** deploy build includes all assets; 110/110 Playwright checks pass on desktop Chrome and mobile Safari; local live-catalog browser QA rendered 2,290 events / 235 cities at desktop and 390×844 with zero overflow or console warnings/errors; independent review passed after overlap, fallback, wording, and third-party asset risks were fixed.
+- **Delivery:** no push, PR, merge, or deploy. Those remain founder-authorized steps.
 
 ## 2026-07-19 — Codex — desktop event metadata + lineup containment
 - **Changed:** event artwork is now image-only at every breakpoint; genre/title/date/venue render below it in one consistent detail flow, and the shared facts card preserves the full `Venue · City, ST` location. Long lineup chips wrap inside the event-content gutter instead of widening or clipping the page.

@@ -157,12 +157,57 @@ test.describe('website smoke', () => {
     await expect(page.locator('#result-count')).toContainText('1 show');
   });
 
-  test('hero proof line is the honest tracking stat, not a fabricated user count', async ({ page }) => {
+  test('hero proof line refreshes from exact public catalog totals', async ({ page }) => {
+    let cityStatsRequests = 0;
+    await page.route('**/rest/v1/event_cities?**', (route) => {
+      cityStatsRequests += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '[{"city":"Denver"},{"city":"Seattle"}]',
+      });
+    });
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      const isStatsRequest = url.searchParams.get('select') === 'id'
+        && url.searchParams.get('limit') === '1';
+      if (isStatsRequest) {
+        expect(url.searchParams.get('or')).toContain('end_date.gte.');
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: {
+          'access-control-expose-headers': 'Content-Range',
+          'content-range': isStatsRequest ? '0-0/1234' : '*/0',
+        },
+        body: isStatsRequest ? '[{"id":"29a5cb9f-f9ae-4840-b90d-910d5b23472f"}]' : '[]',
+      });
+    });
     await page.goto('/index.html');
+    const stats = await page.evaluate(() => (window as any).Drop.fetchCatalogStats());
+    expect(stats).toEqual({ events: 1234, cities: 2 });
+    expect(cityStatsRequests).toBeGreaterThan(0);
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
-    await expect(page.locator('.hero-proof')).toContainText('1,600+');
-    await expect(page.locator('.hero-proof')).toContainText('200+ cities');
+    await expect(page.locator('.hero-proof')).toContainText('1,234 events');
+    await expect(page.locator('.hero-proof')).toContainText('2 cities');
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
+  });
+
+  test('homepage names verified official ticket sources without overstating partnerships', async ({ page }) => {
+    await page.goto('/index.html');
+    const sources = page.locator('.ticket-sources');
+    await expect(sources).toContainText('Official ticket sources available on Drop');
+    await expect(sources).not.toContainText('partnered with');
+    await expect(sources).not.toContainText('integrated with');
+    await expect(sources.locator('img')).toHaveCount(3);
+    await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Ticketmaster');
+    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'SeatGeek');
+    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Etix');
+    for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
+      expect(src).toMatch(/^\/assets\/partners\//);
+    }
+    await expect(page.locator('.foot-disc')).toContainText('affiliate links');
   });
 
   test('"Happening in {city}" heading has a working city dropdown in sync with the nav pill', async ({ page }) => {

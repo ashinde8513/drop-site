@@ -38,6 +38,22 @@
       .catch(function () { return CITIES; });
   };
 
+  // Exact, current public-catalog totals for homepage trust copy. If either
+  // request fails, reject so the server-rendered audited snapshot stays put.
+  Drop.fetchCatalogStats = function () {
+    var today = todayISO();
+    return Promise.all([
+      get('events?' + q({
+        select: 'id', status: 'eq.published',
+        or: '(date.gte.' + today + ',end_date.gte.' + today + ')', limit: 1
+      }), { count: true }),
+      get('event_cities?select=city')
+    ]).then(function (results) {
+      if (results[0].total === null) throw new Error('catalog stats unavailable');
+      return { events: results[0].total, cities: results[1].length };
+    });
+  };
+
   // ---- REST helper --------------------------------------------------------
   function todayISO() {
     // Start-of-today so events later today still show.
