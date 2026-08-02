@@ -7,6 +7,7 @@
 /event/*  /event  200
 /plan/:id   /share-plan.html  302
 /onboarding /download.html  302
+/creators   /creators.html  200
 
 # /app* redirect removed — the standalone post-login web app (ported Prism
 # design SPA) is served natively by Pages from /app/.

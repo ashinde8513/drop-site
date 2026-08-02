@@ -499,8 +499,25 @@
     doc.querySelectorAll('[data-app-download]').forEach(function (a) { a.href = store; });
   }
 
+  // Creator links may enter through the public apex before a visitor chooses
+  // browser signup. Carry the readable code and existing UUID referrer across
+  // that host boundary; the authenticated RPC still enforces first touch.
+  function initCreatorSignupLinks() {
+    var params = new URLSearchParams(location.search);
+    var creator = String(params.get('creator') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var ref = params.get('ref') || '';
+    if (!/^[A-Z0-9]{4,24}$/.test(creator)) return;
+    doc.querySelectorAll('a[href^="https://app.trydropapp.com/?mode=signup"]').forEach(function (link) {
+      var url = new URL(link.href);
+      url.searchParams.set('creator', creator);
+      url.searchParams.set('src', 'creator');
+      if (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(ref)) url.searchParams.set('ref', ref);
+      link.href = url.toString();
+    });
+  }
+
   // ---- boot ---------------------------------------------------------------
-  function boot() { initNav(); initRails(); initDownloadBtns(); }
+  function boot() { initNav(); initRails(); initDownloadBtns(); initCreatorSignupLinks(); }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
   Drop.initRails = initRails; // pages that inject rails later can re-bind

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -49,6 +50,7 @@ const PAGES = [
   { path: '/share-recap.html', title: /Drop/ },
   { path: '/share-wrapped.html', title: /Drop/ },
   { path: '/sms-opt-in.html', title: /SMS verification consent/ },
+  { path: '/creators.html', title: /Drop Creator Program/ },
   // ponytail: app/index.html is in-scope per INGEST_PLAN (track A) but owned
   // by a different in-flight track — add its PAGES entry in that track's commit.
 ];
@@ -501,6 +503,86 @@ test.describe('website smoke', () => {
     await page.locator('.wl-submit').click();
     await expect(page.locator('.wl-msg')).toContainText('valid email');
     await expect(page.locator('#wl-email')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  test('creator application submits accessible normalized fields without production writes', async ({ page }) => {
+    let payload: Record<string, unknown> | undefined;
+    await page.route('**/functions/v1/submit-creator-application', async (route) => {
+      payload = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true,"status":"received"}' });
+    });
+    await page.goto('/creators.html');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+    await page.locator('#creator-email').fill('Raver@Example.com');
+    await page.locator('#creator-name').fill('Raver Maya');
+    await page.locator('#creator-city').fill('Denver');
+    await page.locator('#creator-username').fill('@raver_maya');
+    await page.locator('#creator-platform').fill('https://instagram.com/raver_maya');
+    await page.locator('#creator-sample').fill('https://instagram.com/p/example');
+    await page.locator('#creator-audience').fill('Colorado ravers looking for local shows.');
+    await page.locator('#creator-motivation').fill('I want to help Colorado fans discover the right shows.');
+    await page.locator('#creator-age').check();
+    await page.locator('#creator-expectations').check();
+    await page.locator('.creator-submit').click();
+    await expect(page.locator('.creator-message')).toContainText(/check your inbox/i);
+    expect(payload?.email).toBe('raver@example.com');
+    expect(payload?.state).toBe('CO');
+    expect(payload?.platform_urls).toEqual(['https://instagram.com/raver_maya']);
+  });
+
+  test('creator application surfaces validation, rate limiting, and outages', async ({ page }) => {
+    await page.goto('/creators.html');
+    await page.locator('.creator-submit').click();
+    await expect(page.locator('.creator-message')).toContainText(/required fields/i);
+
+    for (const status of [429, 500]) {
+      await page.route('**/functions/v1/submit-creator-application', (route) =>
+        route.fulfill({ status, body: '' }));
+      await page.locator('#creator-email').fill('raver@example.com');
+      await page.locator('#creator-name').fill('Raver Maya');
+      await page.locator('#creator-city').fill('Denver');
+      await page.locator('#creator-platform').fill('https://instagram.com/raver_maya');
+      await page.locator('#creator-sample').fill('https://instagram.com/p/example');
+      await page.locator('#creator-audience').fill('Colorado ravers looking for local shows.');
+      await page.locator('#creator-motivation').fill('I want to help Colorado fans discover the right shows.');
+      await page.locator('#creator-age').check();
+      await page.locator('#creator-expectations').check();
+      await page.locator('.creator-submit').click();
+      await expect(page.locator('.creator-message')).toContainText(
+        status === 429 ? /wait an hour/i : /didn’t go through/i,
+      );
+      await page.unroute('**/functions/v1/submit-creator-application');
+    }
+  });
+
+  test('creator page remains absent from founding-cohort navigation and sitemap', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('nav a[href*="creator"], footer a[href*="creator"]')).toHaveCount(0);
+    const sitemap = readFileSync(resolve('sitemap.xml'), 'utf8');
+    expect(sitemap).not.toContain('/creators');
+  });
+
+  test('creator referral code crosses the public-to-browser signup boundary', async ({ page }) => {
+    const ref = '11111111-1111-4111-8111-111111111111';
+    await page.goto(`/index.html?creator=MAYA2026&ref=${ref}&src=creator`);
+    const signup = new URL(await page.locator('a[href*="mode=signup"]').first().getAttribute('href') || '');
+    expect(signup.searchParams.get('creator')).toBe('MAYA2026');
+    expect(signup.searchParams.get('ref')).toBe(ref);
+    expect(signup.searchParams.get('src')).toBe('creator');
+  });
+
+  test('signed-in web preserves creator codes until compliant attribution and shows active badge', () => {
+    const appScript = readFileSync(resolve('app/app.js'), 'utf8');
+    const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
+    expect(appScript).toContain("var CREATOR_CODE_KEY = 'drop.creatorCode'");
+    expect(appScript).toContain("supa.rpc('signup_compliance_status')");
+    expect(appScript).toContain("supa.rpc('record_creator_referral', { p_code: code })");
+    expect(appScript.indexOf("supa.rpc('signup_compliance_status')"))
+      .toBeLessThan(appScript.indexOf("supa.rpc('record_creator_referral', { p_code: code })"));
+    expect(appScript).toContain("creator_status,creator_code");
+    expect(appTemplate).toContain('id="signup-creator-code"');
+    expect(appTemplate).toContain('aria-label="Drop Creator"');
+    expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
   });
 
   test('link-in-bio launch buttons point at the real waitlist form', async ({ page }) => {

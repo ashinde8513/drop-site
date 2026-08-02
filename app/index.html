@@ -244,6 +244,8 @@
         <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
         <input type="text" value="{{ username }}" onInput="{{ setUsername }}" placeholder="username" autocomplete="username" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Creator code <span style="color:var(--text-muted);">(optional)</span></label>
+        <input id="signup-creator-code" type="text" placeholder="MAYA2026" autocomplete="off" autocapitalize="characters" maxlength="24" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date of birth</label>
         <input id="signup-dob" type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
         <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Password</label>
@@ -978,6 +980,7 @@
         <div style="flex:1;min-width:220px;">
           <div style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
             <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">{{ prof.name }}</h1>
+            <sc-if value="{{ prof.isCreator }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--social-glass-border);border-radius:var(--r-pill);background:var(--social-glass);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:var(--tr-wide);text-transform:uppercase;" role="status" aria-label="Drop Creator">Drop Creator</span></sc-if>
             <span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--surface-hi);color:var(--text-muted);padding:4px 10px;border-radius:var(--r-pill);">DROP+ — COMING SOON</span>
           </div>
           <div style="color:var(--text-secondary);margin:2px 0 var(--sp-sm);">{{ prof.handleCity }}</div>

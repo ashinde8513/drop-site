@@ -347,6 +347,24 @@
   }
   function fieldVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
   function fieldChecked(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+  var CREATOR_CODE_KEY = 'drop.creatorCode';
+  function normalizeCreatorCode(value) {
+    var code = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return /^[A-Z0-9]{4,24}$/.test(code) ? code : '';
+  }
+  function saveCreatorCode(value) {
+    var code = normalizeCreatorCode(value);
+    if (!code) return false;
+    try { localStorage.setItem(CREATOR_CODE_KEY, code); } catch (_) {}
+    return true;
+  }
+  function pendingCreatorCode() {
+    try { return normalizeCreatorCode(localStorage.getItem(CREATOR_CODE_KEY)); }
+    catch (_) { return ''; }
+  }
+  function clearCreatorCode() {
+    try { localStorage.removeItem(CREATOR_CODE_KEY); } catch (_) {}
+  }
 
   // Stable per-event gradient — real events carry no per-row art direction,
   // so pick deterministically from the design's preset palette (same trick
@@ -891,8 +909,19 @@ class Component extends DCLogic {
   }
   loadProfile(uid){
     if (!supa) return;
-    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image').eq('id', uid).maybeSingle()
+    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image,creator_status,creator_code').eq('id', uid).maybeSingle()
       .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null }); });
+  }
+  maybeRecordCreatorReferral(uid){
+    var code = pendingCreatorCode();
+    if (!supa || !uid || !code) return;
+    supa.rpc('signup_compliance_status').then(({ data, error })=>{
+      if (error || !data || data.user_id !== uid || data.complete !== true) return;
+      supa.rpc('record_creator_referral', { p_code: code }).then(({ data: result, error: referralError })=>{
+        if (referralError) return;
+        if (['recorded', 'already_attributed', 'invalid_code', 'self_referral'].includes(result)) clearCreatorCode();
+      });
+    });
   }
   loadUserData(uid){
     if (!supa) return;
@@ -1019,6 +1048,7 @@ class Component extends DCLogic {
       if (scr === 'home' || scr === 'login' || scr === 'signup') this.go('discover');
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
+      this.maybeRecordCreatorReferral(session.user.id);
       if (this.state.screen === 'festival' && this.state.festivalEvent) {
         this.openFestival(this.state.festivalEvent.id);
       }
@@ -1085,6 +1115,13 @@ class Component extends DCLogic {
   }
   oauth(provider){
     if (!supa) { this.setState({ authError:'Login is unavailable. Refresh and try again.' }); return; }
+    if (this.state.screen === 'signup') {
+      var rawCreatorCode = fieldVal('signup-creator-code');
+      if (rawCreatorCode && !saveCreatorCode(rawCreatorCode)) {
+        this.setState({ authError:'Creator codes use 4–24 letters or numbers.' });
+        return;
+      }
+    }
     supa.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } })
       .then(out=>{ if (out.error) this.setState({ authError: out.error.message }); });
   }
@@ -1466,6 +1503,7 @@ class Component extends DCLogic {
       bio: (profileSrc && profileSrc.bio) || 'Add a bio so your crew knows your vibe.',
       username: (profileSrc && profileSrc.username) || '',
       cityState: profileSrc && profileSrc.city ? profileSrc.city + (profileSrc.state ? ', '+profileSrc.state : '') : '',
+      isCreator: !!(profileSrc && profileSrc.creator_status === 'active'),
     };
     // ponytail: no friends table this phase — drop the "Friends" stat tile
     // entirely instead of showing an invented count.
@@ -2426,14 +2464,18 @@ class Component extends DCLogic {
         const email = fieldVal('signup-email').trim();
         const username = cleanUsername(this.state.username);
         const password = fieldVal('signup-password');
+        const rawCreatorCode = fieldVal('signup-creator-code');
+        const creatorCode = normalizeCreatorCode(rawCreatorCode);
         const dobValue = fieldVal('signup-dob');
         const consented = fieldChecked('signup-consent');
         if (!email || !password) { this.setState({authError:'Enter your email and password.'}); return; }
         if (!username) { this.setState({authError:'Pick a username.'}); return; }
+        if (rawCreatorCode && !creatorCode) { this.setState({authError:'Creator codes use 4–24 letters or numbers.'}); return; }
         if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
         const years = ageFromDob(dobValue);
         if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
         if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
+        if (creatorCode) saveCreatorCode(creatorCode);
         this.setState({authBusy:true, authError:''});
         const data = { username, dob: dobValue, consented_at: new Date().toISOString() };
         // ponytail: referral is cosmetic (no crew-join backend yet) — same
@@ -2577,6 +2619,10 @@ class Component extends DCLogic {
     // ?mode=reset-password (detectSessionInUrl already consumed the token) —
     // route straight to the "choose a new password" screen instead of Home.
     instance.loadEvents();
+    if (typeof location !== 'undefined') {
+      var incomingCreatorCode = new URLSearchParams(location.search).get('creator');
+      if (incomingCreatorCode) saveCreatorCode(incomingCreatorCode);
+    }
     if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('mode') === 'reset-password') {
       instance.setState({ screen: 'reset' });
     }

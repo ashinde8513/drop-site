@@ -54,6 +54,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
+- **Creator Program: after the exact backend migration and Edge Function are
+  separately approved, applied/deployed, and read back, merge this isolated
+  website candidate through the standard PR → `main` workflow and verify
+  `/creators` plus public-to-browser creator-code preservation.** The page
+  remains noindex and absent from navigation; no website deployment occurred.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -253,6 +258,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Verified:** local Playwright passed 108/108; the exact mobile-Safari failure paths passed 45/45 across five repeats; the generated build, secret scan, diff checks, and independent adversarial review passed. PR #30 exact-head run `30522969554` passed, then production run `30523124634` passed its full test and Cloudflare deploy jobs at main `b39b216`.
 - **Live result:** `https://trydropapp.com/sms-opt-in` returns HTTP 200 and contains the exact one-time consent, “Text me a code,” no recurring/promotional-text disclosure, Privacy/Terms links, and `noindex, nofollow`. Twilio initially rejected a mismatched legal-name/entity pairing; the legal name was corrected to CP575-exact `ARYA A SHINDE`, resubmitted with company type `SOLE_PROPRIETOR`, and the fresh checklist reports `In Review`. Toll-free number `(855) 741-1140` (`PNbd8be89e2ffdf5c70d63e5f8a66eba17`) is now attached to `Drop Phone Verification` (`MGe2d6e639033b34c6535bb7deaf7d3bfd`), confirmed by the number configuration's selected-service readback. Supabase secret/config writes remain separately approval-gated.
 
+### 2026-07-30 — Creator Program website candidate verified locally
+
+- Added the noindex `/creators` page, accessible application form, truthful
+  ticket/payment language, public-to-browser creator-code forwarding,
+  post-compliance attribution, and signed-in creator badge.
+- Verified 120/120 Playwright checks, deployable `dist/` generation, and visual
+  desktop/mobile QA at 1280px and 390px with no horizontal overflow.
+- No production application, website deploy, or external submission occurred.
 ### 2026-07-25 — Codex — Reliable launch-access client ready to deploy
 - **Cause:** the live form wrote directly from the visitor’s browser to the
   waitlist table. A failed request was neither queued nor retried, and no code
