@@ -530,6 +530,10 @@ test.describe('website smoke', () => {
     expect(payload?.platform_urls).toEqual(['https://instagram.com/raver_maya']);
   });
 
+  test('creator pretty URL avoids a Cloudflare self-redirect', () => {
+    expect(readFileSync('_redirects', 'utf8')).not.toMatch(/^\/creators\s+\/creators\.html\s+200$/m);
+  });
+
   test('creator application surfaces validation, rate limiting, and outages', async ({ page }) => {
     await page.goto('/creators.html');
     await page.locator('.creator-submit').click();
