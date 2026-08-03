@@ -15,7 +15,7 @@ cp ./*.html dist/
 cp ./*.css ./*.js dist/
 cp favicon.ico favicon.png favicon.svg og-image.png og-image.svg og-image-link.png og-image-link.svg dist/
 cp sitemap.xml robots.txt llms.txt dist/
-cp _headers _redirects dist/
+cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
 cp -R .well-known app assets vendor dist/

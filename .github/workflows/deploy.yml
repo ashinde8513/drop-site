@@ -51,6 +51,8 @@ jobs:
         run: |
           test -f dist/index.html || { echo "::error::dist/index.html missing"; exit 1; }
           test -f dist/_redirects && test -f dist/_headers || { echo "::error::_redirects/_headers missing"; exit 1; }
+          test -f dist/_routes.json && test -f functions/sitemap-entities.xml.js \
+            || { echo "::error::entity SEO routes missing"; exit 1; }
           grep -q 'app.resonanceventures.drop' dist/.well-known/apple-app-site-association \
             || { echo "::error::AASA lost or stale — refusing to deploy a universal-links regression"; exit 1; }
       - name: Deploy to Cloudflare Pages (production)

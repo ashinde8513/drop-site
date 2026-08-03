@@ -53,7 +53,7 @@
   // RSVP controls live on event detail, keeping discovery cards image-forward.
   Drop.ecard = function (event) {
     var a = el('a', 'wsc-card');
-    a.href = '/event.html?id=' + encodeURIComponent(event.id);
+    a.href = Drop.eventPath(event);
     a.dataset.eventId = event.id;
     a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
 
@@ -95,7 +95,7 @@
   // Venue card (derived from grouped events).
   Drop.venueCard = function (v) {
     var a = el('a', 'vcard');
-    a.href = '/venue.html?name=' + encodeURIComponent(v.name) + '&city=' + encodeURIComponent(v.city || '');
+    a.href = Drop.venuePath(v);
     a.setAttribute('aria-label', esc(v.name) + ' — ' + v.count + ' upcoming shows');
     var art = el('div', 'vcard-art ' + (v.cls || 'g-other'));
     art.setAttribute('aria-hidden', 'true');
@@ -115,7 +115,7 @@
   Drop.acard = function (a, opts) {
     opts = opts || {};
     var link = el('a', 'acard');
-    link.href = '/artist.html?id=' + encodeURIComponent(a.id);
+    link.href = Drop.artistPath(a);
     link.setAttribute('aria-label', esc(a.name));
     var media = el('div', 'acard-media');
     function fallback() {
@@ -416,11 +416,11 @@
         row('/events.html?city=' + encodeURIComponent(c), c, 'City');
       });
       (events || []).slice(0, 5).forEach(function (ev) {
-        row('/event.html?id=' + encodeURIComponent(ev.id), ev.title,
+        row(Drop.eventPath(ev), ev.title,
           [Drop.fmtDate(ev.date, ev.time_tbd), ev.venue_name].filter(Boolean).join(' · '));
       });
       (artists || []).slice(0, 4).forEach(function (a) {
-        row('/artist.html?id=' + encodeURIComponent(a.id), a.name, 'Artist');
+        row(Drop.artistPath(a), a.name, 'Artist');
       });
       row('/events.html?city=' + encodeURIComponent(Drop.city()) + '&q=' + encodeURIComponent(q),
         'Search “' + q + '”', 'All events');

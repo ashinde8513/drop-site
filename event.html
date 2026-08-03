@@ -189,6 +189,8 @@
       function setMeta(ev) {
         var title = ev.title + ' · Drop';
         var desc = (ev.description || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.')).slice(0, 155);
+        var canonical = 'https://trydropapp.com' + D.eventPath(ev);
+        var image = D.eventArt(ev) || 'https://trydropapp.com/og-image.png';
         document.title = title;
         document.getElementById('doc-title').textContent = title;
         document.getElementById('meta-desc').setAttribute('content', desc);
@@ -196,15 +198,22 @@
         document.getElementById('og-desc').setAttribute('content', desc);
         document.getElementById('tw-title').setAttribute('content', title);
         document.getElementById('tw-desc').setAttribute('content', desc);
+        document.querySelector('link[rel="canonical"]').href = canonical;
+        document.querySelector('meta[property="og:url"]').content = canonical;
+        document.querySelector('meta[property="og:image"]').content = image;
+        document.querySelector('meta[name="twitter:image"]').content = image;
       }
 
       function injectLd(ev) {
+        if (document.querySelector('[data-server-ldjson]')) return;
+        var ticketUrl = D.safeUrl(ev.ticket_url);
         var ld = {
           '@context': 'https://schema.org',
           '@type': 'Event',
           name: ev.title,
+          url: 'https://trydropapp.com' + D.eventPath(ev),
           startDate: ev.date,
-          eventStatus: 'https://schema.org/EventScheduled',
+          eventStatus: D.schemaEventStatus(ev.lifecycle_status),
           location: {
             '@type': 'Place',
             name: ev.venue_name,
@@ -212,11 +221,11 @@
           },
           image: D.eventArt(ev) ? [D.eventArt(ev)] : undefined,
           description: ev.description || undefined,
-          offers: ev.ticket_url ? {
-            '@type': 'Offer', url: ev.ticket_url,
+          offers: ticketUrl ? {
+            '@type': 'Offer', url: ticketUrl,
             price: ev.price_min != null ? ev.price_min : undefined,
             priceCurrency: ev.currency || 'USD',
-            availability: 'https://schema.org/InStock'
+            availability: D.schemaOfferAvailability(ev.ticket_status)
           } : undefined
         };
         var s = document.createElement('script');
@@ -355,7 +364,7 @@
         venueMetric.appendChild(el('span', 'metric__label', 'Venue'));
         var location = [ev.city, ev.state].filter(Boolean).join(', ');
         var venueLink = el('a', null, [ev.venue_name || 'Venue TBA', location].filter(Boolean).join(' · '));
-        venueLink.href = '/venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
+        venueLink.href = D.venuePath(ev);
         venueLink.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--text);';
         venueMetric.appendChild(venueLink);
         row.appendChild(venueMetric);
@@ -375,7 +384,7 @@
         list.style.marginTop = 'var(--sp-md)';
         arts.forEach(function (a) {
           var chip = el('a', 'chip', a.name);
-          chip.href = '/artist.html?id=' + encodeURIComponent(a.id);
+          chip.href = D.artistPath(a);
           var dot = el('span', 'ed-lineup-dot');
           chip.insertBefore(dot, chip.firstChild);
           list.appendChild(chip);
@@ -426,7 +435,7 @@
         var priceEl = el('span', null, D.fmtPrice(ev.price_min, ev.price_max));
         priceEl.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);';
         right.appendChild(priceEl);
-        var buy = el('a', 'btn btn--secondary btn--sm', 'Get tickets');
+        var buy = el('a', 'btn btn--secondary btn--sm', D.ticketActionLabel(ev));
         buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
         right.appendChild(buy);
         row.appendChild(right);
@@ -469,7 +478,7 @@
 
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
-          var buy = el('a', 'btn btn--primary btn--block', 'Get tickets');
+          var buy = el('a', 'btn btn--primary btn--block', D.ticketActionLabel(ev));
           buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           box.appendChild(buy);
         }
@@ -485,7 +494,7 @@
 
         var onsale = el('div', 'ed-onsale');
         onsale.appendChild(el('span', 'dot'));
-        onsale.appendChild(el('span', null, ticketUrl ? 'Tickets available now' : 'Tickets not yet available'));
+        onsale.appendChild(el('span', null, D.eventAvailabilityText(ev)));
         box.appendChild(onsale);
 
         aside.appendChild(box);
@@ -506,7 +515,7 @@
         stickyBar.appendChild(going);
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
-          var buy = el('a', 'btn btn--primary', 'Get tickets · ' + D.fmtPrice(ev.price_min, ev.price_max));
+          var buy = el('a', 'btn btn--primary', D.ticketActionLabel(ev) + ' · ' + D.fmtPrice(ev.price_min, ev.price_max));
           buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           buy.style.cssText = 'flex:1.4;height:48px;';
           stickyBar.appendChild(buy);
@@ -570,7 +579,7 @@
         // already complete without them.
         var main = document.getElementById('main');
         if (ev.venue_name) {
-          D.fetchVenue(ev.venue_name, ev.city).then(function (v) {
+          (ev.venue_id ? D.fetchVenueById(ev.venue_id) : D.fetchVenue(ev.venue_name, ev.city)).then(function (v) {
             var rail = renderRail('More at ' + ev.venue_name, v.events, ev.id);
             if (rail) main.appendChild(rail);
           }).catch(function () {});

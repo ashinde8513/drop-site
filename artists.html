@@ -217,7 +217,7 @@
         openBtn.className = 'atile-open';
         openBtn.setAttribute('aria-label', 'View ' + a.name);
         openBtn.addEventListener('click', function () {
-          location.href = '/artist.html?id=' + encodeURIComponent(a.id);
+          location.href = D.artistPath(a);
         });
 
         var media = D.el('div', 'acard-media');
@@ -248,7 +248,7 @@
 
         // Follow is a signed-in action — login-gate straight to the app-shell login.
         var follow = D.el('a', 'btn btn--secondary btn--sm atile-follow', 'Follow');
-        follow.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent('/artist.html?id=' + a.id);
+        follow.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent(D.artistPath(a));
         follow.setAttribute('aria-label', 'Log in to follow ' + a.name);
         tile.appendChild(follow);
 
@@ -258,7 +258,7 @@
       function load() {
         moreBtn.hidden = true;
         D.skeletonGrid(host, 6);
-        D.fetchEvents({ city: city, limit: 200 }).then(function (evs) {
+        D.fetchAllEvents({ city: city }).then(function (evs) {
           var map = {};
           evs.forEach(function (ev) {
             (ev.event_artists || []).forEach(function (ea) {

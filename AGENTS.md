@@ -56,6 +56,22 @@ founder for a Cloudflare token to deploy the site.** Notes:
 - The `workers/app-path` Worker is NOT covered by this workflow — `cd
   workers/app-path && npx wrangler deploy` still needs credentials.
 
+## Ordinary website release default
+
+Once the user authorizes an ordinary website code or content change, carry it
+through the complete standard lane: implement → verify → commit/push → PR →
+required exact-head CI → merge → the automatic `main` Test & Deploy workflow →
+live QA → repo closeout. Do not stop at a local change, push, PR, or merge unless
+the user explicitly says `draft`, `stop`, `local-only`, or otherwise narrows the
+delivery scope.
+
+This standing rule does not authorize production database mutations, secret
+writes or rotation, destructive actions, external outreach/submissions, manual
+or break-glass deploys, Worker deploys, or scope expansion. Those retain their
+existing destination-specific approval gates. Routine website production
+delivery uses only the existing `main` GitHub Actions workflow; never request or
+use a Cloudflare token for it.
+
 ## Multi-Agent Handoff Protocol
 Worked on by multiple agents (Claude, Codex, Hermes), possibly concurrently.
 ### Start
