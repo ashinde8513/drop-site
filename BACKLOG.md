@@ -5,6 +5,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 ## Now
 
 - [x] Add canonical event/venue/artist pages from the real catalog — live 2026-08-02 through PRs #38/#39: stable UUID-backed readable paths, server-rendered lifecycle-aware metadata/JSON-LD, fail-closed index eligibility, a quality-filtered live entity sitemap, and full-catalog venue/artist pagination. Thin aggregates remain directly accessible with `noindex, follow`; ticket URLs never imply availability; event links retain venue UUID identity. No fabricated listings or production database writes.
+- [x] Verify `trydropapp.com` in Google Search Console and submit both production sitemaps — complete 2026-08-02. Google reports `Success` for `sitemap.xml` (27 discovered pages) and `sitemap-entities.xml` (3,581 discovered pages).
 - [ ] Persist signed-in show/venue reviews to `show_ratings` and render moderated public review summaries on canonical event/venue pages. The current website's rating UI is local-only and must not be presented as a working review flow.
 - [x] Deploy the paired backend `events.timezone` migration/ingest, rerun the full live-backed suite, and release the website — complete 2026-07-18: 96/96 local + GitHub, PR #17 / `aa76a7a`, production run `29639887776`, and desktop/mobile live catalog/art QA green. Multi-day schedule rendering is regression-tested; production has no official festival set-time rows yet, so live-data schedule QA remains waiting rather than fabricated.
 - [x] Replace generic/empty event cards with the proper event → lineup artist → Prism chain and wire real festival discovery/set times — independently reviewed and live through PR #17 on 2026-07-18; targeted regressions 10/10 and generated-dist parity clean.
@@ -12,7 +13,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Blocked / waiting
 
-- [ ] Submit both `sitemap.xml` and `sitemap-entities.xml` to Google Search Console and Bing Webmaster Tools after the entity routes deploy (Bing OAuth remains founder action).
+- [ ] Import the verified Google Search Console property into Bing Webmaster Tools (founder OAuth remains required).
 - [ ] Obtain an official festival schedule/export source, author the reviewed v1 set-time manifest, and then live-smoke venue-timezone grouping. Production currently has zero published-festival set times.
 
 ## Next
