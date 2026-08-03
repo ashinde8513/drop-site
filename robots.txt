@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://trydropapp.com/sitemap.xml
+Sitemap: https://trydropapp.com/sitemap-entities.xml

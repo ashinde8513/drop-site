@@ -71,6 +71,23 @@
     return parts.join('&');
   }
 
+  Drop.slugify = function (value) {
+    return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '').slice(0, 80) || 'drop';
+  };
+  Drop.eventPath = function (event) {
+    return '/event/' + encodeURIComponent(event.id) + '/' + Drop.slugify(event.title);
+  };
+  Drop.venuePath = function (venue) {
+    var id = venue.id || venue.venue_id;
+    return id ? '/venue/' + encodeURIComponent(id) + '/' + Drop.slugify([venue.name || venue.venue_name, venue.city].filter(Boolean).join(' '))
+      : '/venue.html?name=' + encodeURIComponent(venue.name || venue.venue_name || '') + '&city=' + encodeURIComponent(venue.city || '');
+  };
+  Drop.artistPath = function (artist) {
+    return '/artist/' + encodeURIComponent(artist.id) + '/' + Drop.slugify(artist.name);
+  };
+
   function get(path, opts) {
     var headers = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY };
     if (opts && opts.count) headers.Prefer = 'count=exact';
@@ -124,7 +141,7 @@
   };
 
   var EVENT_COLS =
-    'id,title,description,date,end_date,venue_name,city,state,image_url,ticket_url,' +
+    'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,' +
     'price_min,price_max,currency,is_festival,time_tbd,timezone,status,created_at';
   var EVENT_SELECT = EVENT_COLS + ',event_artists(artists(id,name,genres,image_url))';
 
@@ -181,6 +198,22 @@
       }
       return opts.count ? { rows: rows, total: res.total } : rows;
     });
+  };
+
+  // PostgREST caps responses at 1,000 rows. Venue/artist directories need the
+  // full live catalog, so page until the server returns a short batch.
+  Drop.fetchAllEvents = function (opts) {
+    opts = Object.assign({}, opts || {});
+    var rows = [], offset = opts.offset || 0;
+    function next() {
+      return Drop.fetchEvents(Object.assign({}, opts, { limit: 1000, offset: offset })).then(function (page) {
+        rows = rows.concat(page);
+        if (page.length < 1000) return rows;
+        offset += 1000;
+        return next();
+      });
+    }
+    return next();
   };
 
   // A multi-day festival remains discoverable until its authored end time.
@@ -255,7 +288,7 @@
   };
 
   Drop.fetchEvent = function (id) {
-    return get('events?' + q({ select: EVENT_SELECT, id: 'eq.' + id, limit: 1 }))
+    return get('events?' + q({ select: EVENT_SELECT, id: 'eq.' + id, status: 'eq.published', limit: 1 }))
       .then(function (rows) {
         if (!rows || !rows.length) throw new Error('not found');
         return rows[0];
@@ -277,15 +310,15 @@
     // Events for this artist, upcoming. `!inner` on the join table makes the
     // filter an actual server-side narrowing of parent rows (plain
     // `event_artists.artists.id=eq.X` only narrows the embed, not which
-    // events come back — with limit=100 that silently truncated real shows
-    // off the list for anyone not in the first 100 upcoming events site-wide).
+    // events come back — otherwise real shows can be silently truncated by
+    // unrelated events earlier in the site-wide result set).
     var evP = get('events?' + q({
       select: EVENT_COLS + ',event_artists!inner(artists(id,name,genres,image_url))',
       status: 'eq.published',
       date: 'gte.' + todayISO(),
       order: 'date.asc',
       'event_artists.artist_id': 'eq.' + id,
-      limit: 100
+      limit: 1000
     }));
     return Promise.all([artistP, evP]).then(function (r) {
       if (!r[0] || !r[0].length) throw new Error('not found');
@@ -323,14 +356,30 @@
       date: 'gte.' + todayISO(),
       venue_name: 'ilike.' + name,
       order: 'date.asc',
-      limit: 100
+      limit: 1000
     };
     if (city) params.city = 'ilike.' + city;
     return get('events?' + q(params)).then(function (rows) {
       rows = rows || [];
       if (!rows.length) throw new Error('not found');
       var e0 = rows[0];
-      return { venue: { name: e0.venue_name, city: e0.city, state: e0.state }, events: rows };
+      return { venue: { id: e0.venue_id, name: e0.venue_name, city: e0.city, state: e0.state, address: e0.venue_address }, events: rows };
+    });
+  };
+
+  Drop.fetchVenueById = function (id) {
+    return get('events?' + q({
+      select: EVENT_SELECT,
+      status: 'eq.published',
+      date: 'gte.' + todayISO(),
+      venue_id: 'eq.' + id,
+      order: 'date.asc',
+      limit: 1000
+    })).then(function (rows) {
+      rows = rows || [];
+      if (!rows.length) throw new Error('not found');
+      var e0 = rows[0];
+      return { venue: { id: e0.venue_id, name: e0.venue_name, city: e0.city, state: e0.state, address: e0.venue_address }, events: rows };
     });
   };
 

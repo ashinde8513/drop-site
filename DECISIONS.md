@@ -1,5 +1,9 @@
 # Decisions
 
+## 2026-08-02 — Public entity URLs use stable IDs plus readable slugs
+
+Canonical public discovery URLs are `/event/<uuid>/<slug>`, `/venue/<uuid>/<slug>`, and `/artist/<uuid>/<slug>`. The UUID is identity; the slug is readable and may change, so mismatched or missing slugs redirect permanently to the current canonical path. Pages and sitemaps are generated only from real published catalog rows. Traffic work must never create fake events, reviews, attendance, or social proof. Legacy query-string detail URLs remain compatibility entry points while internal links and shares use canonical paths.
+
 ## 2026-07-18 — Hosted legal pages are canonical; embedded SPA copies are retired
 
 `https://trydropapp.com/privacy` and `https://trydropapp.com/terms` are the canonical Privacy Policy and Terms for the website, web app, and mobile app. The SPA must link to those documents instead of maintaining an embedded duplicate. The native app may render an aligned in-app copy for review accessibility, but its version/date and disclosures must match the hosted documents and it must expose the canonical links. The `.html` URLs remain compatibility redirects, not link targets.

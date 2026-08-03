@@ -161,7 +161,7 @@
     (function () {
       var D = window.Drop;
       var params = new URLSearchParams(location.search);
-      var id = (params.get('id') || '').trim();
+      var id = (params.get('id') || (location.pathname.match(/^\/artist\/([^/]+)/) || [])[1] || '').trim();
       var host = document.getElementById('artist-content');
 
       function renderError() {
@@ -181,6 +181,7 @@
       }
 
       function injectLd(artist) {
+        if (document.querySelector('[data-server-ldjson]')) return;
         var s = document.createElement('script');
         s.type = 'application/ld+json';
         s.id = 'ldjson';
@@ -190,7 +191,7 @@
           name: artist.name,
           genre: artist.genres || [],
           image: D.isRealArtUrl(artist.image_url) ? artist.image_url : undefined,
-          url: 'https://trydropapp.com/artist.html?id=' + encodeURIComponent(artist.id)
+          url: 'https://trydropapp.com' + D.artistPath(artist)
         });
         document.head.appendChild(s);
       }
@@ -198,6 +199,9 @@
       function renderArtist(data) {
         var a = data.artist, events = data.events;
         document.title = a.name + ' — Drop';
+        var canonical = 'https://trydropapp.com' + D.artistPath(a);
+        document.querySelector('link[rel="canonical"]').href = canonical;
+        document.querySelector('meta[property="og:url"]').content = canonical;
         document.getElementById('bc-name').textContent = a.name;
         injectLd(a);
 
@@ -269,7 +273,7 @@
 
         // Follow is a signed-in action — login-gate to the app-shell login.
         var followBtn = D.el('a', 'btn btn--primary', 'Follow');
-        followBtn.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent('/artist.html?id=' + a.id);
+        followBtn.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent(D.artistPath(a));
         followBtn.setAttribute('aria-label', 'Log in to follow ' + a.name);
         heroInner.appendChild(followBtn);
 

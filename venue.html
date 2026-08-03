@@ -158,6 +158,7 @@
       var D = window.Drop;
 
       var params = new URLSearchParams(location.search);
+      var pathId = (location.pathname.match(/^\/venue\/([^/]+)/) || [])[1] || '';
       var name = (params.get('name') || '').trim();
       var city = (params.get('city') || '').trim();
       var host = document.getElementById('venue-content');
@@ -178,6 +179,9 @@
       function renderVenue(data) {
         var v = data.venue, events = data.events;
         document.title = v.name + ' — Drop';
+        var canonical = 'https://trydropapp.com' + D.venuePath(v);
+        document.querySelector('link[rel="canonical"]').href = canonical;
+        document.querySelector('meta[property="og:url"]').content = canonical;
         document.getElementById('bc-name').textContent = v.name;
 
         // Vibe tags: top 3 genres among this venue's upcoming events — real,
@@ -212,7 +216,7 @@
 
         // Follow is a signed-in action — login-gate to the app-shell login.
         var followBtn = D.el('a', 'btn btn--primary', 'Follow');
-        followBtn.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent('/venue.html?name=' + name + '&city=' + city);
+        followBtn.href = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent(D.venuePath(v));
         followBtn.setAttribute('aria-label', 'Log in to follow ' + v.name);
         heroInner.appendChild(followBtn);
         hero.appendChild(heroInner);
@@ -295,6 +299,7 @@
       }
 
       function load() {
+        if (pathId) { D.fetchVenueById(pathId).then(renderVenue).catch(renderError); return; }
         if (!name) { renderError(); return; }
         D.fetchVenue(name, city).then(renderVenue).catch(renderError);
       }

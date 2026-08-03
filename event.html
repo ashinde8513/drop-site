@@ -189,6 +189,8 @@
       function setMeta(ev) {
         var title = ev.title + ' · Drop';
         var desc = (ev.description || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.')).slice(0, 155);
+        var canonical = 'https://trydropapp.com' + D.eventPath(ev);
+        var image = D.eventArt(ev) || 'https://trydropapp.com/og-image.png';
         document.title = title;
         document.getElementById('doc-title').textContent = title;
         document.getElementById('meta-desc').setAttribute('content', desc);
@@ -196,13 +198,19 @@
         document.getElementById('og-desc').setAttribute('content', desc);
         document.getElementById('tw-title').setAttribute('content', title);
         document.getElementById('tw-desc').setAttribute('content', desc);
+        document.querySelector('link[rel="canonical"]').href = canonical;
+        document.querySelector('meta[property="og:url"]').content = canonical;
+        document.querySelector('meta[property="og:image"]').content = image;
+        document.querySelector('meta[name="twitter:image"]').content = image;
       }
 
       function injectLd(ev) {
+        if (document.querySelector('[data-server-ldjson]')) return;
         var ld = {
           '@context': 'https://schema.org',
           '@type': 'Event',
           name: ev.title,
+          url: 'https://trydropapp.com' + D.eventPath(ev),
           startDate: ev.date,
           eventStatus: 'https://schema.org/EventScheduled',
           location: {
@@ -355,7 +363,7 @@
         venueMetric.appendChild(el('span', 'metric__label', 'Venue'));
         var location = [ev.city, ev.state].filter(Boolean).join(', ');
         var venueLink = el('a', null, [ev.venue_name || 'Venue TBA', location].filter(Boolean).join(' · '));
-        venueLink.href = '/venue.html?name=' + encodeURIComponent(ev.venue_name || '') + '&city=' + encodeURIComponent(ev.city || '');
+        venueLink.href = D.venuePath(ev);
         venueLink.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--text);';
         venueMetric.appendChild(venueLink);
         row.appendChild(venueMetric);
@@ -375,7 +383,7 @@
         list.style.marginTop = 'var(--sp-md)';
         arts.forEach(function (a) {
           var chip = el('a', 'chip', a.name);
-          chip.href = '/artist.html?id=' + encodeURIComponent(a.id);
+          chip.href = D.artistPath(a);
           var dot = el('span', 'ed-lineup-dot');
           chip.insertBefore(dot, chip.firstChild);
           list.appendChild(chip);
@@ -570,7 +578,7 @@
         // already complete without them.
         var main = document.getElementById('main');
         if (ev.venue_name) {
-          D.fetchVenue(ev.venue_name, ev.city).then(function (v) {
+          (ev.venue_id ? D.fetchVenueById(ev.venue_id) : D.fetchVenue(ev.venue_name, ev.city)).then(function (v) {
             var rail = renderRail('More at ' + ev.venue_name, v.events, ev.id);
             if (rail) main.appendChild(rail);
           }).catch(function () {});

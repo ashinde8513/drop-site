@@ -185,7 +185,7 @@
 
       function renderRow(v) {
         var row = D.el('a', 'v-row');
-        row.href = '/venue.html?name=' + encodeURIComponent(v.name) + '&city=' + encodeURIComponent(v.city || '');
+        row.href = D.venuePath(v);
         row.setAttribute('aria-label', v.name + ' — ' + v.count + ' upcoming shows');
         row.appendChild(D.el('div', 'v-row__art art-prism ' + v.cls));
         var body = D.el('div', 'v-row__body');
@@ -232,12 +232,12 @@
 
       function load() {
         D.skeletonGrid(host, 6);
-        D.fetchEvents({ limit: 1000 }).then(function (evs) {
+        D.fetchAllEvents().then(function (evs) {
           var map = {};
           evs.forEach(function (ev) {
             if (!ev.venue_name) return;
-            var key = ev.venue_name + '||' + (ev.city || '');
-            if (!map[key]) map[key] = { name: ev.venue_name, city: ev.city, state: ev.state || 'Other', count: 0, cls: D.genreClass(ev), events: [] };
+            var key = ev.venue_id || (ev.venue_name + '||' + (ev.city || ''));
+            if (!map[key]) map[key] = { id: ev.venue_id, name: ev.venue_name, city: ev.city, state: ev.state || 'Other', count: 0, cls: D.genreClass(ev), events: [] };
             map[key].count++;
             map[key].events.push(ev);
           });
@@ -251,7 +251,7 @@
           });
           fullGroups = Object.keys(stateMap).sort(function (a, b) { return stateMap[b].length - stateMap[a].length; })
             .map(function (s) {
-              return { state: s, venues: stateMap[s].sort(function (a, b) { return a.name.localeCompare(b.name); }) };
+              return { state: s, venues: stateMap[s].sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); }) };
             });
 
           if (!list.length) {

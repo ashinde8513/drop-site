@@ -13,13 +13,14 @@ Last updated: 2026-08-02
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — homepage catalog proof + official ticket-source strip shipped and live-verified
+**Status:** IDLE — entity SEO branch verified locally; not merged or deployed
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
 
 ## Current status
 ### What works
+- **ENTITY SEO + FULL VENUE CATALOG READY, NOT DEPLOYED (2026-08-02):** branch `codex/entity-seo-venue-events-20260802` gives every published event, canonical venue, and lineup artist a stable UUID-backed readable URL; Cloudflare Pages Functions server-render real catalog metadata/content and JSON-LD; `/sitemap-entities.xml` currently exposes 4,417 URLs (2,246 upcoming/ongoing events, 715 venues, 1,456 artists). The public venue and artist directories now paginate past PostgREST's 1,000-row cap, group venues by canonical `venue_id`, and rank venues busiest-first within each state. No events or reviews were fabricated and no production writes occurred. Wrangler compiles successfully, live read-only generation resolves Red Rocks to 14 events, and the complete 124-test Chrome/WebKit suite passes.
 - **CREATOR PROGRAM BACKEND LIVE; PUBLIC ROUTE HOTFIX READY (2026-08-02):** the founding-pilot package and backend are merged, production migrations are applied, `CREATOR_RATE_LIMIT_SECRET` is set, and `submit-creator-application` is active with same-origin enforcement. Website PR #36 deployed the noindex application page, but live Browser QA caught a Cloudflare self-redirect on `/creators`; this hotfix removes the redundant `_redirects` rewrite and adds a regression assertion. Mobile release-train PR #297 remains unmerged and no Creator Program OTA has shipped.
 - **HOMEPAGE CATALOG PROOF + OFFICIAL TICKET SOURCES LIVE (2026-08-02):** PR #34 renders overlap-aware totals from the public catalog (2,252 events / 236 cities at production QA time), keeps qualified offline fallbacks, and adds self-hosted Ticketmaster, SeatGeek, and Etix logos under neutral source wording. Production QA caught the homepage reusing an old cached `site.css`; the follow-up adds `?v=20260802` so the logo sizing rules load immediately. Full Chrome/WebKit Playwright coverage is 110/110 and production desktop/mobile QA found no overflow or browser errors.
 - **TWILIO SENDER ASSOCIATION VERIFIED (2026-07-30):** toll-free number `(855) 741-1140` (`PNbd8be89e2ffdf5c70d63e5f8a66eba17`) is attached to the existing Messaging Service `Drop Phone Verification` (`MGe2d6e639033b34c6535bb7deaf7d3bfd`). The number configuration readback shows “Selected messaging service: Drop Phone Verification.” This association does not change Toll-Free Verification's separate `In Review` status.
@@ -54,6 +55,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Open and review the entity-SEO PR from `codex/entity-seo-venue-events-20260802`; after explicit merge authorization, merge through the standard `main` workflow, live-check one event/venue/artist canonical response plus `/sitemap-entities.xml`, then submit both sitemap URLs in Google Search Console.** Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
@@ -250,6 +252,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-02 — Codex — canonical event/venue/artist SEO candidate ready
+- **Changed:** replaced query-string discovery links with readable UUID-backed event, venue, and artist URLs; added server-rendered Cloudflare Pages entity routes, canonical redirects, Event/MusicVenue/MusicGroup JSON-LD, and a live entity sitemap; fixed venue/artist directory truncation by paging the full catalog and grouping venues by canonical ID. Shared links now use the durable event route.
+- **Verified:** read-only production ranking and generation found 2,246 currently discoverable events, 715 venues, 1,456 artists, and 4,417 sitemap URLs; Red Rocks renders 14 events. Node security/URL checks pass, Wrangler compiles the Functions bundle, `scripts/build-dist.sh` includes `_routes.json`, `git diff --check` is clean, and `npm test` passes 124/124 across desktop Chrome and mobile Safari.
+- **Delivery:** isolated branch only; no database mutation, fabricated event/review, merge, or production deploy occurred. The next honest product slice is persisting and publicly rendering moderated `show_ratings` reviews on event/venue pages.
+
 ### 2026-07-30 — Codex — Twilio SMS opt-in proof live
 - **Changed:** added the public, privacy-safe SMS verification consent proof and smoke coverage in PR #29. After two post-merge production attempts timed out waiting for mobile WebKit's `load` event, PR #30 made the test harness deterministic by stubbing Google Fonts and providing explicit Supabase REST fallbacks; production behavior was not changed by the CI fix.
 - **Verified:** local Playwright passed 108/108; the exact mobile-Safari failure paths passed 45/45 across five repeats; the generated build, secret scan, diff checks, and independent adversarial review passed. PR #30 exact-head run `30522969554` passed, then production run `30523124634` passed its full test and Cloudflare deploy jobs at main `b39b216`.

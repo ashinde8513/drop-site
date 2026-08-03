@@ -736,7 +736,7 @@ class Component extends DCLogic {
   // Share = copy the event's public page URL (the SEO page works signed-out,
   // so it's the right link to hand a friend). Same URL shape site.js uses.
   shareEvent(id){
-    const url = 'https://trydropapp.com/event.html?id=' + encodeURIComponent(id || '');
+    const url = 'https://trydropapp.com/event/' + encodeURIComponent(id || '');
     if (!id) { this.flash('Nothing to share yet'); return; }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(
