@@ -159,14 +159,14 @@ test.describe('website smoke', () => {
     await expect(page.locator('#result-count')).toContainText('1 show');
   });
 
-  test('hero proof line refreshes from exact public catalog totals', async ({ page }) => {
+  test('hero proof line floors live catalog totals to truthful rounded-plus counts', async ({ page }) => {
     let cityStatsRequests = 0;
     await page.route('**/rest/v1/event_cities?**', (route) => {
       cityStatsRequests += 1;
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: '[{"city":"Denver"},{"city":"Seattle"}]',
+        body: JSON.stringify(Array.from({ length: 236 }, (_, i) => ({ city: `City ${i + 1}` }))),
       });
     });
     await page.route('**/rest/v1/events?**', (route) => {
@@ -188,11 +188,12 @@ test.describe('website smoke', () => {
     });
     await page.goto('/index.html');
     const stats = await page.evaluate(() => (window as any).Drop.fetchCatalogStats());
-    expect(stats).toEqual({ events: 1234, cities: 2 });
+    expect(stats).toEqual({ events: 1234, cities: 236 });
     expect(cityStatsRequests).toBeGreaterThan(0);
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
-    await expect(page.locator('.hero-proof')).toContainText('1,234 events');
-    await expect(page.locator('.hero-proof')).toContainText('2 cities');
+    await expect(page.locator('.hero-proof')).toContainText('1,200+ events');
+    await expect(page.locator('.hero-proof')).toContainText('230+ cities');
+    await expect(page.locator('.hero-proof')).not.toContainText('1,234');
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
@@ -202,10 +203,12 @@ test.describe('website smoke', () => {
     await expect(sources).toContainText('Official ticket sources available on Drop');
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
-    await expect(sources.locator('img')).toHaveCount(3);
+    await expect(sources.locator('img')).toHaveCount(4);
     await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Ticketmaster');
     await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'SeatGeek');
     await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Etix');
+    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('a[aria-label="Visit Ticketsauce"]')).toHaveAttribute('href', 'https://www.ticketsauce.com/');
     for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
       expect(src).toMatch(/^\/assets\/partners\//);
     }
