@@ -26,18 +26,19 @@ test('stable entity paths keep UUID identity and readable slugs', () => {
   assert.equal(slugify('Red Rocks Amphitheatre & Café'), 'red-rocks-amphitheatre-and-cafe');
   assert.equal(eventPath({ id, title: 'BASS BINGO AFTERS' }), `/event/${id}/bass-bingo-afters`);
   assert.equal(venuePath({ id, name: 'Red Rocks', city: 'Morrison' }), `/venue/${id}/red-rocks-morrison`);
+  assert.equal(venuePath(catalogEvent()), `/venue/${venueId}/red-rocks-morrison`);
   assert.equal(artistPath({ id, name: 'RL Grime' }), `/artist/${id}/rl-grime`);
   assert.equal(routeId([id, 'ignored']), id);
   assert.equal(routeId(['not-a-uuid']), null);
 });
 
 test('server render adds crawlable metadata, content, and safe JSON-LD', () => {
-  const template = '<html><head><title>Old</title><meta name="description" content="Old"><meta property="og:title" content="Old"><meta property="og:description" content="Old"><meta property="og:url" content="old"><meta property="og:image" content="old"><meta name="twitter:title" content="Old"><meta name="twitter:description" content="Old"><meta name="twitter:image" content="old"><link rel="canonical" href="old"></head><body><div class="root" id="event-root"></div></body></html>';
+  const template = '<html><head><title id="doc-title">Old</title><meta name="description" content="Old"><meta property="og:title" content="Old"><meta property="og:description" content="Old"><meta property="og:url" content="old"><meta property="og:image" content="old"><meta name="twitter:title" content="Old"><meta name="twitter:description" content="Old"><meta name="twitter:image" content="old"><link rel="canonical" href="old"></head><body><div class="root" id="event-root"></div></body></html>';
   const html = renderTemplate(template, {
     title: 'Show $& | Drop', description: 'Real $& listing', canonical: 'https://trydropapp.com/event/x', image: 'https://example.com/a.jpg',
     rootId: 'event-root', body: '<h1>Show $&</h1>', jsonLd: { name: '</script><script>alert(1)</script>' }, indexable: false,
   });
-  assert.match(html, /<title>Show \$&amp; \| Drop<\/title>/);
+  assert.match(html, /<title id="doc-title">Show \$&amp; \| Drop<\/title>/);
   assert.match(html, /rel="canonical" href="https:\/\/trydropapp.com\/event\/x"/);
   assert.match(html, /data-server-entity><h1>Show \$&<\/h1>/);
   assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);

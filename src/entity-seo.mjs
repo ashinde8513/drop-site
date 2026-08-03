@@ -14,7 +14,7 @@ export function eventPath(event) {
 }
 
 export function venuePath(venue) {
-  return '/venue/' + encodeURIComponent(venue.id || venue.venue_id) + '/' + slugify([venue.name || venue.venue_name, venue.city].filter(Boolean).join(' '));
+  return '/venue/' + encodeURIComponent(venue.venue_id || venue.id) + '/' + slugify([venue.name || venue.venue_name, venue.city].filter(Boolean).join(' '));
 }
 
 export function artistPath(artist) {
@@ -209,7 +209,7 @@ function replaceContentAttribute(html, marker, value) {
 }
 
 export function renderTemplate(template, { title, description, canonical, image, rootId, body, jsonLd, indexable = true }) {
-  let html = template.replace(/<title>[^<]*<\/title>/i, () => '<title>' + escapeHtml(title) + '</title>');
+  let html = template.replace(/<title([^>]*)>[^<]*<\/title>/i, (_match, attributes) => '<title' + attributes + '>' + escapeHtml(title) + '</title>');
   html = html.replace(/(<link[^>]+rel="canonical"[^>]+href=")[^"]*(")/i, (_match, before, after) => before + escapeHtml(canonical) + after);
   html = replaceContentAttribute(html, 'name="description"', description);
   html = replaceContentAttribute(html, 'property="og:title"', title);

@@ -80,7 +80,7 @@
     return '/event/' + encodeURIComponent(event.id) + '/' + Drop.slugify(event.title);
   };
   Drop.venuePath = function (venue) {
-    var id = venue.id || venue.venue_id;
+    var id = venue.venue_id || venue.id;
     return id ? '/venue/' + encodeURIComponent(id) + '/' + Drop.slugify([venue.name || venue.venue_name, venue.city].filter(Boolean).join(' '))
       : '/venue.html?name=' + encodeURIComponent(venue.name || venue.venue_name || '') + '&city=' + encodeURIComponent(venue.city || '');
   };

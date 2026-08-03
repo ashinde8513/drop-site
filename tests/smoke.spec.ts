@@ -597,9 +597,10 @@ test.describe('website smoke', () => {
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {
     const fakeId = '7b6f66aa-2f6d-4f6e-9d55-1c2b3a4d5e6f';
+    const fakeVenueId = '9f4327fb-b0ca-46dd-a210-84bce2269c2c';
     const fakeEvent = {
       id: fakeId, title: 'Test Rave', description: 'A test show.',
-      date: '2027-01-15T20:00:00', end_date: null, venue_name: 'Test Hall',
+      date: '2027-01-15T20:00:00', end_date: null, venue_id: fakeVenueId, venue_name: 'Test Hall',
       city: 'Denver', state: 'CO', image_url: null,
       ticket_url: 'https://www.ticketmaster.com/e/123',
       price_min: 45, price_max: null, currency: 'USD',
@@ -618,6 +619,8 @@ test.describe('website smoke', () => {
 
     await page.goto(`/event.html?id=${fakeId}`);
     await expect(page.locator('.ed-buybox [title="Log in to RSVP"]')).toHaveCount(2);
+    await expect(page.locator('.ed-facts a', { hasText: 'Test Hall' }))
+      .toHaveAttribute('href', `/venue/${fakeVenueId}/test-hall-denver`);
     // One honest row — real seller name from the URL, no fabricated competitors,
     // and no "Only seller" badge/notice (it implied exclusivity, but resale
     // markets usually also carry the show — removed 2026-07-16, founder call).
