@@ -142,7 +142,7 @@
 
   var EVENT_COLS =
     'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,' +
-    'price_min,price_max,currency,is_festival,time_tbd,timezone,status,created_at';
+    'price_min,price_max,currency,is_festival,time_tbd,timezone,status,lifecycle_status,ticket_status,created_at';
   var EVENT_SELECT = EVENT_COLS + ',event_artists(artists(id,name,genres,image_url))';
 
   // ---- Public fetchers ----------------------------------------------------
@@ -459,6 +459,40 @@
   // against javascript:/data: values injected into ticket_url. Returns null if unsafe.
   Drop.safeUrl = function (u) {
     return /^https?:\/\//i.test(u || '') ? u : null;
+  };
+
+  Drop.schemaEventStatus = function (status) {
+    return {
+      scheduled: 'https://schema.org/EventScheduled',
+      cancelled: 'https://schema.org/EventCancelled',
+      postponed: 'https://schema.org/EventPostponed'
+    }[String(status || '').toLowerCase()];
+  };
+
+  Drop.schemaOfferAvailability = function (status) {
+    return {
+      available: 'https://schema.org/InStock',
+      sold_out: 'https://schema.org/SoldOut',
+      unavailable: 'https://schema.org/OutOfStock'
+    }[String(status || '').toLowerCase()];
+  };
+
+  Drop.eventAvailabilityText = function (event) {
+    if (event && event.lifecycle_status === 'cancelled') return 'Event canceled';
+    if (event && event.lifecycle_status === 'postponed') return 'Event postponed';
+    return {
+      available: 'Tickets available now',
+      sold_out: 'Tickets sold out',
+      unavailable: 'Tickets currently unavailable',
+      rsvp: 'RSVP required'
+    }[event && event.ticket_status] || (Drop.safeUrl(event && event.ticket_url) ? 'Check ticket availability' : 'Ticket availability not listed');
+  };
+
+  Drop.ticketActionLabel = function (event) {
+    if (event && (event.lifecycle_status === 'cancelled' || event.lifecycle_status === 'postponed')) return 'View ticket details';
+    if (event && event.ticket_status === 'available') return 'Get tickets';
+    if (event && event.ticket_status === 'rsvp') return 'RSVP';
+    return 'View ticket details';
   };
 
   // Human seller name from a ticket URL's hostname ("www.ticketmaster.com" →

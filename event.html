@@ -206,13 +206,14 @@
 
       function injectLd(ev) {
         if (document.querySelector('[data-server-ldjson]')) return;
+        var ticketUrl = D.safeUrl(ev.ticket_url);
         var ld = {
           '@context': 'https://schema.org',
           '@type': 'Event',
           name: ev.title,
           url: 'https://trydropapp.com' + D.eventPath(ev),
           startDate: ev.date,
-          eventStatus: 'https://schema.org/EventScheduled',
+          eventStatus: D.schemaEventStatus(ev.lifecycle_status),
           location: {
             '@type': 'Place',
             name: ev.venue_name,
@@ -220,11 +221,11 @@
           },
           image: D.eventArt(ev) ? [D.eventArt(ev)] : undefined,
           description: ev.description || undefined,
-          offers: ev.ticket_url ? {
-            '@type': 'Offer', url: ev.ticket_url,
+          offers: ticketUrl ? {
+            '@type': 'Offer', url: ticketUrl,
             price: ev.price_min != null ? ev.price_min : undefined,
             priceCurrency: ev.currency || 'USD',
-            availability: 'https://schema.org/InStock'
+            availability: D.schemaOfferAvailability(ev.ticket_status)
           } : undefined
         };
         var s = document.createElement('script');
@@ -434,7 +435,7 @@
         var priceEl = el('span', null, D.fmtPrice(ev.price_min, ev.price_max));
         priceEl.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);';
         right.appendChild(priceEl);
-        var buy = el('a', 'btn btn--secondary btn--sm', 'Get tickets');
+        var buy = el('a', 'btn btn--secondary btn--sm', D.ticketActionLabel(ev));
         buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
         right.appendChild(buy);
         row.appendChild(right);
@@ -477,7 +478,7 @@
 
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
-          var buy = el('a', 'btn btn--primary btn--block', 'Get tickets');
+          var buy = el('a', 'btn btn--primary btn--block', D.ticketActionLabel(ev));
           buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           box.appendChild(buy);
         }
@@ -493,7 +494,7 @@
 
         var onsale = el('div', 'ed-onsale');
         onsale.appendChild(el('span', 'dot'));
-        onsale.appendChild(el('span', null, ticketUrl ? 'Tickets available now' : 'Tickets not yet available'));
+        onsale.appendChild(el('span', null, D.eventAvailabilityText(ev)));
         box.appendChild(onsale);
 
         aside.appendChild(box);
@@ -514,7 +515,7 @@
         stickyBar.appendChild(going);
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
-          var buy = el('a', 'btn btn--primary', 'Get tickets · ' + D.fmtPrice(ev.price_min, ev.price_max));
+          var buy = el('a', 'btn btn--primary', D.ticketActionLabel(ev) + ' · ' + D.fmtPrice(ev.price_min, ev.price_max));
           buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           buy.style.cssText = 'flex:1.4;height:48px;';
           stickyBar.appendChild(buy);

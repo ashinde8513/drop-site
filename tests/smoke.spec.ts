@@ -604,10 +604,15 @@ test.describe('website smoke', () => {
       ticket_url: 'https://www.ticketmaster.com/e/123',
       price_min: 45, price_max: null, currency: 'USD',
       is_festival: false, time_tbd: false, status: 'published',
+      lifecycle_status: 'cancelled', ticket_status: 'unknown',
       created_at: '2026-07-01T00:00:00', event_artists: [],
     };
-    await page.route('**/rest/v1/events?**', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) }));
+    await page.route('**/rest/v1/events?**', (route) => {
+      const select = new URL(route.request().url()).searchParams.get('select') || '';
+      expect(select).toContain('lifecycle_status');
+      expect(select).toContain('ticket_status');
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([fakeEvent]) });
+    });
     await page.route('**/rest/v1/rpc/event_going_counts', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
 
@@ -621,6 +626,16 @@ test.describe('website smoke', () => {
     await expect(page.locator('.ed-best')).toHaveCount(0);
     await expect(page.locator('.ed-single-note')).toHaveCount(0);
     await expect(page.locator('.ed-section', { hasText: 'Tickets' })).not.toContainText('only');
+    await expect(page.locator('.ed-onsale')).toHaveText(/Event canceled/);
+    const ticketLinks = page.locator('.ed-price-row a, .ed-buybox > a, #sticky-cta > a.btn--primary');
+    await expect(ticketLinks).toHaveCount(3);
+    expect(await ticketLinks.allTextContents()).toEqual([
+      'View ticket details', 'View ticket details', 'View ticket details · From $45',
+    ]);
+    const ld = JSON.parse(await page.locator('#ldjson').textContent() || '{}');
+    expect(ld.eventStatus).toBe('https://schema.org/EventCancelled');
+    expect(ld.offers.url).toBe(fakeEvent.ticket_url);
+    expect(ld.offers.availability).toBeUndefined();
   });
 
   test('event detail keeps metadata and long lineup pills below and within artwork bounds', async ({ page }) => {
