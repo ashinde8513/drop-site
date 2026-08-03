@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-08-02 — Ordinary authorized website changes finish through live QA
+
+An ordinary website code/content request authorizes the complete guarded release lane by default: implementation, verification, commit/push, PR, exact-head CI, merge, the existing `main` Test & Deploy workflow, live QA, and honest repo closeout. Stop earlier only when the user explicitly asks for a draft, local-only work, a pause, or narrower delivery.
+
+This does not broaden authority for production database mutations, secrets, destructive actions, external outreach/submissions, manual or break-glass deploys, Worker deploys, or new scope. Those keep their separate approval gates. Routine production delivery remains the repository's automatic GitHub Actions path and must not use a manually supplied Cloudflare token.
+
 ## 2026-08-02 — Public entity URLs use stable IDs plus readable slugs
 
 Canonical public discovery URLs are `/event/<uuid>/<slug>`, `/venue/<uuid>/<slug>`, and `/artist/<uuid>/<slug>`. The UUID is identity; the slug is readable and may change, so mismatched or missing slugs redirect permanently to the current canonical path. Pages and sitemaps are generated only from real published catalog rows. Traffic work must never create fake events, reviews, attendance, or social proof. Legacy query-string detail URLs remain compatibility entry points while internal links and shares use canonical paths.

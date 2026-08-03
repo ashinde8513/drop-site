@@ -13,10 +13,10 @@ Last updated: 2026-08-02
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE — entity SEO safeguards verified locally; draft PR not merged or deployed
+**Status:** ACTIVE — PR #38 release authorized; exact-head CI, merge, production deploy, and live QA in progress
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Codex — releasing PR #38 through the guarded website production lane.
 
 ## Current status
 ### What works
@@ -55,7 +55,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Open and review the entity-SEO PR from `codex/entity-seo-venue-events-20260802`; after explicit merge authorization, merge through the standard `main` workflow, live-check one event/venue/artist canonical response plus `/sitemap-entities.xml`, then submit both sitemap URLs in Google Search Console.** Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
+- **Wait for PR #38's exact-head CI, merge it through the standard GitHub path, wait for the exact merged-main Test & Deploy workflow, then live-check event/venue/artist canonical pages, `/sitemap-entities.xml`, robots/canonical/noindex/JSON-LD behavior, and browser health.** Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
