@@ -215,6 +215,9 @@
         <a href="https://www.etix.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Etix">
           <img src="/assets/partners/etix.svg" alt="Etix" loading="lazy" decoding="async" />
         </a>
+        <a href="https://www.ticketsauce.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Ticketsauce">
+          <img src="/assets/partners/ticketsauce.png" alt="Ticketsauce" loading="lazy" decoding="async" />
+        </a>
       </div>
       <p>Official ticket availability and seller vary by event.</p>
     </section>
@@ -264,10 +267,14 @@
     (function () {
       var D = window.Drop;
       var city = D.city();
+      function roundedPlus(value, step) {
+        if (value < step) return value.toLocaleString('en-US');
+        return (Math.floor(value / step) * step).toLocaleString('en-US') + '+';
+      }
 
       D.fetchCatalogStats().then(function (stats) {
-        document.querySelector('[data-catalog-events]').textContent = stats.events.toLocaleString('en-US');
-        document.querySelector('[data-catalog-cities]').textContent = stats.cities.toLocaleString('en-US');
+        document.querySelector('[data-catalog-events]').textContent = roundedPlus(stats.events, 100);
+        document.querySelector('[data-catalog-cities]').textContent = roundedPlus(stats.cities, 10);
       }).catch(function () {}); // audited HTML snapshot remains visible offline
 
       var hs = document.getElementById('home-search');
