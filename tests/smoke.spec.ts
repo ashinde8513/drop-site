@@ -197,35 +197,29 @@ test.describe('website smoke', () => {
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
-  test('homepage names verified official ticket sources without overstating partnerships', async ({ page }) => {
+  test('homepage combines the official Drop partner and verified ticket sources without overstating relationships', async ({ page }) => {
     await page.goto('/index.html');
     const sources = page.locator('.ticket-sources');
-    await expect(sources).toContainText('Official ticket sources available on Drop');
+    await expect(sources).toContainText('Official Drop partners and ticket sources');
+    await expect(sources).toContainText('Cervantes’ Masterpiece Ballroom is an official Drop partner');
+    await expect(sources).toContainText('select-show guest-list access and community promotion in Denver');
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
-    await expect(sources.locator('img')).toHaveCount(4);
-    await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Ticketmaster');
-    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'SeatGeek');
-    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Etix');
-    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('img')).toHaveCount(5);
+    await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Cervantes’ Masterpiece Ballroom');
+    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'Ticketmaster');
+    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'SeatGeek');
+    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Etix');
+    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
+      'href',
+      'https://cervantesmasterpiece.com/',
+    );
     await expect(sources.locator('a[aria-label="Visit Ticketsauce"]')).toHaveAttribute('href', 'https://www.ticketsauce.com/');
     for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
       expect(src).toMatch(/^\/assets\/partners\//);
     }
     await expect(page.locator('.foot-disc')).toContainText('affiliate links');
-  });
-
-  test('homepage names Cervantes as an official Drop partner with the agreed scope', async ({ page }) => {
-    await page.goto('/index.html');
-    const partners = page.locator('.official-partners');
-    await expect(partners).toContainText('Official Drop partners');
-    await expect(partners).toContainText('Cervantes’ Masterpiece Ballroom');
-    await expect(partners).toContainText('Denver, Colorado');
-    await expect(partners).toContainText('select-show guest-list access and community promotion');
-    await expect(partners.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
-      'href',
-      'https://cervantesmasterpiece.com/',
-    );
   });
 
   test('"Happening in {city}" heading has a working city dropdown in sync with the nav pill', async ({ page }) => {
