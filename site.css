@@ -276,6 +276,35 @@ button { font: inherit; cursor: pointer; }
    Footer
    ======================================================================== */
 .site-foot { border-top: 1px solid var(--border); padding: 56px 0 64px; margin-top: 40px; }
+.official-partners {
+  max-width: var(--wrap); margin: 0 auto 40px; padding: 0 24px 40px;
+  border-bottom: 1px solid var(--border); text-align: center;
+}
+.official-partners h2 {
+  margin: 0; font-family: var(--font-display); font-size: 17px;
+  font-weight: 600; letter-spacing: -0.01em; color: var(--text);
+}
+.official-partner {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-width: min(100%, 340px); margin: 24px 0 16px; padding: 18px 28px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-lg);
+  background: linear-gradient(135deg, rgba(77,226,255,0.08), rgba(226,77,255,0.08));
+  color: var(--text); text-decoration: none;
+  transition: border-color var(--dur-base) var(--ease), transform var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+.official-partner:hover,
+.official-partner:focus-visible {
+  border-color: rgba(77,226,255,0.55); transform: translateY(-2px); box-shadow: var(--shadow-glow);
+}
+.official-partner__name {
+  font-family: var(--font-display); font-size: clamp(18px, 2.4vw, 23px); font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.official-partner__location {
+  color: var(--text-secondary); font-family: var(--font-display); font-size: 12px;
+  font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.official-partners p { margin: 0; color: var(--text-secondary); font-size: 13px; }
 .ticket-sources {
   max-width: var(--wrap); margin: 0 auto 48px; padding: 0 24px 40px;
   border-bottom: 1px solid var(--border); text-align: center;

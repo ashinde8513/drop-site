@@ -215,6 +215,19 @@ test.describe('website smoke', () => {
     await expect(page.locator('.foot-disc')).toContainText('affiliate links');
   });
 
+  test('homepage names Cervantes as an official Drop partner with the agreed scope', async ({ page }) => {
+    await page.goto('/index.html');
+    const partners = page.locator('.official-partners');
+    await expect(partners).toContainText('Official Drop partners');
+    await expect(partners).toContainText('Cervantes’ Masterpiece Ballroom');
+    await expect(partners).toContainText('Denver, Colorado');
+    await expect(partners).toContainText('select-show guest-list access and community promotion');
+    await expect(partners.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
+      'href',
+      'https://cervantesmasterpiece.com/',
+    );
+  });
+
   test('"Happening in {city}" heading has a working city dropdown in sync with the nav pill', async ({ page }) => {
     await page.goto('/index.html');
     const headingBtn = page.locator('h2 .city-head-btn');
