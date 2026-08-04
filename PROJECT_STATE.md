@@ -13,14 +13,14 @@ Last updated: 2026-08-04
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE
+**Status:** IDLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex (`codex-019fcec8-logo`) · Started: 2026-08-04 · Working on: combine Cervantes with the ticket-source logo row on `codex/cervantes-logo-combined-partners-20260804`.
+- None.
 
 ## Current status
 ### What works
-- **CERVANTES OFFICIAL PARTNER LIVE (2026-08-04, PR #44):** the homepage now identifies Cervantes' Masterpiece Ballroom as an official Drop partner in a dedicated, responsive partner section linked to the venue's official website. The public wording accurately limits the collaboration to select-show guest-list access and community promotion in Denver. PR #44 merged as `362c44c`; exact `main` workflow `30959655339` passed all 126 browser checks and deployed to Cloudflare Pages. Live desktop/mobile QA confirmed the wording and link, the `20260804` stylesheet, and no horizontal overflow.
+- **CERVANTES PARTNER LOGO + COMBINED SOURCE STRIP LIVE (2026-08-04, PRs #44/#45):** the homepage now lists Cervantes' Masterpiece Ballroom in the same responsive logo row as Ticketmaster, SeatGeek, Etix, and Ticketsauce under “Official Drop partners and ticket sources.” The self-hosted Cervantes wordmark comes from the venue's official website, links back there, and retains precise scope language for select-show guest-list access and community promotion in Denver. PR #45 merged as `5a1769f`; exact `main` workflow `30961412951` passed all 124 browser checks and deployed to Cloudflare Pages. Live 1280×900 and 390×844 QA confirmed all five logos load, the scoped copy and official link are correct, and there is no horizontal overflow or console noise.
 - **TICKETSAUCE + ROUNDED HOMEPAGE PROOF LIVE (2026-08-03, PR #42):** Ticketsauce now appears beside Ticketmaster, SeatGeek, and Etix using the official self-hosted wordmark and neutral authorized-source wording. Live catalog totals floor to truthful marketing bands, currently `2,200+` events and `230+` cities, so the `+` never overstates inventory. PR #42 merged as `9de4ad6`; exact `main` workflow `30878584151` passed all 124 browser checks and deployed to Cloudflare Pages. Live desktop/mobile QA confirmed all four logos load, the Ticketsauce link opens the official site, and the page has no horizontal overflow or console errors.
 - **GOOGLE SEARCH CONSOLE VERIFIED + ENTITY SITEMAP ACCEPTED (2026-08-02):** the `sc-domain:trydropapp.com` property is ownership-verified through a root Cloudflare DNS TXT record. Google Search Console successfully read `sitemap.xml` (27 discovered pages) and `sitemap-entities.xml` (3,581 discovered pages); both show `Success` with an Aug 2, 2026 last-read date. Keep the verification TXT record in DNS. Bing Webmaster import remains a separate founder OAuth action.
 - **ENTITY SEO + FULL VENUE CATALOG LIVE (2026-08-02, PRs #38/#39):** every published event, canonical venue, and lineup artist has a stable UUID-backed readable URL; Cloudflare Pages Functions server-render entity-specific titles, metadata/content, and lifecycle-aware JSON-LD. A fail-closed quality gate keeps malformed events and thin venue/artist aggregates out of `/sitemap-entities.xml` while direct pages remain available with `noindex, follow`; live QA counted 3,581 URLs (2,246 events, 354 venues, 981 artists). Ticket URLs never imply `InStock`, canceled/postponed/sold-out/unavailable/RSVP states stay honest, and event-to-venue links use the venue UUID. The directories still expose the full catalog. No events or reviews were fabricated and no production writes occurred. Seven focused Node checks and the complete 124-test Chrome/WebKit suite pass locally and in the exact-head/main workflows.
@@ -47,7 +47,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- Cervantes combined partner/ticket-source logo row — Codex on `codex/cervantes-logo-combined-partners-20260804`.
+- None.
 ### Blocked / waiting on
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
@@ -255,10 +255,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
-### 2026-08-04 — Codex — Cervantes official partner live
-- **Changed:** added a dedicated homepage partner section naming and linking Cervantes' Masterpiece Ballroom, with partnership wording scoped to select-show guest-list access and community promotion in Denver; added responsive styling and regression coverage.
-- **Verified:** the deploy build and source mirror match; focused entity/SEO checks pass 7/7; independent review found no actionable issue; GitHub's exact-head and `main` workflows passed the complete 126-test Chrome/WebKit suite. Live QA at 1280×900 and 390×844 confirmed the partner wording/link and no horizontal overflow.
-- **Delivery:** PR #44 merged as `362c44c`; production workflow `30959655339` passed and deployed to Cloudflare Pages.
+### 2026-08-04 — Codex — Cervantes combined partner/source logo row live
+- **Changed:** consolidated the standalone Cervantes partner card and ticket-source strip into one section titled “Official Drop partners and ticket sources”; added the official self-hosted Cervantes wordmark as the first linked logo; retained the partnership's select-show guest-list/community-promotion scope; removed the superseded card CSS and consolidated regression coverage.
+- **Verified:** the deploy build and source mirror match; focused entity/SEO checks pass 7/7; independent review's scope-language finding was fixed and the final review found no actionable defects; PR and `main` workflows each passed the complete 124-test Chrome/WebKit suite. Live QA at 1280×900 and 390×844 confirmed five loaded logos, the official Cervantes URL, scoped copy, no horizontal overflow, and no console warnings/errors.
+- **Delivery:** PR #45 merged as `5a1769f`; production workflow `30961412951` passed and deployed to Cloudflare Pages.
 
 ### 2026-08-03 — Codex — Ticketsauce source and rounded homepage totals live
 - **Changed:** added the official Ticketsauce wordmark and homepage link beside the existing three official ticket sources; kept the non-commercial “Official ticket sources available on Drop” wording. Changed only the rendered proof formatting: the live exact counts remain the data source, then floor to the nearest 100 events and 10 cities before appending `+`.
