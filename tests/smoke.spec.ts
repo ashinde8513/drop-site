@@ -600,15 +600,16 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
   });
 
-  test('TikTok connection stays read-only and protects the OAuth callback', async ({ page }) => {
+  test('TikTok production stays read-only while sandbox asks for publishing consent', async ({ page }) => {
     const appScript = readFileSync(resolve('app/app.js'), 'utf8');
     const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
     expect(appTemplate).not.toMatch(/<base\s/i);
     expect(appTemplate).toContain("location.pathname === '/tiktok/callback'");
     expect(appTemplate).toContain("searchParams.set('tiktok_callback', '1')");
     expect(appTemplate).toContain('{{ tiktokButtonLabel }}');
-    expect(appScript).toContain("scope: 'user.info.basic,video.list'");
-    expect(appScript).not.toMatch(/video\.publish|video\.upload|video\.delete/);
+    expect(appScript).toContain(": 'user.info.basic,video.list';");
+    expect(appScript).toContain("? 'user.info.basic,video.list,video.upload,video.publish'");
+    expect(appScript).not.toMatch(/video\.delete/);
     expect(appScript).toContain("config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback'");
     expect(appScript).toContain("const state = randomToken(32), codeVerifier = sandbox ? null : randomToken(64)");
     expect(appScript).toContain("...(codeVerifier ? {");

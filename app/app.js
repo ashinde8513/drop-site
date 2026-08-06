@@ -1072,6 +1072,9 @@ class Component extends DCLogic {
       const sandbox = new URLSearchParams(location.search).get('tiktok_sandbox') === '1';
       const functionName = sandbox
         ? 'tiktok-oauth-sandbox' : 'tiktok-oauth';
+      const scope = sandbox
+        ? 'user.info.basic,video.list,video.upload,video.publish'
+        : 'user.info.basic,video.list';
       const config = await supa.functions.invoke(functionName, { method:'GET' });
       if (config.error || !config.data || !config.data.clientKey || !config.data.redirectUri) throw config.error || new Error('TikTok is not configured');
       if (config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback') throw new Error('TikTok redirect is not configured safely');
@@ -1081,7 +1084,7 @@ class Component extends DCLogic {
       url.search = new URLSearchParams({
         client_key: config.data.clientKey,
         response_type: 'code',
-        scope: 'user.info.basic,video.list',
+        scope,
         redirect_uri: config.data.redirectUri,
         state,
         ...(codeVerifier ? {
