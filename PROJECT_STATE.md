@@ -20,6 +20,14 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **TIKTOK VERIFICATION ARTIFACT LIVE ON BOTH CALLBACK ORIGINS (2026-08-05,
+  PRs #48/#51):** the exact portal artifact is deployed at the root of both
+  `trydropapp.com` and `app.trydropapp.com`. Both live responses are 68-byte
+  plain text with SHA-256
+  `973f5749848cfb34bc30cb760d652349ed380ed0d7db76b12754fee235cdf4aa`
+  and compare byte-identically with the founder-supplied file. The apex URL
+  prefix is verified in TikTok; the app-subdomain prefix can now be added and
+  verified for the Login Kit callback origin.
 - **EVENTIM OFFICIAL PARTNER LIVE (2026-08-05, PR #49):** the homepage partner/source strip includes Eventim's official self-hosted US logo and links to Eventim US. The relationship copy is scoped to Drop's live affiliate and event-source integration without implying ticket exclusivity. PR #49 merged as `2c288f5`; production workflow `31061271681` passed on retry after a hosted-runner dependency-install stall and deployed to Cloudflare Pages. Live desktop/mobile QA confirms all six logos load, the scoped copy and affiliate disclosure remain present, and there is no horizontal overflow or console noise.
 - **READ-ONLY TIKTOK WEB CALLBACK LIVE (2026-08-05, PR #46):** the signed-in
   website can start TikTok Login Kit from Settings with browser-generated PKCE
@@ -60,12 +68,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
-- TikTok URL verification still needs the portal-generated root file named
-  exactly `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt`. Its signed per-app
-  payload was not available to the website session, and the live URL correctly
-  remains HTTP 404. After its separate deploy, finish portal verification and
-  one signed-in sandbox connection test; do not request publishing scopes or
-  Content Posting API access.
+- TikTok portal: add and verify the separate `https://app.trydropapp.com/` URL
+  prefix now that its exact root artifact is live, then run one signed-in
+  sandbox connection test. The apex prefix is already verified. Do not request
+  publishing scopes or Content Posting API access.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
   destination-specific authorization before configuring production Supabase
@@ -75,12 +81,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Retrieve the exact portal-generated
-  `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt` payload, add that file to the
-  website root and the explicit `scripts/build-dist.sh` whitelist, deploy it
-  through the standard PR → `main` workflow, confirm its live body is
-  byte-identical, then complete TikTok URL verification and one read-only
-  signed-in sandbox connection.**
+- **In TikTok, add and verify the `https://app.trydropapp.com/` URL prefix,
+  then configure or enable only Login Kit + Display API scopes
+  `user.info.basic`/`video.list` and run one signed-in sandbox connection. Do
+  not add publishing scopes or Content Posting API access.**
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
@@ -100,6 +104,26 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-08-05 — Codex — TikTok verification artifact live on both origins
+- **Changed:** PR #48 added the founder-supplied portal artifact byte-for-byte
+  at the website root and to the explicit deploy whitelist. After the apex
+  prefix verified, live testing found the app subdomain returned its HTML 404
+  because the existing Worker maps file-like requests into `/app/`. PR #51
+  preserved that Worker and all SPA routing, and copied the single tracked
+  source into `dist/app/` during the deploy build.
+- **Verified:** 7/7 Node checks and 128/128 Playwright checks passed locally and
+  in both production candidates. Source, apex live response, built app copy,
+  and app-subdomain live response are all 68 bytes with SHA-256
+  `973f5749848cfb34bc30cb760d652349ed380ed0d7db76b12754fee235cdf4aa`;
+  direct byte comparisons pass. Both live artifact URLs return HTTP 200 plain
+  text, while the callback and login SPA routes still return HTTP 200 HTML.
+- **Delivery:** PR #48 merged as `f803e56` and deployed in workflow
+  `31060973794`; PR #51 merged as `fd1e60f` and deployed in workflow
+  `31063223254`. The apex TikTok URL prefix is verified; the remaining portal
+  action is to add/verify the app-subdomain prefix and run one read-only
+  sandbox connection. No portal, backend, secret, publishing-scope, Content
+  Posting, or Worker change was made.
+
 ## 2026-08-05 — Codex — read-only TikTok web callback live
 - **Changed:** added the signed-in Settings connection action, browser PKCE and
   anti-forgery state, exact redirect validation, one-time callback exchange via
@@ -113,10 +137,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   same-origin failures. Live `app.js` contains the exact callback and read-only
   scope markers.
 - **Delivery:** PR #46 merged as `15fad17`; main workflow `31059041140` passed
-  tests and deployed Cloudflare Pages. The separately required exact TikTok
-  root verification file remains HTTP 404 and is recorded above as the next
-  action; no portal, backend, secret, publishing-scope, or Content Posting
-  change was made.
+  tests and deployed Cloudflare Pages. The exact TikTok root verification file
+  is now live on both the apex and app subdomain as recorded above; no backend,
+  secret, publishing-scope, or Content Posting change was made.
 
 ## 2026-08-05 — Codex — Eventim official partner live
 - **Changed:** added Eventim's official self-hosted US logo and link to the existing homepage partner/source strip, plus scoped copy naming the live affiliate and event-source relationship. Existing FTC affiliate disclosure remains unchanged.
