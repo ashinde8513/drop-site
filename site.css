@@ -301,6 +301,7 @@ button { font: inherit; cursor: pointer; }
 }
 .ticket-sources__logo--cervantes { flex-basis: 260px; }
 .ticket-sources__logo--cervantes img { max-width: 260px; height: 42px; }
+.ticket-sources__logo--eventim img { height: 42px; filter: none; }
 .ticket-sources__logo--seatgeek img { height: 46px; }
 .ticket-sources p { margin: 0; color: var(--text-secondary); font-size: 13px; }
 .foot-grid {
@@ -341,6 +342,7 @@ button { font: inherit; cursor: pointer; }
   .ticket-sources__logos img { max-width: 145px; height: 28px; }
   .ticket-sources__logo--cervantes { flex-basis: 100%; }
   .ticket-sources__logo--cervantes img { max-width: 260px; height: 42px; }
+  .ticket-sources__logo--eventim img { height: 36px; }
   .ticket-sources__logo--seatgeek img { height: 40px; }
 }
 

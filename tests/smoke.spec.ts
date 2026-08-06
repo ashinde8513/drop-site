@@ -203,18 +203,21 @@ test.describe('website smoke', () => {
     await expect(sources).toContainText('Official Drop partners and ticket sources');
     await expect(sources).toContainText('Cervantes’ Masterpiece Ballroom is an official Drop partner');
     await expect(sources).toContainText('select-show guest-list access and community promotion in Denver');
+    await expect(sources).toContainText('Eventim is an official Drop affiliate and event-source partner');
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
-    await expect(sources.locator('img')).toHaveCount(5);
+    await expect(sources.locator('img')).toHaveCount(6);
     await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Cervantes’ Masterpiece Ballroom');
-    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'Ticketmaster');
-    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'SeatGeek');
-    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Etix');
-    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'Eventim');
+    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Ticketmaster');
+    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'SeatGeek');
+    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'Etix');
+    await expect(sources.locator('img').nth(5)).toHaveAttribute('alt', 'Ticketsauce');
     await expect(sources.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
       'href',
       'https://cervantesmasterpiece.com/',
     );
+    await expect(sources.locator('a[aria-label="Visit Eventim"]')).toHaveAttribute('href', 'https://www.eventim.us/');
     await expect(sources.locator('a[aria-label="Visit Ticketsauce"]')).toHaveAttribute('href', 'https://www.ticketsauce.com/');
     for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
       expect(src).toMatch(/^\/assets\/partners\//);
