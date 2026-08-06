@@ -197,13 +197,11 @@ test.describe('website smoke', () => {
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
-  test('homepage combines the official Drop partner and verified ticket sources without overstating relationships', async ({ page }) => {
+  test('homepage shows official Drop partners and ticket sources without extra relationship copy', async ({ page }) => {
     await page.goto('/index.html');
     const sources = page.locator('.ticket-sources');
     await expect(sources).toContainText('Official Drop partners and ticket sources');
-    await expect(sources).toContainText('Cervantes’ Masterpiece Ballroom is an official Drop partner');
-    await expect(sources).toContainText('select-show guest-list access and community promotion in Denver');
-    await expect(sources).toContainText('Eventim is an official Drop affiliate and event-source partner');
+    await expect(sources.locator(':scope > p')).toHaveCount(0);
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
     await expect(sources.locator('img')).toHaveCount(6);
