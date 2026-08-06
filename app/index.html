@@ -4,12 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Drop</title>
+<script>
+  // The app host maps root assets into /app/; the apex serves them at /app/.
+  // Pick explicitly because callback-relative URLs resolve under /tiktok/.
+  var appHost = location.hostname === 'app.trydropapp.com' || location.pathname === '/tiktok/callback';
+  var appAssetBase = appHost ? '/' : '/app/';
+  if (location.pathname === '/tiktok/callback') {
+    var callbackUrl = new URL(location.href);
+    callbackUrl.pathname = '/';
+    callbackUrl.searchParams.set('tiktok_callback', '1');
+    history.replaceState({}, '', callbackUrl.pathname + callbackUrl.search);
+  }
+  ['tokens.css', 'app.css'].forEach(function (file) {
+    var style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = appAssetBase + file + '?v=cf4d0dc';
+    document.head.appendChild(style);
+  });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="stylesheet" href="./tokens.css?v=cf4d0dc">
-<link rel="stylesheet" href="./app.css?v=cf4d0dc">
 </head>
 <body>
 <!--
@@ -1101,6 +1117,7 @@
           <span style="flex:1;font-size:var(--fs-sm);color:var(--text-secondary);">Email</span><span style="font-size:var(--fs-sm);color:var(--text);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f2939e978ab2978a939f829e97dc919d9f">[email&#160;protected]</a></span>
         </div>
         <button type="button" onClick="{{ goTaste }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Music taste</span><span style="color:var(--text-muted);">›</span></button>
+        <button type="button" onClick="{{ connectTikTok }}" disabled="{{ tiktokConnecting }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">{{ tiktokButtonLabel }}</span><span style="color:var(--text-muted);">›</span></button>
         <button type="button" onClick="{{ goBlocked }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Blocked accounts</span><span style="color:var(--text-muted);">›</span></button>
         <button type="button" onClick="{{ goDelete }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--danger);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Delete account</span><span>›</span></button>
       </div>
@@ -3157,6 +3174,10 @@
      and /favicon* through from the site root, so a root-relative /consent.js
      would 404 on the app host. -->
 <script src="https://trydropapp.com/consent.js" defer></script>
-<script src="./app.js"></script>
+<script>
+  var appScript = document.createElement('script');
+  appScript.src = appAssetBase + 'app.js?v=cf4d0dc';
+  document.body.appendChild(appScript);
+</script>
 </body>
 </html>

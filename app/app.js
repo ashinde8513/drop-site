@@ -347,6 +347,15 @@
   }
   function fieldVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
   function fieldChecked(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+  function base64Url(bytes) {
+    var text = '';
+    bytes.forEach(function (byte) { text += String.fromCharCode(byte); });
+    return btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function randomToken(bytes) { return base64Url(crypto.getRandomValues(new Uint8Array(bytes))); }
+  async function pkceChallenge(verifier) {
+    return base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+  }
   var CREATOR_CODE_KEY = 'drop.creatorCode';
   function normalizeCreatorCode(value) {
     var code = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -602,7 +611,7 @@ class Component extends DCLogic {
     wizStep: 0, wizGenres: {}, wizFriendSel: {}, wizArtistSel: {}, wizArtQuery: '',
     // settings
     setToggles: { reminders: true, sales: true, comments: false, plans: true },
-    recapPrivacy: true, deleteConfirm: '',
+    recapPrivacy: true, deleteConfirm: '', tiktokConnecting: false,
     // notifications (unread ids)
     notifRead: {},
     // pick artists / venues / crew / plans / wrapped
@@ -1049,11 +1058,67 @@ class Component extends DCLogic {
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
       this.maybeRecordCreatorReferral(session.user.id);
+      this.resumeTikTokCallback();
       if (this.state.screen === 'festival' && this.state.festivalEvent) {
         this.openFestival(this.state.festivalEvent.id);
       }
       this.maybeResumeClaimDeepLink();
     });
+  }
+  async connectTikTok(){
+    if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
+    this.setState({ tiktokConnecting:true });
+    try {
+      const config = await supa.functions.invoke('tiktok-oauth', { method:'GET' });
+      if (config.error || !config.data || !config.data.clientKey || !config.data.redirectUri) throw config.error || new Error('TikTok is not configured');
+      if (config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback') throw new Error('TikTok redirect is not configured safely');
+      const state = randomToken(32), codeVerifier = randomToken(64);
+      sessionStorage.setItem('drop.tiktok.oauth', JSON.stringify({ state, codeVerifier }));
+      const url = new URL('https://www.tiktok.com/v2/auth/authorize/');
+      url.search = new URLSearchParams({
+        client_key: config.data.clientKey,
+        response_type: 'code',
+        scope: 'user.info.basic,video.list',
+        redirect_uri: config.data.redirectUri,
+        state,
+        code_challenge: await pkceChallenge(codeVerifier),
+        code_challenge_method: 'S256',
+      }).toString();
+      location.assign(url.toString());
+    } catch (error) {
+      this.setState({ tiktokConnecting:false });
+      this.flash((error && error.message) || 'Could not start TikTok connection');
+    }
+  }
+  async resumeTikTokCallback(){
+    const params = new URLSearchParams(location.search);
+    if (params.get('tiktok_callback') !== '1') return;
+    const saved = sessionStorage.getItem('drop.tiktok.oauth');
+    let flow = null;
+    try { flow = saved && JSON.parse(saved); } catch (_) {}
+    const finish = function (message) {
+      sessionStorage.removeItem('drop.tiktok.oauth');
+      history.replaceState({}, '', '/');
+      this.go('settings');
+      this.flash(message);
+    }.bind(this);
+    if (params.get('error') || !flow || params.get('state') !== flow.state || !params.get('code')) {
+      finish('TikTok connection was cancelled or could not be verified');
+      return;
+    }
+    // Consume browser state and scrub the one-time code before the network
+    // request so repeated auth events cannot replay the exchange.
+    sessionStorage.removeItem('drop.tiktok.oauth');
+    history.replaceState({}, '', '/');
+    try {
+      const out = await supa.functions.invoke('tiktok-oauth', {
+        body: { code: params.get('code'), codeVerifier: flow.codeVerifier },
+      });
+      if (out.error || !out.data || !out.data.connected) throw out.error || new Error('TikTok connection failed');
+      finish('TikTok connected');
+    } catch (_) {
+      finish('TikTok connection could not be completed');
+    }
   }
 
   // ===== Artist detail + claim/edit-links (PHASE 1 real writes) ==========
@@ -2143,6 +2208,8 @@ class Component extends DCLogic {
       prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0,
       notifBadge: String(notifications.filter(n=>n.unread).length), hasNotifBadge: notifications.some(n=>n.unread),
       settingsToggles, recapPrivacy: s.recapPrivacy,
+      tiktokConnecting: s.tiktokConnecting,
+      tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
       blocked, blockedEmpty: blocked.length===0,
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk,
       deleteBtnBg: deleteOk?'var(--danger)':'var(--surface-hi)', deleteBtnColor: deleteOk?'var(--white)':'var(--text-muted)', deleteCursor: deleteOk?'pointer':'not-allowed',
@@ -2551,6 +2618,7 @@ class Component extends DCLogic {
       goProfile:(e)=>{ this.prevent(e); this.go('profile'); },
       goEditProfile:(e)=>{ this.prevent(e); this.go('editprofile'); },
       goSettings:(e)=>{ this.prevent(e); this.go('settings'); },
+      connectTikTok:()=>this.connectTikTok(),
       goBlocked:(e)=>{ this.prevent(e); this.go('blocked'); },
       goDelete:(e)=>{ this.prevent(e); this.go('delete'); },
       goNotifications:(e)=>{ this.prevent(e); this.go('notifications'); },

@@ -599,6 +599,37 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
   });
 
+  test('TikTok connection stays read-only and protects the OAuth callback', async ({ page }) => {
+    const appScript = readFileSync(resolve('app/app.js'), 'utf8');
+    const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
+    expect(appTemplate).not.toMatch(/<base\s/i);
+    expect(appTemplate).toContain("location.pathname === '/tiktok/callback'");
+    expect(appTemplate).toContain("searchParams.set('tiktok_callback', '1')");
+    expect(appTemplate).toContain('{{ tiktokButtonLabel }}');
+    expect(appScript).toContain("scope: 'user.info.basic,video.list'");
+    expect(appScript).not.toMatch(/video\.publish|video\.upload|video\.delete/);
+    expect(appScript).toContain("config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback'");
+    expect(appScript).toContain("code_challenge_method: 'S256'");
+    expect(appScript).toContain("params.get('state') !== flow.state");
+    expect(appScript).toContain("supa.functions.invoke('tiktok-oauth'");
+    expect(appScript.indexOf("sessionStorage.removeItem('drop.tiktok.oauth')", appScript.indexOf('async resumeTikTokCallback')))
+      .toBeLessThan(appScript.indexOf("body: { code: params.get('code')", appScript.indexOf('async resumeTikTokCallback')));
+
+    const appAssetRequests: string[] = [];
+    await page.route('**/tiktok/callback?**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: appTemplate }));
+    for (const asset of ['tokens.css', 'app.css', 'app.js']) {
+      await page.route(`**/${asset}?*`, (route) => {
+        appAssetRequests.push(new URL(route.request().url()).pathname);
+        return route.fulfill({ status: 200, contentType: asset.endsWith('.css') ? 'text/css' : 'text/javascript', body: '' });
+      });
+    }
+    await page.goto('/tiktok/callback?code=once&state=expected');
+    expect(new URL(page.url()).pathname).toBe('/');
+    expect(new URL(page.url()).searchParams.get('tiktok_callback')).toBe('1');
+    expect(appAssetRequests.sort()).toEqual(['/app.css', '/app.js', '/tokens.css']);
+  });
+
   test('link-in-bio launch buttons point at the real waitlist form', async ({ page }) => {
     await page.goto('/link.html');
     await expect(page.locator('#getApp')).toHaveAttribute('href', '/download.html#waitlist');
