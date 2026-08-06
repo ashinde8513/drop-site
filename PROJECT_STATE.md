@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-04
+Last updated: 2026-08-05
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,16 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **READ-ONLY TIKTOK WEB CALLBACK LIVE (2026-08-05, PR #46):** the signed-in
+  website can start TikTok Login Kit from Settings with browser-generated PKCE
+  and anti-forgery state, requests only `user.info.basic` + `video.list`, and
+  exchanges the one-time code only through the JWT-protected `tiktok-oauth`
+  Edge Function. The callback consumes browser state before exchange and
+  validates the exact `https://app.trydropapp.com/tiktok/callback` redirect.
+  Merge `15fad17` passed all 126 Chrome/WebKit checks and production workflow
+  `31059041140` deployed it. Live mobile-size browser QA confirmed the callback
+  and apex `/app/` both load their correct CSS/JS paths with zero same-origin
+  failures.
 - **CERVANTES PARTNER LOGO + COMBINED SOURCE STRIP LIVE (2026-08-04, PRs #44/#45):** the homepage now lists Cervantes' Masterpiece Ballroom in the same responsive logo row as Ticketmaster, SeatGeek, Etix, and Ticketsauce under “Official Drop partners and ticket sources.” The self-hosted Cervantes wordmark comes from the venue's official website, links back there, and retains precise scope language for select-show guest-list access and community promotion in Denver. PR #45 merged as `5a1769f`; exact `main` workflow `30961412951` passed all 124 browser checks and deployed to Cloudflare Pages. Live 1280×900 and 390×844 QA confirmed all five logos load, the scoped copy and official link are correct, and there is no horizontal overflow or console noise.
 - **TICKETSAUCE + ROUNDED HOMEPAGE PROOF LIVE (2026-08-03, PR #42):** Ticketsauce now appears beside Ticketmaster, SeatGeek, and Etix using the official self-hosted wordmark and neutral authorized-source wording. Live catalog totals floor to truthful marketing bands, currently `2,200+` events and `230+` cities, so the `+` never overstates inventory. PR #42 merged as `9de4ad6`; exact `main` workflow `30878584151` passed all 124 browser checks and deployed to Cloudflare Pages. Live desktop/mobile QA confirmed all four logos load, the Ticketsauce link opens the official site, and the page has no horizontal overflow or console errors.
 - **GOOGLE SEARCH CONSOLE VERIFIED + ENTITY SITEMAP ACCEPTED (2026-08-02):** the `sc-domain:trydropapp.com` property is ownership-verified through a root Cloudflare DNS TXT record. Google Search Console successfully read `sitemap.xml` (27 discovered pages) and `sitemap-entities.xml` (3,581 discovered pages); both show `Success` with an Aug 2, 2026 last-read date. Keep the verification TXT record in DNS. Bing Webmaster import remains a separate founder OAuth action.
@@ -49,6 +59,12 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
+- TikTok URL verification still needs the portal-generated root file named
+  exactly `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt`. Its signed per-app
+  payload was not available to the website session, and the live URL correctly
+  remains HTTP 404. After its separate deploy, finish portal verification and
+  one signed-in sandbox connection test; do not request publishing scopes or
+  Content Posting API access.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
   destination-specific authorization before configuring production Supabase
@@ -58,6 +74,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Retrieve the exact portal-generated
+  `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt` payload, add that file to the
+  website root and the explicit `scripts/build-dist.sh` whitelist, deploy it
+  through the standard PR → `main` workflow, confirm its live body is
+  byte-identical, then complete TikTok URL verification and one read-only
+  signed-in sandbox connection.**
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
@@ -76,6 +98,24 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+
+## 2026-08-05 — Codex — read-only TikTok web callback live
+- **Changed:** added the signed-in Settings connection action, browser PKCE and
+  anti-forgery state, exact redirect validation, one-time callback exchange via
+  `tiktok-oauth`, and host-aware app assets that preserve both
+  `app.trydropapp.com` and `trydropapp.com/app/`. Review rejected the original
+  global `<base href="/">` because it regressed the apex app surface; browser
+  testing then caught callback-relative preload requests before delivery.
+- **Verified:** 7/7 Node checks plus 126/126 Playwright checks passed locally
+  and in PR CI. Production mobile-size browser QA returned HTTP 200 for the
+  callback and apex app, loaded the expected asset paths, and found no
+  same-origin failures. Live `app.js` contains the exact callback and read-only
+  scope markers.
+- **Delivery:** PR #46 merged as `15fad17`; main workflow `31059041140` passed
+  tests and deployed Cloudflare Pages. The separately required exact TikTok
+  root verification file remains HTTP 404 and is recorded above as the next
+  action; no portal, backend, secret, publishing-scope, or Content Posting
+  change was made.
 
 ## 2026-08-02 — Codex — homepage live counts and official ticket-source trust strip
 - **Changed:** replaced stale hard-coded homepage proof with exact public-catalog event/city totals, including ongoing multi-day events; added qualified offline fallbacks; added a responsive Ticketmaster/SeatGeek/Etix source strip with self-hosted SVGs and existing affiliate disclosure preserved. Production QA caught and fixed a stale stylesheet cache key.
