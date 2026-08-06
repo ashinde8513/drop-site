@@ -85,11 +85,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After exact approval and application of backend migration
-  `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
-  sandbox-only consent branch, then re-consent at
-  `https://app.trydropapp.com/?tiktok_sandbox=1`. Do not upload, schedule, or
-  publish content.**
+- **TikTok Sandbox publishing consent is live after merged PR #61 and backend
+  migration `20260806055852_tiktok_sandbox_publishing_scopes.sql`; re-consent
+  completed with no upload, schedule, or post. Build metrics sync and content
+  ideas next; require explicit per-draft approval before any transfer action.**
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
