@@ -19,6 +19,9 @@ cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
 cp -R .well-known app assets vendor dist/
+# app.trydropapp.com maps file-like requests into /app/. Keep the exact TikTok
+# verification artifact available there from the single tracked root source.
+cp tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt dist/app/
 
 echo "dist/ built:"
 find dist -type f | wc -l
