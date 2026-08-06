@@ -635,10 +635,13 @@ test.describe('website smoke', () => {
 
   test('TikTok site-verification artifact is served unchanged by the deploy build', async ({ request }) => {
     const filename = 'tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt';
+    const artifact = readFileSync(resolve(filename));
     const response = await request.get(`/${filename}`);
     expect(response.status()).toBe(200);
-    expect(await response.body()).toEqual(readFileSync(resolve(filename)));
-    expect(readFileSync(resolve('scripts/build-dist.sh'), 'utf8')).toContain(filename);
+    expect(await response.body()).toEqual(artifact);
+
+    const buildScript = readFileSync(resolve('scripts/build-dist.sh'), 'utf8');
+    expect(buildScript).toContain(`cp ${filename} dist/app/`);
   });
 
   test('link-in-bio launch buttons point at the real waitlist form', async ({ page }) => {
