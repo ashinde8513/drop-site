@@ -612,7 +612,9 @@ test.describe('website smoke', () => {
     expect(appScript).toContain("config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback'");
     expect(appScript).toContain("code_challenge_method: 'S256'");
     expect(appScript).toContain("params.get('state') !== flow.state");
-    expect(appScript).toContain("supa.functions.invoke('tiktok-oauth'");
+    expect(appScript).toContain("get('tiktok_sandbox') === '1'");
+    expect(appScript).toContain("tiktok-oauth-sandbox");
+    expect(appScript).toContain("flow.functionName === 'tiktok-oauth-sandbox'");
     expect(appScript.indexOf("sessionStorage.removeItem('drop.tiktok.oauth')", appScript.indexOf('async resumeTikTokCallback')))
       .toBeLessThan(appScript.indexOf("body: { code: params.get('code')", appScript.indexOf('async resumeTikTokCallback')));
 
