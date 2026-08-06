@@ -1069,11 +1069,13 @@ class Component extends DCLogic {
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
     this.setState({ tiktokConnecting:true });
     try {
-      const config = await supa.functions.invoke('tiktok-oauth', { method:'GET' });
+      const functionName = new URLSearchParams(location.search).get('tiktok_sandbox') === '1'
+        ? 'tiktok-oauth-sandbox' : 'tiktok-oauth';
+      const config = await supa.functions.invoke(functionName, { method:'GET' });
       if (config.error || !config.data || !config.data.clientKey || !config.data.redirectUri) throw config.error || new Error('TikTok is not configured');
       if (config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback') throw new Error('TikTok redirect is not configured safely');
       const state = randomToken(32), codeVerifier = randomToken(64);
-      sessionStorage.setItem('drop.tiktok.oauth', JSON.stringify({ state, codeVerifier }));
+      sessionStorage.setItem('drop.tiktok.oauth', JSON.stringify({ state, codeVerifier, functionName }));
       const url = new URL('https://www.tiktok.com/v2/auth/authorize/');
       url.search = new URLSearchParams({
         client_key: config.data.clientKey,
@@ -1111,7 +1113,9 @@ class Component extends DCLogic {
     sessionStorage.removeItem('drop.tiktok.oauth');
     history.replaceState({}, '', '/');
     try {
-      const out = await supa.functions.invoke('tiktok-oauth', {
+      const functionName = flow.functionName === 'tiktok-oauth-sandbox'
+        ? 'tiktok-oauth-sandbox' : 'tiktok-oauth';
+      const out = await supa.functions.invoke(functionName, {
         body: { code: params.get('code'), codeVerifier: flow.codeVerifier },
       });
       if (out.error || !out.data || !out.data.connected) throw out.error || new Error('TikTok connection failed');

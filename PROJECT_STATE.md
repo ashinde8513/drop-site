@@ -40,6 +40,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
   `31059041140` deployed it. Live mobile-size browser QA confirmed the callback
   and apex `/app/` both load their correct CSS/JS paths with zero same-origin
   failures.
+- **TIKTOK SANDBOX TEST MODE READY (2026-08-05):** signed-in Drop users can
+  open `?tiktok_sandbox=1` to route one test OAuth flow exclusively through
+  `tiktok-oauth-sandbox`; the normal route continues to use `tiktok-oauth`.
+  The selected endpoint is stored only for that PKCE session and callback.
 - **CERVANTES PARTNER LOGO + COMBINED SOURCE STRIP LIVE (2026-08-04, PRs #44/#45/#54):** the homepage lists Cervantes' Masterpiece Ballroom in the same responsive logo row as Eventim, Ticketmaster, SeatGeek, Etix, and Ticketsauce under “Official Drop partners and ticket sources.” The self-hosted Cervantes wordmark comes from the venue's official website and links back there. PR #54 later removed the verbose relationship paragraph while keeping all six logos and the FTC disclosure.
 - **TICKETSAUCE + ROUNDED HOMEPAGE PROOF LIVE (2026-08-03, PR #42):** Ticketsauce now appears beside Ticketmaster, SeatGeek, and Etix using the official self-hosted wordmark and neutral authorized-source wording. Live catalog totals floor to truthful marketing bands, currently `2,200+` events and `230+` cities, so the `+` never overstates inventory. PR #42 merged as `9de4ad6`; exact `main` workflow `30878584151` passed all 124 browser checks and deployed to Cloudflare Pages. Live desktop/mobile QA confirmed all four logos load, the Ticketsauce link opens the official site, and the page has no horizontal overflow or console errors.
 - **GOOGLE SEARCH CONSOLE VERIFIED + ENTITY SITEMAP ACCEPTED (2026-08-02):** the `sc-domain:trydropapp.com` property is ownership-verified through a root Cloudflare DNS TXT record. Google Search Console successfully read `sitemap.xml` (27 discovered pages) and `sitemap-entities.xml` (3,581 discovered pages); both show `Success` with an Aug 2, 2026 last-read date. Keep the verification TXT record in DNS. Bing Webmaster import remains a separate founder OAuth action.
@@ -69,10 +73,9 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
-- TikTok portal: click **Verify** for the `https://app.trydropapp.com/` URL
-  prefix now that its separately signed exact artifact is live, then run one
-  signed-in sandbox connection. The apex prefix is already verified. Do not
-  request publishing scopes or Content Posting API access.
+- TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
+  website switch deploys. Do not request publishing scopes or Content Posting
+  API access.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
   destination-specific authorization before configuring production Supabase
@@ -82,10 +85,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **In TikTok, click Verify for the `https://app.trydropapp.com/` URL prefix,
-  then configure or enable only Login Kit + Display API scopes
-  `user.info.basic`/`video.list` and run one signed-in sandbox connection. Do
-  not add publishing scopes or Content Posting API access.**
+- **Open `https://app.trydropapp.com/?tiktok_sandbox=1`, sign in, and select
+  Settings → Connect TikTok to complete the read-only sandbox connection.**
+  Do not add publishing scopes or Content Posting API access.
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
