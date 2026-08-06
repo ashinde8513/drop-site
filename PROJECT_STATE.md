@@ -13,15 +13,14 @@ Last updated: 2026-08-05
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE
+**Status:** IDLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex session `019fd42c-c022-70d1-978d-fc7d5a9cb545`
-- Working on: Eventim official partner addition and production delivery.
+- None.
 
 ## Current status
 ### What works
-- **EVENTIM OFFICIAL PARTNER ADDITION READY (2026-08-05):** the homepage partner/source strip now includes Eventim's official self-hosted US logo and links to Eventim US. The relationship copy is scoped to Drop's live affiliate and event-source integration without implying ticket exclusivity. The complete 7 entity checks and 126 desktop/mobile browser checks pass; local 1280px and 390px QA confirms all six logos load with no horizontal overflow. Standard PR-to-`main` delivery is in progress.
+- **EVENTIM OFFICIAL PARTNER LIVE (2026-08-05, PR #49):** the homepage partner/source strip includes Eventim's official self-hosted US logo and links to Eventim US. The relationship copy is scoped to Drop's live affiliate and event-source integration without implying ticket exclusivity. PR #49 merged as `2c288f5`; production workflow `31061271681` passed on retry after a hosted-runner dependency-install stall and deployed to Cloudflare Pages. Live desktop/mobile QA confirms all six logos load, the scoped copy and affiliate disclosure remain present, and there is no horizontal overflow or console noise.
 - **READ-ONLY TIKTOK WEB CALLBACK LIVE (2026-08-05, PR #46):** the signed-in
   website can start TikTok Login Kit from Settings with browser-generated PKCE
   and anti-forgery state, requests only `user.info.basic` + `video.list`, and
@@ -76,7 +75,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Merge and deploy the tested Eventim partner addition through the standard PR → `main` workflow, then verify the six-logo strip, Eventim US link, scoped partner copy, and zero horizontal overflow on live desktop and mobile.**
 - **Retrieve the exact portal-generated
   `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt` payload, add that file to the
   website root and the explicit `scripts/build-dist.sh` whitelist, deploy it
@@ -120,10 +118,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   action; no portal, backend, secret, publishing-scope, or Content Posting
   change was made.
 
-## 2026-08-05 — Codex — Eventim official partner addition ready
+## 2026-08-05 — Codex — Eventim official partner live
 - **Changed:** added Eventim's official self-hosted US logo and link to the existing homepage partner/source strip, plus scoped copy naming the live affiliate and event-source relationship. Existing FTC affiliate disclosure remains unchanged.
 - **Verified:** 7/7 entity checks and 126/126 Playwright checks pass. Local 1280×900 and 390×844 browser QA loaded all six logos, preserved the Eventim mark's colors, and found no horizontal overflow; the only request error was an unrelated third-party event-art 404.
-- **Delivery:** standard PR → `main` CI/deploy is in progress; update this entry with the merge, workflow, and live-production evidence after delivery.
+- **Delivery:** PR #49 merged as `2c288f5`. Production workflow `31061271681` was canceled once after its hosted runner stalled for 12 minutes during Playwright dependency installation; attempt 2 passed the complete test and dist safety gates and deployed successfully. Live Chrome QA verified six logos, the Eventim US link and scoped copy, preserved affiliate disclosure, zero horizontal overflow, and zero console errors on desktop and mobile.
 
 ## 2026-08-02 — Codex — homepage live counts and official ticket-source trust strip
 - **Changed:** replaced stale hard-coded homepage proof with exact public-catalog event/city totals, including ongoing multi-day events; added qualified offline fallbacks; added a responsive Ticketmaster/SeatGeek/Etix source strip with self-hosted SVGs and existing affiliate disclosure preserved. Production QA caught and fixed a stale stylesheet cache key.
