@@ -634,7 +634,7 @@ test.describe('website smoke', () => {
   test('TikTok site-verification artifacts are served unchanged by the deploy build', async ({ request }) => {
     const filenames = [
       'tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt',
-      'tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt',
+      'tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt',
     ];
     for (const filename of filenames) {
       const artifact = readFileSync(resolve(filename));

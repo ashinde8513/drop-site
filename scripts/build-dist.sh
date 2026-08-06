@@ -14,14 +14,14 @@ mkdir -p dist
 cp ./*.html dist/
 cp ./*.css ./*.js dist/
 cp favicon.ico favicon.png favicon.svg og-image.png og-image.svg og-image-link.png og-image-link.svg dist/
-cp sitemap.xml robots.txt llms.txt tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt dist/
+cp sitemap.xml robots.txt llms.txt tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/
 cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
 cp -R .well-known app assets vendor dist/
 # app.trydropapp.com maps file-like requests into /app/. Keep the exact TikTok
 # verification artifacts available there from their tracked root sources.
-cp tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt dist/app/
+cp tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/app/
 
 echo "dist/ built:"
 find dist -type f | wc -l
