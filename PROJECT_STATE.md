@@ -21,9 +21,9 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ## Current status
 ### What works
 - **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
-  #48/#51/#53):** TikTok's apex artifact is live and that portal prefix is
+  #48/#51/#53/#57):** TikTok's apex artifact is live and that portal prefix is
   verified. The separately signed app-subdomain artifact is now live at
-  `/tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt`: HTTP 200 plain text, 68
+  `/tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt`: HTTP 200 plain text, 68
   bytes, SHA-256
   `6e9b5e7bef342feded472b9ab4509ec030bbc8ed3d24de4a7b7a8975750f49c9`,
   and byte-identical to the portal download. The existing Worker still maps
@@ -110,22 +110,28 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   found the app-host Worker maps file-like requests into `/app/`; PR #51 made
   the build preserve the single tracked artifact there without altering the
   Worker or SPA routing. TikTok generated a different signed artifact for the
-  app prefix, so PR #53 added that second exact portal file under destination
-  `tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt` and included both artifacts in
-  the root and app deploy whitelists.
+  app prefix. PR #53 initially interpreted the portal typography as `lJO`;
+  live portal DOM inspection resolved the exact ending as capital `I`, digit
+  `0`, `JS`. PR #57 renamed the unchanged bytes to the required destination
+  `tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt`, removed the mistaken source,
+  and corrected both root and app deploy whitelists.
 - **Verified:** the app-prefix portal download, tracked file, and built/live
   app-host copies are each 68 bytes with SHA-256
   `6e9b5e7bef342feded472b9ab4509ec030bbc8ed3d24de4a7b7a8975750f49c9`;
   direct byte comparisons pass. The app-host URL returns HTTP 200 plain text;
   callback and login routes remain HTTP 200 HTML. Local and exact-main checks
-  passed 7/7 Node tests and 128/128 Playwright tests.
+  passed 7/7 Node tests and 128/128 Playwright tests. Immediately after the
+  correction deploy, Cloudflare still served the removed mistaken URL's same
+  68-byte response; it has no source/build reference and is not used by the
+  portal.
 - **Delivery:** PR #48 merged as `f803e56`; PR #51 merged as `fd1e60f`; PR #53
   merged as `4a6ae7c`. Exact PR #53 workflow attempt 1 stalled in hosted-runner
   Playwright installation and was canceled; the unchanged attempt 2 passed.
-  Main workflow `31064947739` passed and deployed Cloudflare Pages. The apex
-  prefix is portal-verified; the app prefix is live and ready for its Verify
-  click. No backend, secret, publishing-scope, Content Posting, or Worker
-  change was made.
+  PR #57 merged the exact-name correction as `3bd3338`; main workflow
+  `31068662131` passed and deployed Cloudflare Pages. The apex prefix is
+  portal-verified; the app prefix is live and ready for its Verify click. No
+  backend, secret, publishing-scope, Content Posting, or Worker change was
+  made.
 
 ## 2026-08-05 — Codex — read-only TikTok web callback live
 - **Changed:** added the signed-in Settings connection action, browser PKCE and
