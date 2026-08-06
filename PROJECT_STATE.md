@@ -20,6 +20,15 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
+  #48/#51/#53):** TikTok's apex artifact is live and that portal prefix is
+  verified. The separately signed app-subdomain artifact is now live at
+  `/tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt`: HTTP 200 plain text, 68
+  bytes, SHA-256
+  `6e9b5e7bef342feded472b9ab4509ec030bbc8ed3d24de4a7b7a8975750f49c9`,
+  and byte-identical to the portal download. The existing Worker still maps
+  file-like app-host requests into `/app/`; callback and login SPA routes
+  remain HTTP 200 HTML.
 - **EVENTIM OFFICIAL PARTNER LIVE (2026-08-05, PR #49):** the homepage partner/source strip includes Eventim's official self-hosted US logo and links to Eventim US. The relationship copy is scoped to Drop's live affiliate and event-source integration without implying ticket exclusivity. PR #49 merged as `2c288f5`; production workflow `31061271681` passed on retry after a hosted-runner dependency-install stall and deployed to Cloudflare Pages. Live desktop/mobile QA confirms all six logos load, the scoped copy and affiliate disclosure remain present, and there is no horizontal overflow or console noise.
 - **READ-ONLY TIKTOK WEB CALLBACK LIVE (2026-08-05, PR #46):** the signed-in
   website can start TikTok Login Kit from Settings with browser-generated PKCE
@@ -60,12 +69,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
-- TikTok URL verification still needs the portal-generated root file named
-  exactly `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt`. Its signed per-app
-  payload was not available to the website session, and the live URL correctly
-  remains HTTP 404. After its separate deploy, finish portal verification and
-  one signed-in sandbox connection test; do not request publishing scopes or
-  Content Posting API access.
+- TikTok portal: click **Verify** for the `https://app.trydropapp.com/` URL
+  prefix now that its separately signed exact artifact is live, then run one
+  signed-in sandbox connection. The apex prefix is already verified. Do not
+  request publishing scopes or Content Posting API access.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
   submission is `In Review`. Do not claim approval. After approval, obtain
   destination-specific authorization before configuring production Supabase
@@ -75,12 +82,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Retrieve the exact portal-generated
-  `tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt` payload, add that file to the
-  website root and the explicit `scripts/build-dist.sh` whitelist, deploy it
-  through the standard PR → `main` workflow, confirm its live body is
-  byte-identical, then complete TikTok URL verification and one read-only
-  signed-in sandbox connection.**
+- **In TikTok, click Verify for the `https://app.trydropapp.com/` URL prefix,
+  then configure or enable only Login Kit + Display API scopes
+  `user.info.basic`/`video.list` and run one signed-in sandbox connection. Do
+  not add publishing scopes or Content Posting API access.**
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
 - **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
@@ -100,6 +105,28 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
 
+## 2026-08-05 — Codex — TikTok per-prefix verification artifacts live
+- **Changed:** PR #48 added TikTok's apex signed artifact. Live inspection then
+  found the app-host Worker maps file-like requests into `/app/`; PR #51 made
+  the build preserve the single tracked artifact there without altering the
+  Worker or SPA routing. TikTok generated a different signed artifact for the
+  app prefix, so PR #53 added that second exact portal file under destination
+  `tiktok3vSsOjcdAwZqkeershAZQumPuThlJOJS.txt` and included both artifacts in
+  the root and app deploy whitelists.
+- **Verified:** the app-prefix portal download, tracked file, and built/live
+  app-host copies are each 68 bytes with SHA-256
+  `6e9b5e7bef342feded472b9ab4509ec030bbc8ed3d24de4a7b7a8975750f49c9`;
+  direct byte comparisons pass. The app-host URL returns HTTP 200 plain text;
+  callback and login routes remain HTTP 200 HTML. Local and exact-main checks
+  passed 7/7 Node tests and 128/128 Playwright tests.
+- **Delivery:** PR #48 merged as `f803e56`; PR #51 merged as `fd1e60f`; PR #53
+  merged as `4a6ae7c`. Exact PR #53 workflow attempt 1 stalled in hosted-runner
+  Playwright installation and was canceled; the unchanged attempt 2 passed.
+  Main workflow `31064947739` passed and deployed Cloudflare Pages. The apex
+  prefix is portal-verified; the app prefix is live and ready for its Verify
+  click. No backend, secret, publishing-scope, Content Posting, or Worker
+  change was made.
+
 ## 2026-08-05 — Codex — read-only TikTok web callback live
 - **Changed:** added the signed-in Settings connection action, browser PKCE and
   anti-forgery state, exact redirect validation, one-time callback exchange via
@@ -113,10 +140,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   same-origin failures. Live `app.js` contains the exact callback and read-only
   scope markers.
 - **Delivery:** PR #46 merged as `15fad17`; main workflow `31059041140` passed
-  tests and deployed Cloudflare Pages. The separately required exact TikTok
-  root verification file remains HTTP 404 and is recorded above as the next
-  action; no portal, backend, secret, publishing-scope, or Content Posting
-  change was made.
+  tests and deployed Cloudflare Pages. TikTok's separately signed verification
+  artifacts are now live as recorded above; no backend, secret,
+  publishing-scope, or Content Posting change was made.
 
 ## 2026-08-05 — Codex — Eventim official partner live
 - **Changed:** added Eventim's official self-hosted US logo and link to the existing homepage partner/source strip, plus scoped copy naming the live affiliate and event-source relationship. Existing FTC affiliate disclosure remains unchanged.
