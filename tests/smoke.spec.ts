@@ -610,6 +610,8 @@ test.describe('website smoke', () => {
     expect(appScript).toContain("scope: 'user.info.basic,video.list'");
     expect(appScript).not.toMatch(/video\.publish|video\.upload|video\.delete/);
     expect(appScript).toContain("config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback'");
+    expect(appScript).toContain("const state = randomToken(32), codeVerifier = sandbox ? null : randomToken(64)");
+    expect(appScript).toContain("...(codeVerifier ? {");
     expect(appScript).toContain("code_challenge_method: 'S256'");
     expect(appScript).toContain("params.get('state') !== flow.state");
     expect(appScript).toContain("get('tiktok_sandbox') === '1'");

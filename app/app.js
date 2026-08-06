@@ -1069,12 +1069,13 @@ class Component extends DCLogic {
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
     this.setState({ tiktokConnecting:true });
     try {
-      const functionName = new URLSearchParams(location.search).get('tiktok_sandbox') === '1'
+      const sandbox = new URLSearchParams(location.search).get('tiktok_sandbox') === '1';
+      const functionName = sandbox
         ? 'tiktok-oauth-sandbox' : 'tiktok-oauth';
       const config = await supa.functions.invoke(functionName, { method:'GET' });
       if (config.error || !config.data || !config.data.clientKey || !config.data.redirectUri) throw config.error || new Error('TikTok is not configured');
       if (config.data.redirectUri !== 'https://app.trydropapp.com/tiktok/callback') throw new Error('TikTok redirect is not configured safely');
-      const state = randomToken(32), codeVerifier = randomToken(64);
+      const state = randomToken(32), codeVerifier = sandbox ? null : randomToken(64);
       sessionStorage.setItem('drop.tiktok.oauth', JSON.stringify({ state, codeVerifier, functionName }));
       const url = new URL('https://www.tiktok.com/v2/auth/authorize/');
       url.search = new URLSearchParams({
@@ -1083,8 +1084,10 @@ class Component extends DCLogic {
         scope: 'user.info.basic,video.list',
         redirect_uri: config.data.redirectUri,
         state,
-        code_challenge: await pkceChallenge(codeVerifier),
-        code_challenge_method: 'S256',
+        ...(codeVerifier ? {
+          code_challenge: await pkceChallenge(codeVerifier),
+          code_challenge_method: 'S256',
+        } : {}),
       }).toString();
       location.assign(url.toString());
     } catch (error) {
