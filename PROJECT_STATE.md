@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-05
+Last updated: 2026-08-07
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IDLE
+**Status:** ACTIVE — Codex optional phone signup flow on `codex/optional-phone-signup-20260807`
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Codex: authenticated optional Twilio phone verification in browser account creation; scope `app/index.html`, `app/app.js`, focused tests, generated `dist/`, and closeout docs.
 
 ## Current status
 ### What works
+- **OPTIONAL PHONE SIGNUP CANDIDATE VERIFIED AND INDEPENDENTLY REVIEWED (2026-08-07):** browser account creation now routes authenticated email-confirmation and signup-origin OAuth callbacks through one-shot `?mode=signup-complete` handling into a dedicated optional phone step. Every authenticated session attests the existing signup-compliance RPC before Discover, including identities first created from the login-origin Google/Apple buttons; incomplete identities fail closed. The step calls the existing authenticated `verify-phone` Edge boundary, keeps phone/code ephemeral, destroys abandoned/successful state, blocks request races, and preserves Skip/email-only signup. Password signup sends the accepted July 18 metadata and signup-origin OAuth completes the sanctioned compliance RPC from tab-scoped DOB/consent. App syntax/build, 7 Node tests, all 142 Chrome/WebKit checks, focused 14/14 mocked signup-phone cases, diff checks, and two adversarial review passes succeed. No backend, secret, migration, SMS, deploy, merge, or production mutation occurred.
 - **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
   #48/#51/#53/#57):** TikTok's apex artifact is live and that portal prefix is
   verified. The separately signed app-subdomain artifact is now live at
@@ -76,15 +77,16 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
   website switch deploys. Do not request publishing scopes or Content Posting
   API access.
-- Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender: corrected
-  submission is `In Review`. Do not claim approval. After approval, obtain
-  destination-specific authorization before configuring production Supabase
-  Phone Auth and running founder SMS QA.
+- Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender remains a
+  separate compliance lane; do not infer its status from the production Twilio
+  Verify service. The optional browser flow uses the existing authenticated
+  `verify-phone` Edge boundary and does not configure Supabase Phone Auth.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Independently review the exact optional-phone signup diff, commit/push `codex/optional-phone-signup-20260807`, open the website PR, pass exact-head CI, merge, and let the standard `main` workflow deploy the reviewed source. Then live-verify email-confirmation routing, Skip/email-only signup, one mocked/non-SMS error state, and the signed-in phone step before the founder performs one real SMS proof.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
   sandbox-only consent branch, then re-consent at
@@ -342,6 +344,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-07 — Codex — optional browser phone verification reviewed locally
+- **Changed:** added an explicit optional phone step to the authenticated signup wizard using the existing `verify-phone` Edge Function; preserved email-only signup and Skip; routed email-confirmation, resend, and signup-origin OAuth callbacks through `?mode=signup-complete`; corrected password-signup metadata to the accepted July 18 compliance contract.
+- **Security/reliability:** every authenticated session attests signup compliance before Discover; raw phone/code stay ephemeral and clear on success, abandonment, activation restart, and sign-out; provider errors are sanitized; navigation, resend, and number changes are disabled during active requests; server-only Twilio credentials and the existing JWT/compliance/rate-limit boundary remain unchanged.
+- **Verified:** app JS syntax and deploy build pass; full website suite passes 7 Node + 142 Playwright checks across desktop Chrome/mobile Safari, including 14/14 mocked callback/compliance/skip/send/check/failure/cleanup cases. Two adversarial review passes are resolved. PR, CI, deploy, live routing verification, and one founder SMS proof remain. No production mutation occurred.
+
 ### 2026-08-04 — Codex — Cervantes combined partner/source logo row live
 - **Changed:** consolidated the standalone Cervantes partner card and ticket-source strip into one section titled “Official Drop partners and ticket sources”; added the official self-hosted Cervantes wordmark as the first linked logo; retained the partnership's select-show guest-list/community-promotion scope; removed the superseded card CSS and consolidated regression coverage.
 - **Verified:** the deploy build and source mirror match; focused entity/SEO checks pass 7/7; independent review's scope-language finding was fixed and the final review found no actionable defects; PR and `main` workflows each passed the complete 124-test Chrome/WebKit suite. Live QA at 1280×900 and 390×844 confirmed five loaded logos, the official Cervantes URL, scoped copy, no horizontal overflow, and no console warnings/errors.

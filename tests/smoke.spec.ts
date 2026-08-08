@@ -379,10 +379,49 @@ test.describe('website smoke', () => {
     const signUpIndex = signupImplementation?.indexOf('supa.auth.signUp') ?? -1;
     expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
     expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
+    expect(signupImplementation).toContain('birthdate:dobValue');
+    expect(signupImplementation).toContain('legal_accepted:true');
+    expect(signupImplementation).toContain("terms_version:'2026-07-18'");
+    expect(signupImplementation).toContain("privacy_version:'2026-07-18'");
+    expect(signupImplementation).not.toContain('consented_at');
+    expect(signupImplementation).toContain("'?mode=signup-complete'");
     const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
     expect(oauthImplementation, 'OAuth implementation is present').not.toBeNull();
     expect(oauthImplementation?.[1]).toContain('signInWithOAuth');
-    expect(oauthImplementation?.[1]).not.toMatch(/\bdob\b|date.of.birth/i);
+    expect(oauthImplementation?.[1]).toContain("signupOrigin ? '?mode=signup-complete' : ''");
+    expect(oauthImplementation?.[1]).toContain("fieldVal('signup-dob')");
+    expect(oauthImplementation?.[1]).toContain("fieldChecked('signup-consent')");
+    expect(oauthImplementation?.[1]).toContain('savePendingOAuthCompliance(dobValue)');
+    expect(appScript).toContain("supa.rpc('complete_signup_profile'");
+    expect(appScript).toContain('p_terms_version:pending.termsVersion');
+    expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
+
+    expect(appTemplate).toContain('Phone verification is optional during setup');
+    expect(appTemplate).toContain('value="{{ wizStepPhone }}"');
+    expect(appTemplate).toContain('autocomplete="tel"');
+    expect(appTemplate).toContain('autocomplete="one-time-code"');
+    expect(appTemplate).toContain('Email-only signup stays available');
+    expect(appScript).toContain("functions.invoke('verify-phone'");
+    expect(appScript).toContain("body:{ action:'send', phone }");
+    expect(appScript).toContain("body:{ action:'check', phone:this.state.wizPhonePending, code }");
+    expect(appScript).toContain("wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneVerified:true");
+    expect(appScript).toContain('wizPhoneResendDisabled:s.wizPhoneResendBlocked || s.wizPhoneBusy');
+    expect(appScript).toContain('wizNavigationBusy:s.wizStep===0 && s.wizPhoneBusy');
+    expect(appTemplate).toContain('onClick="{{ wizPhoneResend }}" disabled="{{ wizPhoneResendDisabled }}"');
+    expect(appTemplate).toContain('onClick="{{ wizPhoneChange }}" disabled="{{ wizPhoneBusy }}"');
+    expect(appTemplate).toContain('onClick="{{ wizSkip }}" disabled="{{ wizNavigationBusy }}"');
+    expect(appTemplate).toContain('onClick="{{ wizNext }}" disabled="{{ wizNavigationBusy }}"');
+    expect(appScript).toContain("var SIGNUP_COMPLETE_MODE = 'signup-complete'");
+    expect(appScript).not.toContain("if (mode === 'signup-complete') instance.setState({ screen: 'activation'");
+    expect(appScript).toContain('scrubSignupCompletionUrl();');
+    expect(appScript).toContain('clearPhoneVerificationState({ authed:false');
+    expect(appScript).toContain('window.clearTimeout(this._wizPhoneCooldown)');
+    const afterLoginImplementation = appScript.match(/async afterLogin\(\)\{([\s\S]*?)\n  \}\n  async connectTikTok/);
+    expect(afterLoginImplementation?.[1]).toContain("supa.rpc('signup_compliance_status')");
+    expect(afterLoginImplementation?.[1].indexOf("supa.rpc('signup_compliance_status')"))
+      .toBeLessThan(afterLoginImplementation?.[1].indexOf("this.go('discover')"));
+    expect(appScript).toContain("if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; }");
+    expect(appScript).not.toMatch(/console\.(?:log|error|warn)\([^\n]*(?:wizPhone|PhonePending|phonePending)/);
 
     const appAssets = `${appTemplate}\n${appScript}`;
     for (const staleLegalMarker of [
