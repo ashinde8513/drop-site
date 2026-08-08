@@ -13,14 +13,14 @@ Last updated: 2026-08-07
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE — Codex optional phone signup flow on `codex/optional-phone-signup-20260807`
+**Status:** INACTIVE — optional phone signup is merged and live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Codex: authenticated optional Twilio phone verification in browser account creation; scope `app/index.html`, `app/app.js`, focused tests, generated `dist/`, and closeout docs.
+- None.
 
 ## Current status
 ### What works
-- **OPTIONAL PHONE SIGNUP CANDIDATE VERIFIED AND INDEPENDENTLY REVIEWED (2026-08-07):** browser account creation now routes authenticated email-confirmation and signup-origin OAuth callbacks through one-shot `?mode=signup-complete` handling into a dedicated optional phone step. Every authenticated session attests the existing signup-compliance RPC before Discover, including identities first created from the login-origin Google/Apple buttons; incomplete identities fail closed. The step calls the existing authenticated `verify-phone` Edge boundary, keeps phone/code ephemeral, destroys abandoned/successful state, blocks request races, and preserves Skip/email-only signup. Password signup sends the accepted July 18 metadata and signup-origin OAuth completes the sanctioned compliance RPC from tab-scoped DOB/consent. App syntax/build, 7 Node tests, all 142 Chrome/WebKit checks, focused 14/14 mocked signup-phone cases, diff checks, and two adversarial review passes succeed. No backend, secret, migration, SMS, deploy, merge, or production mutation occurred.
+- **OPTIONAL PHONE SIGNUP MERGED AND LIVE (2026-08-07, PR #63):** browser account creation routes authenticated email-confirmation and signup-origin OAuth callbacks through one-shot `?mode=signup-complete` handling into a dedicated optional phone step. Every authenticated session attests the existing signup-compliance RPC before Discover, including identities first created from the login-origin Google/Apple buttons; incomplete identities fail closed. The step calls the existing authenticated `verify-phone` Edge boundary, keeps phone/code ephemeral, destroys abandoned/successful state, blocks request races, and preserves Skip/email-only signup. Password signup sends the accepted July 18 metadata and signup-origin OAuth completes the sanctioned compliance RPC from tab-scoped DOB/consent. PR #63 merged as `944ff9362a9e4de7571f9f11c24829f59022df26`; main workflow `31232346422` passed 141 browser checks cleanly, passed one unrelated festival check on its automatic retry, and deployed to Cloudflare Pages. Live `app.js` and signup HTML are byte-identical to the reviewed source and contain the optional disclosure, compliance RPCs, and authenticated `verify-phone` calls. No backend, secret, migration, production-data, or Twilio configuration mutation occurred; one real SMS proof remains founder physical QA.
 - **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
   #48/#51/#53/#57):** TikTok's apex artifact is live and that portal prefix is
   verified. The separately signed app-subdomain artifact is now live at
@@ -86,7 +86,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Independently review the exact optional-phone signup diff, commit/push `codex/optional-phone-signup-20260807`, open the website PR, pass exact-head CI, merge, and let the standard `main` workflow deploy the reviewed source. Then live-verify email-confirmation routing, Skip/email-only signup, one mocked/non-SMS error state, and the signed-in phone step before the founder performs one real SMS proof.**
+- **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
   sandbox-only consent branch, then re-consent at
