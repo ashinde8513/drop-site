@@ -273,6 +273,7 @@
         </label>
         <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
         <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
+        <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin:var(--sp-sm) 0 0;">Phone verification is optional during setup. Email-only signup stays available.</p>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
         </div>
@@ -857,16 +858,48 @@
     <div style="position:relative;width:100%;max-width:520px;">
       <!-- progress dots -->
       <div style="display:flex;gap:8px;justify-content:center;margin-bottom:var(--sp-xxl);">
-        <sc-for list="{{ wizDots }}" as="d" hint-placeholder-count="5">
+        <sc-for list="{{ wizDots }}" as="d" hint-placeholder-count="6">
           <span style="height:6px;border-radius:var(--r-pill);transition:all var(--dur-base) var(--ease);{{ d.style }}"></span>
         </sc-for>
       </div>
       <div class="wiz-card" style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-xl);padding:var(--sp-xxl);box-shadow:var(--shadow-card);">
-        <div style="font-size:var(--fs-xs);color:var(--accent);font-weight:700;letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:var(--sp-sm);">Step {{ wizStepNum }} of 5</div>
+        <div style="font-size:var(--fs-xs);color:var(--accent);font-weight:700;letter-spacing:var(--tr-wide);text-transform:uppercase;margin-bottom:var(--sp-sm);">Step {{ wizStepNum }} of {{ wizStepCount }}</div>
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ wizTitle }}</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">{{ wizSubtitle }}</p>
 
-        <!-- Step 0: profile -->
+        <!-- Step 0: optional phone verification -->
+        <sc-if value="{{ wizStepPhone }}">
+          <sc-if value="{{ wizPhoneVerified }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-md);padding:var(--sp-xl);background:var(--social-glass);border:1px solid var(--social-glass-border);border-radius:var(--r-md);text-align:center;">
+              <span style="font-size:34px;color:var(--attended);" aria-hidden="true">✓</span>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);">Phone verified</div>
+              <div style="color:var(--text-secondary);font-size:var(--fs-sm);">Drop kept only a protected one-way ownership proof, not your phone number.</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ wizPhoneEntry }}">
+            <label for="wiz-phone" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Phone number <span style="color:var(--text-muted);">(optional)</span></label>
+            <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <p style="color:var(--text-muted);font-size:var(--fs-xs);line-height:1.55;margin:0 0 var(--sp-lg);">
+              By selecting Text me a code, you agree to receive one automated transactional verification text from Drop. One message per request. Message and data rates may apply. Reply STOP to opt out or HELP for help where supported. No marketing. See our <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.
+            </p>
+            <button type="button" class="btn btn--secondary btn--block" onClick="{{ wizPhoneSend }}" disabled="{{ wizPhoneBusy }}">{{ wizPhoneSendLabel }}</button>
+          </sc-if>
+          <sc-if value="{{ wizPhoneCodeEntry }}">
+            <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0 0 var(--sp-lg);">Enter the 6-digit code sent to {{ wizPhonePending }}.</p>
+            <label for="wiz-phone-code" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Verification code</label>
+            <input id="wiz-phone-code" type="text" value="{{ wizPhoneCode }}" onInput="{{ setWizPhoneCode }}" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;height:56px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;letter-spacing:0.16em;text-align:center;outline:none;" />
+            <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
+              <button type="button" class="btn btn--secondary btn--block" onClick="{{ wizPhoneVerify }}" disabled="{{ wizPhoneBusy }}">{{ wizPhoneVerifyLabel }}</button>
+              <button type="button" class="btn btn--ghost btn--block" onClick="{{ wizPhoneResend }}" disabled="{{ wizPhoneResendDisabled }}">{{ wizPhoneResendLabel }}</button>
+              <button type="button" class="btn btn--ghost btn--block" onClick="{{ wizPhoneChange }}" disabled="{{ wizPhoneBusy }}">Use a different number</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ wizPhoneHasStatus }}">
+            <p role="status" aria-live="polite" style="color:var(--text-secondary);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ wizPhoneStatus }}</p>
+          </sc-if>
+        </sc-if>
+
+        <!-- Step 1: profile -->
         <sc-if value="{{ wizStep0 }}">
           <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-xl);">
             <div style="width:96px;height:96px;border-radius:50%;background:var(--grad-glow-fill);box-shadow:0 0 0 3px var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;">📷</div>
@@ -875,13 +908,13 @@
           <input type="text" placeholder="Display name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
         </sc-if>
 
-        <!-- Step 1: location -->
+        <!-- Step 2: location -->
         <sc-if value="{{ wizStep1 }}">
           <input type="text" value="Denver, CO" placeholder="City, State" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
           <button type="button" class="chip" onClick="{{ toastLoc }}"><span class="chip__dot"></span>Use my current location</button>
         </sc-if>
 
-        <!-- Step 2: vibes -->
+        <!-- Step 3: vibes -->
         <sc-if value="{{ wizStep2 }}">
           <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-lg);">
             <sc-for list="{{ wizGenreChips }}" as="g" hint-placeholder-count="6">
@@ -910,7 +943,7 @@
           <button type="button" class="btn btn--secondary btn--block btn--sm" onClick="{{ toastSc }}">🔗 Connect SoundCloud</button>
         </sc-if>
 
-        <!-- Step 3: friends -->
+        <!-- Step 4: friends -->
         <sc-if value="{{ wizStep3 }}">
           <div style="position:relative;margin-bottom:var(--sp-lg);">
             <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
@@ -930,7 +963,7 @@
           </div>
         </sc-if>
 
-        <!-- Step 4: follow artists -->
+        <!-- Step 5: follow artists -->
         <sc-if value="{{ wizStep4 }}">
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-md);">
             <sc-for list="{{ wizArtists }}" as="a" hint-placeholder-count="6">
@@ -944,9 +977,9 @@
         </sc-if>
 
         <div class="wiz-foot" style="display:flex;gap:var(--sp-md);margin-top:var(--sp-xxl);align-items:center;">
-          <sc-if value="{{ wizHasBack }}"><button type="button" class="btn btn--ghost" onClick="{{ wizBack }}" style="flex:0 0 auto;">← Back</button></sc-if>
-          <button type="button" class="btn btn--ghost" onClick="{{ wizSkip }}" style="flex:0 0 auto;">Skip</button>
-          <button type="button" class="btn btn--primary" onClick="{{ wizNext }}" style="flex:1;">{{ wizNextLabel }}</button>
+          <sc-if value="{{ wizHasBack }}"><button type="button" class="btn btn--ghost" onClick="{{ wizBack }}" disabled="{{ wizNavigationBusy }}" style="flex:0 0 auto;">← Back</button></sc-if>
+          <button type="button" class="btn btn--ghost" onClick="{{ wizSkip }}" disabled="{{ wizNavigationBusy }}" style="flex:0 0 auto;">Skip</button>
+          <button type="button" class="btn btn--primary" onClick="{{ wizNext }}" disabled="{{ wizNavigationBusy }}" style="flex:1;">{{ wizNextLabel }}</button>
         </div>
       </div>
     </div>

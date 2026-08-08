@@ -345,6 +345,96 @@
     if (isNaN(dob.getTime())) return null;
     return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   }
+  function normalizeVerificationPhone(value) {
+    var digits = String(value || '').replace(/\D/g, '');
+    if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
+    return digits.length === 10 ? '+1' + digits : '';
+  }
+  function phoneVerificationMessage(detail, stage) {
+    var text = String(detail || '').toLowerCase();
+    if (text.includes('phone_in_use') || text.includes('phone_exists') || text.includes('already linked')) {
+      return 'That phone number is already linked to another Drop account.';
+    }
+    if (text.includes('rate_limited') || text.includes('rate limit') || text.includes('too many')) {
+      return 'Too many codes requested. Wait a few minutes and try again.';
+    }
+    if (text.includes('invalid_code') || text.includes('invalid otp') || text.includes('expired')) {
+      return 'That code is invalid or expired.';
+    }
+    if (text.includes('access_required')) return 'Finish the account requirements before verifying a phone.';
+    if (text.includes('unavailable') || text.includes('503')) {
+      return 'Phone verification is temporarily unavailable. Try again later.';
+    }
+    return stage === 'check'
+      ? 'Couldn\u2019t verify that code. Check it and try again.'
+      : 'Couldn\u2019t send a verification code. Try again.';
+  }
+  async function phoneVerificationFailure(error, stage) {
+    var detail = error && typeof error === 'object'
+      ? ((error.code || '') + ' ' + (error.message || '') + ' ' + (error.error || ''))
+      : '';
+    if (error && error.context instanceof Response) {
+      var payload = await error.context.clone().json().catch(function () { return null; });
+      if (payload && typeof payload.error === 'string') detail += ' ' + payload.error;
+    }
+    return phoneVerificationMessage(detail, stage);
+  }
+  var SIGNUP_COMPLETE_MODE = 'signup-complete';
+  var PENDING_OAUTH_COMPLIANCE_KEY = 'drop.signup.oauth-compliance';
+  var SIGNUP_TERMS_VERSION = '2026-07-18';
+  var SIGNUP_PRIVACY_VERSION = '2026-07-18';
+  var AUTH_CALLBACK_KEYS = [
+    'code', 'state', 'error', 'error_code', 'error_description',
+    'access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at',
+    'provider_token', 'provider_refresh_token', 'type'
+  ];
+  function pendingOAuthCompliance(value) {
+    if (!value || typeof value !== 'object') return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value.birthdate || '')) return null;
+    if (value.termsVersion !== SIGNUP_TERMS_VERSION || value.privacyVersion !== SIGNUP_PRIVACY_VERSION) return null;
+    var years = ageFromDob(value.birthdate);
+    return years != null && years >= 16 && years <= 120
+      ? { birthdate:value.birthdate, termsVersion:value.termsVersion, privacyVersion:value.privacyVersion }
+      : null;
+  }
+  function savePendingOAuthCompliance(birthdate) {
+    var payload = pendingOAuthCompliance({
+      birthdate,
+      termsVersion:SIGNUP_TERMS_VERSION,
+      privacyVersion:SIGNUP_PRIVACY_VERSION
+    });
+    if (!payload) return false;
+    try { sessionStorage.setItem(PENDING_OAUTH_COMPLIANCE_KEY, JSON.stringify(payload)); return true; }
+    catch (_) { return false; }
+  }
+  function takePendingOAuthCompliance() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(PENDING_OAUTH_COMPLIANCE_KEY); }
+    catch (_) { return null; }
+    try { sessionStorage.removeItem(PENDING_OAUTH_COMPLIANCE_KEY); } catch (_) {}
+    if (!raw) return null;
+    try { return pendingOAuthCompliance(JSON.parse(raw)); }
+    catch (_) { return null; }
+  }
+  function clearPendingOAuthCompliance() {
+    try { sessionStorage.removeItem(PENDING_OAUTH_COMPLIANCE_KEY); } catch (_) {}
+  }
+  function signupCompletionRequested() {
+    return typeof location !== 'undefined'
+      && new URLSearchParams(location.search).get('mode') === SIGNUP_COMPLETE_MODE;
+  }
+  function scrubSignupCompletionUrl() {
+    if (typeof location === 'undefined' || typeof history === 'undefined') return;
+    var url = new URL(location.href);
+    if (url.searchParams.get('mode') === SIGNUP_COMPLETE_MODE) url.searchParams.delete('mode');
+    AUTH_CALLBACK_KEYS.forEach(function (key) { url.searchParams.delete(key); });
+    if (url.hash && url.hash.includes('=')) {
+      var hash = new URLSearchParams(url.hash.slice(1));
+      AUTH_CALLBACK_KEYS.forEach(function (key) { hash.delete(key); });
+      url.hash = hash.toString() ? '#' + hash.toString() : '';
+    }
+    history.replaceState({}, '', url.pathname + url.search + url.hash);
+  }
   function fieldVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
   function fieldChecked(id) { var el = document.getElementById(id); return !!(el && el.checked); }
   function base64Url(bytes) {
@@ -609,6 +699,8 @@ class Component extends DCLogic {
     festivalLoading: false, festivalError: null,
     // activation wizard
     wizStep: 0, wizGenres: {}, wizFriendSel: {}, wizArtistSel: {}, wizArtQuery: '',
+    wizPhone: '', wizPhonePending: '', wizPhoneCode: '', wizPhoneBusy: false,
+    wizPhoneVerified: false, wizPhoneStatus: '', wizPhoneResendBlocked: false,
     // settings
     setToggles: { reminders: true, sales: true, comments: false, plans: true },
     recapPrivacy: true, deleteConfirm: '', tiktokConnecting: false,
@@ -1045,11 +1137,187 @@ class Component extends DCLogic {
       this.go('myshows');
     });
   }
-  afterLogin(){
+  async sendPhoneCode(){
+    if (!supa || this.state.wizPhoneBusy) return;
+    const phone = normalizeVerificationPhone(this.state.wizPhone);
+    if (!phone) {
+      this.setState({ wizPhoneStatus:'Enter a valid 10-digit +1 phone number.' });
+      return;
+    }
+    const requestId = this._wizPhoneRequest = (this._wizPhoneRequest || 0) + 1;
+    this.setState({ wizPhoneBusy:true, wizPhoneStatus:'' });
+    try {
+      const result = await supa.functions.invoke('verify-phone', { body:{ action:'send', phone } });
+      if (requestId !== this._wizPhoneRequest) return;
+      if (result.error || !result.data || result.data.ok !== true) {
+        this.setState({ wizPhoneStatus:await phoneVerificationFailure(result.error || result.data, 'send') });
+        return;
+      }
+      this.setState({ wizPhonePending:phone, wizPhoneCode:'', wizPhoneStatus:'Code sent.', wizPhoneResendBlocked:true });
+      this.startPhoneCooldown();
+    } catch (error) {
+      if (requestId === this._wizPhoneRequest) {
+        this.setState({ wizPhoneStatus:phoneVerificationMessage(error && error.message, 'send') });
+      }
+    } finally {
+      if (requestId === this._wizPhoneRequest) this.setState({ wizPhoneBusy:false });
+    }
+  }
+  async resendPhoneCode(){
+    if (!supa || !this.state.wizPhonePending || this.state.wizPhoneBusy || this.state.wizPhoneResendBlocked) return;
+    const requestId = this._wizPhoneRequest = (this._wizPhoneRequest || 0) + 1;
+    this.setState({ wizPhoneBusy:true, wizPhoneStatus:'' });
+    try {
+      const result = await supa.functions.invoke('verify-phone', { body:{ action:'send', phone:this.state.wizPhonePending } });
+      if (requestId !== this._wizPhoneRequest) return;
+      if (result.error || !result.data || result.data.ok !== true) {
+        this.setState({ wizPhoneStatus:await phoneVerificationFailure(result.error || result.data, 'send') });
+        return;
+      }
+      this.setState({ wizPhoneStatus:'New code sent.', wizPhoneResendBlocked:true });
+      this.startPhoneCooldown();
+    } catch (error) {
+      if (requestId === this._wizPhoneRequest) {
+        this.setState({ wizPhoneStatus:phoneVerificationMessage(error && error.message, 'send') });
+      }
+    } finally {
+      if (requestId === this._wizPhoneRequest) this.setState({ wizPhoneBusy:false });
+    }
+  }
+  async checkPhoneCode(){
+    if (!supa || !this.state.wizPhonePending || this.state.wizPhoneBusy) return;
+    const code = String(this.state.wizPhoneCode || '').replace(/\D/g, '').slice(0, 6);
+    if (!/^\d{6}$/.test(code)) {
+      this.setState({ wizPhoneStatus:'Enter the 6-digit code.' });
+      return;
+    }
+    const requestId = this._wizPhoneRequest = (this._wizPhoneRequest || 0) + 1;
+    this.setState({ wizPhoneBusy:true, wizPhoneStatus:'' });
+    try {
+      const result = await supa.functions.invoke('verify-phone', {
+        body:{ action:'check', phone:this.state.wizPhonePending, code }
+      });
+      if (requestId !== this._wizPhoneRequest) return;
+      if (result.error || !result.data || result.data.verified !== true) {
+        this.setState({ wizPhoneStatus:await phoneVerificationFailure(result.error || result.data, 'check') });
+        return;
+      }
+      this.clearPhoneCooldown();
+      this.setState({
+        wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneVerified:true,
+        wizPhoneStatus:'Phone ownership verified for this Drop account.'
+      });
+    } catch (error) {
+      if (requestId === this._wizPhoneRequest) {
+        this.setState({ wizPhoneStatus:phoneVerificationMessage(error && error.message, 'check') });
+      }
+    } finally {
+      if (requestId === this._wizPhoneRequest) this.setState({ wizPhoneBusy:false });
+    }
+  }
+  clearPhoneCooldown(){
+    this._wizPhoneCooldownToken = (this._wizPhoneCooldownToken || 0) + 1;
+    if (this._wizPhoneCooldown) window.clearTimeout(this._wizPhoneCooldown);
+    this._wizPhoneCooldown = null;
+  }
+  startPhoneCooldown(){
+    this.clearPhoneCooldown();
+    const token = this._wizPhoneCooldownToken;
+    this._wizPhoneCooldown = window.setTimeout(() => {
+      if (token !== this._wizPhoneCooldownToken) return;
+      this._wizPhoneCooldown = null;
+      this.setState({ wizPhoneResendBlocked:false });
+    }, 60_000);
+  }
+  clearPhoneVerificationState(nextState){
+    this._wizPhoneRequest = (this._wizPhoneRequest || 0) + 1;
+    this.clearPhoneCooldown();
+    this.setState(Object.assign({
+      wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneBusy:false,
+      wizPhoneVerified:false, wizPhoneStatus:'', wizPhoneResendBlocked:false
+    }, nextState || {}));
+  }
+  changePhoneNumber(){
+    if (this.state.wizPhoneBusy) return;
+    this.clearPhoneVerificationState();
+  }
+  startActivation(){
+    this.clearPhoneVerificationState({ screen:'activation', wizStep:0, authError:'' });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+  }
+  async completeSignupRoute(session){
+    if (this._signupCompletionPromise) return this._signupCompletionPromise;
+    this._signupCompletionPromise = (async () => {
+      const pending = takePendingOAuthCompliance();
+      if (pending) {
+        const completed = await supa.rpc('complete_signup_profile', {
+          p_birthdate:pending.birthdate,
+          p_terms_version:pending.termsVersion,
+          p_privacy_version:pending.privacyVersion
+        });
+        if (completed.error || completed.data !== true) {
+          const message = String(completed.error && completed.error.message || '').toLowerCase();
+          if (message.includes('16 or older')) throw new Error('You must be 16 or older to use Drop.');
+          if (message.includes('current terms') || message.includes('privacy policy')) {
+            throw new Error('Accept Drop\u2019s current Terms and Privacy Policy to continue.');
+          }
+          throw new Error('Could not finish account setup. Please try signing up again.');
+        }
+      }
+      const status = await supa.rpc('signup_compliance_status');
+      if (status.error || !status.data || status.data.user_id !== session.user.id || status.data.complete !== true) {
+        throw new Error('Could not confirm the account requirements. Please try signing up again.');
+      }
+      scrubSignupCompletionUrl();
+      this.startActivation();
+      return true;
+    })();
+    try {
+      return await this._signupCompletionPromise;
+    } catch (error) {
+      clearPendingOAuthCompliance();
+      scrubSignupCompletionUrl();
+      await supa.auth.signOut().catch(() => undefined);
+      this.clearPhoneVerificationState({
+        authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
+        authBusy:false, authError:error && error.message || 'Could not finish account setup. Please try signing up again.'
+      });
+      return false;
+    } finally {
+      this._signupCompletionPromise = null;
+    }
+  }
+  async afterLogin(){
     if (!supa) return;
-    supa.auth.getSession().then(({ data })=>{
+    const completingSignup = signupCompletionRequested();
+    const { data } = await supa.auth.getSession();
       const session = data && data.session;
-      if (!session) { if (this.state.pendingClaimArtistId) this.openGate('Log in to claim your profile'); return; }
+      if (!session) {
+        if (completingSignup) {
+          clearPendingOAuthCompliance();
+          scrubSignupCompletionUrl();
+          this.clearPhoneVerificationState({
+            screen:'signup', authError:'Sign up or use the verified link from your email to finish account setup.'
+          });
+        } else if (this.state.pendingClaimArtistId) this.openGate('Log in to claim your profile');
+        return;
+      }
+      if (completingSignup) {
+        if (!(await this.completeSignupRoute(session))) return;
+      } else {
+        const status = await supa.rpc('signup_compliance_status');
+        if (status.error || !status.data || status.data.user_id !== session.user.id || status.data.complete !== true) {
+          await supa.auth.signOut().catch(() => undefined);
+          this.clearPhoneVerificationState({
+            authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
+            authBusy:false,
+            authError:status.error
+              ? 'Could not confirm the account requirements. Try again.'
+              : 'Finish account setup through Get started before logging in.'
+          });
+          return;
+        }
+      }
       this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
       // Authed users never sit on the marketing hero or an auth form —
       // Discover is the logged-in home (design: doLogin/doVerify → discover).
@@ -1063,7 +1331,6 @@ class Component extends DCLogic {
         this.openFestival(this.state.festivalEvent.id);
       }
       this.maybeResumeClaimDeepLink();
-    });
   }
   async connectTikTok(){
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
@@ -1185,20 +1452,46 @@ class Component extends DCLogic {
     this.openClaimFor(id);
   }
   logout(){
+    clearPendingOAuthCompliance();
     if (supa) supa.auth.signOut().catch(()=>{});
-    this.setState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
+    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
   oauth(provider){
     if (!supa) { this.setState({ authError:'Login is unavailable. Refresh and try again.' }); return; }
-    if (this.state.screen === 'signup') {
+    const signupOrigin = this.state.screen === 'signup';
+    if (signupOrigin) {
       var rawCreatorCode = fieldVal('signup-creator-code');
       if (rawCreatorCode && !saveCreatorCode(rawCreatorCode)) {
         this.setState({ authError:'Creator codes use 4–24 letters or numbers.' });
         return;
       }
+      var dobValue = fieldVal('signup-dob');
+      var consented = fieldChecked('signup-consent');
+      if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
+      var years = ageFromDob(dobValue);
+      if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+      if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
+      if (!savePendingOAuthCompliance(dobValue)) {
+        this.setState({authError:'Could not safely start signup. Refresh and try again.'});
+        return;
+      }
+    } else {
+      clearPendingOAuthCompliance();
     }
-    supa.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } })
-      .then(out=>{ if (out.error) this.setState({ authError: out.error.message }); });
+    const redirectTo = location.origin + location.pathname + (signupOrigin ? '?mode=signup-complete' : '');
+    this.setState({ authBusy:true, authError:'' });
+    supa.auth.signInWithOAuth({ provider, options: { redirectTo } })
+      .then(out=>{
+        this.setState({ authBusy:false });
+        if (out.error) {
+          if (signupOrigin) clearPendingOAuthCompliance();
+          this.setState({ authError: out.error.message || 'Could not start signup.' });
+        }
+      })
+      .catch(()=>{
+        if (signupOrigin) clearPendingOAuthCompliance();
+        this.setState({ authBusy:false, authError:'Could not start signup. Try again.' });
+      });
   }
 
   renderVals(){
@@ -1540,6 +1833,7 @@ class Component extends DCLogic {
 
     // ===== Activation wizard =====
     const wizSteps = [
+      { title:'Verify your phone', sub:'Optional: add a verified phone now or skip and keep using email only.' },
       { title:'Add a profile photo', sub:'Help your crew recognize you.' },
       { title:'Where do you go out?', sub:'We\u2019ll show shows near you first.' },
       { title:'What are your vibes?', sub:'Pick genres so your feed fits your taste.' },
@@ -1555,7 +1849,7 @@ class Component extends DCLogic {
     // design's fixed WIZ_ARTISTS mock list — same pool as Pick Artists.
     const wizArtistPool = realArtists.map(a=>a.name);
     const wizArtists = wizArtistPool.map(a=>{ const on=!!s.wizArtistSel[a]; return { name:a, border: on?'var(--accent)':'var(--border)', color: on?'var(--accent)':'var(--text-muted)', label: on?'Following':'Follow', toggle:()=>this.setState(x=>({ wizArtistSel:{...x.wizArtistSel, [a]: !x.wizArtistSel[a]} })) }; });
-    const wizNextLabel = s.wizStep>=4 ? 'Finish — go to Discover' : 'Continue';
+    const wizNextLabel = s.wizStep>=5 ? 'Finish — go to Discover' : 'Continue';
     // manual artist typeahead (vibes step)
     const artQ = s.wizArtQuery.trim().toLowerCase();
     const wizArtMatches = artQ.length>0 ? wizArtistPool
@@ -2139,8 +2433,19 @@ class Component extends DCLogic {
       festivalTimeZone,
 
       // wizard
-      wizStepNum, wizTitle: wizCur.title, wizSubtitle: wizCur.sub, wizDots, wizNextLabel, wizHasBack: s.wizStep>0,
-      wizStep0: s.wizStep===0, wizStep1: s.wizStep===1, wizStep2: s.wizStep===2, wizStep3: s.wizStep===3, wizStep4: s.wizStep===4,
+      wizStepNum, wizStepCount:wizSteps.length, wizTitle: wizCur.title, wizSubtitle: wizCur.sub, wizDots, wizNextLabel, wizHasBack: s.wizStep>0,
+      wizStepPhone:s.wizStep===0, wizStep0:s.wizStep===1, wizStep1:s.wizStep===2, wizStep2:s.wizStep===3, wizStep3:s.wizStep===4, wizStep4:s.wizStep===5,
+      wizPhone:s.wizPhone, wizPhonePending:s.wizPhonePending, wizPhoneCode:s.wizPhoneCode,
+      wizPhoneBusy:s.wizPhoneBusy, wizPhoneVerified:s.wizPhoneVerified,
+      wizPhoneEntry:!s.wizPhonePending && !s.wizPhoneVerified,
+      wizPhoneCodeEntry:!!s.wizPhonePending && !s.wizPhoneVerified,
+      wizPhoneStatus:s.wizPhoneStatus, wizPhoneHasStatus:!!s.wizPhoneStatus,
+      wizPhoneResendBlocked:s.wizPhoneResendBlocked,
+      wizPhoneResendDisabled:s.wizPhoneResendBlocked || s.wizPhoneBusy,
+      wizNavigationBusy:s.wizStep===0 && s.wizPhoneBusy,
+      wizPhoneSendLabel:s.wizPhoneBusy?'Working…':'Text me a code',
+      wizPhoneVerifyLabel:s.wizPhoneBusy?'Working…':'Verify phone',
+      wizPhoneResendLabel:s.wizPhoneResendBlocked?'Code sent — wait 60 seconds':'Resend code',
       wizGenreChips, wizFriends, wizArtists,
       wizArtQuery: s.wizArtQuery, wizArtMatches, wizArtOpen, wizArtChosen, wizHasArtChosen: wizArtChosen.length>0,
 
@@ -2344,7 +2649,7 @@ class Component extends DCLogic {
         if (!supa) { this.go('discover'); return; }
         this.setState({verifyMessage:'Checking...'});
         supa.auth.getSession().then(({data})=>{
-          if (data && data.session) { this.setState({verifyMessage:''}); this.afterLogin(); this.go('discover'); this.flash('Email verified — welcome to Drop'); }
+          if (data && data.session) { this.setState({verifyMessage:''}); this.startActivation(); this.afterLogin(); this.flash('Email verified — finish setting up Drop'); }
           else this.setState({verifyMessage:'Not verified yet — click the link in your email first.'});
         });
       },
@@ -2352,7 +2657,11 @@ class Component extends DCLogic {
         this.prevent(e);
         if (!supa || !this.state.verifyEmail) return;
         this.setState({verifyMessage:'Sending...'});
-        supa.auth.resend({ type:'signup', email:this.state.verifyEmail }).then(out=>{
+        supa.auth.resend({
+          type:'signup',
+          email:this.state.verifyEmail,
+          options:{ emailRedirectTo:location.origin + location.pathname + '?mode=signup-complete' }
+        }).then(out=>{
           this.setState({ verifyMessage: out.error ? (out.error.message||'Could not resend — try again.') : 'Email resent — check your inbox.' });
         });
       },
@@ -2552,23 +2861,30 @@ class Component extends DCLogic {
         const years = ageFromDob(dobValue);
         if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
         if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
+        clearPendingOAuthCompliance();
         if (creatorCode) saveCreatorCode(creatorCode);
         this.setState({authBusy:true, authError:''});
-        const data = { username, dob: dobValue, consented_at: new Date().toISOString() };
+        const data = {
+          username,
+          birthdate:dobValue,
+          legal_accepted:true,
+          terms_version:'2026-07-18',
+          privacy_version:'2026-07-18'
+        };
         // ponytail: referral is cosmetic (no crew-join backend yet) — same
         // note as account.js's signUp(); the raw ref token still rides along
         // as user metadata for a future crew-join job.
         const referralRef = (typeof location!=='undefined' && new URLSearchParams(location.search).get('ref')) || '';
         if (referralRef) data.referred_by = referralRef;
-        const redirectTo = location.origin + location.pathname;
+        const redirectTo = location.origin + location.pathname + '?mode=signup-complete';
         (async ()=>{
           try {
             const out = await supa.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data } });
             if (out.error) throw out.error;
             this.setState({authBusy:false});
             if (!out.data.session) { this.setState({ verifyEmail: email, screen:'verify' }); return; }
-            this.setState({gate:false, gateReturn:null, screen:'activation', wizStep:0});
-            if (typeof window!=='undefined') window.scrollTo(0,0);
+            this.setState({gate:false, gateReturn:null});
+            this.startActivation();
             this.afterLogin();
           } catch (e) { this.setState({authBusy:false, authError: e.message || 'Could not create your account.'}); }
         })();
@@ -2614,9 +2930,15 @@ class Component extends DCLogic {
       retryFestival:()=>this.openFestival(this._festivalRequestedId),
 
       // wizard
-      wizNext:()=>{ if(this.state.wizStep>=4){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
-      wizBack:()=>{ this.setState(x=>({wizStep: Math.max(0, x.wizStep-1)})); },
-      wizSkip:()=>{ if(this.state.wizStep>=4){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      wizNext:()=>{ if(this.state.wizPhoneBusy) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      wizBack:()=>{ if(this.state.wizPhoneBusy) return; this.setState(x=>({wizStep: Math.max(0, x.wizStep-1)})); },
+      wizSkip:()=>{ if(this.state.wizPhoneBusy) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      setWizPhone:(e)=>this.setState({wizPhone:e.target.value, wizPhoneStatus:''}),
+      setWizPhoneCode:(e)=>this.setState({wizPhoneCode:e.target.value.replace(/\D/g,'').slice(0,6), wizPhoneStatus:''}),
+      wizPhoneSend:()=>this.sendPhoneCode(),
+      wizPhoneVerify:()=>this.checkPhoneCode(),
+      wizPhoneResend:()=>this.resendPhoneCode(),
+      wizPhoneChange:()=>this.changePhoneNumber(),
       setWizArtQuery:(e)=>this.setState({wizArtQuery:e.target.value}),
       rmGoing:()=>{ if(rmEv) this.toggleRsvp(rmEv.id,'going'); this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
       rmSkip:()=>{ this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); },
@@ -2726,7 +3048,14 @@ class Component extends DCLogic {
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
           if (instance._festivalWrites) instance._festivalWrites.clear();
-          instance.setState({ authed:false, userId:null, profile:null, stars:{}, festTab:'All' });
+          clearPendingOAuthCompliance();
+          instance.clearPhoneVerificationState({
+            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login'
+          });
+        } else if (event === 'SIGNED_IN' && signupCompletionRequested()) {
+          // Supabase warns against starting another auth call while its auth
+          // callback lock is held. Resume on the next macrotask instead.
+          window.setTimeout(() => instance.afterLogin(), 0);
         }
       });
     }
