@@ -13,10 +13,10 @@ Last updated: 2026-08-09
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** INACTIVE — optional phone signup is merged and live
+**Status:** ACTIVE — adding all official social profiles to the public website
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Owner: Codex `019fe715-07ee-7d11-ab66-6937e0408566` · Started: 2026-08-09 · Working on: public footer and link-hub social icons on `agent/add-social-links`
 
 ## Current status
 ### What works

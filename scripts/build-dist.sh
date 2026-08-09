@@ -13,7 +13,7 @@ mkdir -p dist
 # Pages + root assets (explicit whitelist — add here when shipping new files).
 cp ./*.html dist/
 cp ./*.css ./*.js dist/
-cp favicon.ico favicon.png favicon.svg og-image.png og-image.svg og-image-link.png og-image-link.svg dist/
+cp favicon.ico favicon.png favicon.svg social-icons.svg og-image.png og-image.svg og-image-link.png og-image-link.svg dist/
 cp sitemap.xml robots.txt llms.txt tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/
 cp _headers _redirects _routes.json dist/
 

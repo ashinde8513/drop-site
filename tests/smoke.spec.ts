@@ -64,6 +64,16 @@ const DETAIL_PAGES = [
   { path: '/artist.html', backHref: '/artists.html' },
 ];
 
+const SOCIAL_LINKS = [
+  { name: 'Instagram', href: 'https://www.instagram.com/trydropapp/', icon: 'instagram' },
+  { name: 'TikTok', href: 'https://www.tiktok.com/@trydropapp', icon: 'tiktok' },
+  { name: 'X', href: 'https://x.com/trydropapp', icon: 'x' },
+  { name: 'YouTube', href: 'https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ', icon: 'youtube' },
+  { name: 'Facebook', href: 'https://www.facebook.com/trydropapp', icon: 'facebook' },
+  { name: 'Reddit', href: 'https://www.reddit.com/user/trydrop/', icon: 'reddit' },
+  { name: 'LinkedIn', href: 'https://www.linkedin.com/company/trydropapp/', icon: 'linkedin' },
+];
+
 test.describe('website smoke', () => {
   // Pre-dismiss the cookie banner so it can't sit over unrelated click
   // targets; the dedicated 'cookie consent' suite below exercises the banner.
@@ -282,6 +292,21 @@ test.describe('website smoke', () => {
       await expect(link, `${href} link present`).toHaveCount(1);
       const res = await page.request.get(href);
       expect(res.status(), `${href} reachable`).toBeLessThan(400);
+    }
+  });
+
+  test('public footer and link hub expose every official social profile safely', async ({ page }) => {
+    for (const path of ['/index.html', '/link.html']) {
+      await page.goto(path);
+      const socials = page.locator('.foot-social').first();
+      await expect(socials).toBeVisible();
+      for (const { name, href, icon } of SOCIAL_LINKS) {
+        const link = socials.getByRole('link', { name, exact: true });
+        await expect(link).toHaveAttribute('href', href);
+        await expect(link).toHaveAttribute('target', '_blank');
+        await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        await expect(link.locator('use')).toHaveAttribute('href', `/social-icons.svg#${icon}`);
+      }
     }
   });
 
