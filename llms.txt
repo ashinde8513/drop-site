@@ -12,7 +12,7 @@ Drop is built by Resonance Ventures LLC. Primary site: https://trydropapp.com
 - [Artists](https://trydropapp.com/artists): browse artists with upcoming shows by city
 - [For Promoters](https://trydropapp.com/promoters): list an event free on Drop
 - [About](https://trydropapp.com/about): who builds Drop, why it exists
-- [Download Drop](https://apps.apple.com/us/app/drop-edm-events/id6790662825): iPhone and iPad app
+- [Download Drop](https://apps.apple.com/us/app/drop-edm-events/id6790662825): iPhone app
 - [Privacy Policy](https://trydropapp.com/privacy)
 - [Terms of Service](https://trydropapp.com/terms)
 - [Get the app / links](https://trydropapp.com/link): app links, launch list, social — link-in-bio hub
