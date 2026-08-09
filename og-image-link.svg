@@ -34,7 +34,7 @@
   <!-- Tagline: link-hub specific -->
   <text x="600" y="288" font-family="'Space Grotesk', system-ui, sans-serif"
         font-size="26" font-weight="500" letter-spacing="6"
-        text-anchor="middle" fill="#7C8597">LINKS &amp; LAUNCH ACCESS</text>
+        text-anchor="middle" fill="#7C8597">LINKS &amp; DOWNLOAD</text>
 
   <!-- Spectrum bars -->
   <g transform="translate(338,432)">

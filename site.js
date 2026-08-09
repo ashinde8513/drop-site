@@ -489,9 +489,7 @@
   }
 
   // ---- download-the-app buttons -------------------------------------------
-  // ponytail: store URLs stay '' until the app ships — buttons keep their
-  // /download.html href; fill these in and nothing else changes.
-  var APP_STORE_URL = '', PLAY_STORE_URL = '';
+  var APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = '';
   function initDownloadBtns() {
     var ua = navigator.userAgent || '';
     var store = /iPhone|iPad|iPod/i.test(ua) ? APP_STORE_URL : (/Android/i.test(ua) ? PLAY_STORE_URL : '');
