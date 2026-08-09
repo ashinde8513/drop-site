@@ -617,9 +617,7 @@
   const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming' };
   const stateName = st => STATE_NAMES[st] || st || '';
 
-  // ponytail: store URLs stay '' until the app ships — the button routes to
-  // the public download/waitlist page; fill these in and nothing else changes.
-  const APP_STORE_URL = '', PLAY_STORE_URL = '';
+  const APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = '';
   function appDownloadHref() {
     const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
     if (/iPhone|iPad|iPod/i.test(ua) && APP_STORE_URL) return APP_STORE_URL;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drop — Get the app & links</title>
-  <meta name="description" content="Get Drop, join the launch list, and follow @trydropapp. EDM events, festivals & set times in one app." />
+  <meta name="description" content="Get Drop and follow @trydropapp. EDM events, festivals, and set times in one app." />
   <meta name="theme-color" content="#0B0D12" />
   <meta name="robots" content="noindex" />
 
@@ -13,20 +13,20 @@
 
   <!-- Open Graph -->
   <meta property="og:title" content="Drop — Get the app" />
-  <meta property="og:description" content="EDM events, festivals & set times. Releasing soon — get on the list." />
+  <meta property="og:description" content="EDM events, festivals, set times, and your live-music history. Download Drop on the App Store." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://trydropapp.com/link" />
   <meta property="og:image" content="https://trydropapp.com/og-image-link.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Drop — Links &amp; launch access. @trydropapp." />
+  <meta property="og:image:alt" content="Drop — Links. @trydropapp." />
 
   <!-- Twitter card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@trydropapp" />
   <meta name="twitter:title" content="Drop — Get the app" />
-  <meta name="twitter:description" content="EDM events, festivals &amp; set times. Releasing soon — get on the list." />
+  <meta name="twitter:description" content="EDM events, festivals, set times, and your live-music history. Download Drop on the App Store." />
   <meta name="twitter:image" content="https://trydropapp.com/og-image-link.png" />
 
   <!-- Favicon -->
@@ -69,18 +69,15 @@
 
       <h1 class="lh-name">Drop<span class="caret">▾</span></h1>
       <p class="lh-tag">EDM events, festivals &amp; set times — in one app</p>
-      <p class="lh-meta">Releasing soon · iOS · Free at launch</p>
+      <p class="lh-meta">iPhone &amp; iPad · Free</p>
 
       <nav class="lh-links" aria-label="Links">
-        <!-- PRIMARY: smart routes iOS → App Store at launch, otherwise → launch list.
-             Text + destination are set by the script below from the LAUNCHED flag.
-             No-JS fallback points to the launch list. -->
-        <a class="lh-link primary" id="getApp" href="/download.html#waitlist">
-          <span class="lh-ico" aria-hidden="true">📲</span><span class="lh-label">Get launch access</span><span class="lh-chev" aria-hidden="true">›</span>
+        <a class="lh-link primary" id="getApp" href="https://apps.apple.com/us/app/drop-edm-events/id6790662825">
+          <span class="lh-ico" aria-hidden="true">📲</span><span class="lh-label">Download on the App Store</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
 
-        <a class="lh-link" id="joinList" href="/download.html#waitlist">
-          <span class="lh-ico" aria-hidden="true">🔔</span><span class="lh-label">Join the launch list</span><span class="lh-chev" aria-hidden="true">›</span>
+        <a class="lh-link" id="aboutDrop" href="/download.html">
+          <span class="lh-ico" aria-hidden="true">ℹ️</span><span class="lh-label">About Drop</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
         <a class="lh-link" href="https://instagram.com/trydropapp" target="_blank" rel="noopener noreferrer">
           <span class="lh-ico" aria-hidden="true">📷</span><span class="lh-label">Instagram — @trydropapp</span><span class="lh-chev" aria-hidden="true">›</span>
@@ -105,62 +102,5 @@
     </div>
   </main>
 
-  <script>
-    // Link-in-bio smart routing.
-    // ── At launch: set LAUNCHED = true and paste the App Store URL below.
-    //    Then iPhone/iPad visitors who tap the primary button go straight to the
-    //    App Store; everyone else (Android/desktop) still gets the launch list.
-    // ── The ?src= query param (e.g. /link?src=ig_bio) is preserved so you can tell
-    //    Instagram from TikTok traffic — it is appended to the App Store campaign
-    //    token (ct) and carried into the launch-list link.
-    (function () {
-      var LAUNCHED = false;                 // ← flip to true on launch day
-      var APP_STORE_URL = "";               // ← e.g. "https://apps.apple.com/us/app/drop/id000000000"
-      // The launch-access form lives on /download.html (id="waitlist") — the
-      // old index.html#notify anchor was removed in the browse-first rebuild.
-      var WAITLIST_URL = "/download.html#waitlist";
-
-      var btn = document.getElementById('getApp');
-      if (!btn) return;
-      // Label lives in a child span (icon/chevron flank it) — set that, not
-      // the whole button, so restyled markup survives the state switch.
-      var label = btn.querySelector('.lh-label') || btn;
-
-      // Capture the traffic source (?src=ig_bio / tiktok_bio / …) for attribution.
-      var src = new URLSearchParams(window.location.search).get('src') || '';
-
-      // Carry ?src= into the secondary "Join the launch list" link too.
-      var jl = document.getElementById('joinList');
-      if (jl && src) jl.setAttribute('href', '/download.html?src=' + encodeURIComponent(src) + '#waitlist');
-
-      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
-
-      if (LAUNCHED && APP_STORE_URL && isIOS) {
-        var url = APP_STORE_URL;
-        if (src) {
-          // Apple Campaign tokens for free App Analytics attribution.
-          url += (url.indexOf('?') === -1 ? '?' : '&') + 'ct=' + encodeURIComponent(src) + '&pt=0&mt=8';
-        }
-        btn.setAttribute('href', url);
-        label.textContent = 'Download on the App Store →';
-      } else if (LAUNCHED && APP_STORE_URL) {
-        // Launched, but not on iOS yet (Drop is iOS-first) — keep them on the list.
-        btn.setAttribute('href', WAITLIST_URL);
-        label.textContent = 'Get notified on Android →';
-      } else {
-        // Pre-launch: everyone joins the list. Insert ?src= BEFORE the #fragment
-        // so the anchor still resolves and the param stays readable on the target.
-        var wl = WAITLIST_URL;
-        if (src) {
-          var hash = '', hi = wl.indexOf('#');
-          if (hi !== -1) { hash = wl.slice(hi); wl = wl.slice(0, hi); }
-          wl += (wl.indexOf('?') === -1 ? '?' : '&') + 'src=' + encodeURIComponent(src) + hash;
-        }
-        btn.setAttribute('href', wl);
-        label.textContent = 'Get launch access →';
-      }
-    })();
-  </script>
 </body>
 </html>

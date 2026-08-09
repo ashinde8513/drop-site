@@ -39,7 +39,7 @@ const PAGES = [
   { path: '/artists.html', title: /Artists/ },
   { path: '/promoters.html', title: /For Promoters/ },
   { path: '/about.html', title: /About/ },
-  { path: '/download.html', title: /Get Drop/ },
+  { path: '/download.html', title: /Download Drop on the App Store/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
   { path: '/link.html', title: /Drop — Get the app/ },
@@ -509,50 +509,12 @@ test.describe('website smoke', () => {
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
 
-  test('launch-access submit answers inline instead of silently reloading', async ({ page }) => {
-    // Mock the function: CI must never write a real row or send a real email.
-    let posted: string | undefined;
-    await page.route('**/functions/v1/join-waitlist', async (route) => {
-      posted = route.request().postData() ?? '';
-      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
-    });
+  test('download page uses Apple-provided artwork and the live App Store destination', async ({ page }) => {
     await page.goto('/download.html');
-    await page.locator('#wl-email').fill('Raver@Example.com');
-    await page.locator('.wl-submit').click();
-    // The tap must produce visible feedback that mentions email — never a
-    // bare page reload (founder-reported bug).
-    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
-    expect(page.url()).not.toContain('email_address=');
-    // The row goes to our own table, lowercased for the unique constraint.
-    expect(posted).toContain('"email":"raver@example.com"');
-  });
-
-  test('repeat signup gets the same privacy-safe confirmation', async ({ page }) => {
-    await page.route('**/functions/v1/join-waitlist', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
-    await page.goto('/download.html');
-    await page.locator('#wl-email').fill('raver@example.com');
-    await page.locator('.wl-submit').click();
-    await expect(page.locator('.wl-msg')).toContainText(/check your inbox/i);
-    await expect(page.locator('.wl-msg')).toHaveClass(/ok/);
-  });
-
-  test('waitlist outage shows a retry message instead of failing silently', async ({ page }) => {
-    await page.route('**/functions/v1/join-waitlist', (route) =>
-      route.fulfill({ status: 500, body: '' }));
-    await page.goto('/download.html');
-    await page.locator('#wl-email').fill('raver@example.com');
-    await page.locator('.wl-submit').click();
-    await expect(page.locator('.wl-msg')).toContainText(/didn't go through/);
-    await expect(page.locator('.wl-msg')).toHaveClass(/err/);
-  });
-
-  test('launch-access submit flags an invalid email inline', async ({ page }) => {
-    await page.goto('/download.html');
-    await page.locator('#wl-email').fill('not-an-email');
-    await page.locator('.wl-submit').click();
-    await expect(page.locator('.wl-msg')).toContainText('valid email');
-    await expect(page.locator('#wl-email')).toHaveAttribute('aria-invalid', 'true');
+    const badge = page.getByRole('link', { name: 'Download Drop on the App Store' });
+    await expect(badge).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(badge.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
+    await expect(page.locator('#waitlist')).toHaveCount(0);
   });
 
   test('creator application submits accessible normalized fields without production writes', async ({ page }) => {
@@ -690,10 +652,10 @@ test.describe('website smoke', () => {
     expect(buildScript).toContain(`cp ${filenames.join(' ')} dist/app/`);
   });
 
-  test('link-in-bio launch buttons point at the real waitlist form', async ({ page }) => {
+  test('link-in-bio sends visitors to the live App Store listing', async ({ page }) => {
     await page.goto('/link.html');
-    await expect(page.locator('#getApp')).toHaveAttribute('href', '/download.html#waitlist');
-    await expect(page.locator('#joinList')).toHaveAttribute('href', '/download.html#waitlist');
+    await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/download.html');
   });
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {

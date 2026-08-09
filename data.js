@@ -103,23 +103,6 @@
     });
   }
 
-  // Server-side signup stores the address and sends the confirmation email.
-  Drop.joinWaitlist = function (email, source) {
-    return fetch(FUNCTIONS + 'join-waitlist', {
-      method: 'POST',
-      headers: {
-        apikey: SUPA_KEY,
-        Authorization: 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify({ email: email, source: source || null })
-    }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    });
-  };
-
   Drop.submitCreatorApplication = function (application) {
     return fetch(FUNCTIONS + 'submit-creator-application', {
       method: 'POST',

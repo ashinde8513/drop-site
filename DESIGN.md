@@ -49,7 +49,7 @@ Scale (responsive `clamp()`):
 
 - Container max-width `--wrap: 1240px` (`--wrap-narrow: 760px` for prose).
 - Shared stylesheet `site.css` (Prism token block copied verbatim from `drop-design/foundations/tokens.css`) + `data.js` (live Supabase public-catalog fetch layer, `window.Drop.*`) + `site.js` (nav/rails/cards/spectrum). Plain static HTML, zero build. Legacy `styles.css` remains ONLY for `link.html`.
-- Pages (12 + hub): `index`, `events` (filterable listing), `event`/`venue`/`artist` (param-driven detail templates), `venues`, `artists`, `promoters`, `about`, `download` (waitlist), `privacy`, `terms`, plus `link.html`.
+- Pages (12 + hub): `index`, `events` (filterable listing), `event`/`venue`/`artist` (param-driven detail templates), `venues`, `artists`, `promoters`, `about`, `download` (App Store), `privacy`, `terms`, plus `link.html`.
 - Hero is search-first (`clamp(40px, 5.5vw, 76px)`), not the old 150px poster headline.
 
 ## Components (site.css)
@@ -60,7 +60,7 @@ Scale (responsive `clamp()`):
 - `.chip` / `.chip-social` — filter pills (aria-pressed) / cyan social-glass "N friends going" (product-preview sections ONLY — never faked on real events)
 - `.spectrum` — 64-bar frequency visualization (the signature; one per page max)
 - `.state-empty` / `.state-error` / `.skeleton` — required states for every live-data surface
-- `.cta-band`, `.wl-form` (waitlist, Kit + mailto fallback), `.doc` (legal prose, 760px, magenta numerals), `.site-foot` (4-col footer + FTC/LLC lines)
+- `.cta-band`, `.doc` (legal prose, 760px, magenta numerals), `.site-foot` (4-col footer + FTC/LLC lines)
 
 ## Motion
 
