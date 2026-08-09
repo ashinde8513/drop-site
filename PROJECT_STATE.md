@@ -20,14 +20,18 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
-- **APP STORE LAUNCH WEBSITE UPDATE READY (2026-08-09):** `download.html`
-  uses Apple-provided Download on the App Store artwork linked to the live
-  `Drop - EDM Events` listing; waitlist capture and its unused client helper
-  are removed. The link hub, iPhone/iPad in-app download controls, metadata,
-  structured data, app-discovery text, and legal credit now reflect the live
-  iOS release. Local checks pass: 7/7 entity tests and 122/122 Playwright
-  Chrome/WebKit checks. Branch `codex/app-store-launch-20260809` at `ed07db2`
-  awaits standard PR/CI/merge deployment.
+- **APP STORE LAUNCH WEBSITE UPDATE LIVE (2026-08-09, PRs #65/#66):**
+  `download.html` uses Apple's official Download on the App Store badge linked
+  to the live `Drop - EDM Events` listing (`id6790662825`). The former waitlist
+  and unused client helper are removed; the link hub, in-app download controls,
+  metadata, structured data, app-discovery text, and legal credit reflect the
+  public release. PR #66 aligned every availability claim with Apple's live
+  iPhone-only compatibility label while retaining iPad user-agent routing to
+  the official listing. Merge `6ad7e46551fba41ab33aebf8c42d26eec7d360f5`
+  passed main workflow `31320193410` and deployed automatically. Live desktop
+  and 390px Browser QA verified `/download`, `/link`, the `/app/` template,
+  `/llms.txt`, the official App Store destination, no horizontal overflow, and
+  badge SHA-256 `a26fc5b38380272c92e9019a2eb8b45542a66814b3e2b203772db8904b9fb99f`.
 - **OPTIONAL PHONE SIGNUP MERGED AND LIVE (2026-08-07, PR #63):** browser account creation routes authenticated email-confirmation and signup-origin OAuth callbacks through one-shot `?mode=signup-complete` handling into a dedicated optional phone step. Every authenticated session attests the existing signup-compliance RPC before Discover, including identities first created from the login-origin Google/Apple buttons; incomplete identities fail closed. The step calls the existing authenticated `verify-phone` Edge boundary, keeps phone/code ephemeral, destroys abandoned/successful state, blocks request races, and preserves Skip/email-only signup. Password signup sends the accepted July 18 metadata and signup-origin OAuth completes the sanctioned compliance RPC from tab-scoped DOB/consent. PR #63 merged as `944ff9362a9e4de7571f9f11c24829f59022df26`; main workflow `31232346422` passed 141 browser checks cleanly, passed one unrelated festival check on its automatic retry, and deployed to Cloudflare Pages. Live `app.js` and signup HTML are byte-identical to the reviewed source and contain the optional disclosure, compliance RPCs, and authenticated `verify-phone` calls. No backend, secret, migration, production-data, or Twilio configuration mutation occurred; one real SMS proof remains founder physical QA.
 - **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
   #48/#51/#53/#57):** TikTok's apex artifact is live and that portal prefix is
@@ -57,7 +61,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - **TICKETSAUCE + ROUNDED HOMEPAGE PROOF LIVE (2026-08-03, PR #42):** Ticketsauce now appears beside Ticketmaster, SeatGeek, and Etix using the official self-hosted wordmark and neutral authorized-source wording. Live catalog totals floor to truthful marketing bands, currently `2,200+` events and `230+` cities, so the `+` never overstates inventory. PR #42 merged as `9de4ad6`; exact `main` workflow `30878584151` passed all 124 browser checks and deployed to Cloudflare Pages. Live desktop/mobile QA confirmed all four logos load, the Ticketsauce link opens the official site, and the page has no horizontal overflow or console errors.
 - **GOOGLE SEARCH CONSOLE VERIFIED + ENTITY SITEMAP ACCEPTED (2026-08-02):** the `sc-domain:trydropapp.com` property is ownership-verified through a root Cloudflare DNS TXT record. Google Search Console successfully read `sitemap.xml` (27 discovered pages) and `sitemap-entities.xml` (3,581 discovered pages); both show `Success` with an Aug 2, 2026 last-read date. Keep the verification TXT record in DNS. Bing Webmaster import remains a separate founder OAuth action.
 - **ENTITY SEO + FULL VENUE CATALOG LIVE (2026-08-02, PRs #38/#39):** every published event, canonical venue, and lineup artist has a stable UUID-backed readable URL; Cloudflare Pages Functions server-render entity-specific titles, metadata/content, and lifecycle-aware JSON-LD. A fail-closed quality gate keeps malformed events and thin venue/artist aggregates out of `/sitemap-entities.xml` while direct pages remain available with `noindex, follow`; live QA counted 3,581 URLs (2,246 events, 354 venues, 981 artists). Ticket URLs never imply `InStock`, canceled/postponed/sold-out/unavailable/RSVP states stay honest, and event-to-venue links use the venue UUID. The directories still expose the full catalog. No events or reviews were fabricated and no production writes occurred. Seven focused Node checks and the complete 124-test Chrome/WebKit suite pass locally and in the exact-head/main workflows.
-- **CREATOR PROGRAM BACKEND LIVE; PUBLIC ROUTE HOTFIX READY (2026-08-02):** the founding-pilot package and backend are merged, production migrations are applied, `CREATOR_RATE_LIMIT_SECRET` is set, and `submit-creator-application` is active with same-origin enforcement. Website PR #36 deployed the noindex application page, but live Browser QA caught a Cloudflare self-redirect on `/creators`; this hotfix removes the redundant `_redirects` rewrite and adds a regression assertion. Mobile release-train PR #297 remains unmerged and no Creator Program OTA has shipped.
+- **CREATOR PROGRAM WEBSITE ROUTE LIVE (2026-08-02, PRs #36/#37):** the founding-pilot package and backend are merged, production migrations are applied, `CREATOR_RATE_LIMIT_SECRET` is set, and `submit-creator-application` is active with same-origin enforcement. Website PR #37 removed the Cloudflare self-redirect on `/creators` and merged as `0ac5927`. Mobile release-train PR #297 remains a separate lane.
 - **HOMEPAGE CATALOG PROOF + OFFICIAL TICKET SOURCES LIVE (2026-08-02):** PR #34 renders overlap-aware totals from the public catalog (2,252 events / 236 cities at production QA time), keeps qualified offline fallbacks, and adds self-hosted Ticketmaster, SeatGeek, and Etix logos under neutral source wording. Production QA caught the homepage reusing an old cached `site.css`; the follow-up adds `?v=20260802` so the logo sizing rules load immediately. Full Chrome/WebKit Playwright coverage is 110/110 and production desktop/mobile QA found no overflow or browser errors.
 - **TWILIO SENDER ASSOCIATION VERIFIED (2026-07-30):** toll-free number `(855) 741-1140` (`PNbd8be89e2ffdf5c70d63e5f8a66eba17`) is attached to the existing Messaging Service `Drop Phone Verification` (`MGe2d6e639033b34c6535bb7deaf7d3bfd`). The number configuration readback shows “Selected messaging service: Drop Phone Verification.” This association does not change Toll-Free Verification's separate `In Review` status.
 - **TWILIO SMS OPT-IN PROOF LIVE + VERIFICATION IN REVIEW (2026-07-30, PRs #29/#30):** `https://trydropapp.com/sms-opt-in` returns HTTP 200 with the shipped one-time verification consent, “Text me a code,” the no-recurring/promotional-text disclosure, Privacy/Terms links, and `noindex, nofollow`. PR #29 merged the page as `3c6dcd9`; PR #30 isolated the browser gate from third-party font/catalog latency and merged as `b39b216`. Exact production workflow `30523124634` passed 108/108 Playwright checks and deployed Cloudflare Pages. Twilio initially rejected the registration because the legal name and `SOLE_PROPRIETOR` classification disagreed; the legal name was corrected to the CP575-exact `ARYA A SHINDE`, resubmitted, and the fresh checklist now reports `In Review`.
@@ -94,10 +98,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Open and merge the App Store launch website PR from
-  `codex/app-store-launch-20260809` (`ed07db2`) after required CI is green;
-  verify live `/download.html`, `/link.html`, and the App Store destination on
-  desktop and mobile.**
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -106,7 +106,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   publish content.**
 - **After the next scheduled catalog ingest, run the read-only entity monitor:** compare `/sitemap-entities.xml` event/venue/artist counts with the 2026-08-02 baseline (2,246 / 354 / 981), open one canonical event, venue, and artist, and confirm one thin venue remains `noindex, follow` and absent from the sitemap. Keep the separate persistent review-write/read flow honest: the current website does not yet persist reviews.
 - **After the next scheduled catalog ingest, spot-check that the homepage event/city totals still refresh and the ticket-source strip remains correctly sized on desktop and mobile.**
-- **Creator Program: merge the `/creators` redirect-loop hotfix through the standard website PR → `main` workflow, then verify the canonical page, form validation, console health, and same-origin submission boundary in production.** Mobile release-train PR #297 and the resulting exact-tag OTA remain separate founder gates.
 - **Open the real Treehouse “BASS BINGO AFTERS” event in physical iPhone Safari after the standard `main` deploy and confirm the poster stays clear, date/venue remain below the title, and the long lineup pill wraps inside the same page gutters as the details and ticket cards.** Automated Chrome/WebKit checks and browser geometry are green at mobile and desktop widths.
 - **On internally distributed TestFlight 1.0.1 Build 10, tap canonical-apex event and emailed password-recovery links on a physical iPhone; verify cold launch into the native app and complete the reset. Browser fallback is live and verified; this remaining check is native Universal-Link behavior only. Keep the separate `www` AASA-host hardening item out of the release claim because that origin intentionally redirects to apex.**
 - **Then run the first post-release catalog monitor after the next scheduled ingest:**
@@ -115,13 +114,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   zero, leave schedule live-QA in waiting and point the next agent to the reviewed
   backend manifest command instead of inventing rows.
 -1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
-0. ~~Add the Supabase OAuth redirect allowlist entries~~ **DONE (verified 2026-07-16 via Management API)**: live `uri_allow_list` already contains `https://app.trydropapp.com/**`, `https://trydropapp.com/app`, and `https://trydropapp.com/app/**` (plus login/reset entries) — someone added them in a prior session.
 1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
-2. **Review/merge the artist-claims app PR** — Drop-App "Wrapped all-time mode + artist merch links + artist claim flow" (#150): tsc/lint/304 unit tests green; needs device QA per app merge gate (wrapped toggle, claim wizard, admin Artist-claims tab).
 3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
-6. **Drop-App PR #146** (`feat/recap-celebration`): wire `<RecapCelebration trigger={revealed} />` into the recap screen root, device-QA, merge per app gate.
+6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
 ## 2026-08-05 — Codex — TikTok per-prefix verification artifacts live
 - **Changed:** PR #48 added TikTok's apex signed artifact. Live inspection then
@@ -356,6 +353,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-09 — Codex — App Store launch surfaces live and listing-truth aligned
+- **Changed:** PR #65 replaced the download waitlist with Apple's official badge and live `id6790662825` listing across the download page, link hub, signed-in app template, metadata, and discovery text. PR #66 corrected the remaining iPhone-and-iPad claims to iPhone-only copy, matching Apple's product page without changing badge/link or iPad routing.
+- **Verified:** final local regression passed 7 entity tests and 136 Playwright checks; independent adversarial review approved the truth fix. PR #66 CI passed, merge `6ad7e46551fba41ab33aebf8c42d26eec7d360f5` deployed through main run `31320193410`, and live desktop/390px Browser QA confirmed copy, official artwork, no mobile overflow, `/link` handoff, the `/app/` template, `/llms.txt`, and the App Store product page (`Drop - EDM Events`, Free, Only for iPhone). Live badge bytes match the reviewed source SHA-256.
+- **Boundaries:** no manual Wrangler, Worker, backend, schema, data, secret, or App Store Connect mutation occurred.
+
 ### 2026-08-07 — Codex — optional browser phone verification reviewed locally
 - **Changed:** added an explicit optional phone step to the authenticated signup wizard using the existing `verify-phone` Edge Function; preserved email-only signup and Skip; routed email-confirmation, resend, and signup-origin OAuth callbacks through `?mode=signup-complete`; corrected password-signup metadata to the accepted July 18 compliance contract.
 - **Security/reliability:** every authenticated session attests signup compliance before Discover; raw phone/code stay ephemeral and clear on success, abandonment, activation restart, and sign-out; provider errors are sanitized; navigation, resend, and number changes are disabled during active requests; server-only Twilio credentials and the existing JWT/compliance/rate-limit boundary remain unchanged.
