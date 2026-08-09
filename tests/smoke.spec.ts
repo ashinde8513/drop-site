@@ -69,7 +69,7 @@ const SOCIAL_LINKS = [
   { name: 'TikTok', href: 'https://www.tiktok.com/@trydropapp', icon: 'tiktok' },
   { name: 'X', href: 'https://x.com/trydropapp', icon: 'x' },
   { name: 'YouTube', href: 'https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ', icon: 'youtube' },
-  { name: 'Facebook', href: 'https://www.facebook.com/trydropapp', icon: 'facebook' },
+  { name: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61591821453151', icon: 'facebook' },
   { name: 'Reddit', href: 'https://www.reddit.com/user/trydrop/', icon: 'reddit' },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/company/trydropapp/', icon: 'linkedin' },
 ];
