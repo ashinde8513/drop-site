@@ -13,13 +13,22 @@ Last updated: 2026-08-09
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE — correcting the official Facebook Page destination
+**Status:** INACTIVE — official Facebook Page destination corrected and live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Codex — correcting the authentic Facebook Page URL on `agent/fix-facebook-link`.
+- None.
 
 ## Current status
 ### What works
+- **OFFICIAL FACEBOOK PAGE LINK LIVE (2026-08-09, PR #70):** every public
+  footer, the link hub, Organization JSON-LD, and `llms.txt` now use the stable
+  numeric Page URL `https://www.facebook.com/profile.php?id=61591821453151`
+  instead of the unrelated London logistics Page at the `trydropapp` vanity
+  path. Meta Accounts Center identifies `61591821453151` as the managed
+  `trydropapp` Page. Merge `57b5c699b1450940e7ce371b354f76c5de633cb9`
+  passed 138/138 checks and deployed through main workflow `31329063826`.
+  Live interaction QA reached the canonical Drop Page with its EDM bio,
+  Software category, `trydropapp@gmail.com`, and `trydropapp.com` identity.
 - **ALL OFFICIAL SOCIAL PROFILES LIVE (2026-08-09, PR #68):** every existing
   public footer and the link hub expose icon-only links to Drop's Instagram,
   TikTok, X, YouTube, Facebook, Reddit, and LinkedIn profiles. Each link has an
@@ -362,6 +371,26 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-09 — Codex — authentic Facebook Page destination live
+- **Changed:** replaced the unrelated `facebook.com/trydropapp` logistics
+  destination across all 16 public Page surfaces, Organization JSON-LD,
+  `llms.txt`, and exact deterministic coverage with stable Page ID
+  `61591821453151`; kept platform icon, accessible name, and safe new-tab
+  attributes unchanged.
+- **Verified:** Meta Accounts Center lists the managed `trydropapp` Page with
+  that numeric ID. Local checks passed 7 Node tests and 138/138 Playwright
+  checks; independent adversarial review approved. PR #70 merged as
+  `57b5c699b1450940e7ce371b354f76c5de633cb9`; exact main workflow
+  `31329063826` passed 138/138 and deployed to Cloudflare Pages. A live `/link`
+  click opened canonical `/people/trydropapp/61591821453151/`, whose public DOM
+  and metadata show the Drop EDM bio, Software category, email, and website,
+  with no console errors or horizontal overflow.
+- **QA note:** desktop Browser interaction is live-proven and the repo's mobile
+  Safari lane passed; the Browser extension's separate 390px viewport override
+  hung and was abandoned without a second unbounded retry.
+- **Boundaries:** no backend, database, secret, Worker, social-account setting,
+  or external post changed.
+
 ### 2026-08-09 — Codex — official social profiles live
 - **Changed:** replaced the old Instagram/TikTok/X letter badges with one
   self-hosted seven-platform SVG sprite across all 15 existing public footers
