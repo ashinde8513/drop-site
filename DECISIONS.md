@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-08-09 — App Store claims follow the listing compatibility label
+
+User-facing availability copy must match Apple's current product-page
+compatibility label. Drop is therefore described as available for iPhone while
+the listing says “Only for iPhone.” iPad user-agent routing may still open the
+same official App Store destination; routing a device to the listing is not an
+iPad compatibility claim. Use Apple's official unmodified badge and the exact
+product URL rather than recreating badge artwork or maintaining a waitlist.
+
 ## 2026-08-02 — Ordinary authorized website changes finish through live QA
 
 An ordinary website code/content request authorizes the complete guarded release lane by default: implementation, verification, commit/push, PR, exact-head CI, merge, the existing `main` Test & Deploy workflow, live QA, and honest repo closeout. Stop earlier only when the user explicitly asks for a draft, local-only work, a pause, or narrower delivery.

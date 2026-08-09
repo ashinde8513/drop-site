@@ -18,7 +18,8 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Next
 
-- [ ] Richer JSON-LD: add `FAQPage` schema once an FAQ section exists; add `offers`/App Store `url` to the SoftwareApplication schema once Drop is listed.
+- [ ] Richer JSON-LD: add `FAQPage` schema once an FAQ section exists. The live
+  App Store URL and offer are already present in SoftwareApplication metadata.
 
 > Design ideas to pull from: see `prism-tokens/DESIGN_RESOURCES.md` (refero / Aceternity / Componentry — reimplement natively, Prism-token, reduced-motion).
 - [ ] FAQ section on homepage — common AI-search queries ("is Drop free", "what cities does Drop cover", "when does Drop launch") currently unanswered anywhere on-site, so AI answer engines have nothing to cite.
