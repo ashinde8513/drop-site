@@ -514,7 +514,17 @@ test.describe('website smoke', () => {
     const badge = page.getByRole('link', { name: 'Download Drop on the App Store' });
     await expect(badge).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
     await expect(badge.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
+    await expect(page.getByText('Available for iPhone', { exact: true })).toBeVisible();
+    await expect(page.getByText(/iPhone\s*(?:&|and)\s*iPad/i)).toHaveCount(0);
     await expect(page.locator('#waitlist')).toHaveCount(0);
+
+    const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
+    expect(appTemplate).toContain('Available for iPhone');
+    expect(appTemplate).not.toMatch(/iPhone\s*(?:&amp;|&|and)\s*iPad/i);
+
+    const crawlerGuide = readFileSync(resolve('llms.txt'), 'utf8');
+    expect(crawlerGuide).toContain('id6790662825): iPhone app');
+    expect(crawlerGuide).not.toMatch(/iPhone\s*(?:&|and)\s*iPad/i);
   });
 
   test('creator application submits accessible normalized fields without production writes', async ({ page }) => {
@@ -656,6 +666,7 @@ test.describe('website smoke', () => {
     await page.goto('/link.html');
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
     await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/download.html');
+    await expect(page.getByText('iPhone · Free', { exact: true })).toBeVisible();
   });
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {
