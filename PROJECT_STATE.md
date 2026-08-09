@@ -13,13 +13,22 @@ Last updated: 2026-08-09
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE — adding all official social profiles to the public website
+**Status:** INACTIVE — official social profiles are merged and live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex `019fe715-07ee-7d11-ab66-6937e0408566` · Started: 2026-08-09 · Working on: public footer and link-hub social icons on `agent/add-social-links`
+- None.
 
 ## Current status
 ### What works
+- **ALL OFFICIAL SOCIAL PROFILES LIVE (2026-08-09, PR #68):** every existing
+  public footer and the link hub expose icon-only links to Drop's Instagram,
+  TikTok, X, YouTube, Facebook, Reddit, and LinkedIn profiles. Each link has an
+  accessible platform name and opens in a new tab with `noopener noreferrer`.
+  Organization structured data and `llms.txt` carry the same canonical URLs.
+  Merge `3aed046eb8a9e0e7c4e5092160a0b22316bfcd90` passed 138/138 Playwright
+  checks in main workflow `31323566520` and deployed through Cloudflare Pages.
+  Live desktop/mobile Browser QA found seven visible icons, no overflow or
+  console warnings/errors, and a YouTube click opened the official Drop channel.
 - **APP STORE LAUNCH WEBSITE UPDATE LIVE (2026-08-09, PRs #65/#66):**
   `download.html` uses Apple's official Download on the App Store badge linked
   to the live `Drop - EDM Events` listing (`id6790662825`). The former waitlist
@@ -353,6 +362,22 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-09 — Codex — official social profiles live
+- **Changed:** replaced the old Instagram/TikTok/X letter badges with one
+  self-hosted seven-platform SVG sprite across all 15 existing public footers
+  and the link hub; added the same canonical URLs to Organization JSON-LD and
+  `llms.txt`; added accessible names, new-tab behavior, and
+  `noopener noreferrer` to every profile link.
+- **Verified:** local checks passed 7 Node tests and 138/138 Playwright checks
+  across desktop Chrome/mobile Safari; an independent adversarial reviewer
+  approved. Exact main workflow `31323566520` passed and deployed merge
+  `3aed046eb8a9e0e7c4e5092160a0b22316bfcd90`. Live source/CSS/icon readback
+  matches reviewed bytes; desktop 1440×900 and mobile 390×844 Browser QA found
+  all seven icons, no overflow, no console warnings/errors, and the YouTube
+  interaction opened the official Drop channel.
+- **Boundaries:** no signed-in app behavior, Worker, backend, database, secret,
+  social-account setting, or external post changed.
+
 ### 2026-08-09 — Codex — App Store launch surfaces live and listing-truth aligned
 - **Changed:** PR #65 replaced the download waitlist with Apple's official badge and live `id6790662825` listing across the download page, link hub, signed-in app template, metadata, and discovery text. PR #66 corrected the remaining iPhone-and-iPad claims to iPhone-only copy, matching Apple's product page without changing badge/link or iPad routing.
 - **Verified:** final local regression passed 7 entity tests and 136 Playwright checks; independent adversarial review approved the truth fix. PR #66 CI passed, merge `6ad7e46551fba41ab33aebf8c42d26eec7d360f5` deployed through main run `31320193410`, and live desktop/390px Browser QA confirmed copy, official artwork, no mobile overflow, `/link` handoff, the `/app/` template, `/llms.txt`, and the App Store product page (`Drop - EDM Events`, Free, Only for iPhone). Live badge bytes match the reviewed source SHA-256.
