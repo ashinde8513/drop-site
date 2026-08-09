@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-07
+Last updated: 2026-08-09
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,14 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **APP STORE LAUNCH WEBSITE UPDATE READY (2026-08-09):** `download.html`
+  uses Apple-provided Download on the App Store artwork linked to the live
+  `Drop - EDM Events` listing; waitlist capture and its unused client helper
+  are removed. The link hub, iPhone/iPad in-app download controls, metadata,
+  structured data, app-discovery text, and legal credit now reflect the live
+  iOS release. Local checks pass: 7/7 entity tests and 122/122 Playwright
+  Chrome/WebKit checks. Branch `codex/app-store-launch-20260809` at `ed07db2`
+  awaits standard PR/CI/merge deployment.
 - **OPTIONAL PHONE SIGNUP MERGED AND LIVE (2026-08-07, PR #63):** browser account creation routes authenticated email-confirmation and signup-origin OAuth callbacks through one-shot `?mode=signup-complete` handling into a dedicated optional phone step. Every authenticated session attests the existing signup-compliance RPC before Discover, including identities first created from the login-origin Google/Apple buttons; incomplete identities fail closed. The step calls the existing authenticated `verify-phone` Edge boundary, keeps phone/code ephemeral, destroys abandoned/successful state, blocks request races, and preserves Skip/email-only signup. Password signup sends the accepted July 18 metadata and signup-origin OAuth completes the sanctioned compliance RPC from tab-scoped DOB/consent. PR #63 merged as `944ff9362a9e4de7571f9f11c24829f59022df26`; main workflow `31232346422` passed 141 browser checks cleanly, passed one unrelated festival check on its automatic retry, and deployed to Cloudflare Pages. Live `app.js` and signup HTML are byte-identical to the reviewed source and contain the optional disclosure, compliance RPCs, and authenticated `verify-phone` calls. No backend, secret, migration, production-data, or Twilio configuration mutation occurred; one real SMS proof remains founder physical QA.
 - **TIKTOK PER-PREFIX VERIFICATION ARTIFACTS LIVE (2026-08-05, PRs
   #48/#51/#53/#57):** TikTok's apex artifact is live and that portal prefix is
@@ -86,6 +94,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Open and merge the App Store launch website PR from
+  `codex/app-store-launch-20260809` (`ed07db2`) after required CI is green;
+  verify live `/download.html`, `/link.html`, and the App Store destination on
+  desktop and mobile.**
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
