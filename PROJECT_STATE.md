@@ -19,6 +19,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - None.
 
 ## Current status
+### Prepared / held
+- **13+ WEBSITE SOURCE READY, NOT LIVE (2026-08-09):** the signup UI, OAuth
+  compliance restore, password signup, canonical Privacy Policy, and canonical
+  Terms are aligned to the production backend's 13+ boundary. Exact-birthday
+  and underage regressions cover both OAuth and password signup; the complete
+  website suite passes 142/142. Existing July 18 legal version identifiers and
+  visible dates remain unchanged because production accepts those identifiers
+  and no replacement legal version was authorized. Keep this source in a draft
+  PR until the combined native release is ready: public Build 17 still describes
+  a 16+ account rule, and the hosted documents are canonical for mobile too.
+
 ### What works
 - **OFFICIAL FACEBOOK PAGE LINK LIVE (2026-08-09, PR #70):** every public
   footer, the link hub, Organization JSON-LD, and `llms.txt` now use the stable
@@ -104,6 +115,12 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
+- 13+ website merge/deploy is release-coordination blocked while public native
+  Build 17 remains 16+. Before making the canonical documents live, include the
+  native 13+ client/legal copy in the next combined build and decide whether the
+  eligibility correction needs a newly dated/versioned legal acceptance pair.
+  Do not infer or silently create a new version; the backend currently supports
+  the existing compatibility pairs.
 - TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
   website switch deploys. Do not request publishing scopes or Content Posting
   API access.
@@ -116,6 +133,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Coordinate the held 13+ website PR with the next combined native build:**
+  resolve the legal date/version decision, verify the native signup and in-app
+  legal copy use the same 13+ boundary, then merge through normal CI so the
+  canonical hosted documents and public client become truthful together. Do
+  not deploy this candidate while Build 17 remains the public client.
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the

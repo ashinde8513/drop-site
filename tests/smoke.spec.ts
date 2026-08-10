@@ -351,14 +351,14 @@ test.describe('website smoke', () => {
     );
   });
 
-  test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
+  test('legal pages match the 13+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
     const termsCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
     expect(termsCanonical).toBe('https://trydropapp.com/terms');
-    await expect(terms).toContainText('at least 16 years old to create or use a Drop account');
+    await expect(terms).toContainText('at least 13 years old to create or use a Drop account');
     await expect(terms).toContainText('date of birth when requested');
-    await expect(terms).not.toContainText(/under 13|at least 13/i);
+    await expect(terms).not.toContainText(/under 16|at least 16/i);
 
     await page.goto('/privacy.html');
     const privacy = page.locator('.doc-inner');
@@ -372,8 +372,8 @@ test.describe('website smoke', () => {
     await expect(privacy).toContainText(
       'In the mobile app, we collect product interactions and search or filter history, including selected genre, city, and date filters'
     );
-    await expect(privacy).toContainText('accounts and social features are for people who are at least 16 years old');
-    await expect(privacy).not.toContainText(/under 13|at least 13|finding your crew at a venue/i);
+    await expect(privacy).toContainText('accounts and social features are for people who are at least 13 years old');
+    await expect(privacy).not.toContainText(/under 16|at least 16|finding your crew at a venue/i);
 
     const hostedTerms = await (await page.request.get('/terms.html')).text();
     const hostedPrivacy = await (await page.request.get('/privacy.html')).text();
@@ -405,6 +405,7 @@ test.describe('website smoke', () => {
     expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
     expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
     expect(signupImplementation).toContain('birthdate:dobValue');
+    expect(appScript).toContain('var MIN_SIGNUP_AGE = 13;');
     expect(signupImplementation).toContain('legal_accepted:true');
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
     expect(signupImplementation).toContain("privacy_version:'2026-07-18'");

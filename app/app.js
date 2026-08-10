@@ -337,13 +337,22 @@
       })
     : null;
   var Drop = window.Drop || null; // from data.js — public event catalog + formatters
+  var MIN_SIGNUP_AGE = 13;
 
   function looksLikeEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
   function cleanUsername(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
   function ageFromDob(v) {
-    var dob = new Date(v);
-    if (isNaN(dob.getTime())) return null;
-    return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+    if (!match) return null;
+    var year = Number(match[1]);
+    var month = Number(match[2]);
+    var day = Number(match[3]);
+    var dob = new Date(Date.UTC(year, month - 1, day));
+    if (dob.getUTCFullYear() !== year || dob.getUTCMonth() !== month - 1 || dob.getUTCDate() !== day) return null;
+    var today = new Date();
+    var age = today.getUTCFullYear() - year;
+    if (today.getUTCMonth() < month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() < day)) age -= 1;
+    return age;
   }
   function normalizeVerificationPhone(value) {
     var digits = String(value || '').replace(/\D/g, '');
@@ -393,7 +402,7 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value.birthdate || '')) return null;
     if (value.termsVersion !== SIGNUP_TERMS_VERSION || value.privacyVersion !== SIGNUP_PRIVACY_VERSION) return null;
     var years = ageFromDob(value.birthdate);
-    return years != null && years >= 16 && years <= 120
+    return years != null && years >= MIN_SIGNUP_AGE && years <= 120
       ? { birthdate:value.birthdate, termsVersion:value.termsVersion, privacyVersion:value.privacyVersion }
       : null;
   }
@@ -1255,7 +1264,7 @@ class Component extends DCLogic {
         });
         if (completed.error || completed.data !== true) {
           const message = String(completed.error && completed.error.message || '').toLowerCase();
-          if (message.includes('16 or older')) throw new Error('You must be 16 or older to use Drop.');
+          if (message.includes(String(MIN_SIGNUP_AGE) + ' or older')) throw new Error('You must be ' + MIN_SIGNUP_AGE + ' or older to use Drop.');
           if (message.includes('current terms') || message.includes('privacy policy')) {
             throw new Error('Accept Drop\u2019s current Terms and Privacy Policy to continue.');
           }
@@ -1467,7 +1476,7 @@ class Component extends DCLogic {
       var consented = fieldChecked('signup-consent');
       if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
       var years = ageFromDob(dobValue);
-      if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+      if (years == null || years < MIN_SIGNUP_AGE) { this.setState({authError:'You must be ' + MIN_SIGNUP_AGE + ' or older to use Drop.'}); return; }
       if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
       if (!savePendingOAuthCompliance(dobValue)) {
         this.setState({authError:'Could not safely start signup. Refresh and try again.'});
@@ -2857,7 +2866,7 @@ class Component extends DCLogic {
         if (rawCreatorCode && !creatorCode) { this.setState({authError:'Creator codes use 4–24 letters or numbers.'}); return; }
         if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
         const years = ageFromDob(dobValue);
-        if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+        if (years == null || years < MIN_SIGNUP_AGE) { this.setState({authError:'You must be ' + MIN_SIGNUP_AGE + ' or older to use Drop.'}); return; }
         if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
         clearPendingOAuthCompliance();
         if (creatorCode) saveCreatorCode(creatorCode);
