@@ -1,5 +1,20 @@
 # Decisions
 
+## 2026-08-09 — The 13+ website change ships with the aligned native release
+
+The production backend accepts users age 13 and older, but the currently public
+native Build 17 still presents a 16+ rule. Because the hosted Privacy Policy and
+Terms are canonical for both website and mobile, the 13+ website/legal candidate
+must not deploy ahead of the aligned native client. Keep it in reviewed source
+until the next combined build is ready, then release through the normal website
+CI path.
+
+The implementation preserves the existing July 18 Terms and Privacy acceptance
+identifiers and visible dates. Backend compatibility proves those identifiers
+remain accepted; it does not authorize inventing a new legal version. Before
+deployment, explicitly resolve whether the eligibility correction stays under
+that identity or requires a newly dated/versioned acceptance pair.
+
 ## 2026-08-09 — App Store claims follow the listing compatibility label
 
 User-facing availability copy must match Apple's current product-page

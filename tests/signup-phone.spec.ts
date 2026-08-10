@@ -37,7 +37,7 @@ const FAKE_SUPABASE = String.raw`
       signOut:async function () { session = null; emit('SIGNED_OUT'); return { error:null }; },
       signInWithOAuth:async function (input) { calls.push({ kind:'oauth', input:input }); return { data:{ url:'https://oauth.example.test' }, error:null }; },
       signInWithPassword:async function () { return { data:{ session:session }, error:null }; },
-      signUp:async function () { return { data:{ session:session }, error:null }; },
+      signUp:async function (input) { calls.push({ kind:'signup', input:input }); return { data:{ session:session }, error:null }; },
       setSession:async function () { return { data:{ session:session }, error:null }; },
       resend:async function () { return { data:{}, error:null }; },
       resetPasswordForEmail:async function () { return { data:{}, error:null }; },
@@ -110,7 +110,68 @@ async function openPhoneActivation(page: Page) {
   await expect(page.getByRole('heading', { name: 'Verify your phone' })).toBeVisible();
 }
 
+function signupBoundaryDob(dayOffset: number) {
+  const today = new Date();
+  return new Date(Date.UTC(
+    today.getUTCFullYear() - 13,
+    today.getUTCMonth(),
+    today.getUTCDate() + dayOffset,
+  )).toISOString().slice(0, 10);
+}
+
 test.describe('optional phone signup behavior', () => {
+  test('signup OAuth accepts 13-year-olds and rejects younger users', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup');
+    await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
+      element.checked = true;
+      element.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+    await page.locator('#signup-dob').fill(signupBoundaryDob(0));
+    await page.getByRole('button', { name: 'Google' }).click();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'oauth'))).toHaveLength(1);
+
+    await page.locator('#signup-dob').fill(signupBoundaryDob(1));
+    await page.getByRole('button', { name: 'Apple' }).click();
+    await expect(page.getByText('You must be 13 or older to use Drop.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'oauth'))).toHaveLength(1);
+  });
+
+  test('password signup accepts an exact 13th birthday and rejects a younger user', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup');
+    await page.getByPlaceholder('username').fill('boundary_user');
+    // Username is controlled and rerenders this template; fill the uncontrolled
+    // fields after it so their values survive that render.
+    await page.locator('#signup-email').fill('boundary@example.com');
+    await page.locator('#signup-password').fill('test-password');
+    await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
+      element.checked = true;
+      element.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+
+    await page.locator('#signup-dob').fill(signupBoundaryDob(1));
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('You must be 13 or older to use Drop.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'signup'))).toHaveLength(0);
+
+    const exactBirthday = signupBoundaryDob(0);
+    // The validation error rerenders the template and clears uncontrolled fields.
+    await page.locator('#signup-email').fill('boundary@example.com');
+    await page.locator('#signup-password').fill('test-password');
+    await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
+      element.checked = true;
+      element.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+    await page.locator('#signup-dob').fill(exactBirthday);
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    const signup = await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'signup'));
+    expect(signup.input.options.data.birthdate).toBe(exactBirthday);
+    expect(signup.input.options.data.terms_version).toBe('2026-07-18');
+    expect(signup.input.options.data.privacy_version).toBe('2026-07-18');
+  });
+
   test('authenticated signup completion is one-shot and preserves unrelated URL params', async ({ page }) => {
     await installFakeSupabase(page, { session:true });
     await page.goto('/app/index.html?mode=signup-complete&safe=1&code=query-secret#access_token=hash-secret&keep=yes');

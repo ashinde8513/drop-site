@@ -13,6 +13,11 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Blocked / waiting
 
+- [ ] Release the reviewed 13+ website/legal candidate with the next combined
+  native build. Public Build 17 still presents 16+, so the canonical hosted
+  documents must remain unchanged until the client is aligned. Founder/legal
+  decision: retain the July 18 legal identity as a compatibility correction or
+  authorize a new dated/versioned acceptance pair before deploy.
 - [ ] Import the verified Google Search Console property into Bing Webmaster Tools (founder OAuth remains required).
 - [ ] Obtain an official festival schedule/export source, author the reviewed v1 set-time manifest, and then live-smoke venue-timezone grouping. Production currently has zero published-festival set times.
 
