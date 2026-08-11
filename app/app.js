@@ -2898,7 +2898,7 @@ class Component extends DCLogic {
           birthdate:dobValue,
           legal_accepted:true,
           terms_version:'2026-07-18',
-          privacy_version:'2026-07-18'
+          privacy_version:'2026-08-11'
         };
         // ponytail: referral is cosmetic (no crew-join backend yet) — same
         // note as account.js's signUp(); the raw ref token still rides along

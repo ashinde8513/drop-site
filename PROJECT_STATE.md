@@ -150,6 +150,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **After exact founder approval of the paired backend migration and legal mutation, merge the reviewed August 11 canonical Privacy/Terms correction and browser-signup Privacy identifier through standard CI auto-deploy; then live-verify `/privacy`, `/terms`, and `app.trydropapp.com` source provenance. Do not deploy before backend accepts `2026-08-11`.**
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -170,6 +171,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-08-11 — Codex — Canonical verified-contact disclosure ready for gated deploy
+- **Changed:** the canonical Privacy Policy now states that server-verified email and phone matching defaults on, remains independently removable in Edit profile, keeps raw address-book details on-device, stores no raw verification number, uses Twilio for optional SMS verification, and enforces one verified phone per account. The policy is dated August 11, and browser signup records Privacy version `2026-08-11`.
+- **Alignment cleanup:** the already-reviewed 13+ account rule is reflected in hosted Privacy/Terms so the canonical pages no longer contradict the native app and production eligibility gate.
+- **Verified/pending:** seven Node tests plus 148 Playwright checks pass across desktop Chromium and mobile WebKit; diff checks pass. Merge/deploy and live QA remain blocked on exact approval and the paired backend migration so browser signup never advertises an unsupported Privacy version.
 
 ## 2026-08-10 — Codex — cross-browser signup confirmation callback
 - **Root cause:** password signup starts Supabase PKCE in one browser, while

@@ -359,20 +359,24 @@ test.describe('website smoke', () => {
     );
   });
 
-  test('legal pages match the 16+ gate and audited data handling', async ({ page }) => {
+  test('legal pages match the 13+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
     const termsCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
     expect(termsCanonical).toBe('https://trydropapp.com/terms');
-    await expect(terms).toContainText('at least 16 years old to create or use a Drop account');
+    await expect(terms).toContainText('at least 13 years old to create or use a Drop account');
     await expect(terms).toContainText('date of birth when requested');
-    await expect(terms).not.toContainText(/under 13|at least 13/i);
+    await expect(terms).not.toContainText(/under 16|at least 16/i);
 
     await page.goto('/privacy.html');
     const privacy = page.locator('.doc-inner');
     const privacyCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
     expect(privacyCanonical).toBe('https://trydropapp.com/privacy');
     await expect(privacy).toContainText('one-way hash');
+    await expect(privacy).toContainText('enables matching for that verified channel by default');
+    await expect(privacy).toContainText('turn either channel off at any time in Edit profile');
+    await expect(privacy).toContainText('One verified phone can belong to only one Drop account');
+    await expect(privacy).toContainText('Twilio processes the phone number');
     await expect(privacy).toContainText('processed on your device');
     await expect(privacy).toContainText('not transmitted to or retained by Drop');
     await expect(privacy).toContainText('ticket-wallet records');
@@ -380,8 +384,8 @@ test.describe('website smoke', () => {
     await expect(privacy).toContainText(
       'In the mobile app, we collect product interactions and search or filter history, including selected genre, city, and date filters'
     );
-    await expect(privacy).toContainText('accounts and social features are for people who are at least 16 years old');
-    await expect(privacy).not.toContainText(/under 13|at least 13|finding your crew at a venue/i);
+    await expect(privacy).toContainText('accounts and social features are for people who are at least 13 years old');
+    await expect(privacy).not.toContainText(/under 16|at least 16|finding your crew at a venue/i);
 
     const hostedTerms = await (await page.request.get('/terms.html')).text();
     const hostedPrivacy = await (await page.request.get('/privacy.html')).text();
@@ -415,7 +419,7 @@ test.describe('website smoke', () => {
     expect(signupImplementation).toContain('birthdate:dobValue');
     expect(signupImplementation).toContain('legal_accepted:true');
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
-    expect(signupImplementation).toContain("privacy_version:'2026-07-18'");
+    expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
     expect(signupImplementation).not.toContain('consented_at');
     expect(signupImplementation).toContain("'?mode=signup-complete'");
     const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
