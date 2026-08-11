@@ -20,6 +20,19 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **IMPACT MARKETPLACE PROFILE REBUILT + APPEAL OPEN (2026-08-10, PR
+  #76):** Impact account `7487237` now has a verified `trydropapp.com` website,
+  the live `Drop - EDM Events` App Store property, connected Instagram
+  `@trydropapp`, connected Facebook Page, and the official Drop LinkedIn page.
+  PR #76 placed Impact's current verification tag first in `<head>` and merged
+  as `86cdf6dc50465af8179814bf461c076f0ac5e9fe`; the property then showed
+  Connected. The rebuilt marketplace application used an app-specific profile
+  description and was submitted, but Impact immediately returned Declined.
+  Support appeal `865870` is Open under Compliance → Marketplace Approval and
+  requests manual review with the verified website, App Store, and social
+  ownership evidence. TikTok, YouTube, and X remain unconnected because Impact
+  required write or unrelated analytics scopes; no expanded permissions were
+  granted.
 - **CROSS-BROWSER EMAIL CONFIRMATION CALLBACK LIVE (2026-08-10, PR
   #73):** signup confirmation callbacks now accept only Supabase's documented
   `token_hash` + `type=email` contract, scrub credentials before exchange, and
@@ -121,6 +134,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
+- Impact marketplace: support appeal `865870` is Open after the rebuilt
+  application was immediately declined. Wait for Impact's specific compliance
+  reason; reply with additional ownership evidence if requested. Direct brand
+  signup links remain usable while marketplace access is declined.
 - TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
   website switch deploys. Do not request publishing scopes or Content Posting
   API access.
@@ -148,7 +165,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   health, and proper-art fallback against live data. If festival set times remain
   zero, leave schedule live-QA in waiting and point the next agent to the reviewed
   backend manifest command instead of inventing rows.
--1. **Founder: click "Verify" in impact.com** — the site-verification snippet is LIVE on the homepage footer (`Impact-Site-Verification: 32f8d138-…`, confirmed 2026-07-16); Vivid Seats enrollment is gated on it. ~30s.
 1. **Founder QA the logged-in write paths on app.trydropapp.com** (deploy `5c8a6dc1`, commit 1033fa6): sign in with a real account and exercise (a) the NEW log-past-shows flow (My Shows → "Log a past show": archive multi-select bulk add → attendance rows; manual form → logged_shows; Wrapped should then count them), (b) an artist claim submit (artist page → bottom "Are you {name}? Claim this profile" wizard → artist_claims row), (b) owner Edit-links save (needs an approved claim — approve via `select review_artist_claim('<claim-id>','approved')` as an admin or ask the agent), (c) Wrapped with real history (2026 ↔ All-time toggle + story-card download), (d) RSVP + follow (still never exercised against prod). All write paths shape-verified + headless-driven logged-out only.
 3. **Retire the drop-web (Expo export) CF Pages project** — nothing routes to it anymore; delete the project in the CF dashboard + remove web-deploy.yml from drop-mobile-app.
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
@@ -430,6 +446,22 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-10 — Codex — Impact marketplace reapplication and appeal
+- **Profile:** corrected the business classification to developer/company/
+  website-app/tech solutions; added the live App Store property; connected the
+  verified website, Instagram, Facebook, and LinkedIn; and saved a Drop-specific
+  marketplace description. TikTok, YouTube, and X were left unconnected after
+  their Impact OAuth flows required write or unrelated analytics scopes.
+- **Verification delivery:** PR #76 added the current first-in-head Impact meta
+  tag and merged as `86cdf6dc50465af8179814bf461c076f0ac5e9fe` after tests and
+  review. Impact then showed `trydropapp.com` Connected.
+- **Result:** the rebuilt application was submitted and immediately declined.
+  Following Impact's documented appeal path, support ticket `865870` was sent
+  from account `7487237` with website, App Store, and connected-social evidence;
+  status is Open under Marketplace Approval.
+- **Boundaries:** no TikTok write scope, Google Analytics scope, X follow/tweet
+  write scope, password disclosure, payment, tax, or production data change.
+
 ### 2026-08-09 — Codex — authentic Facebook Page destination live
 - **Changed:** replaced the unrelated `facebook.com/trydropapp` logistics
   destination across all 16 public Page surfaces, Organization JSON-LD,
