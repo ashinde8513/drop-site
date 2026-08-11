@@ -20,14 +20,19 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
-- **CROSS-BROWSER EMAIL CONFIRMATION READY FOR DELIVERY (2026-08-10, PR
+- **CROSS-BROWSER EMAIL CONFIRMATION CALLBACK LIVE (2026-08-10, PR
   #73):** signup confirmation callbacks now accept only Supabase's documented
   `token_hash` + `type=email` contract, scrub credentials before exchange, and
   call `auth.verifyOtp` before reusing the existing signup-compliance and
   activation gates. OAuth remains PKCE. Invalid, rejected, thrown, wrong-type,
   and oversized-token callbacks fail closed. The final local gate passed seven
   Node checks and 148 Playwright checks across desktop Chromium and mobile
-  WebKit; independent adversarial review approved the amended diff. The hosted
+  WebKit; independent adversarial review approved the amended diff. Merge
+  `8246246d8012b5521e24c8a059b6b5010ea928f9` passed production workflow
+  `31448895774` and deployed through Cloudflare Pages. Live `app.js` is
+  byte-identical to reviewed source, and a synthetic invalid callback scrubbed
+  the complete URL, rendered the safe recovery error, and emitted no browser
+  warnings or errors. The hosted
   Supabase Confirm signup template is a separate production Auth configuration
   write and has not been changed.
 - **OFFICIAL FACEBOOK PAGE LINK LIVE (2026-08-09, PR #70):** every public
@@ -177,9 +182,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   parity and JavaScript syntax checks pass; local rendered failure-state QA had
   no browser warnings or errors. Independent adversarial review approved the
   amended diff.
-- **Delivery boundary:** reviewed commit
-  `33ae7f2fdd18b175747ae922f92268b44b35dfc6` is pushed in PR #73. CI, merge,
-  production deploy, and live callback readback remain in progress. The hosted
+- **Delivery:** reviewed commit
+  `33ae7f2fdd18b175747ae922f92268b44b35dfc6` plus closeout commit
+  `1cafc0512379c52804e6dc78f24b33af5bd2de3c` merged through PR #73 as
+  `8246246d8012b5521e24c8a059b6b5010ea928f9`. Production workflow
+  `31448895774` passed test and Cloudflare deploy jobs. The deployed `app.js`
+  SHA-256 is `cfe677cfac3b9492cf3f86a6e13c00205411cb81fee331aa213e5843c0f3f41c`,
+  byte-identical to reviewed source. Live invalid-callback QA scrubbed the URL,
+  failed closed with the safe recovery message, and emitted no browser logs.
+  The hosted
   Supabase Confirm signup template has not been changed and still requires the
   explicit production Auth configuration approval recorded above.
 
