@@ -131,6 +131,14 @@ test.describe('website smoke', () => {
     await expect(page.locator('h1')).not.toContainText('Discover live shows near you');
     await expect(page.locator('#home-search')).toHaveCount(1);
     await expect(page.locator('#home-grid')).toHaveCount(1);
+    await expect(page.locator('head > meta').first()).toHaveAttribute(
+      'name',
+      'impact-site-verification',
+    );
+    await expect(page.locator('head > meta').first()).toHaveAttribute(
+      'value',
+      '7d7f50d4-d425-4041-ae9b-84d29d3d0305',
+    );
   });
 
   test('homepage keeps an ongoing multi-day festival in the global rail', async ({ page }) => {
