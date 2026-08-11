@@ -685,7 +685,7 @@ class Component extends DCLogic {
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'all', discPage: 0,
     city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
-    username: '', descClamped: true, toast: null,
+    username: '', signupEmail: '', descClamped: true, toast: null,
     genre: null,
     // search
     query: '', distance: '25', priceMin: 0, priceMax: 200, sGenres: {}, searchGeo: 'idle',
@@ -1286,7 +1286,7 @@ class Component extends DCLogic {
         });
         if (completed.error || completed.data !== true) {
           const message = String(completed.error && completed.error.message || '').toLowerCase();
-          if (message.includes('16 or older')) throw new Error('You must be 16 or older to use Drop.');
+          if (message.includes('13 or older')) throw new Error('You must be 13 or older to use Drop.');
           if (message.includes('current terms') || message.includes('privacy policy')) {
             throw new Error('Accept Drop\u2019s current Terms and Privacy Policy to continue.');
           }
@@ -1498,7 +1498,7 @@ class Component extends DCLogic {
       var consented = fieldChecked('signup-consent');
       if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
       var years = ageFromDob(dobValue);
-      if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+      if (years == null || years < 13) { this.setState({authError:'You must be 13 or older to use Drop.'}); return; }
       if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
       if (!savePendingOAuthCompliance(dobValue)) {
         this.setState({authError:'Could not safely start signup. Refresh and try again.'});
@@ -2425,7 +2425,7 @@ class Component extends DCLogic {
       authError: s.authError, authBusy: s.authBusy,
       loginBtnLabel: s.authBusy ? 'Working…' : 'Log in',
       signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
-      username: s.username,
+      username: s.username, signupEmail: s.signupEmail,
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
       city: s.city, cityOpen: s.cityOpen, cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents, discShowPager, discPageLabel, discPrevDisabled, discNextDisabled, genreActive, gridLabel, gridEmpty, genreName: s.genre,
@@ -2876,7 +2876,7 @@ class Component extends DCLogic {
       },
       doSignup:()=>{
         if (!supa) { this.setState({authError:'Signup is unavailable. Refresh and try again.'}); return; }
-        const email = fieldVal('signup-email').trim();
+        const email = this.state.signupEmail.trim();
         const username = cleanUsername(this.state.username);
         const password = fieldVal('signup-password');
         const rawCreatorCode = fieldVal('signup-creator-code');
@@ -2888,7 +2888,7 @@ class Component extends DCLogic {
         if (rawCreatorCode && !creatorCode) { this.setState({authError:'Creator codes use 4–24 letters or numbers.'}); return; }
         if (!dobValue) { this.setState({authError:'Enter your date of birth.'}); return; }
         const years = ageFromDob(dobValue);
-        if (years == null || years < 16) { this.setState({authError:'You must be 16 or older to use Drop.'}); return; }
+        if (years == null || years < 13) { this.setState({authError:'You must be 13 or older to use Drop.'}); return; }
         if (!consented) { this.setState({authError:'Agree to the Terms and Privacy Policy to continue.'}); return; }
         clearPendingOAuthCompliance();
         if (creatorCode) saveCreatorCode(creatorCode);
@@ -2922,6 +2922,7 @@ class Component extends DCLogic {
       oauthApple:()=>this.oauth('apple'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       setUsername:(e)=>this.setState({username: e.target.value}),
+      setSignupEmail:(e)=>this.setState({signupEmail: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),
