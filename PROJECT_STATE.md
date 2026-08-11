@@ -32,9 +32,11 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
   `31448895774` and deployed through Cloudflare Pages. Live `app.js` is
   byte-identical to reviewed source, and a synthetic invalid callback scrubbed
   the complete URL, rendered the safe recovery error, and emitted no browser
-  warnings or errors. The hosted
-  Supabase Confirm signup template is a separate production Auth configuration
-  write and has not been changed.
+  warnings or errors. The hosted Supabase Confirm signup template now emits the
+  exact trusted `token_hash` callback while preserving its subject and all
+  other body bytes. A fresh production message completed confirmation from a
+  new empty-storage tab, traversed optional-phone activation and onboarding,
+  and reached signed-in Discover with no browser warnings or errors.
 - **OFFICIAL FACEBOOK PAGE LINK LIVE (2026-08-09, PR #70):** every public
   footer, the link hub, Organization JSON-LD, and `llms.txt` now use the stable
   numeric Page URL `https://www.facebook.com/profile.php?id=61591821453151`
@@ -119,11 +121,6 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
-- Production signup emails cannot use the cross-browser callback until the
-  founder explicitly approves updating only the hosted Supabase **Confirm
-  signup** template link to the exact `token_hash` URL documented in
-  `docs/auth-email-confirmation.md`. Preserve the current subject and branded
-  content. This is an Auth configuration write, not a database migration.
 - TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
   website switch deploys. Do not request publishing scopes or Content Posting
   API access.
@@ -136,13 +133,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Founder approval gate:** approve changing only the hosted Supabase Confirm
-  signup email link to
-  `https://app.trydropapp.com/?mode=signup-complete&token_hash={{ .TokenHash }}&type=email`,
-  preserving the subject and all branded content. After the reviewed template
-  is applied, create one disposable non-demo identity, open its fresh message
-  in Gmail's iOS embedded browser, verify activation reaches Discover exactly
-  once, then remove the identity without recording PII.
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -190,9 +180,22 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   SHA-256 is `cfe677cfac3b9492cf3f86a6e13c00205411cb81fee331aa213e5843c0f3f41c`,
   byte-identical to reviewed source. Live invalid-callback QA scrubbed the URL,
   failed closed with the safe recovery message, and emitted no browser logs.
-  The hosted
-  Supabase Confirm signup template has not been changed and still requires the
-  explicit production Auth configuration approval recorded above.
+- **Hosted Auth configuration and production proof:** after exact founder
+  approval, changed only the Confirm signup template href from
+  `{{ .ConfirmationURL }}` to
+  `https://app.trydropapp.com/?mode=signup-complete&token_hash={{ .TokenHash }}&type=email`.
+  Reload readback proved the subject remained `Confirm your email address`, the
+  new href appears exactly once, the legacy href appears zero times, and
+  replacing that one href reconstructs the original body byte-for-byte. A
+  fresh disposable Gmail message contained one unique exact callback. Opening
+  it from a new empty-storage tab scrubbed token and mode, reached the optional
+  phone step, completed all six activation steps, and opened signed-in
+  Discover. Read-only backend proof showed one confirmed user, complete signup
+  compliance, and one profile before cleanup. The session was signed out; the
+  Auth user was deleted through the Dashboard; final readback showed zero
+  users, profiles, compliance rows, or sessions; and the QA email was
+  permanently deleted with zero mailbox matches. No QA identity or PII was
+  retained.
 
 ## 2026-08-05 — Codex — TikTok per-prefix verification artifacts live
 - **Changed:** PR #48 added TikTok's apex signed artifact. Live inspection then
