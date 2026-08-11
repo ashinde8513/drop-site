@@ -98,15 +98,15 @@
       <div class="doc"><article class="doc-inner">
         <a class="back" href="/index.html">← Back to Drop</a>
         <h1>Privacy Policy</h1>
-        <p class="meta">Last updated: July 18, 2026</p>
+        <p class="meta">Last updated: August 11, 2026</p>
 
         <p>Drop ("Drop," "we," "us," or "our") is an EDM event-discovery and social service operated by <strong>Resonance Ventures LLC</strong>, a Colorado limited liability company. This Privacy Policy applies to the Drop mobile app, website, web app, and related services (together, the "Service"). It explains what information we collect, how we use and share it, how long we keep it, and the choices you have.</p>
 
         <h2 id="collect"><span class="num">01</span>Information we collect</h2>
         <p>We collect the following, depending on which parts of the Service you use and the choices you make:</p>
         <ul>
-          <li><strong>Account and eligibility information.</strong> When you create an account, we collect your name or username, email address, account or user ID, and any profile photo you add. Some account-creation flows ask for your date of birth; when they do, we collect it to apply Drop's 16+ account eligibility rule. Authentication is handled through Supabase and, if you choose one, a sign-in provider such as Apple or Google.</li>
-          <li><strong>Phone and contact matching.</strong> If you choose to find friends through contacts, we store a one-way hash of your normalized phone number rather than the raw number. Address-book phone numbers are normalized and hashed on your device; only the hashes are sent for real-time matching, and the raw address-book numbers are not uploaded to or stored by Drop. We retain resulting matches and friendship or relationship status so the social graph works.</li>
+          <li><strong>Account and eligibility information.</strong> When you create an account, we collect your name or username, email address, account or user ID, and any profile photo you add. Some account-creation flows ask for your date of birth; when they do, we collect it to apply Drop's 13+ account eligibility rule. Authentication is handled through Supabase and, if you choose one, a sign-in provider such as Apple or Google.</li>
+          <li><strong>Verified email, phone, and contact matching.</strong> After Drop verifies your account email or you verify a phone through a one-time SMS, Drop derives protected one-way hashes and enables matching for that verified channel by default. You can turn either channel off at any time in Edit profile. One verified phone can belong to only one Drop account. Twilio processes the phone number and verification delivery or check metadata; Drop retains only protected one-way proofs and the verification time, not the raw phone number. If you grant contacts permission, address-book emails and phone numbers are normalized and hashed on your device. Only those hashes are sent for real-time matching; raw address-book details are not uploaded to or stored by Drop.</li>
           <li><strong>Profile, social, and message content.</strong> Your profile city and state, bio, ratings, comments, posts, plans, submissions, direct messages, group chats, and other content you choose to create or send.</li>
           <li><strong>Photos and videos.</strong> Profile images, ticket screenshots, and event or social media you choose to upload.</li>
           <li><strong>Events, tickets, and preferences.</strong> Events, artists, and venues you save, follow, or RSVP to; ticket-wallet records such as the seller and order reference you provide; notification settings; and music preferences. If you connect or import Apple Music information, Drop may use imported artists and genres and a derived taste profile for recommendations. Drop does not retain your raw playback history or Apple Music user token in its database, and we do not collect payment-card details.</li>
@@ -117,7 +117,7 @@
 
         <h2 id="use"><span class="num">02</span>How we use your information</h2>
         <ul>
-          <li>Create and secure your account, apply the 16+ account eligibility rule when date of birth is provided, and provide account and social features.</li>
+          <li>Create and secure your account, apply the 13+ account eligibility rule when date of birth is provided, and provide account and social features.</li>
           <li>Rank, filter, and personalize event recommendations using your city, preferences, saved activity, filters, and music tastes.</li>
           <li>Match contacts you choose to check, maintain friendships, and enable profiles, posts, plans, direct messages, and group chats.</li>
           <li>Maintain your ticket wallet and send push notifications or reminders you request (you can opt out).</li>
@@ -129,7 +129,7 @@
         <h2 id="share"><span class="num">03</span>How we share information</h2>
         <p>We do not sell your personal information or use it to track you across other companies' apps or websites for targeted advertising. We share information only as described here:</p>
         <ul>
-          <li><strong>Service providers.</strong> Providers that operate functions on our behalf, including Supabase for backend, authentication, and database hosting; Expo for push-notification delivery; sign-in or music services you choose to connect; and website hosting or consented analytics providers. We require service providers to use personal data only for the services they provide to us and to protect it consistently with this policy and applicable law.</li>
+          <li><strong>Service providers.</strong> Providers that operate functions on our behalf, including Supabase for backend, authentication, and database hosting; Twilio for optional SMS phone verification; Expo for push-notification delivery; sign-in or music services you choose to connect; and website hosting or consented analytics providers. We require service providers to use personal data only for the services they provide to us and to protect it consistently with this policy and applicable law.</li>
           <li><strong>Other users.</strong> Your profile and content you choose to make social are visible to the relevant Drop users. Direct messages and group chats are shared with their participants. Drop does not share your device location or a live crew location with other users.</li>
           <li><strong>Ticketing partners.</strong> When you tap a ticket link, you are directed to a third-party ticketing site to complete your purchase. Those purchases are governed by the ticketing provider's own privacy policy. We may participate in affiliate programs that use identifiers to attribute ticket referrals to Drop. <strong>We do not sell tickets or process payments.</strong></li>
           <li><strong>Legal and safety.</strong> When required by law, or to protect the rights, safety, and property of our users, the public, or Drop.</li>
@@ -150,18 +150,18 @@
         <ul>
           <li><strong>Access and update</strong> your account information in the app, or contact us to request a copy or correction.</li>
           <li><strong>Delete your account.</strong> You can permanently delete your account and associated data from within the app; this removes your information except where we must retain it for legal reasons.</li>
-          <li><strong>Contacts, location, and notifications.</strong> Control contacts and location access and push notifications through your device settings. You can use core event discovery without sharing device location.</li>
+          <li><strong>Contacts, location, and notifications.</strong> Choose whether contacts can find you by your verified email or phone in Edit profile. Control address-book and location access and push notifications through your device settings. You can use core event discovery without granting contacts or location access.</li>
           <li><strong>Privacy rights.</strong> Depending on where you live (including under the Colorado Privacy Act and similar U.S. state laws), you may have rights to know, access, correct, delete, or obtain a portable copy of your personal data, and to opt out of its sale, targeted advertising, or certain profiling. Drop does not currently sell personal data or use it for targeted advertising. Contact us to exercise a right or appeal a decision about your request.</li>
         </ul>
 
         <h2 id="retention"><span class="num">06</span>Data retention</h2>
-        <p>We keep account information while your account is active and as needed to provide the Service. We retain friendship and ticket-wallet records until you remove them, the relationship changes, or the account is deleted. Raw address-book numbers are not retained, and a device GPS fix is not sent to or retained by Drop. When you delete your account, we delete or de-identify associated personal information within a reasonable period, except for limited records we must keep for legal, security, fraud-prevention, dispute, or backup purposes.</p>
+        <p>We keep account information while your account is active and as needed to provide the Service. We retain friendship and ticket-wallet records until you remove them, the relationship changes, or the account is deleted. Contact-discovery hashes remain until you turn the channel off, change the verified identifier, or delete your account. A verified phone-ownership proof remains until you verify a replacement number or delete your account. Drop does not retain the raw verification number; Twilio may retain verification data longer when required for security, fraud prevention, legal, or investigative purposes. Raw address-book details are not retained, and a device GPS fix is not sent to or retained by Drop. When you delete your account, we delete or de-identify associated personal information within a reasonable period, except for limited records we must keep for legal, security, fraud-prevention, dispute, or backup purposes.</p>
 
         <h2 id="security"><span class="num">07</span>Security</h2>
         <p>We use reasonable technical and organizational safeguards to protect your information. No method of transmission or storage is perfectly secure, so we cannot guarantee absolute security.</p>
 
         <h2 id="children"><span class="num">08</span>Children</h2>
-        <p>Drop's public event pages can be browsed without an account. Drop accounts and social features are for people who are at least 16 years old. We may request date of birth during account creation, and you must provide accurate eligibility information when asked. Regardless of signup method, someone under 16 may not create or use a Drop account. If we learn that an under-16 user created an account, we will suspend or delete the account and associated information as appropriate. Events listed in Drop may have separate age restrictions set by venues or organizers.</p>
+        <p>Drop's public event pages can be browsed without an account. Drop accounts and social features are for people who are at least 13 years old. We may request date of birth during account creation, and you must provide accurate eligibility information when asked. Regardless of signup method, someone under 13 may not create or use a Drop account. If we learn that an under-13 user created an account, we will suspend or delete the account and associated information as appropriate. Events listed in Drop may have separate age restrictions set by venues or organizers.</p>
 
         <h2 id="changes"><span class="num">09</span>Changes to this policy</h2>
         <p>We may update this policy from time to time. When we make material changes, we will update the date above and, where appropriate, notify you in the app.</p>
