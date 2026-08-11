@@ -384,7 +384,7 @@
   var SIGNUP_TERMS_VERSION = '2026-07-18';
   var SIGNUP_PRIVACY_VERSION = '2026-07-18';
   var AUTH_CALLBACK_KEYS = [
-    'code', 'state', 'error', 'error_code', 'error_description',
+    'code', 'token_hash', 'state', 'error', 'error_code', 'error_description',
     'access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at',
     'provider_token', 'provider_refresh_token', 'type'
   ];
@@ -423,10 +423,10 @@
     return typeof location !== 'undefined'
       && new URLSearchParams(location.search).get('mode') === SIGNUP_COMPLETE_MODE;
   }
-  function scrubSignupCompletionUrl() {
+  function scrubSignupCompletionUrl(keepMode) {
     if (typeof location === 'undefined' || typeof history === 'undefined') return;
     var url = new URL(location.href);
-    if (url.searchParams.get('mode') === SIGNUP_COMPLETE_MODE) url.searchParams.delete('mode');
+    if (!keepMode && url.searchParams.get('mode') === SIGNUP_COMPLETE_MODE) url.searchParams.delete('mode');
     AUTH_CALLBACK_KEYS.forEach(function (key) { url.searchParams.delete(key); });
     if (url.hash && url.hash.includes('=')) {
       var hash = new URLSearchParams(url.hash.slice(1));
@@ -1242,6 +1242,37 @@ class Component extends DCLogic {
   startActivation(){
     this.clearPhoneVerificationState({ screen:'activation', wizStep:0, authError:'' });
     if (typeof window!=='undefined') window.scrollTo(0,0);
+  }
+  async confirmSignupEmail(){
+    if (!signupCompletionRequested() || typeof location === 'undefined') return false;
+    const params = new URLSearchParams(location.search);
+    const tokenHash = params.get('token_hash');
+    if (!tokenHash) return false;
+    // Supabase's PKCE signup template emits TokenHash with type=email.
+    // Keep this route signup-only: recovery/invite/email-change tokens belong
+    // to their own flows and must never be exchanged here.
+    const valid = params.get('type') === 'email' && tokenHash.length <= 512;
+    scrubSignupCompletionUrl(true);
+    this.setState({ screen:'signup', authBusy:true, authError:'' });
+    if (!valid) {
+      scrubSignupCompletionUrl();
+      this.setState({ authBusy:false, authError:'That confirmation link is invalid or expired. Request a new email and try again.' });
+      return true;
+    }
+    this._confirmingSignupEmail = true;
+    let result;
+    try { result = await supa.auth.verifyOtp({ token_hash:tokenHash, type:'email' }); }
+    catch (_) { result = null; }
+    if (!result || result.error || !result.data || !result.data.session) {
+      this._confirmingSignupEmail = false;
+      scrubSignupCompletionUrl();
+      this.setState({ authBusy:false, authError:'That confirmation link is invalid or expired. Request a new email and try again.' });
+      return true;
+    }
+    this.setState({ authBusy:false });
+    try { await this.afterLogin(); }
+    finally { this._confirmingSignupEmail = false; }
+    return true;
   }
   async completeSignupRoute(session){
     if (this._signupCompletionPromise) return this._signupCompletionPromise;
@@ -3042,7 +3073,6 @@ class Component extends DCLogic {
       if (festivalId) instance.openFestival(festivalId === '1' ? null : festivalId);
     }
     if (supa) {
-      instance.afterLogin(); // checks for an existing/just-confirmed session
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
           if (instance._festivalWrites) instance._festivalWrites.clear();
@@ -3050,11 +3080,14 @@ class Component extends DCLogic {
           instance.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login'
           });
-        } else if (event === 'SIGNED_IN' && signupCompletionRequested()) {
+        } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {
           // Supabase warns against starting another auth call while its auth
           // callback lock is held. Resume on the next macrotask instead.
           window.setTimeout(() => instance.afterLogin(), 0);
         }
+      });
+      instance.confirmSignupEmail().then((handled) => {
+        if (!handled) instance.afterLogin(); // checks for an existing/just-confirmed session
       });
     }
   }

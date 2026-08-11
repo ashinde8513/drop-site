@@ -4,7 +4,7 @@ const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 const FAKE_SUPABASE = String.raw`
 (function () {
-  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false }, window.__dropFakeConfig || {});
+  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false, failEmailConfirmation:false, throwEmailConfirmation:false }, window.__dropFakeConfig || {});
   var listeners = [];
   var calls = [];
   var storedSession = false;
@@ -38,6 +38,14 @@ const FAKE_SUPABASE = String.raw`
       signInWithOAuth:async function (input) { calls.push({ kind:'oauth', input:input }); return { data:{ url:'https://oauth.example.test' }, error:null }; },
       signInWithPassword:async function () { return { data:{ session:session }, error:null }; },
       signUp:async function () { return { data:{ session:session }, error:null }; },
+      verifyOtp:async function (input) {
+        calls.push({ kind:'verifyOtp', input:input });
+        if (config.throwEmailConfirmation) throw new Error('Network unavailable');
+        if (config.failEmailConfirmation) return { data:{ session:null }, error:{ message:'Token expired' } };
+        session = { user:{ id:'${USER_ID}', email:'founder@example.com' } };
+        emit('SIGNED_IN');
+        return { data:{ session:session }, error:null };
+      },
       setSession:async function () { return { data:{ session:session }, error:null }; },
       resend:async function () { return { data:{}, error:null }; },
       resetPasswordForEmail:async function () { return { data:{}, error:null }; },
@@ -111,6 +119,69 @@ async function openPhoneActivation(page: Page) {
 }
 
 test.describe('optional phone signup behavior', () => {
+  test('token-hash confirmation creates a session without a PKCE verifier', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=email-token-hash&type=email&safe=1');
+
+    await expect(page.getByRole('heading', { name: 'Verify your phone' })).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'verifyOtp')?.input)).toEqual({
+      token_hash:'email-token-hash',
+      type:'email',
+    });
+    const url = new URL(page.url());
+    expect(url.searchParams.get('safe')).toBe('1');
+    expect(url.searchParams.has('mode')).toBe(false);
+    expect(url.searchParams.has('token_hash')).toBe(false);
+    expect(url.searchParams.has('type')).toBe(false);
+    const complianceCalls = await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.name === 'signup_compliance_status'));
+    expect(complianceCalls).toHaveLength(1);
+  });
+
+  test('invalid token-hash confirmation fails closed and scrubs the URL', async ({ page }) => {
+    await installFakeSupabase(page, { session:false, failEmailConfirmation:true });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=expired-token&type=email&safe=1');
+
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+    await expect(page.getByText('That confirmation link is invalid or expired. Request a new email and try again.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Verify your phone' })).toHaveCount(0);
+    const url = new URL(page.url());
+    expect(url.searchParams.get('safe')).toBe('1');
+    expect(url.searchParams.has('mode')).toBe(false);
+    expect(url.searchParams.has('token_hash')).toBe(false);
+    expect(url.searchParams.has('type')).toBe(false);
+  });
+
+  test('signup callback rejects other OTP types without calling Supabase', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=recovery-token&type=recovery');
+
+    await expect(page.getByText('That confirmation link is invalid or expired. Request a new email and try again.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'verifyOtp'))).toEqual([]);
+    expect(page.url()).not.toContain('token_hash');
+  });
+
+  test('signup callback handles a rejected OTP request and scrubs the URL', async ({ page }) => {
+    await installFakeSupabase(page, { session:false, throwEmailConfirmation:true });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=network-token&type=email&safe=1');
+
+    await expect(page.getByText('That confirmation link is invalid or expired. Request a new email and try again.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'verifyOtp'))).toHaveLength(1);
+    const url = new URL(page.url());
+    expect(url.searchParams.get('safe')).toBe('1');
+    expect(url.searchParams.has('mode')).toBe(false);
+    expect(url.searchParams.has('token_hash')).toBe(false);
+    expect(url.searchParams.has('type')).toBe(false);
+  });
+
+  test('signup callback rejects oversized token hashes without calling Supabase', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=' + 'a'.repeat(513) + '&type=email');
+
+    await expect(page.getByText('That confirmation link is invalid or expired. Request a new email and try again.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'verifyOtp'))).toEqual([]);
+    expect(page.url()).not.toContain('token_hash');
+  });
+
   test('authenticated signup completion is one-shot and preserves unrelated URL params', async ({ page }) => {
     await installFakeSupabase(page, { session:true });
     await page.goto('/app/index.html?mode=signup-complete&safe=1&code=query-secret#access_token=hash-secret&keep=yes');
