@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,16 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **CROSS-BROWSER EMAIL CONFIRMATION READY FOR DELIVERY (2026-08-10, PR
+  #73):** signup confirmation callbacks now accept only Supabase's documented
+  `token_hash` + `type=email` contract, scrub credentials before exchange, and
+  call `auth.verifyOtp` before reusing the existing signup-compliance and
+  activation gates. OAuth remains PKCE. Invalid, rejected, thrown, wrong-type,
+  and oversized-token callbacks fail closed. The final local gate passed seven
+  Node checks and 148 Playwright checks across desktop Chromium and mobile
+  WebKit; independent adversarial review approved the amended diff. The hosted
+  Supabase Confirm signup template is a separate production Auth configuration
+  write and has not been changed.
 - **OFFICIAL FACEBOOK PAGE LINK LIVE (2026-08-09, PR #70):** every public
   footer, the link hub, Organization JSON-LD, and `llms.txt` now use the stable
   numeric Page URL `https://www.facebook.com/profile.php?id=61591821453151`
@@ -104,6 +114,11 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
+- Production signup emails cannot use the cross-browser callback until the
+  founder explicitly approves updating only the hosted Supabase **Confirm
+  signup** template link to the exact `token_hash` URL documented in
+  `docs/auth-email-confirmation.md`. Preserve the current subject and branded
+  content. This is an Auth configuration write, not a database migration.
 - TikTok sandbox: run one signed-in `?tiktok_sandbox=1` connection after its
   website switch deploys. Do not request publishing scopes or Content Posting
   API access.
@@ -116,6 +131,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
+- **Founder approval gate:** approve changing only the hosted Supabase Confirm
+  signup email link to
+  `https://app.trydropapp.com/?mode=signup-complete&token_hash={{ .TokenHash }}&type=email`,
+  preserving the subject and all branded content. After the reviewed template
+  is applied, create one disposable non-demo identity, open its fresh message
+  in Gmail's iOS embedded browser, verify activation reaches Discover exactly
+  once, then remove the identity without recording PII.
 - **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -137,6 +159,29 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-08-10 — Codex — cross-browser signup confirmation callback
+- **Root cause:** password signup starts Supabase PKCE in one browser, while
+  Gmail on iOS can open the confirmation email in an embedded browser without
+  that browser-local verifier. The previous callback waited for a session that
+  could not be established there.
+- **Changed:** PR #73 adds a strict `token_hash` / `type=email` confirmation
+  path, pre-exchange URL scrubbing, bounded input, fail-closed errors, and a
+  single-flight guard for the Supabase `SIGNED_IN` event. It keeps the existing
+  compliance RPC and activation behavior, documents the exact hosted-template
+  contract, and does not weaken PKCE for OAuth.
+- **Verified:** final `npm test` passed seven Node checks plus 148 Playwright
+  tests across desktop Chromium and mobile WebKit. Focused callback coverage
+  includes success, returned and thrown exchange failures, wrong type,
+  oversized token, URL scrubbing, and the duplicate-sign-in race. Source/dist
+  parity and JavaScript syntax checks pass; local rendered failure-state QA had
+  no browser warnings or errors. Independent adversarial review approved the
+  amended diff.
+- **Delivery boundary:** reviewed commit
+  `33ae7f2fdd18b175747ae922f92268b44b35dfc6` is pushed in PR #73. CI, merge,
+  production deploy, and live callback readback remain in progress. The hosted
+  Supabase Confirm signup template has not been changed and still requires the
+  explicit production Auth configuration approval recorded above.
 
 ## 2026-08-05 — Codex — TikTok per-prefix verification artifacts live
 - **Changed:** PR #48 added TikTok's apex signed artifact. Live inspection then
