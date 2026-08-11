@@ -9,11 +9,11 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-10
+Last updated: 2026-08-11
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** INACTIVE — official Facebook Page destination corrected and live
+**Status:** INACTIVE — canonical verified-contact privacy disclosure corrected and live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
@@ -172,10 +172,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
-## 2026-08-11 — Codex — Canonical verified-contact disclosure ready for gated deploy
-- **Changed:** the canonical Privacy Policy now states that server-verified email and phone matching defaults on, remains independently removable in Edit profile, keeps raw address-book details on-device, stores no raw verification number, uses Twilio for optional SMS verification, and enforces one verified phone per account. The policy is dated August 11, and browser signup records Privacy version `2026-08-11`.
+## 2026-08-11 — Codex — Canonical verified-contact disclosure live
+- **Changed:** the canonical Privacy Policy states that server-verified email and phone matching defaults on, remains independently removable in Edit profile, keeps raw address-book details on-device, stores no raw verification number, uses Twilio for optional SMS verification, and enforces one verified phone per account. The policy is dated August 11, and browser signup records Privacy version `2026-08-11`.
 - **Alignment cleanup:** the already-reviewed 13+ account rule is reflected in hosted Privacy/Terms so the canonical pages no longer contradict the native app and production eligibility gate.
-- **Verified/pending:** seven Node tests plus 148 Playwright checks pass across desktop Chromium and mobile WebKit; diff checks pass. Merge/deploy and live QA remain blocked on exact approval and the paired backend migration so browser signup never advertises an unsupported Privacy version.
+- **Verified/delivered:** seven Node tests plus 148 Playwright checks pass across desktop Chromium and mobile WebKit. PR #79 merged as `43e0648b816fca4f0567a13e2702dfc7ff607362`; Cloudflare production run `31520495118` passed. Live `/privacy.html` shows the August 11 default-on verified email/phone disclosure and independent opt-out; `/terms.html` retains the July 18 13+ terms. Paired backend ledger `20260811175815` accepts Privacy version `2026-08-11`.
 
 ## 2026-08-10 — Codex — cross-browser signup confirmation callback
 - **Root cause:** password signup starts Supabase PKCE in one browser, while
