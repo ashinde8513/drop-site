@@ -13,14 +13,14 @@ Last updated: 2026-08-12
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IN PROGRESS — mandatory verified-phone website compatibility is reviewed and awaiting PR delivery
+**Status:** INACTIVE — mandatory verified-phone website compatibility is live; backend activation remains separately approval-gated
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex · Started: 2026-08-12 · Working on: mandatory phone compatibility in `app/app.js`, `app/index.html`, `tests/signup-phone.spec.ts`, and `tests/smoke.spec.ts` on `codex/mandatory-phone-web-20260812`.
+- None.
 
 ## Current status
 ### What works
-- **MANDATORY PHONE WEBSITE COMPATIBILITY REVIEWED (2026-08-12):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. Local verification passed 7/7 Node contracts plus 160/160 Playwright checks across desktop Chromium and mobile WebKit; independent adversarial review found no blockers. Delivery through standard PR/main Cloudflare Pages workflow remains next.
+- **MANDATORY PHONE WEBSITE COMPATIBILITY LIVE (2026-08-12, PR #81):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. PR #81 merged as `fa695ff581e991bb2fa2e3e7c42a219b7f57f793`; exact-main workflow `31670064544` passed 7/7 Node contracts plus 160/160 Playwright checks and deployed `a2193ab5.drop-site.pages.dev`. Its app asset and `app.trydropapp.com/app.js` are byte-identical to reviewed source (SHA-256 `bd27176384be4a44bce49868f387cb03d852e8e39c44b41c524954c9a84430d7`). Independent adversarial review found no blockers.
 - **IMPACT MARKETPLACE PROFILE REBUILT + APPEAL OPEN (2026-08-10, PR
   #76):** Impact account `7487237` now has a verified `trydropapp.com` website,
   the live `Drop - EDM Events` App Store property, connected Instagram
@@ -151,8 +151,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Ship `codex/mandatory-phone-web-20260812` through standard website PR/CI/main auto-deploy, live-verify exact `app.js`/signup-template provenance plus the required/no-skip route, then request separate exact approval for `20260813033553_activate_required_phone_identity.sql`. Do not apply activation before this website deploy is live and verified.**
-- **After website delivery, perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
+- **Request separate exact approval to apply Drop-App migration `supabase/migrations/20260813033553_activate_required_phone_identity.sql`; after approval, apply only that migration and verify the ledger, contract version, enforcement setting, signup-compliance gates, and security advisors. Do not apply it without that filename-specific approval.**
+- **Then perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
   sandbox-only consent branch, then re-consent at
@@ -458,6 +458,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-12 — Codex — mandatory verified-phone website compatibility live
+- **Delivery:** PR #81 merged as `fa695ff581e991bb2fa2e3e7c42a219b7f57f793`; exact-main workflow `31670064544` passed and deployed Cloudflare Pages URL `a2193ab5.drop-site.pages.dev`.
+- **Live proof:** immutable deployment and `app.trydropapp.com` serve reviewed `app.js` bytes at SHA-256 `bd27176384be4a44bce49868f387cb03d852e8e39c44b41c524954c9a84430d7`; the production signup template contains mandatory-phone copy and explicit required-state routing.
+- **Boundary:** no backend migration, Edge Function, secret, Worker, or production-data change occurred. Compatibility is live; activation migration `20260813033553_activate_required_phone_identity.sql` remains unapproved and unapplied.
+
 ### 2026-08-10 — Codex — Impact marketplace reapplication and appeal
 - **Profile:** corrected the business classification to developer/company/
   website-app/tech solutions; added the live App Store property; connected the
