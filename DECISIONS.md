@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-08-12 — Explicit phone attestation, not compatibility `complete`, gates browser accounts
+
+The standalone website treats authenticated `signup_compliance_status` with
+`profile_complete:true` and `phone_verified:false` as phone-required even while
+the compatibility migration leaves `complete:true` and server enforcement off.
+This lets clients ship first without stranding older website builds. Legacy
+payloads without the new fields keep their previous complete/incomplete routing.
+
+Required mode has no skip path and unlocks Discover only after a fresh server
+attestation following successful OTP proof. Password recovery, sign-out, and
+account deletion remain explicit exceptions. Raw phone/code values stay
+browser-memory-only and are cleared on success, change, or logout; duplicate
+numbers use generic unavailable copy.
+
 ## 2026-08-09 — App Store claims follow the listing compatibility label
 
 User-facing availability copy must match Apple's current product-page
