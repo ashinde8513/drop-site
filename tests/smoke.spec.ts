@@ -409,6 +409,8 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain(`href="${termsCanonical}"`);
     expect(appTemplate).not.toContain('https://trydropapp.com/privacy.html');
     expect(appTemplate).not.toContain('https://trydropapp.com/terms.html');
+    expect(appTemplate).toContain('Free forever. 13+ only.');
+    expect(appTemplate).not.toContain('Free forever. 16+ only.');
 
     const signupImplementation = appScript.match(/doSignup:\(\)=>\{([\s\S]*?)\n      \},\n      oauthGoogle:/)?.[1];
     expect(signupImplementation, 'signup implementation is present').toBeDefined();
@@ -417,6 +419,8 @@ test.describe('website smoke', () => {
     expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
     expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
     expect(signupImplementation).toContain('birthdate:dobValue');
+    expect(signupImplementation).toContain('years < 13');
+    expect(signupImplementation).not.toContain('years < 16');
     expect(signupImplementation).toContain('legal_accepted:true');
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
     expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
@@ -428,7 +432,11 @@ test.describe('website smoke', () => {
     expect(oauthImplementation?.[1]).toContain("signupOrigin ? '?mode=signup-complete' : ''");
     expect(oauthImplementation?.[1]).toContain("fieldVal('signup-dob')");
     expect(oauthImplementation?.[1]).toContain("fieldChecked('signup-consent')");
+    expect(oauthImplementation?.[1]).toContain('years < 13');
+    expect(oauthImplementation?.[1]).not.toContain('years < 16');
     expect(oauthImplementation?.[1]).toContain('savePendingOAuthCompliance(dobValue)');
+    expect(appScript).toContain('years >= 13 && years <= 120');
+    expect(appScript).not.toMatch(/16 or older|years >= 16/);
     expect(appScript).toContain("supa.rpc('complete_signup_profile'");
     expect(appScript).toContain('p_terms_version:pending.termsVersion');
     expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
