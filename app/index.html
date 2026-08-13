@@ -273,7 +273,7 @@
         </label>
         <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
         <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
-        <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin:var(--sp-sm) 0 0;">Phone verification is optional during setup. Email-only signup stays available.</p>
+        <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin:var(--sp-sm) 0 0;">A verified phone is required before account activation.</p>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
         </div>
@@ -867,7 +867,7 @@
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">{{ wizTitle }}</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">{{ wizSubtitle }}</p>
 
-        <!-- Step 0: optional phone verification -->
+        <!-- Step 0: phone verification -->
         <sc-if value="{{ wizStepPhone }}">
           <sc-if value="{{ wizPhoneVerified }}">
             <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-md);padding:var(--sp-xl);background:var(--social-glass);border:1px solid var(--social-glass-border);border-radius:var(--r-md);text-align:center;">
@@ -877,7 +877,7 @@
             </div>
           </sc-if>
           <sc-if value="{{ wizPhoneEntry }}">
-            <label for="wiz-phone" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Phone number <span style="color:var(--text-muted);">(optional)</span></label>
+            <label for="wiz-phone" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Phone number</label>
             <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
             <p style="color:var(--text-muted);font-size:var(--fs-xs);line-height:1.55;margin:0 0 var(--sp-lg);">
               By selecting Text me a code, you agree to receive one automated transactional verification text from Drop. One message per request. Message and data rates may apply. Reply STOP to opt out or HELP for help where supported. No marketing. See our <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.
@@ -896,6 +896,12 @@
           </sc-if>
           <sc-if value="{{ wizPhoneHasStatus }}">
             <p role="status" aria-live="polite" style="color:var(--text-secondary);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ wizPhoneStatus }}</p>
+          </sc-if>
+          <sc-if value="{{ wizPhoneRequired }}">
+            <div style="display:flex;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-top:var(--sp-xl);font-size:var(--fs-sm);">
+              <button type="button" class="btn btn--ghost btn--sm" onClick="{{ doLogout }}" disabled="{{ wizPhoneBusy }}">Use a different account</button>
+              <button type="button" class="btn btn--ghost btn--sm" onClick="{{ goDelete }}" disabled="{{ wizPhoneBusy }}" style="color:var(--danger);">Delete this account</button>
+            </div>
           </sc-if>
         </sc-if>
 
@@ -978,8 +984,8 @@
 
         <div class="wiz-foot" style="display:flex;gap:var(--sp-md);margin-top:var(--sp-xxl);align-items:center;">
           <sc-if value="{{ wizHasBack }}"><button type="button" class="btn btn--ghost" onClick="{{ wizBack }}" disabled="{{ wizNavigationBusy }}" style="flex:0 0 auto;">← Back</button></sc-if>
-          <button type="button" class="btn btn--ghost" onClick="{{ wizSkip }}" disabled="{{ wizNavigationBusy }}" style="flex:0 0 auto;">Skip</button>
-          <button type="button" class="btn btn--primary" onClick="{{ wizNext }}" disabled="{{ wizNavigationBusy }}" style="flex:1;">{{ wizNextLabel }}</button>
+          <sc-if value="{{ wizPhoneOptional }}"><button type="button" class="btn btn--ghost" onClick="{{ wizSkip }}" disabled="{{ wizNavigationBusy }}" style="flex:0 0 auto;">Skip</button></sc-if>
+          <sc-if value="{{ wizPhoneOptional }}"><button type="button" class="btn btn--primary" onClick="{{ wizNext }}" disabled="{{ wizNavigationBusy }}" style="flex:1;">{{ wizNextLabel }}</button></sc-if>
         </div>
       </div>
     </div>
@@ -1186,12 +1192,13 @@
 <sc-if value="{{ screenDelete }}">
   <main class="wsh">
     <div style="max-width:520px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <a href="#" onClick="{{ goSettings }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to settings</a>
+      <a href="#" onClick="{{ deleteBack }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← {{ deleteBackLabel }}</a>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-md);color:var(--danger);">Delete account</h1>
       <p style="color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-base);margin:0 0 var(--sp-lg);">This permanently erases your profile, RSVPs, saved shows, crew, plans, and Drop Wrapped history. This cannot be undone. Any banked Drop+ credit is forfeited.</p>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Type DELETE to confirm</label>
       <input type="text" value="{{ deleteConfirm }}" onInput="{{ setDeleteConfirm }}" placeholder="DELETE" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;letter-spacing:2px;" />
-      <button type="button" onClick="{{ confirmDelete }}" disabled="{{ deleteDisabled }}" class="btn btn--block" style="background:{{ deleteBtnBg }};color:{{ deleteBtnColor }};border:1px solid var(--danger);cursor:{{ deleteCursor }};">Permanently delete my account</button>
+      <button type="button" onClick="{{ confirmDelete }}" disabled="{{ deleteDisabled }}" class="btn btn--block" style="background:{{ deleteBtnBg }};color:{{ deleteBtnColor }};border:1px solid var(--danger);cursor:{{ deleteCursor }};">{{ deleteButtonLabel }}</button>
+      <sc-if value="{{ deleteHasStatus }}"><p role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ deleteStatus }}</p></sc-if>
     </div>
   </main>
 </sc-if>

@@ -433,21 +433,23 @@ test.describe('website smoke', () => {
     expect(appScript).toContain('p_terms_version:pending.termsVersion');
     expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
 
-    expect(appTemplate).toContain('Phone verification is optional during setup');
+    expect(appTemplate).toContain('A verified phone is required before account activation');
     expect(appTemplate).toContain('value="{{ wizStepPhone }}"');
     expect(appTemplate).toContain('autocomplete="tel"');
     expect(appTemplate).toContain('autocomplete="one-time-code"');
-    expect(appTemplate).toContain('Email-only signup stays available');
+    expect(appTemplate).not.toContain('Email-only signup stays available');
     expect(appScript).toContain("functions.invoke('verify-phone'");
+    expect(appScript).toContain("functions.invoke('delete-account'");
+    expect(appScript).toContain("if (value.profile_complete === true && value.phone_verified === false) return 'phone-required'");
     expect(appScript).toContain("body:{ action:'send', phone }");
     expect(appScript).toContain("body:{ action:'check', phone:this.state.wizPhonePending, code }");
     expect(appScript).toContain("wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneVerified:true");
     expect(appScript).toContain('wizPhoneResendDisabled:s.wizPhoneResendBlocked || s.wizPhoneBusy');
-    expect(appScript).toContain('wizNavigationBusy:s.wizStep===0 && s.wizPhoneBusy');
+    expect(appScript).toContain('wizNavigationBusy:s.wizStep===0 && (s.wizPhoneBusy || (s.wizPhoneRequired && !s.wizPhoneVerified))');
     expect(appTemplate).toContain('onClick="{{ wizPhoneResend }}" disabled="{{ wizPhoneResendDisabled }}"');
     expect(appTemplate).toContain('onClick="{{ wizPhoneChange }}" disabled="{{ wizPhoneBusy }}"');
-    expect(appTemplate).toContain('onClick="{{ wizSkip }}" disabled="{{ wizNavigationBusy }}"');
-    expect(appTemplate).toContain('onClick="{{ wizNext }}" disabled="{{ wizNavigationBusy }}"');
+    expect(appTemplate).toContain('<sc-if value="{{ wizPhoneOptional }}"><button type="button" class="btn btn--ghost" onClick="{{ wizSkip }}"');
+    expect(appTemplate).toContain('<sc-if value="{{ wizPhoneOptional }}"><button type="button" class="btn btn--primary" onClick="{{ wizNext }}"');
     expect(appScript).toContain("var SIGNUP_COMPLETE_MODE = 'signup-complete'");
     expect(appScript).not.toContain("if (mode === 'signup-complete') instance.setState({ screen: 'activation'");
     expect(appScript).toContain('scrubSignupCompletionUrl();');

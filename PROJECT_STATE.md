@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-11
+Last updated: 2026-08-12
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** INACTIVE — canonical verified-contact privacy disclosure corrected and live
+**Status:** IN PROGRESS — mandatory verified-phone website compatibility is reviewed and awaiting PR delivery
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Owner: Codex · Started: 2026-08-12 · Working on: mandatory phone compatibility in `app/app.js`, `app/index.html`, `tests/signup-phone.spec.ts`, and `tests/smoke.spec.ts` on `codex/mandatory-phone-web-20260812`.
 
 ## Current status
 ### What works
+- **MANDATORY PHONE WEBSITE COMPATIBILITY REVIEWED (2026-08-12):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. Local verification passed 7/7 Node contracts plus 160/160 Playwright checks across desktop Chromium and mobile WebKit; independent adversarial review found no blockers. Delivery through standard PR/main Cloudflare Pages workflow remains next.
 - **IMPACT MARKETPLACE PROFILE REBUILT + APPEAL OPEN (2026-08-10, PR
   #76):** Impact account `7487237` now has a verified `trydropapp.com` website,
   the live `Drop - EDM Events` App Store property, connected Instagram
@@ -143,15 +144,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   API access.
 - Twilio Toll-Free Verification for Drop's `(855) 741-1140` sender remains a
   separate compliance lane; do not infer its status from the production Twilio
-  Verify service. The optional browser flow uses the existing authenticated
+  Verify service. The mandatory browser proof uses the existing authenticated
   `verify-phone` Edge boundary and does not configure Supabase Phone Auth.
 - Founder: Bing Webmaster import-from-GSC (OAuth grant only founder can approve; extension also lacks bing.com permission).
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After exact founder approval of the paired backend migration and legal mutation, merge the reviewed August 11 canonical Privacy/Terms correction and browser-signup Privacy identifier through standard CI auto-deploy; then live-verify `/privacy`, `/terms`, and `app.trydropapp.com` source provenance. Do not deploy before backend accepts `2026-08-11`.**
-- **Founder physical QA: create or sign into one test account on the live website, confirm the phone step can be skipped, then perform one real SMS send/check and confirm Discover opens afterward. Record only pass/fail and the delivered artifact; never record the raw phone number or OTP.**
+- **Ship `codex/mandatory-phone-web-20260812` through standard website PR/CI/main auto-deploy, live-verify exact `app.js`/signup-template provenance plus the required/no-skip route, then request separate exact approval for `20260813033553_activate_required_phone_identity.sql`. Do not apply activation before this website deploy is live and verified.**
+- **After website delivery, perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
   sandbox-only consent branch, then re-consent at
@@ -171,6 +172,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-08-12 — Codex — Mandatory verified-phone website compatibility reviewed
+- **Root cause:** the website treated any `complete:true` attestation as Discover-ready and its activation phone step was optional. The compatibility contract intentionally keeps `complete:true` while backend enforcement is off, so explicit unverified-phone state needed its own fail-closed route before activation can safely switch on.
+- **Changed:** one shared attestation parser handles legacy/new payloads; explicit `profile_complete:true` plus `phone_verified:false` enters required OTP mode with no Skip/Continue, generic duplicate copy, server re-attestation after proof, and ephemeral phone/code state. Password recovery, sign-out, and real `delete-account` remain reachable; deletion distinguishes completed from queued.
+- **Verified:** `node --check`, `git diff --check`, focused 18/18 desktop auth checks, and full 7/7 Node plus 160/160 desktop/mobile Playwright checks pass. Independent adversarial review found no blockers. No backend migration, Edge deploy, secret, Worker, or production mutation occurred in this website session.
 
 ## 2026-08-11 — Codex — Canonical verified-contact disclosure live
 - **Changed:** the canonical Privacy Policy states that server-verified email and phone matching defaults on, remains independently removable in Edit profile, keeps raw address-book details on-device, stores no raw verification number, uses Twilio for optional SMS verification, and enforces one verified phone per account. The policy is dated August 11, and browser signup records Privacy version `2026-08-11`.

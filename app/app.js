@@ -352,8 +352,8 @@
   }
   function phoneVerificationMessage(detail, stage) {
     var text = String(detail || '').toLowerCase();
-    if (text.includes('phone_in_use') || text.includes('phone_exists') || text.includes('already linked')) {
-      return 'That phone number is already linked to another Drop account.';
+    if (text.includes('phone_unavailable') || text.includes('phone_in_use') || text.includes('phone_exists') || text.includes('already linked')) {
+      return 'That phone number can\u2019t be used for this account.';
     }
     if (text.includes('rate_limited') || text.includes('rate limit') || text.includes('too many')) {
       return 'Too many codes requested. Wait a few minutes and try again.';
@@ -378,6 +378,13 @@
       if (payload && typeof payload.error === 'string') detail += ' ' + payload.error;
     }
     return phoneVerificationMessage(detail, stage);
+  }
+  function signupComplianceState(expectedUserId, value) {
+    if (!value || typeof value !== 'object' || value.user_id !== expectedUserId || typeof value.complete !== 'boolean') {
+      return 'unavailable';
+    }
+    if (value.profile_complete === true && value.phone_verified === false) return 'phone-required';
+    return value.complete ? 'complete' : 'required';
   }
   var SIGNUP_COMPLETE_MODE = 'signup-complete';
   var PENDING_OAUTH_COMPLIANCE_KEY = 'drop.signup.oauth-compliance';
@@ -698,10 +705,11 @@ class Component extends DCLogic {
     // activation wizard
     wizStep: 0, wizGenres: {}, wizFriendSel: {}, wizArtistSel: {}, wizArtQuery: '',
     wizPhone: '', wizPhonePending: '', wizPhoneCode: '', wizPhoneBusy: false,
+    wizPhoneRequired: false,
     wizPhoneVerified: false, wizPhoneStatus: '', wizPhoneResendBlocked: false,
     // settings
     setToggles: { reminders: true, sales: true, comments: false, plans: true },
-    recapPrivacy: true, deleteConfirm: '', tiktokConnecting: false,
+    recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
     notifRead: {},
     // pick artists / venues / crew / plans / wrapped
@@ -1201,10 +1209,22 @@ class Component extends DCLogic {
         return;
       }
       this.clearPhoneCooldown();
+      const required = this.state.wizPhoneRequired;
       this.setState({
         wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneVerified:true,
         wizPhoneStatus:'Phone ownership verified for this Drop account.'
       });
+      if (required) {
+        const sessionResult = await supa.auth.getSession();
+        const session = sessionResult.data && sessionResult.data.session;
+        const status = session && await supa.rpc('signup_compliance_status');
+        if (!session || !status || status.error || signupComplianceState(session.user.id, status.data) !== 'complete') {
+          this.setState({ wizPhoneVerified:false, wizPhoneStatus:'Phone verified. Refresh the page to finish account setup.' });
+          return;
+        }
+        this.setState({ wizPhoneRequired:false, screen:'home' });
+        await this.afterLogin();
+      }
     } catch (error) {
       if (requestId === this._wizPhoneRequest) {
         this.setState({ wizPhoneStatus:phoneVerificationMessage(error && error.message, 'check') });
@@ -1239,8 +1259,8 @@ class Component extends DCLogic {
     if (this.state.wizPhoneBusy) return;
     this.clearPhoneVerificationState();
   }
-  startActivation(){
-    this.clearPhoneVerificationState({ screen:'activation', wizStep:0, authError:'' });
+  startActivation(phoneRequired){
+    this.clearPhoneVerificationState({ screen:'activation', wizStep:0, wizPhoneRequired:phoneRequired === true, authError:'' });
     if (typeof window!=='undefined') window.scrollTo(0,0);
   }
   async confirmSignupEmail(){
@@ -1294,11 +1314,12 @@ class Component extends DCLogic {
         }
       }
       const status = await supa.rpc('signup_compliance_status');
-      if (status.error || !status.data || status.data.user_id !== session.user.id || status.data.complete !== true) {
+      const compliance = status.error ? 'unavailable' : signupComplianceState(session.user.id, status.data);
+      if (compliance === 'unavailable' || compliance === 'required') {
         throw new Error('Could not confirm the account requirements. Please try signing up again.');
       }
       scrubSignupCompletionUrl();
-      this.startActivation();
+      this.startActivation(compliance === 'phone-required');
       return true;
     })();
     try {
@@ -1331,11 +1352,24 @@ class Component extends DCLogic {
         } else if (this.state.pendingClaimArtistId) this.openGate('Log in to claim your profile');
         return;
       }
+      // Password recovery is an explicit compliance exception. A valid
+      // recovery/auth session may finish resetting before phone verification.
+      if (this.state.screen === 'reset') return;
       if (completingSignup) {
         if (!(await this.completeSignupRoute(session))) return;
+        if (this.state.wizPhoneRequired) {
+          this.setState({ authed:true, userId:session.user.id, userEmail:session.user.email || '' });
+          return;
+        }
       } else {
         const status = await supa.rpc('signup_compliance_status');
-        if (status.error || !status.data || status.data.user_id !== session.user.id || status.data.complete !== true) {
+        const compliance = status.error ? 'unavailable' : signupComplianceState(session.user.id, status.data);
+        if (compliance === 'phone-required') {
+          this.setState({ authed:true, userId:session.user.id, userEmail:session.user.email || '' });
+          this.startActivation(true);
+          return;
+        }
+        if (compliance !== 'complete') {
           await supa.auth.signOut().catch(() => undefined);
           this.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
@@ -1862,7 +1896,7 @@ class Component extends DCLogic {
 
     // ===== Activation wizard =====
     const wizSteps = [
-      { title:'Verify your phone', sub:'Optional: add a verified phone now or skip and keep using email only.' },
+      { title:'Verify your phone', sub:s.wizPhoneRequired ? 'Required to activate this account and keep one verified identity per person.' : 'Add a verified phone to protect your Drop identity.' },
       { title:'Add a profile photo', sub:'Help your crew recognize you.' },
       { title:'Where do you go out?', sub:'We\u2019ll show shows near you first.' },
       { title:'What are your vibes?', sub:'Pick genres so your feed fits your taste.' },
@@ -2471,7 +2505,9 @@ class Component extends DCLogic {
       wizPhoneStatus:s.wizPhoneStatus, wizPhoneHasStatus:!!s.wizPhoneStatus,
       wizPhoneResendBlocked:s.wizPhoneResendBlocked,
       wizPhoneResendDisabled:s.wizPhoneResendBlocked || s.wizPhoneBusy,
-      wizNavigationBusy:s.wizStep===0 && s.wizPhoneBusy,
+      wizPhoneRequired:s.wizPhoneRequired,
+      wizPhoneOptional:!s.wizPhoneRequired,
+      wizNavigationBusy:s.wizStep===0 && (s.wizPhoneBusy || (s.wizPhoneRequired && !s.wizPhoneVerified)),
       wizPhoneSendLabel:s.wizPhoneBusy?'Working…':'Text me a code',
       wizPhoneVerifyLabel:s.wizPhoneBusy?'Working…':'Verify phone',
       wizPhoneResendLabel:s.wizPhoneResendBlocked?'Code sent — wait 60 seconds':'Resend code',
@@ -2555,7 +2591,10 @@ class Component extends DCLogic {
       tiktokConnecting: s.tiktokConnecting,
       tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
       blocked, blockedEmpty: blocked.length===0,
-      deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk,
+      deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk || s.deleteBusy,
+      deleteBusy:s.deleteBusy, deleteStatus:s.deleteStatus, deleteHasStatus:!!s.deleteStatus,
+      deleteButtonLabel:s.deleteBusy?'Deleting\u2026':'Permanently delete my account',
+      deleteBackLabel:s.wizPhoneRequired?'Back to phone verification':'Back to settings',
       deleteBtnBg: deleteOk?'var(--danger)':'var(--surface-hi)', deleteBtnColor: deleteOk?'var(--white)':'var(--text-muted)', deleteCursor: deleteOk?'pointer':'not-allowed',
       gate: s.gate, gateTitle: s.gateTitle, toast: s.toast,
 
@@ -2959,9 +2998,9 @@ class Component extends DCLogic {
       retryFestival:()=>this.openFestival(this._festivalRequestedId),
 
       // wizard
-      wizNext:()=>{ if(this.state.wizPhoneBusy) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      wizNext:()=>{ if(this.state.wizPhoneBusy || (this.state.wizStep===0 && this.state.wizPhoneRequired && !this.state.wizPhoneVerified)) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
       wizBack:()=>{ if(this.state.wizPhoneBusy) return; this.setState(x=>({wizStep: Math.max(0, x.wizStep-1)})); },
-      wizSkip:()=>{ if(this.state.wizPhoneBusy) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      wizSkip:()=>{ if(this.state.wizPhoneBusy || (this.state.wizStep===0 && this.state.wizPhoneRequired)) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
       setWizPhone:(e)=>this.setState({wizPhone:e.target.value, wizPhoneStatus:''}),
       setWizPhoneCode:(e)=>this.setState({wizPhoneCode:e.target.value.replace(/\D/g,'').slice(0,6), wizPhoneStatus:''}),
       wizPhoneSend:()=>this.sendPhoneCode(),
@@ -2982,6 +3021,7 @@ class Component extends DCLogic {
       connectTikTok:()=>this.connectTikTok(),
       goBlocked:(e)=>{ this.prevent(e); this.go('blocked'); },
       goDelete:(e)=>{ this.prevent(e); this.go('delete'); },
+      deleteBack:(e)=>{ this.prevent(e); this.go(this.state.wizPhoneRequired?'activation':'settings'); },
       goNotifications:(e)=>{ this.prevent(e); this.go('notifications'); },
       saveProfile:()=>{
         if (supa && this.state.userId) {
@@ -3008,11 +3048,23 @@ class Component extends DCLogic {
       toggleRecap:()=>this.setState(x=>({recapPrivacy:!x.recapPrivacy})),
       doLogout:()=>{ this.logout(); this.go('home'); },
       setDeleteConfirm:(e)=>this.setState({deleteConfirm:e.target.value}),
-      // ponytail: real account-row deletion needs a service-role edge
-      // function (can't run client-side with the anon key) — not built this
-      // phase. This signs the session out for real; the account itself is
-      // NOT actually deleted. Flag as unverified/mock in the Phase-1 report.
-      confirmDelete:()=>{ if(this.state.deleteConfirm.trim().toUpperCase()==='DELETE'){ this.logout(); this.setState({deleteConfirm:''}); this.go('home'); this.flash('Account deleted'); } },
+      confirmDelete:async()=>{
+        if (!supa || this.state.deleteBusy || this.state.deleteConfirm.trim().toUpperCase() !== 'DELETE') return;
+        this.setState({deleteBusy:true, deleteStatus:''});
+        try {
+          const result = await supa.functions.invoke('delete-account', { body:{ confirm:'DELETE' } });
+          if (result.error || !result.data || result.data.accepted !== true) {
+            this.setState({deleteBusy:false, deleteStatus:'Unable to delete account. Please try again.'});
+            return;
+          }
+          this.logout();
+          this.setState({deleteBusy:false, deleteConfirm:'', deleteStatus:''});
+          this.go('home');
+          this.flash(result.data.completed === true ? 'Account deleted' : 'Account deletion accepted and still processing');
+        } catch (_) {
+          this.setState({deleteBusy:false, deleteStatus:'Unable to delete account. Please try again.'});
+        }
+      },
     };
   }
 }

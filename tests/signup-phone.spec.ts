@@ -4,7 +4,7 @@ const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 const FAKE_SUPABASE = String.raw`
 (function () {
-  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false, failEmailConfirmation:false, throwEmailConfirmation:false }, window.__dropFakeConfig || {});
+  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false, failPhoneUnavailable:false, failDelete:false, pendingDelete:false, failEmailConfirmation:false, throwEmailConfirmation:false }, window.__dropFakeConfig || {});
   var listeners = [];
   var calls = [];
   var storedSession = false;
@@ -54,8 +54,16 @@ const FAKE_SUPABASE = String.raw`
     functions:{
       invoke:async function (name, options) {
         calls.push({ kind:'function', name:name, body:options && options.body });
+        if (name === 'delete-account') return config.failDelete
+          ? result(null, { message:'Delete failed' })
+          : result(config.pendingDelete ? { accepted:true, pending:true } : { accepted:true, completed:true });
         if (name !== 'verify-phone') return result({ ok:true });
         if (options.body.action === 'send') return result({ ok:true });
+        if (config.failPhoneUnavailable) return result({ error:'phone_unavailable' });
+        if (!config.failCheck) {
+          config.phoneVerified = true;
+          config.complianceComplete = true;
+        }
         return config.failCheck
           ? result({ error:'invalid_code' })
           : result({ verified:true });
@@ -69,7 +77,11 @@ const FAKE_SUPABASE = String.raw`
         return result(true);
       }
       if (name === 'signup_compliance_status') {
-        return result({ user_id:'${USER_ID}', complete:config.complianceComplete });
+        var status = { user_id:'${USER_ID}', complete:config.complianceComplete };
+        if (typeof config.profileComplete === 'boolean') status.profile_complete = config.profileComplete;
+        if (typeof config.phoneVerified === 'boolean') status.phone_verified = config.phoneVerified;
+        if (typeof config.phoneEnforcementEnabled === 'boolean') status.phone_enforcement_enabled = config.phoneEnforcementEnabled;
+        return result(status);
       }
       return result(null);
     },
@@ -118,7 +130,19 @@ async function openPhoneActivation(page: Page) {
   await expect(page.getByRole('heading', { name: 'Verify your phone' })).toBeVisible();
 }
 
-test.describe('optional phone signup behavior', () => {
+async function openRequiredPhone(page: Page) {
+  await installFakeSupabase(page, {
+    session:true,
+    complianceComplete:true,
+    profileComplete:true,
+    phoneVerified:false,
+    phoneEnforcementEnabled:false,
+  });
+  await page.goto('/app/index.html');
+  await expect(page.getByRole('heading', { name:'Verify your phone' })).toBeVisible();
+}
+
+test.describe('phone signup behavior', () => {
   test('token-hash confirmation creates a session without a PKCE verifier', async ({ page }) => {
     await installFakeSupabase(page, { session:false });
     await page.goto('/app/index.html?mode=signup-complete&token_hash=email-token-hash&type=email&safe=1');
@@ -284,6 +308,83 @@ test.describe('optional phone signup behavior', () => {
     await expect(page.getByText('Could not finish account setup. Please try signing up again.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Verify your phone' })).toHaveCount(0);
     expect(await page.evaluate(() => sessionStorage.getItem('drop.signup.oauth-compliance'))).toBeNull();
+  });
+
+  test('explicit phone-required attestation blocks Discover without a skip', async ({ page }) => {
+    await openRequiredPhone(page);
+
+    await expect(page.getByText('Required to activate this account and keep one verified identity per person.')).toBeVisible();
+    await expect(page.getByRole('button', { name:'Skip' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name:'Continue' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name:'Use a different account' })).toBeVisible();
+    await expect(page.getByRole('button', { name:'Delete this account' })).toBeVisible();
+    await expect(page.getByText('Pick your night')).toHaveCount(0);
+  });
+
+  test('password recovery remains reachable before required phone proof', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true, phoneVerified:false,
+    });
+    await page.goto('/app/index.html?mode=reset-password');
+
+    await expect(page.getByRole('heading', { name:'Choose a new password' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Verify your phone' })).toHaveCount(0);
+  });
+
+  test('required phone proof unlocks Discover only after server attestation refresh', async ({ page }) => {
+    await openRequiredPhone(page);
+    await page.locator('#wiz-phone').fill('(303) 555-0100');
+    await page.getByRole('button', { name:'Text me a code' }).click();
+    await page.locator('#wiz-phone-code').fill('123456');
+    await page.getByRole('button', { name:'Verify phone' }).click();
+
+    await expect(page.getByText('Pick your night')).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Verify your phone' })).toHaveCount(0);
+    const statusCalls = await page.evaluate(() => (window as any).__dropFake.calls
+      .filter((call: any) => call.name === 'signup_compliance_status'));
+    expect(statusCalls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test('duplicate phone result is generic and does not identify another account', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true,
+      phoneVerified:false, failPhoneUnavailable:true,
+    });
+    await page.goto('/app/index.html');
+    await page.locator('#wiz-phone').fill('3035550100');
+    await page.getByRole('button', { name:'Text me a code' }).click();
+    await page.locator('#wiz-phone-code').fill('123456');
+    await page.getByRole('button', { name:'Verify phone' }).click();
+
+    await expect(page.getByRole('status')).toContainText('That phone number can’t be used for this account.');
+    await expect(page.getByRole('status')).not.toContainText('another');
+  });
+
+  test('required phone screen keeps real account deletion reachable', async ({ page }) => {
+    await openRequiredPhone(page);
+    await page.getByRole('button', { name:'Delete this account' }).click();
+    await expect(page.getByRole('heading', { name:'Delete account' })).toBeVisible();
+    await expect(page.getByText('Back to phone verification')).toBeVisible();
+    await page.getByPlaceholder('DELETE').fill('DELETE');
+    await page.getByRole('button', { name:'Permanently delete my account' }).click();
+
+    await expect(page.getByRole('button', { name:/Get started/ }).first()).toBeVisible();
+    const deletion = await page.evaluate(() => (window as any).__dropFake.calls
+      .find((call: any) => call.name === 'delete-account'));
+    expect(deletion.body).toEqual({ confirm:'DELETE' });
+  });
+
+  test('pending account deletion is reported as processing, not completed', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true, phoneVerified:false,
+      pendingDelete:true,
+    });
+    await page.goto('/app/index.html');
+    await page.getByRole('button', { name:'Delete this account' }).click();
+    await page.getByPlaceholder('DELETE').fill('DELETE');
+    await page.getByRole('button', { name:'Permanently delete my account' }).click();
+    await expect(page.getByText('Account deletion accepted and still processing')).toBeVisible();
+    await expect(page.getByText('Account deleted')).toHaveCount(0);
   });
 
   test('phone remains skippable and send/check success removes raw values', async ({ page }) => {
