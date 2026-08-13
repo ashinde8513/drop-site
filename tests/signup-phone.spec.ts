@@ -58,7 +58,9 @@ const FAKE_SUPABASE = String.raw`
           ? result(null, { message:'Delete failed' })
           : result(config.pendingDelete ? { accepted:true, pending:true } : { accepted:true, completed:true });
         if (name !== 'verify-phone') return result({ ok:true });
-        if (options.body.action === 'send') return result({ ok:true });
+        if (options.body.action === 'send') return config.failPhoneUnavailableAtSend
+          ? result({ error:'phone_unavailable' })
+          : result({ ok:true });
         if (config.failPhoneUnavailable) return result({ error:'phone_unavailable' });
         if (!config.failCheck) {
           config.phoneVerified = true;
@@ -345,7 +347,7 @@ test.describe('phone signup behavior', () => {
     expect(statusCalls.length).toBeGreaterThanOrEqual(3);
   });
 
-  test('duplicate phone result is generic and does not identify another account', async ({ page }) => {
+  test('post-OTP duplicate phone result names the conflict without identifying the account', async ({ page }) => {
     await installFakeSupabase(page, {
       session:true, complianceComplete:true, profileComplete:true,
       phoneVerified:false, failPhoneUnavailable:true,
@@ -356,8 +358,24 @@ test.describe('phone signup behavior', () => {
     await page.locator('#wiz-phone-code').fill('123456');
     await page.getByRole('button', { name:'Verify phone' }).click();
 
+    await expect(page.getByRole('status')).toContainText('This phone number is already linked to another Drop account. Sign in to that account to continue.');
+    await expect(page.getByRole('button', { name:'Sign in to that account' })).toBeVisible();
+    await expect(page.getByRole('status')).not.toContainText('founder@example.com');
+    await page.getByRole('button', { name:'Sign in to that account' }).click();
+    await expect(page.getByRole('heading', { name:'Welcome back' })).toBeVisible();
+  });
+
+  test('pre-OTP phone_unavailable remains generic', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true,
+      phoneVerified:false, failPhoneUnavailableAtSend:true,
+    });
+    await page.goto('/app/index.html');
+    await page.locator('#wiz-phone').fill('3035550100');
+    await page.getByRole('button', { name:'Text me a code' }).click();
+
     await expect(page.getByRole('status')).toContainText('That phone number can’t be used for this account.');
-    await expect(page.getByRole('status')).not.toContainText('another');
+    await expect(page.getByRole('status')).not.toContainText('another Drop account');
   });
 
   test('required phone screen keeps real account deletion reachable', async ({ page }) => {
