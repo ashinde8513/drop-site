@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-12
+Last updated: 2026-08-13
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IN PROGRESS — mandatory verified-phone website compatibility is reviewed and awaiting PR delivery
+**Status:** IN PROGRESS — explicit post-OTP duplicate-phone prompt
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex · Started: 2026-08-12 · Working on: mandatory phone compatibility in `app/app.js`, `app/index.html`, `tests/signup-phone.spec.ts`, and `tests/smoke.spec.ts` on `codex/mandatory-phone-web-20260812`.
+- Owner: Codex `/root/auth_identity_audit` · Started: 2026-08-13 · Working on: post-OTP `phone_unavailable` copy and sign-in action in `app/app.js`, `app/index.html`, and `tests/signup-phone.spec.ts` on `feat/explicit-duplicate-phone-web-20260813`.
 
 ## Current status
 ### What works
+- **EXPLICIT POST-OTP DUPLICATE-PHONE PROMPT REVIEWED (2026-08-13):** exact `phone_unavailable` after OTP check explains that the number is linked to another Drop account and offers a direct sign-out-to-login action without exposing its email or identity. Send/resend responses stay generic; required deletion/recovery remain reachable; 7 Node contracts and 162 desktop/mobile Playwright checks pass, with independent adversarial re-review clean. PR/merge/live deploy verification remain.
 - **MANDATORY PHONE WEBSITE COMPATIBILITY REVIEWED (2026-08-12):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. Local verification passed 7/7 Node contracts plus 160/160 Playwright checks across desktop Chromium and mobile WebKit; independent adversarial review found no blockers. Delivery through standard PR/main Cloudflare Pages workflow remains next.
 - **IMPACT MARKETPLACE PROFILE REBUILT + APPEAL OPEN (2026-08-10, PR
   #76):** Impact account `7487237` now has a verified `trydropapp.com` website,
@@ -151,7 +152,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Ship `codex/mandatory-phone-web-20260812` through standard website PR/CI/main auto-deploy, live-verify exact `app.js`/signup-template provenance plus the required/no-skip route, then request separate exact approval for `20260813033553_activate_required_phone_identity.sql`. Do not apply activation before this website deploy is live and verified.**
+- **Ship `feat/explicit-duplicate-phone-web-20260813` through standard PR/CI/main auto-deploy and live-verify exact `app.js`/template provenance plus the post-OTP message and direct login action.**
 - **After website delivery, perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the

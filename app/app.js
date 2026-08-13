@@ -350,8 +350,12 @@
     if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
     return digits.length === 10 ? '+1' + digits : '';
   }
+  var PHONE_ALREADY_LINKED_MESSAGE = 'This phone number is already linked to another Drop account. Sign in to that account to continue.';
   function phoneVerificationMessage(detail, stage) {
     var text = String(detail || '').toLowerCase();
+    if (stage === 'check' && text.includes('phone_unavailable')) {
+      return PHONE_ALREADY_LINKED_MESSAGE;
+    }
     if (text.includes('phone_unavailable') || text.includes('phone_in_use') || text.includes('phone_exists') || text.includes('already linked')) {
       return 'That phone number can\u2019t be used for this account.';
     }
@@ -1519,6 +1523,15 @@ class Component extends DCLogic {
     if (supa) supa.auth.signOut().catch(()=>{});
     this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
+  async switchPhoneAccount(){
+    clearPendingOAuthCompliance();
+    if (supa) await supa.auth.signOut().catch(()=>{});
+    this.clearPhoneVerificationState({
+      authed:false, userId:null, userEmail:'', profile:null, screen:'login',
+      rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null,
+      realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[]
+    });
+  }
   oauth(provider){
     if (!supa) { this.setState({ authError:'Login is unavailable. Refresh and try again.' }); return; }
     const signupOrigin = this.state.screen === 'signup';
@@ -2503,6 +2516,8 @@ class Component extends DCLogic {
       wizPhoneEntry:!s.wizPhonePending && !s.wizPhoneVerified,
       wizPhoneCodeEntry:!!s.wizPhonePending && !s.wizPhoneVerified,
       wizPhoneStatus:s.wizPhoneStatus, wizPhoneHasStatus:!!s.wizPhoneStatus,
+      wizPhoneAccountActions:s.wizPhoneRequired || s.wizPhoneStatus===PHONE_ALREADY_LINKED_MESSAGE,
+      wizPhoneAccountActionLabel:s.wizPhoneStatus===PHONE_ALREADY_LINKED_MESSAGE?'Sign in to that account':'Use a different account',
       wizPhoneResendBlocked:s.wizPhoneResendBlocked,
       wizPhoneResendDisabled:s.wizPhoneResendBlocked || s.wizPhoneBusy,
       wizPhoneRequired:s.wizPhoneRequired,
@@ -3007,6 +3022,9 @@ class Component extends DCLogic {
       wizPhoneVerify:()=>this.checkPhoneCode(),
       wizPhoneResend:()=>this.resendPhoneCode(),
       wizPhoneChange:()=>this.changePhoneNumber(),
+      wizPhoneAccountSwitch:()=>this.state.wizPhoneStatus===PHONE_ALREADY_LINKED_MESSAGE
+        ? this.switchPhoneAccount()
+        : (this.logout(), this.go('home')),
       setWizArtQuery:(e)=>this.setState({wizArtQuery:e.target.value}),
       rmGoing:()=>{ if(rmEv) this.toggleRsvp(rmEv.id,'going'); this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
       rmSkip:()=>{ this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); },

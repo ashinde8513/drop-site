@@ -897,10 +897,12 @@
           <sc-if value="{{ wizPhoneHasStatus }}">
             <p role="status" aria-live="polite" style="color:var(--text-secondary);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ wizPhoneStatus }}</p>
           </sc-if>
-          <sc-if value="{{ wizPhoneRequired }}">
+          <sc-if value="{{ wizPhoneAccountActions }}">
             <div style="display:flex;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-top:var(--sp-xl);font-size:var(--fs-sm);">
-              <button type="button" class="btn btn--ghost btn--sm" onClick="{{ doLogout }}" disabled="{{ wizPhoneBusy }}">Use a different account</button>
-              <button type="button" class="btn btn--ghost btn--sm" onClick="{{ goDelete }}" disabled="{{ wizPhoneBusy }}" style="color:var(--danger);">Delete this account</button>
+              <button type="button" class="btn btn--ghost btn--sm" onClick="{{ wizPhoneAccountSwitch }}" disabled="{{ wizPhoneBusy }}">{{ wizPhoneAccountActionLabel }}</button>
+              <sc-if value="{{ wizPhoneRequired }}">
+                <button type="button" class="btn btn--ghost btn--sm" onClick="{{ goDelete }}" disabled="{{ wizPhoneBusy }}" style="color:var(--danger);">Delete this account</button>
+              </sc-if>
             </div>
           </sc-if>
         </sc-if>
