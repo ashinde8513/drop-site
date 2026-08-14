@@ -562,10 +562,10 @@
     </div>
     <sc-if value="{{ contentReady }}">
       <div class="ed-bottombar">
-        <button type="button" onClick="{{ aeSave }}" class="{{ aeSaveCls }}" style="width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;">{{ aeSaveGlyph }}</button>
-        <button type="button" class="{{ aeInterestedCls }}" style="flex:1;height:48px;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }}</button>
-        <button type="button" class="{{ aeGoingCls }}" style="flex:1;height:48px;" onClick="{{ aeGoing }}">✓ Going</button>
-        <button type="button" class="btn btn--primary" style="flex:1.4;height:48px;" onClick="{{ aeTickets }}">Get tickets · {{ ae.price }}</button>
+        <button type="button" onClick="{{ aeSave }}" class="{{ aeSaveCls }} ed-bottombar__icon" aria-label="Save event" style="width:48px;height:48px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;">{{ aeSaveGlyph }}</button>
+        <button type="button" class="{{ aeInterestedCls }} ed-bottombar__icon" aria-label="Mark interested" style="height:48px;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }}</button>
+        <button type="button" class="{{ aeGoingCls }} ed-bottombar__going" style="height:48px;" onClick="{{ aeGoing }}">✓ Going</button>
+        <button type="button" class="btn btn--primary ed-bottombar__tickets" onClick="{{ aeTickets }}">Get tickets</button>
       </div>
     </sc-if>
   </main>
