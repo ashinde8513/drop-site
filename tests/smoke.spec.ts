@@ -724,6 +724,7 @@ test.describe('website smoke', () => {
   });
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {
+    await page.setViewportSize({ width: 498, height: 608 });
     const fakeId = '7b6f66aa-2f6d-4f6e-9d55-1c2b3a4d5e6f';
     const fakeVenueId = '9f4327fb-b0ca-46dd-a210-84bce2269c2c';
     const fakeEvent = {
@@ -761,8 +762,30 @@ test.describe('website smoke', () => {
     const ticketLinks = page.locator('.ed-price-row a, .ed-buybox > a, #sticky-cta > a.btn--primary');
     await expect(ticketLinks).toHaveCount(3);
     expect(await ticketLinks.allTextContents()).toEqual([
-      'View ticket details', 'View ticket details', 'View ticket details · From $45',
+      'View ticket details', 'View ticket details', 'Tickets',
     ]);
+    await expect(page.locator('#sticky-cta > a.btn--primary')).toHaveAccessibleName('View ticket details');
+    const stickyLayout = await page.locator('#sticky-cta').evaluate((bar) => {
+      const ticket = bar.querySelector<HTMLElement>('.ed-bottombar__tickets');
+      const children = [...bar.children].map((child) => (child as HTMLElement).getBoundingClientRect());
+      return {
+        noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+        ticketFits: !!ticket && ticket.scrollWidth <= ticket.clientWidth && ticket.scrollHeight <= ticket.clientHeight,
+        noOverlap: children.every((rect, index) => index === 0 || rect.left >= children[index - 1].right),
+      };
+    });
+    expect(stickyLayout).toEqual({ noHorizontalOverflow: true, ticketFits: true, noOverlap: true });
+    await page.setViewportSize({ width: 320, height: 568 });
+    const compactLayout = await page.locator('#sticky-cta').evaluate((bar) => {
+      const ticket = bar.querySelector<HTMLElement>('.ed-bottombar__tickets');
+      const content = document.querySelector<HTMLElement>('.ed-wrap');
+      return {
+        reserved: !!content && bar.getBoundingClientRect().height <= parseFloat(getComputedStyle(content).paddingBottom),
+        ticketFits: !!ticket && ticket.scrollWidth <= ticket.clientWidth && ticket.scrollHeight <= ticket.clientHeight,
+        noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      };
+    });
+    expect(compactLayout).toEqual({ reserved: true, ticketFits: true, noHorizontalOverflow: true });
     const ld = JSON.parse(await page.locator('#ldjson').textContent() || '{}');
     expect(ld.eventStatus).toBe('https://schema.org/EventCancelled');
     expect(ld.offers.url).toBe(fakeEvent.ticket_url);

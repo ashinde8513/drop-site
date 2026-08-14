@@ -436,6 +436,9 @@
     .ed-aside { display: none !important; }
     .ed-wrap { padding-bottom: 96px !important; }
     .ed-bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; gap: var(--sp-sm); align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--glass-dark); backdrop-filter: blur(12px); border-top: 1px solid var(--border-strong); }
+    .ed-bottombar__icon { flex: 0 0 48px; padding-inline: 0; }
+    .ed-bottombar__going { flex: 0 1 82px; min-width: 72px; padding-inline: 10px; }
+    .ed-bottombar__tickets { flex: 1 1 160px; min-width: 0; min-height: 48px; height: auto; padding: 8px 12px; font-size: var(--fs-sm); line-height: 1.2; }
 
     /* ===== SEARCH: stack filter above results, compact panel ===== */
     .search-grid { grid-template-columns: 1fr !important; }

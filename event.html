@@ -508,20 +508,23 @@
 
       function renderBottomBar(ev) {
         stickyBar.innerHTML = '';
-        var save = gateLink('gate', '🔖', 'Log in to save this show');
+        var save = gateLink('gate ed-bottombar__icon', '🔖', 'Log in to save this show');
+        save.setAttribute('aria-label', 'Save event');
         save.style.cssText = 'width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(save);
-        var interested = gateLink('chip gate', '☆', 'Log in to RSVP');
-        interested.style.cssText = 'flex:1;height:48px;display:inline-flex;align-items:center;justify-content:center;';
+        var interested = gateLink('chip gate ed-bottombar__icon', '☆', 'Log in to RSVP');
+        interested.setAttribute('aria-label', 'Mark interested');
+        interested.style.cssText = 'height:48px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(interested);
-        var going = gateLink('chip gate', '✓ Going', 'Log in to RSVP');
-        going.style.cssText = 'flex:1;height:48px;display:inline-flex;align-items:center;justify-content:center;';
+        var going = gateLink('chip gate ed-bottombar__going', '✓ Going', 'Log in to RSVP');
+        going.style.cssText = 'height:48px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(going);
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
-          var buy = el('a', 'btn btn--primary', D.ticketActionLabel(ev) + ' · ' + D.fmtPrice(ev.price_min, ev.price_max));
+          var ticketLabel = D.ticketActionLabel(ev);
+          var buy = el('a', 'btn btn--primary ed-bottombar__tickets', ticketLabel === 'View ticket details' ? 'Tickets' : ticketLabel);
+          buy.setAttribute('aria-label', ticketLabel);
           buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
-          buy.style.cssText = 'flex:1.4;height:48px;';
           stickyBar.appendChild(buy);
         }
       }
