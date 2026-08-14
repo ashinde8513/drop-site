@@ -9,14 +9,14 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** IN PROGRESS — explicit post-OTP duplicate-phone prompt
+**Status:** REVIEWED — homepage buyable-event count delivery in progress
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex `/root/auth_identity_audit` · Started: 2026-08-13 · Working on: post-OTP `phone_unavailable` copy and sign-in action in `app/app.js`, `app/index.html`, and `tests/signup-phone.spec.ts` on `feat/explicit-duplicate-phone-web-20260813`.
+- Owner: Codex `/root/update_live_event_count` · Started: 2026-08-14 · Working on: homepage buyable-event count in `data.js`, `index.html`, and `tests/smoke.spec.ts` on `agent/update-event-count-20260814`.
 
 ## Current status
 ### What works
@@ -152,7 +152,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **Ship `feat/explicit-duplicate-phone-web-20260813` through standard PR/CI/main auto-deploy and live-verify exact `app.js`/template provenance plus the post-OTP message and direct login action.**
+- **Ship `agent/update-event-count-20260814` through standard PR/CI/main auto-deploy, then verify the live homepage renders the conservative buyable-event band from the reviewed `ticket_url=neq.` query with no console errors or mobile overflow.**
 - **After website delivery, perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -459,6 +459,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-14 — Codex — buyable homepage event count reviewed
+- **Changed:** homepage trust count now includes only published upcoming/ongoing events with a non-empty ticket URL; the audited fallback is `4,500+` events / `320+` cities.
+- **Evidence:** read-only production count returned 4,595 buyable events at the existing browser-local start-of-day boundary, so flooring to `4,500+` preserves the no-overstatement rule. The UTC-boundary count was deliberately not substituted because that would change established visitor-local date semantics.
+- **Verified:** 7 Node checks plus 164 desktop/mobile Playwright checks pass; the dist build mirrors source; rendered 1280×900 and 390×844 QA shows `4,500+`, no console warnings/errors, no mobile overflow, and a working city picker. Independent adversarial review found no blockers.
+- **Delivery:** standard PR/main Cloudflare Pages deployment and live verification remain in progress.
+
 ### 2026-08-10 — Codex — Impact marketplace reapplication and appeal
 - **Profile:** corrected the business classification to developer/company/
   website-app/tech solutions; added the live App Store property; connected the

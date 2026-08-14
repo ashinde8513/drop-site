@@ -177,7 +177,7 @@ test.describe('website smoke', () => {
     await expect(page.locator('#result-count')).toContainText('1 show');
   });
 
-  test('hero proof line floors live catalog totals to truthful rounded-plus counts', async ({ page }) => {
+  test('hero proof line floors live buyable-event totals to truthful rounded-plus counts', async ({ page }) => {
     let cityStatsRequests = 0;
     await page.route('**/rest/v1/event_cities?**', (route) => {
       cityStatsRequests += 1;
@@ -193,6 +193,7 @@ test.describe('website smoke', () => {
         && url.searchParams.get('limit') === '1';
       if (isStatsRequest) {
         expect(url.searchParams.get('or')).toContain('end_date.gte.');
+        expect(url.searchParams.get('ticket_url')).toBe('neq.');
       }
       return route.fulfill({
         status: 200,
@@ -213,6 +214,20 @@ test.describe('website smoke', () => {
     await expect(page.locator('.hero-proof')).toContainText('230+ cities');
     await expect(page.locator('.hero-proof')).not.toContainText('1,234');
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
+  });
+
+  test('hero proof line keeps the audited snapshot when live stats fail', async ({ page }) => {
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      const isStatsRequest = url.searchParams.get('select') === 'id'
+        && url.searchParams.get('limit') === '1';
+      return isStatsRequest
+        ? route.fulfill({ status: 503, body: '' })
+        : route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+    await page.goto('/index.html');
+    await expect(page.locator('.hero-proof')).toContainText('4,500+ events');
+    await expect(page.locator('.hero-proof')).toContainText('320+ cities');
   });
 
   test('homepage shows official Drop partners and ticket sources without extra relationship copy', async ({ page }) => {
