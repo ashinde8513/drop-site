@@ -13,13 +13,14 @@ Last updated: 2026-08-14
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** AVAILABLE — homepage buyable-event count live
+**Status:** AVAILABLE — mobile event ticket bar live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
 
 ## Current status
 ### What works
+- **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
 - **BUYABLE HOMEPAGE EVENT COUNT LIVE (2026-08-14, PR #86):** the homepage trust total now counts only published upcoming/ongoing events with a non-empty ticket URL, preserving the existing browser-local start-of-day boundary and conservative floor-to-100 display. Read-only production evidence was 4,595 buyable events, so the live page truthfully renders `4,500+`; the offline fallback matches. Main workflow `31849172339` passed 164/164 and deployed, production desktop/mobile QA is clean, and live `data.js` is byte-identical to reviewed source.
 - **EXPLICIT POST-OTP DUPLICATE-PHONE PROMPT REVIEWED (2026-08-13):** exact `phone_unavailable` after OTP check explains that the number is linked to another Drop account and offers a direct sign-out-to-login action without exposing its email or identity. Send/resend responses stay generic; required deletion/recovery remain reachable; 7 Node contracts and 162 desktop/mobile Playwright checks pass, with independent adversarial re-review clean. PR/merge/live deploy verification remain.
 - **MANDATORY PHONE WEBSITE COMPATIBILITY REVIEWED (2026-08-12):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. Local verification passed 7/7 Node contracts plus 160/160 Playwright checks across desktop Chromium and mobile WebKit; independent adversarial review found no blockers. Delivery through standard PR/main Cloudflare Pages workflow remains next.
@@ -153,7 +154,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After website delivery, perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
+- **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
   sandbox-only consent branch, then re-consent at
@@ -459,6 +460,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-14 — Codex — mobile event ticket bar live
+- **Root cause:** the four mobile event actions split width at `1 / 1 / 1.4` while the ticket CTA concatenated status and price inside a fixed 48px, overflow-hidden button. At the reported 498×608 viewport the CTA received about 156px, wrapped, and clipped.
+- **Changed:** public and signed-in event bars now reserve 48px for the two icon actions, bound Going to 72–82px, and give the remaining width to an auto-height ticket CTA. Sticky price copy is removed; unknown/cancelled state renders neutral `Tickets` while preserving `View ticket details` as the accessible name. Icon-only actions now have explicit accessible labels.
+- **Verified:** 7 Node checks plus 164 Playwright checks pass across desktop Chromium and mobile WebKit. Independent review caught and closed the 320px/reserved-inset edge. Exact live event QA passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA click targets the exact SeatGeek URL without replacing the event tab.
+- **Delivery:** PR #88 exact head `91984cb81966522defb4b4ab9ba458afebc1f09d` passed required CI and merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`. Main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live public CSS and app assets match reviewed bytes; the exact public event response contains the reviewed CTA implementation.
+
 ### 2026-08-14 — Codex — buyable homepage event count live
 - **Changed:** homepage trust count now includes only published upcoming/ongoing events with a non-empty ticket URL; the audited fallback is `4,500+` events / `320+` cities.
 - **Evidence:** read-only production count returned 4,595 buyable events at the existing browser-local start-of-day boundary, so flooring to `4,500+` preserves the no-overstatement rule. The UTC-boundary count was deliberately not substituted because that would change established visitor-local date semantics.
