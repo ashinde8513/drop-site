@@ -160,7 +160,8 @@
         </div>
         <div class="hero-proof" style="display:flex;align-items:center;gap:var(--sp-sm);margin-top:var(--sp-xxl);color:var(--text-muted);font-size:var(--fs-sm);">
           <span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:var(--grad-glow);box-shadow:var(--shadow-glow);flex:0 0 auto;"></span>
-          <span aria-live="polite">Tracking <b data-catalog-events style="color:var(--text);">4,500+</b> events across <b data-catalog-cities style="color:var(--text);">320+</b> cities</span>
+          <span data-catalog-proof aria-live="polite" hidden>Tracking <b data-catalog-events style="color:var(--text);"></b> events across <b data-catalog-cities style="color:var(--text);"></b> cities</span>
+          <span data-catalog-proof-pending>Live catalog updated continuously</span>
         </div>
       </div>
     </section>
@@ -281,15 +282,12 @@
     (function () {
       var D = window.Drop;
       var city = D.city();
-      function roundedPlus(value, step) {
-        if (value < step) return value.toLocaleString('en-US');
-        return (Math.floor(value / step) * step).toLocaleString('en-US') + '+';
-      }
-
       D.fetchCatalogStats().then(function (stats) {
-        document.querySelector('[data-catalog-events]').textContent = roundedPlus(stats.events, 100);
-        document.querySelector('[data-catalog-cities]').textContent = roundedPlus(stats.cities, 10);
-      }).catch(function () {}); // audited HTML snapshot remains visible offline
+        document.querySelector('[data-catalog-events]').textContent = stats.events.toLocaleString('en-US');
+        document.querySelector('[data-catalog-cities]').textContent = stats.cities.toLocaleString('en-US');
+        document.querySelector('[data-catalog-proof]').hidden = false;
+        document.querySelector('[data-catalog-proof-pending]').hidden = true;
+      }).catch(function () {}); // nonnumeric live-catalog copy remains visible offline
 
       var hs = document.getElementById('home-search');
       hs.addEventListener('submit', function (e) {
