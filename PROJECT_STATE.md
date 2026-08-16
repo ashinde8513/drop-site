@@ -9,20 +9,20 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** AVAILABLE — mobile event ticket bar live
+**Status:** AVAILABLE — canonical public catalog stats live
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Codex `/root/canonical_catalog_stats` — building canonical public catalog stats on `agent/canonical-catalog-stats-20260815` with database companion `agent/canonical-catalog-stats-db-20260815`; production migration remains exact-approval gated.
+- None.
 
 ## Current status
 ### What works
-- **CANONICAL PUBLIC CATALOG STATS REVIEWED; DEPLOYMENT HELD (2026-08-15):** the homepage now requests one stable server RPC and renders exact, comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Focused desktop/mobile checks, the full 164-test Playwright suite, rendered fallback QA, and independent adversarial review pass. The website must remain held until its companion migration is merged, explicitly approved, applied, and read back.
+- **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
 - **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
-- **BUYABLE HOMEPAGE EVENT COUNT LIVE (2026-08-14, PR #86):** the homepage trust total now counts only published upcoming/ongoing events with a non-empty ticket URL, preserving the existing browser-local start-of-day boundary and conservative floor-to-100 display. Read-only production evidence was 4,595 buyable events, so the live page truthfully renders `4,500+`; the offline fallback matches. Main workflow `31849172339` passed 164/164 and deployed, production desktop/mobile QA is clean, and live `data.js` is byte-identical to reviewed source.
+- **BUYABLE HOMEPAGE EVENT COUNT SUPERSEDED (2026-08-14, PR #86):** this historical browser-local rounded-count implementation shipped successfully, then PR #90 replaced it with the canonical exact server count above. No rounded or numeric offline fallback remains.
 - **EXPLICIT POST-OTP DUPLICATE-PHONE PROMPT REVIEWED (2026-08-13):** exact `phone_unavailable` after OTP check explains that the number is linked to another Drop account and offers a direct sign-out-to-login action without exposing its email or identity. Send/resend responses stay generic; required deletion/recovery remain reachable; 7 Node contracts and 162 desktop/mobile Playwright checks pass, with independent adversarial re-review clean. PR/merge/live deploy verification remain.
 - **MANDATORY PHONE WEBSITE COMPATIBILITY REVIEWED (2026-08-12):** the signed-in SPA recognizes the live compatibility contract's explicit `profile_complete:true` / `phone_verified:false` state even while backend enforcement remains off, and routes password, Google, Apple, and confirmed-email sessions to the existing `verify-phone` OTP surface. Required mode has no Skip/Continue bypass, re-attests server state before Discover, keeps raw phone/code values ephemeral, maps duplicate-phone responses to generic copy, and preserves password recovery, sign-out, and real `delete-account` access. Legacy compliance payloads retain their prior complete/incomplete behavior. Local verification passed 7/7 Node contracts plus 160/160 Playwright checks across desktop Chromium and mobile WebKit; independent adversarial review found no blockers. Delivery through standard PR/main Cloudflare Pages workflow remains next.
 - **IMPACT MARKETPLACE PROFILE REBUILT + APPEAL OPEN (2026-08-10, PR
@@ -155,7 +155,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
 ### Exact next step
-- **After exact approval/application/readback of backend migration `20260816032731_public_catalog_stats.sql`, merge this held website branch through the normal PR/main deploy, then verify exact RPC-to-homepage parity and malformed/unavailable fail-closed behavior on production desktop and mobile.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -462,10 +461,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
-### 2026-08-15 — Codex — canonical public catalog stats ready; deployment held
-- **Changed:** replaced the browser-local two-query/rounded snapshot path with one canonical RPC response carrying exact event count, normalized city count, and server calculation time. The homepage has no numeric fallback; it reveals exact counts only after strict response validation.
-- **Review fix:** an explicit JSON `null` initially converted to zero in JavaScript. Counts now become `NaN` unless present before safe-integer validation, and a malformed HTTP 200 regression proves the numeric proof remains hidden.
-- **Verified/boundary:** 7 Node checks plus 164 Playwright checks pass across desktop Chromium and mobile WebKit; Browser QA shows the intended nonnumeric pre-migration state without overflow or console errors. Independent re-review is clean. No website deploy or production backend mutation occurred; merge waits on exact migration approval and readback.
+### 2026-08-16 — Codex — canonical public catalog stats live
+- **Delivered:** backend migration `20260816032731_public_catalog_stats.sql` SHA-256 `35da83dc1f180f39b1cb605887ce29decd9ce463f360c3e60f56187ee3e5b68a` is live as ledger `20260816084907`. Website PR #90 merged as `9f0d1a2f`; workflow `31937512102` passed 164/164 and deployed through Cloudflare Pages.
+- **Behavior:** the browser-local two-query/rounded snapshot is replaced by one canonical RPC response carrying exact event count, normalized city count, and server calculation time. Counts become `NaN` unless present before safe-integer validation; malformed HTTP 200, unavailable, and pre-response states keep numeric proof hidden and show only nonnumeric copy.
+- **Verified:** anonymous RPC and production desktop 1745x1228/mobile 390x844 matched at 4,110 events / 295 cities, with no overflow or console warnings/errors. Live `data.js` SHA-256 `58a94049...3252` and `site.js` SHA-256 `9e95de32...6d00` are byte-identical to reviewed `main`; the only index transform is Cloudflare email obfuscation. No provider, importer, Edge, cron, secret, data rewrite, or third-party seller-availability work occurred.
 
 ### 2026-08-14 — Codex — mobile event ticket bar live
 - **Root cause:** the four mobile event actions split width at `1 / 1 / 1.4` while the ticket CTA concatenated status and price inside a fixed 48px, overflow-hidden button. At the reported 498×608 viewport the CTA received about 156px, wrapped, and clipped.
