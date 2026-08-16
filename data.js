@@ -38,19 +38,19 @@
       .catch(function () { return CITIES; });
   };
 
-  // Exact, current buyable-catalog totals for homepage trust copy. If either
-  // request fails, reject so the server-rendered audited snapshot stays put.
+  // Exact, current buyable-catalog totals from one server-side filtered set.
   Drop.fetchCatalogStats = function () {
-    var today = todayISO();
-    return Promise.all([
-      get('events?' + q({
-        select: 'id', status: 'eq.published', ticket_url: 'neq.',
-        or: '(date.gte.' + today + ',end_date.gte.' + today + ')', limit: 1
-      }), { count: true }),
-      get('event_cities?select=city')
-    ]).then(function (results) {
-      if (results[0].total === null) throw new Error('catalog stats unavailable');
-      return { events: results[0].total, cities: results[1].length };
+    return get('rpc/get_public_catalog_stats').then(function (rows) {
+      var stats = rows && rows[0];
+      var events = stats && stats.event_count != null ? Number(stats.event_count) : NaN;
+      var cities = stats && stats.city_count != null ? Number(stats.city_count) : NaN;
+      var calculatedAt = stats && stats.calculated_at;
+      if (!Number.isSafeInteger(events) || events < 0 ||
+          !Number.isSafeInteger(cities) || cities < 0 ||
+          !calculatedAt || !Number.isFinite(Date.parse(calculatedAt))) {
+        throw new Error('catalog stats unavailable');
+      }
+      return { events: events, cities: cities, calculatedAt: calculatedAt };
     });
   };
 
