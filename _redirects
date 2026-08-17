@@ -5,7 +5,7 @@
 # App share/deep-link paths (deepLinks.ts contract). When the app is installed
 # the OS intercepts these via Universal/App Links; on the web they land here.
 /event/*  /event  200
-/plan/:id   /share-plan.html  302
+/plan/*     /share-plan.html  200
 /onboarding /download.html  302
 
 # /app* redirect removed — the standalone post-login web app (ported Prism

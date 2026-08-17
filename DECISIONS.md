@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-08-17 — Browser share attribution is bounded and private by default
+
+Canonical redirects and public-to-account handoffs preserve only UUID referrer/target, route-derived event/plan/signup kind, and the fixed source catalog shared with mobile and the database. Browser pending state is first-touch, expires after 24 hours, survives sanctioned signup callbacks, and records only after compliance through an authenticated RPC that derives the signed-in account.
+
+Referral credit also requires the account creation timestamp to follow the captured link open. Existing accounts and malformed timestamps fail closed, and Auth user metadata does not duplicate referral or private plan targets because bounded pending state plus the RPC/table are authoritative.
+
+Plan fallbacks retain the plan UUID for authenticated continuation but render no roster, meetup, friend, venue, event, or date values from public query parameters. Android association uses only apex `trydropapp.com` and the exact current Google Play App Signing fingerprint for `app.resonanceventures.drop`; debug, guessed, placeholder, or upload-key fingerprints are prohibited. This public-certificate contract does not authorize credential creation, a build, or a Play release.
+
 ## 2026-08-12 — Explicit phone attestation, not compatibility `complete`, gates browser accounts
 
 The standalone website treats authenticated `signup_compliance_status` with
