@@ -497,25 +497,38 @@
     doc.querySelectorAll('[data-app-download]').forEach(function (a) { a.href = store; });
   }
 
-  // Creator links may enter through the public apex before a visitor chooses
-  // browser signup. Carry the readable code and existing UUID referrer across
-  // that host boundary; the authenticated RPC still enforces first touch.
-  function initCreatorSignupLinks() {
+  // Carry only bounded attribution across the public -> account host boundary.
+  // Route identity is derived from the public path, never display query text.
+  function initSignupAttributionLinks() {
     var params = new URLSearchParams(location.search);
     var creator = String(params.get('creator') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     var ref = params.get('ref') || '';
-    if (!/^[A-Z0-9]{4,24}$/.test(creator)) return;
+    var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    var sources = new Set(['creator','crew_invite','event_invite','event_share','friend_invite','invite_screen','plan_share','qr','recap_share','seen_history','show_memories','wrapped']);
+    var validCreator = /^[A-Z0-9]{4,24}$/.test(creator) ? creator : '';
+    var source = validCreator ? 'creator' : (sources.has(params.get('src')) ? params.get('src') : '');
+    var route = location.pathname.match(/^\/(event|plan)\/([0-9a-f-]{36})(?:\/|$)/i);
+    var kind = route && uuid.test(route[2]) ? route[1].toLowerCase() : params.get('kind');
+    var target = route && uuid.test(route[2]) ? route[2].toLowerCase() : params.get('target');
+    if (kind !== 'event' && kind !== 'plan' && kind !== 'signup') kind = ref && uuid.test(ref) ? 'signup' : '';
+    if ((kind === 'event' || kind === 'plan') && !uuid.test(target || '')) { kind = ''; target = ''; }
+    if (kind === 'signup') target = '';
+    if (!uuid.test(ref)) ref = '';
+    if (!ref) { source = ''; kind = ''; target = ''; }
+    if (!validCreator && !ref && !source) return;
     doc.querySelectorAll('a[href^="https://app.trydropapp.com/?mode=signup"]').forEach(function (link) {
       var url = new URL(link.href);
-      url.searchParams.set('creator', creator);
-      url.searchParams.set('src', 'creator');
-      if (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(ref)) url.searchParams.set('ref', ref);
+      if (validCreator) url.searchParams.set('creator', validCreator);
+      if (ref) url.searchParams.set('ref', ref.toLowerCase());
+      if (source) url.searchParams.set('src', source);
+      if (ref && kind) url.searchParams.set('kind', kind);
+      if (target) url.searchParams.set('target', target);
       link.href = url.toString();
     });
   }
 
   // ---- boot ---------------------------------------------------------------
-  function boot() { initNav(); initRails(); initDownloadBtns(); initCreatorSignupLinks(); }
+  function boot() { initNav(); initRails(); initDownloadBtns(); initSignupAttributionLinks(); }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
   Drop.initRails = initRails; // pages that inject rails later can re-bind
