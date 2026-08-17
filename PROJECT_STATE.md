@@ -16,9 +16,9 @@ Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJE
 **Status:** AVAILABLE — Google Play submission is in external review
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex `/root/meta_drop_plan/phase1_impl`
-- Working on: Phase 1 Facebook Login UI and auth regressions on `agent/facebook-login-website-20260817` in `/Users/aryashinde/Developer/Drop/drop-website-facebook-login-20260817`.
-- Scope: `app/app.js`, `app/index.html`, existing Playwright auth tests, and required Project OS closeout only. No provider/dashboard configuration, privacy/legal/deletion, backend/database, Worker, or manual deployment change.
+- Owner: Codex `/root/meta_drop_plan/phase1_impl` — blocked before PR creation.
+- Working on: Phase 1 Facebook Login branch `agent/facebook-login-website-20260817` is pushed at commits `13a5c0b` and `c3d6b19`.
+- Blocker: GitHub CLI auth is invalid; the GitHub integration returns `403 Resource not accessible by integration`; browser PR submission requires action-time user confirmation.
 
 ## Current status
 ### What works
@@ -162,6 +162,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Restore GitHub PR-write access or confirm browser submission, then open `agent/facebook-login-website-20260817` against `main`; rerun exact-head CI before any merge/deploy. Do not claim live Facebook authentication until Meta/Supabase configuration and tester proof pass.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -680,6 +681,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-08-17 — Facebook Login browser controls verified and pushed; PR access blocked
+- **Changed:** login/signup now call the existing `oauth('facebook')` path; signup still enforces DOB and legal consent before OAuth. Source and behavioral regressions assert the Facebook provider.
+- **Verified:** `node --check`, 7/7 Node checks, 164/164 desktop/mobile Playwright checks, generated source/dist parity, and diff checks pass. No provider configuration or live Facebook round trip ran.
+- **Pushed/blocker:** branch `agent/facebook-login-website-20260817`, commits `13a5c0b` and `c3d6b19`. PR creation is blocked by invalid CLI auth, integration HTTP 403, and browser action-time confirmation. Independent external review was denied because diff export was not authorized. No merge/deploy, provider/dashboard configuration, privacy/legal/deletion, backend/database, Worker, or manual deploy occurred.
+
 ### 2026-07-18 — Codex — Google favicon correction
 - **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
 - **Changed:** added 96×96 Prism spectrum `favicon.png`, a matching root `favicon.ico` fallback, made the PNG the homepage's primary declared favicon, and added both files to the deploy whitelist.
