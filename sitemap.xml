@@ -55,6 +55,12 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://trydropapp.com/delete-account</loc>
+    <lastmod>2026-08-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://trydropapp.com/link</loc>
     <lastmod>2026-07-06</lastmod>
     <changefreq>weekly</changefreq>
