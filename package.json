@@ -4,7 +4,7 @@
   "private": true,
   "description": "Playwright E2E/smoke tests for the Drop website",
   "scripts": {
-    "test": "node --test tests/entity-seo.test.mjs && playwright test",
+    "test": "node --test tests/entity-seo.test.mjs tests/deploy-contract.test.mjs && playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report"

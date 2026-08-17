@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "app.drop.mobile",
+      "package_name": "app.resonanceventures.drop",
       "sha256_cert_fingerprints": [
-        "TODO_REPLACE_WITH_RELEASE_SIGNING_CERT_SHA256_FINGERPRINT"
+        "E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2"
       ]
     }
   }

@@ -55,6 +55,7 @@ jobs:
             || { echo "::error::entity SEO routes missing"; exit 1; }
           grep -q 'app.resonanceventures.drop' dist/.well-known/apple-app-site-association \
             || { echo "::error::AASA lost or stale — refusing to deploy a universal-links regression"; exit 1; }
+          node scripts/verify-android-assetlinks.mjs
       - name: Deploy to Cloudflare Pages (production)
         # Pinned to a commit SHA (not the mutable @v3 tag): this third-party action
         # receives the production CLOUDFLARE_API_TOKEN, so a retagged @v3 must not be
