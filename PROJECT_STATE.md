@@ -16,7 +16,9 @@ Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJE
 **Status:** AVAILABLE — Google Play submission is in external review
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Owner: Codex `/root/meta_drop_plan/phase1_impl`
+- Working on: Phase 1 Facebook Login UI and auth regressions on `agent/facebook-login-website-20260817` in `/Users/aryashinde/Developer/Drop/drop-website-facebook-login-20260817`.
+- Scope: `app/app.js`, `app/index.html`, existing Playwright auth tests, and required Project OS closeout only. No provider/dashboard configuration, privacy/legal/deletion, backend/database, Worker, or manual deployment change.
 
 ## Current status
 ### What works
