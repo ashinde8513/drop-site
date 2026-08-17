@@ -2,7 +2,7 @@
 
 ## 2026-08-17 — Browser share attribution is bounded and private by default
 
-Canonical redirects and public-to-account handoffs preserve only UUID referrer/target, route-derived event/plan/signup kind, and the fixed source catalog shared with mobile and the database. Browser pending state is first-touch, expires after 24 hours, survives sanctioned signup callbacks, and records only after compliance through an authenticated RPC that derives the signed-in account.
+Canonical redirects and public-to-account handoffs preserve only UUID referrer/target, route-derived event/plan/signup kind, and the fixed source catalog shared with mobile and the database. Browser pending state is first-touch, expires after 24 hours, and may survive sanctioned signup callbacks only in the same browser through local storage; a fresh-browser email confirmation deliberately fails closed without referral credit. Eligible same-browser state records only after compliance through an authenticated RPC that derives the signed-in account.
 
 Referral credit also requires the account creation timestamp to follow the captured link open. Existing accounts and malformed timestamps fail closed, and Auth user metadata does not duplicate referral or private plan targets because bounded pending state plus the RPC/table are authoritative.
 
