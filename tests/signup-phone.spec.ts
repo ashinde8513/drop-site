@@ -152,7 +152,7 @@ async function openRequiredPhone(page: Page) {
 }
 
 test.describe('phone signup behavior', () => {
-  test('signup carries bounded attribution in the confirmation URL without durable auth metadata', async ({ page }) => {
+  test('signup requests best-effort same-browser attribution without durable auth metadata', async ({ page }) => {
     const ref = '22222222-2222-4222-8222-222222222222';
     const target = '33333333-3333-4333-8333-333333333333';
     await installFakeSupabase(page, { session:false });
@@ -221,6 +221,24 @@ test.describe('phone signup behavior', () => {
       (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
     )).toBe(false);
     expect(await page.evaluate(() => localStorage.getItem('drop.pendingReferral'))).toBeNull();
+  });
+
+  test('fresh-browser email confirmation fails closed without referral credit', async ({ page }) => {
+    const ref = '22222222-2222-4222-8222-222222222222';
+    await installFakeSupabase(page, {
+      session:false,
+      complianceComplete:true,
+      createdAt:new Date(Date.now() - 60_000).toISOString(),
+    });
+    await page.goto(`/app/index.html?mode=signup-complete&token_hash=fresh-browser-token&type=email&ref=${ref}&src=friend_invite&kind=signup`);
+
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.kind === 'verifyOtp')
+    )).toBe(true);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('drop.pendingReferral'))).toBeNull();
+    expect(await page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(false);
   });
 
   test('browser referral storage keeps valid first touch and replaces only an expired touch', async ({ page }) => {
