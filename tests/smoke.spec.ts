@@ -42,6 +42,7 @@ const PAGES = [
   { path: '/download.html', title: /Download Drop on the App Store/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
+  { path: '/delete-account.html', title: /Delete your Drop account/ },
   { path: '/link.html', title: /Drop — Get the app/ },
   { path: '/city.html', title: /EDM Shows in .+\| Drop/ },
   { path: '/404.html', title: /404 — Page not found \| Drop/ },
@@ -390,6 +391,7 @@ test.describe('website smoke', () => {
       'In the mobile app, we collect product interactions and search or filter history, including selected genre, city, and date filters'
     );
     await expect(privacy).toContainText('accounts and social features are for people who are at least 13 years old');
+    await expect(privacy.getByRole('link', { name: 'Delete your account.' })).toHaveAttribute('href', '/delete-account');
     await expect(privacy).not.toContainText(/under 16|at least 16|finding your crew at a venue/i);
 
     const hostedTerms = await (await page.request.get('/terms.html')).text();
@@ -487,6 +489,20 @@ test.describe('website smoke', () => {
     ]) {
       expect(appAssets).not.toContain(staleLegalMarker);
     }
+  });
+
+  test('account deletion page provides in-app and external request paths', async ({ page }) => {
+    await page.goto('/delete-account.html');
+    await expect(page.getByRole('heading', { name: 'Delete your Drop account' })).toBeVisible();
+    await expect(page.getByText('Profile → Settings → Delete account')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Request account deletion' })).toHaveAttribute(
+      'href',
+      /^mailto:trydropapp@gmail\.com\?subject=Delete%20my%20Drop%20account/,
+    );
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://trydropapp.com/delete-account',
+    );
   });
 
   test('contact email link is present and well-formed', async ({ page }) => {

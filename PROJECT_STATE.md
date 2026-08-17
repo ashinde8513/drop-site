@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-16
+Last updated: 2026-08-17
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
 - **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
 - **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
 - **BUYABLE HOMEPAGE EVENT COUNT SUPERSEDED (2026-08-14, PR #86):** this historical browser-local rounded-count implementation shipped successfully, then PR #90 replaced it with the canonical exact server count above. No rounded or numeric offline fallback remains.
@@ -461,6 +462,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-08-17 — Codex — Google Play deletion resource reviewed
+- **Changed:** added `/delete-account`, linked it from the privacy policy and sitemap, and covered the page at desktop and mobile sizes.
+- **Verified:** 7 Node checks and 168 Playwright checks pass; browser QA is clean; `dist/delete-account.html` is byte-identical to reviewed source.
+- **Delivery:** branch `agent/google-play-compliance-20260817` is pushed for the standard PR, CI, merge, and Cloudflare Pages deploy path.
+
 ### 2026-08-16 — Codex — canonical public catalog stats live
 - **Delivered:** backend migration `20260816032731_public_catalog_stats.sql` SHA-256 `35da83dc1f180f39b1cb605887ce29decd9ce463f360c3e60f56187ee3e5b68a` is live as ledger `20260816084907`. Website PR #90 merged as `9f0d1a2f`; workflow `31937512102` passed 164/164 and deployed through Cloudflare Pages.
 - **Behavior:** the browser-local two-query/rounded snapshot is replaced by one canonical RPC response carrying exact event count, normalized city count, and server calculation time. Counts become `NaN` unless present before safe-integer validation; malformed HTTP 200, unavailable, and pre-response states keep numeric proof hidden and show only nonnumeric copy.
