@@ -37,7 +37,7 @@ const FAKE_SUPABASE = String.raw`
       signOut:async function () { session = null; emit('SIGNED_OUT'); return { error:null }; },
       signInWithOAuth:async function (input) { calls.push({ kind:'oauth', input:input }); return { data:{ url:'https://oauth.example.test' }, error:null }; },
       signInWithPassword:async function () { return { data:{ session:session }, error:null }; },
-      signUp:async function () { return { data:{ session:session }, error:null }; },
+      signUp:async function (input) { calls.push({ kind:'signUp', input:input }); return { data:{ session:session }, error:null }; },
       verifyOtp:async function (input) {
         calls.push({ kind:'verifyOtp', input:input });
         if (config.throwEmailConfirmation) throw new Error('Network unavailable');
@@ -145,6 +145,38 @@ async function openRequiredPhone(page: Page) {
 }
 
 test.describe('phone signup behavior', () => {
+  test('password signup rejects under-13 and accepts an exact 13th birthday', async ({ page }) => {
+    await installFakeSupabase(page, { session:false });
+    await page.goto('/app/index.html?mode=signup');
+
+    const birthday = (yearsAgo: number) => {
+      const date = new Date();
+      date.setUTCFullYear(date.getUTCFullYear() - yearsAgo);
+      return date.toISOString().slice(0, 10);
+    };
+    const fillSignup = async (birthdate: string) => {
+      await page.getByPlaceholder('username').fill('thirteenplus');
+      await page.locator('#signup-email').fill('thirteen@example.com');
+      await page.locator('#signup-dob').fill(birthdate);
+      await page.locator('#signup-password').fill('correct-horse-battery-staple');
+      await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
+        element.checked = true;
+        element.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+    };
+
+    await fillSignup(birthday(12));
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('You must be 13 or older to use Drop.')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.kind === 'signUp'))).toEqual([]);
+
+    await fillSignup(birthday(13));
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    const signup = await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'signUp'));
+    expect(signup.input.options.data.birthdate).toBe(birthday(13));
+  });
+
   test('token-hash confirmation creates a session without a PKCE verifier', async ({ page }) => {
     await installFakeSupabase(page, { session:false });
     await page.goto('/app/index.html?mode=signup-complete&token_hash=email-token-hash&type=email&safe=1');
