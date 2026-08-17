@@ -357,11 +357,45 @@ test.describe('website smoke', () => {
     ]);
   });
 
+  test('Android association matches the exact Google Play app-signing identity', async ({ request }) => {
+    const response = await request.get('/.well-known/assetlinks.json');
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const source = readFileSync('.well-known/assetlinks.json', 'utf8');
+    expect(source).not.toMatch(/TODO|REPLACE|app\.drop\.mobile/);
+
+    const association = JSON.parse(source);
+    expect(association).toEqual([
+      {
+        relation: ['delegate_permission/common.handle_all_urls'],
+        target: {
+          namespace: 'android_app',
+          package_name: 'app.resonanceventures.drop',
+          sha256_cert_fingerprints: [
+            'E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2',
+          ],
+        },
+      },
+    ]);
+    expect(await response.json()).toEqual(association);
+  });
+
   test('password recovery has a browser fallback to the signed-in SPA', () => {
     const redirects = readFileSync('_redirects', 'utf8');
     expect(redirects).toContain(
       '/reset-password https://app.trydropapp.com/?mode=reset-password  302',
     );
+  });
+
+  test('plan links retain UUID attribution without rendering personal query data', () => {
+    const redirects = readFileSync('_redirects', 'utf8');
+    const plan = readFileSync('share-plan.html', 'utf8');
+    expect(redirects).toContain('/plan/*     /share-plan.html  200');
+    expect(plan).toContain("signup.searchParams.set('target', planId)");
+    expect(plan).not.toMatch(/p\.get\('(friend|u|count|event|venue|city|genre|date)'\)/);
+    expect(plan).not.toContain('friends are going');
+    expect(plan).not.toContain("friendHandle");
   });
 
   test('legal pages match the 13+ gate and audited data handling', async ({ page }) => {
@@ -430,11 +464,12 @@ test.describe('website smoke', () => {
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
     expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
     expect(signupImplementation).not.toContain('consented_at');
-    expect(signupImplementation).toContain("'?mode=signup-complete'");
+    expect(signupImplementation).toContain('signupCompletionUrl()');
+    expect(appScript).toContain("url.searchParams.set('mode', SIGNUP_COMPLETE_MODE)");
     const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
     expect(oauthImplementation, 'OAuth implementation is present').not.toBeNull();
     expect(oauthImplementation?.[1]).toContain('signInWithOAuth');
-    expect(oauthImplementation?.[1]).toContain("signupOrigin ? '?mode=signup-complete' : ''");
+    expect(oauthImplementation?.[1]).toContain('signupOrigin ? signupCompletionUrl()');
     expect(oauthImplementation?.[1]).toContain("fieldVal('signup-dob')");
     expect(oauthImplementation?.[1]).toContain("fieldChecked('signup-consent')");
     expect(oauthImplementation?.[1]).toContain('years < 13');
@@ -647,6 +682,17 @@ test.describe('website smoke', () => {
     expect(signup.searchParams.get('creator')).toBe('MAYA2026');
     expect(signup.searchParams.get('ref')).toBe(ref);
     expect(signup.searchParams.get('src')).toBe('creator');
+    expect(signup.searchParams.get('kind')).toBe('signup');
+  });
+
+  test('event referral carries validated ref/src/kind/target to browser signup', async ({ page }) => {
+    const ref = '11111111-1111-4111-8111-111111111111';
+    const target = '22222222-2222-4222-8222-222222222222';
+    await page.goto(`/event.html?ref=${ref}&src=event_invite&kind=event&target=${target}`);
+    const signup = new URL(await page.locator('a[href*="mode=signup"]').first().getAttribute('href') || '');
+    expect(Object.fromEntries(signup.searchParams)).toMatchObject({
+      mode:'signup', ref, src:'event_invite', kind:'event', target,
+    });
   });
 
   test('signed-in web preserves creator codes until compliant attribution and shows active badge', () => {
