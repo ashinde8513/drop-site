@@ -16,9 +16,10 @@ Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJE
 **Status:** AVAILABLE — Google Play submission is in external review
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex `/root/meta_drop_plan/phase1_impl` — blocked before PR creation.
-- Working on: Phase 1 Facebook Login branch `agent/facebook-login-website-20260817` is pushed at commits `13a5c0b` and `c3d6b19`.
-- Blocker: GitHub CLI auth is invalid; the GitHub integration returns `403 Resource not accessible by integration`; browser PR submission requires action-time user confirmation.
+- Owner: Codex `/root` — Phase 1 Facebook Login delivery.
+- Working on: branch `agent/facebook-login-website-20260817` is rebased onto
+  current `origin/main` after prerequisite PR #83 merged as `bf9c4e9`; it is
+  independently reviewed, fully retested, and pushed.
 
 ## Current status
 ### What works
@@ -162,7 +163,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **Restore GitHub PR-write access or confirm browser submission, then open `agent/facebook-login-website-20260817` against `main`; rerun exact-head CI before any merge/deploy. Do not claim live Facebook authentication until Meta/Supabase configuration and tester proof pass.**
+- **Open `agent/facebook-login-website-20260817` against `main` through the authenticated browser, pass exact-head CI, and hold merge/deploy until the Meta/Supabase provider completes a tester login. Do not claim live Facebook authentication until the deployed branch and a non-tester production round trip both pass.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -683,8 +684,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 <!-- SESSIONS:newest-first -->
 ### 2026-08-17 — Facebook Login browser controls verified and pushed; PR access blocked
 - **Changed:** login/signup now call the existing `oauth('facebook')` path; signup still enforces DOB and legal consent before OAuth. Source and behavioral regressions assert the Facebook provider.
-- **Verified:** `node --check`, 7/7 Node checks, 164/164 desktop/mobile Playwright checks, generated source/dist parity, and diff checks pass. No provider configuration or live Facebook round trip ran.
-- **Pushed/blocker:** branch `agent/facebook-login-website-20260817`, commits `13a5c0b` and `c3d6b19`. PR creation is blocked by invalid CLI auth, integration HTTP 403, and browser action-time confirmation. Independent external review was denied because diff export was not authorized. No merge/deploy, provider/dashboard configuration, privacy/legal/deletion, backend/database, Worker, or manual deploy occurred.
+- **Reconciled:** prerequisite age-gate PR #83 passed its existing checks and merged as `bf9c4e9`; this branch rebased on top, preserving both 13+ enforcement and Facebook controls, then pushed with lease.
+- **Verified:** `node --check`, 7/7 Node checks, 166/166 desktop/mobile Playwright checks, generated source/dist parity, diff checks, and independent auth review pass. No provider configuration or live Facebook round trip ran.
+- **Boundary:** No merge/deploy, provider/dashboard configuration, privacy/legal/deletion, backend/database, Worker, or manual deploy occurred.
 
 ### 2026-07-18 — Codex — Google favicon correction
 - **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
