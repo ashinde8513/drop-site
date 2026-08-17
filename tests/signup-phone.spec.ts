@@ -296,10 +296,10 @@ test.describe('phone signup behavior', () => {
     await installFakeSupabase(page, { session:false });
     await page.goto('/app/index.html?mode=signup');
 
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
     await expect(page.getByText('Enter your date of birth.')).toBeVisible();
     await page.locator('#signup-dob').fill('1995-04-12');
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
     await expect(page.getByText('Agree to the Terms and Privacy Policy to continue.')).toBeVisible();
     await page.locator('#signup-dob').fill('1995-04-12');
     await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
@@ -307,9 +307,10 @@ test.describe('phone signup behavior', () => {
       element.dispatchEvent(new Event('change', { bubbles:true }));
     });
     await expect(page.locator('#signup-consent')).toBeChecked();
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
 
     const oauth = await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'oauth'));
+    expect(oauth.input.provider).toBe('facebook');
     expect(oauth.input.options.redirectTo).toContain('?mode=signup-complete');
     expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('drop.signup.oauth-compliance') || 'null'))).toEqual({
       birthdate:'1995-04-12',

@@ -2980,6 +2980,7 @@ class Component extends DCLogic {
       },
       oauthGoogle:()=>this.oauth('google'),
       oauthApple:()=>this.oauth('apple'),
+      oauthFacebook:()=>this.oauth('facebook'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       setUsername:(e)=>this.setState({username: e.target.value}),
       closeGate:()=>this.setState({gate:false}),

@@ -468,6 +468,9 @@ test.describe('website smoke', () => {
     expect(oauthImplementation?.[1]).toContain('savePendingOAuthCompliance(dobValue)');
     expect(appScript).toContain('years >= 13 && years <= 120');
     expect(appScript).not.toMatch(/16 or older|years >= 16/);
+    expect(appScript).toContain("oauthFacebook:()=>this.oauth('facebook')");
+    expect(appTemplate.match(/onClick="\{\{ oauthFacebook \}\}"/g)).toHaveLength(2);
+    expect(appTemplate).not.toContain('Facebook sign-in coming soon');
     expect(appScript).toContain("supa.rpc('complete_signup_profile'");
     expect(appScript).toContain('p_terms_version:pending.termsVersion');
     expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
