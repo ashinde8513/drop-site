@@ -13,10 +13,11 @@ Last updated: 2026-08-16
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** AVAILABLE — canonical public catalog stats live
+**Status:** ACTIVE — Android Digital Asset Links fingerprint hotfix
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Owner: Codex `/root/provider_activation/deep_account_deletion_repair`
+- Working on: exact Google Play App Signing fingerprint in the canonical Android Digital Asset Links source, deterministic regression coverage, and truthful delivery status on `agent/android-dal-hotfix-20260817`.
 
 ## Current status
 ### What works
