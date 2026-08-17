@@ -13,7 +13,7 @@ Last updated: 2026-08-17
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** ACTIVE — Android Digital Asset Links fingerprint hotfix
+**Status:** REVIEW — Android Digital Asset Links fingerprint hotfix
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - Owner: Codex `/root/provider_activation/deep_account_deletion_repair`
@@ -22,6 +22,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ## Current status
 ### What works
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
+- **ANDROID DIGITAL ASSET LINKS HOTFIX SOURCE READY (2026-08-17):** the canonical `.well-known/assetlinks.json` now names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`, read from Play Console's generated statement. The deploy workflow now fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. Production apex still serves the stale package/TODO until this hotfix merges and auto-deploys; `www` remains a redirect and is intentionally excluded from Android intent filters. Play-signed 1.0.2 (2) is active in Internal Testing; physical App Links acceptance remains untested because no Android test device is available.
 - **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
 - **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
 - **BUYABLE HOMEPAGE EVENT COUNT SUPERSEDED (2026-08-14, PR #86):** this historical browser-local rounded-count implementation shipped successfully, then PR #90 replaced it with the canonical exact server count above. No rounded or numeric offline fallback remains.
@@ -139,7 +140,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- None.
+- Android Digital Asset Links hotfix: independent review, PR, required CI, normal merge/deploy, and exact live readback remain. No build, signing credential, Play release, store, or device mutation is part of this claim.
 ### Blocked / waiting on
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
@@ -156,7 +157,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Official festival schedule/export source: production currently has zero
   published-festival `event_set_times`; do not fabricate set times. Author and
   apply the reviewed v1 manifest when a primary source becomes available.
+- Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Finish the Android DAL hotfix through exact-head CI and the normal `main` auto-deploy, then verify `https://trydropapp.com/.well-known/assetlinks.json` is HTTP 200 JSON with the exact reviewed package/fingerprint. Keep `www` excluded while it redirects. In Google Play, promote the existing verified 1.0.2 (2) artifact to Production and submit the approved changes for review; do not upload a replacement build.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -467,6 +470,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Changed:** added `/delete-account`, linked it from the privacy policy and sitemap, and covered the page at desktop and mobile sizes.
 - **Verified:** 7 Node checks and 168 Playwright checks pass; browser QA is clean; `dist/delete-account.html` is byte-identical to reviewed source.
 - **Delivery:** branch `agent/google-play-compliance-20260817` is pushed for the standard PR, CI, merge, and Cloudflare Pages deploy path.
+
+### 2026-08-17 — Codex — Android Digital Asset Links source correction
+- **Root cause:** the public website still carried the retired `app.drop.mobile` package and a TODO signing fingerprint because Android launch had previously been deferred. Google Play now exposes the authoritative App Signing public certificate for the current package.
+- **Changed:** canonical assetlinks source now uses `app.resonanceventures.drop` plus the exact Play-generated SHA-256; the deploy build preserves it byte-for-byte; the regression asserts the complete statement and rejects stale/TODO/empty values. The runbook defines apex-only Android App Links because `www` redirects rather than directly serving an association file.
+- **Verified/boundary:** focused 2/2, full Playwright 172/172, Node 8/8, build parity, diff check, and gitleaks pass after rebasing over the account-deletion page. Production remained stale until ordinary PR merge/Cloudflare delivery. That source-review session made no signing credential, build, bundle upload, Play release, store/device configuration, database, secret, or production mutation; a later session activated Play-signed 1.0.2 (2) in Internal Testing.
 
 ### 2026-08-16 — Codex — canonical public catalog stats live
 - **Delivered:** backend migration `20260816032731_public_catalog_stats.sql` SHA-256 `35da83dc1f180f39b1cb605887ce29decd9ce463f360c3e60f56187ee3e5b68a` is live as ledger `20260816084907`. Website PR #90 merged as `9f0d1a2f`; workflow `31937512102` passed 164/164 and deployed through Cloudflare Pages.
