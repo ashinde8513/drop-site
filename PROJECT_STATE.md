@@ -9,20 +9,20 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** REVIEW — Android Digital Asset Links fingerprint hotfix
+**Status:** AVAILABLE — Google Play submission is in external review
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Owner: Codex `/root/provider_activation/deep_account_deletion_repair`
-- Working on: exact Google Play App Signing fingerprint in the canonical Android Digital Asset Links source, deterministic regression coverage, and truthful delivery status on `agent/android-dal-hotfix-20260817`.
+- None.
 
 ## Current status
 ### What works
+- **GOOGLE PLAY LAUNCH SUBMITTED + ANDROID DAL LIVE (2026-08-18):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. Its authoritative status is **In review**. Managed publishing is off, so Google will publish the approved changes automatically; no replacement AAB was uploaded.
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
-- **ANDROID DIGITAL ASSET LINKS HOTFIX SOURCE READY (2026-08-17):** the canonical `.well-known/assetlinks.json` now names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`, read from Play Console's generated statement. The deploy workflow now fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. Production apex still serves the stale package/TODO until this hotfix merges and auto-deploys; `www` remains a redirect and is intentionally excluded from Android intent filters. Play-signed 1.0.2 (2) is active in Internal Testing; physical App Links acceptance remains untested because no Android test device is available.
+- **ANDROID DIGITAL ASSET LINKS HOTFIX DELIVERED (2026-08-17/18):** the canonical `.well-known/assetlinks.json` names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`. The deploy workflow fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. PR #95 merged and the production apex readback matches reviewed source. `www` remains a redirect and is intentionally excluded from Android intent filters. Physical App Links acceptance remains untested because no Android test device is available.
 - **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
 - **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
 - **BUYABLE HOMEPAGE EVENT COUNT SUPERSEDED (2026-08-14, PR #86):** this historical browser-local rounded-count implementation shipped successfully, then PR #90 replaced it with the canonical exact server count above. No rounded or numeric offline fallback remains.
@@ -140,8 +140,9 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- Android Digital Asset Links hotfix: independent review, PR, required CI, normal merge/deploy, and exact live readback remain. No build, signing credential, Play release, store, or device mutation is part of this claim.
+- None.
 ### Blocked / waiting on
+- Google Play submission `1` is **In review**. Managed publishing is off, so approved changes will publish automatically. Google says reviews typically finish within seven days but can take longer.
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
   reason; reply with additional ownership evidence if requested. Direct brand
@@ -159,7 +160,6 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **Finish the Android DAL hotfix through exact-head CI and the normal `main` auto-deploy, then verify `https://trydropapp.com/.well-known/assetlinks.json` is HTTP 200 JSON with the exact reviewed package/fingerprint. Keep `www` excluded while it redirects. In Google Play, promote the existing verified 1.0.2 (2) artifact to Production and submit the approved changes for review; do not upload a replacement build.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -180,6 +180,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-08-18 — Codex — Google Play launch submitted and Android DAL live
+- **Delivered:** PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`; the live apex association is byte-identical to the reviewed package/fingerprint statement. Production build 1.0.2 (2) was promoted for United States availability without uploading a replacement AAB.
+- **Submitted:** Google Play submission `1` was sent at 5:33 PM with all ten pending production, store-listing, app-content, and store-settings changes. Play reports **In review**.
+- **Publication behavior:** managed publishing is off, so approval triggers automatic public availability. The only remaining launch step is Google's external review; physical Android App Links acceptance remains device-QA flagged because no Android test device is available.
 
 ## 2026-08-12 — Codex — Mandatory verified-phone website compatibility reviewed
 - **Root cause:** the website treated any `complete:true` attestation as Discover-ready and its activation phone step was optional. The compatibility contract intentionally keeps `complete:true` while backend enforcement is off, so explicit unverified-phone state needed its own fail-closed route before activation can safely switch on.
