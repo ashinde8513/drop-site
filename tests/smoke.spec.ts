@@ -358,6 +358,30 @@ test.describe('website smoke', () => {
     ]);
   });
 
+  test('Android association matches the exact Google Play app-signing identity', async ({ request }) => {
+    const response = await request.get('/.well-known/assetlinks.json');
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const source = readFileSync('.well-known/assetlinks.json', 'utf8');
+    expect(source).not.toMatch(/TODO|REPLACE|app\.drop\.mobile/);
+
+    const association = JSON.parse(source);
+    expect(association).toEqual([
+      {
+        relation: ['delegate_permission/common.handle_all_urls'],
+        target: {
+          namespace: 'android_app',
+          package_name: 'app.resonanceventures.drop',
+          sha256_cert_fingerprints: [
+            'E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2',
+          ],
+        },
+      },
+    ]);
+    expect(await response.json()).toEqual(association);
+  });
+
   test('password recovery has a browser fallback to the signed-in SPA', () => {
     const redirects = readFileSync('_redirects', 'utf8');
     expect(redirects).toContain(
