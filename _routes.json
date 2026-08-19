@@ -4,7 +4,8 @@
     "/event/*",
     "/venue/*",
     "/artist/*",
-    "/sitemap-entities.xml"
+    "/sitemap-entities.xml",
+    "/go"
   ],
   "exclude": []
 }
