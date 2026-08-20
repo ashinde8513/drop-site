@@ -160,6 +160,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Keep PR #92 open and undeployed while Meta/Supabase provider verification remains incomplete. Before any eventual merge, require current-head CI plus a disposable tester login; do not claim live Facebook authentication until a deployed non-tester production round trip passes.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -678,6 +679,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-08-20 — Facebook Login PR #92 refreshed on current main
+- **Changed:** login/signup call the existing `oauth('facebook')` path; signup still enforces DOB and legal consent before OAuth. Source and behavioral regressions assert the Facebook provider.
+- **Reconciled:** the held branch was rebased onto current `origin/main` `30a7cda1f529dfd350590bf8372f797c48cf19a6`, preserving current 13+ and account-safety fixes while dropping stale status-only history.
+- **Verified:** `node --check`, 17/17 Node checks, 172/172 desktop/mobile Playwright checks, local rendered login/signup inspection, generated source/dist parity, and the Android association validator pass. Exact-head diff/secret review and hosted CI are required at branch closeout.
+- **Boundary:** PR #92 remains open and must not auto-deploy until the provider canary gate is satisfied. No provider/dashboard configuration, live Facebook round trip, backend/database, secret, Worker, merge, or deploy occurred.
+
 ### 2026-07-18 — Codex — Google favicon correction
 - **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
 - **Changed:** added 96×96 Prism spectrum `favicon.png`, a matching root `favicon.ico` fallback, made the PNG the homepage's primary declared favicon, and added both files to the deploy whitelist.
