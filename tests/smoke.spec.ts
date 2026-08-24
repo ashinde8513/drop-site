@@ -389,6 +389,16 @@ test.describe('website smoke', () => {
     );
   });
 
+  test('plan links retain UUID attribution without rendering personal query data', () => {
+    const redirects = readFileSync('_redirects', 'utf8');
+    const plan = readFileSync('share-plan.html', 'utf8');
+    expect(redirects).toContain('/plan/*     /share-plan.html  200');
+    expect(plan).toContain("signup.searchParams.set('target', planId)");
+    expect(plan).not.toMatch(/p\.get\('(friend|u|count|event|venue|city|genre|date)'\)/);
+    expect(plan).not.toContain('friends are going');
+    expect(plan).not.toContain("friendHandle");
+  });
+
   test('legal pages match the 13+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
@@ -456,11 +466,12 @@ test.describe('website smoke', () => {
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
     expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
     expect(signupImplementation).not.toContain('consented_at');
-    expect(signupImplementation).toContain("'?mode=signup-complete'");
+    expect(signupImplementation).toContain('signupCompletionUrl()');
+    expect(appScript).toContain("url.searchParams.set('mode', SIGNUP_COMPLETE_MODE)");
     const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
     expect(oauthImplementation, 'OAuth implementation is present').not.toBeNull();
     expect(oauthImplementation?.[1]).toContain('signInWithOAuth');
-    expect(oauthImplementation?.[1]).toContain("signupOrigin ? '?mode=signup-complete' : ''");
+    expect(oauthImplementation?.[1]).toContain('signupOrigin ? signupCompletionUrl()');
     expect(oauthImplementation?.[1]).toContain("fieldVal('signup-dob')");
     expect(oauthImplementation?.[1]).toContain("fieldChecked('signup-consent')");
     expect(oauthImplementation?.[1]).toContain('years < 13');
@@ -468,6 +479,9 @@ test.describe('website smoke', () => {
     expect(oauthImplementation?.[1]).toContain('savePendingOAuthCompliance(dobValue)');
     expect(appScript).toContain('years >= 13 && years <= 120');
     expect(appScript).not.toMatch(/16 or older|years >= 16/);
+    expect(appScript).toContain("oauthFacebook:()=>this.oauth('facebook')");
+    expect(appTemplate.match(/onClick="\{\{ oauthFacebook \}\}"/g)).toHaveLength(2);
+    expect(appTemplate).not.toContain('Facebook sign-in coming soon');
     expect(appScript).toContain("supa.rpc('complete_signup_profile'");
     expect(appScript).toContain('p_terms_version:pending.termsVersion');
     expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
@@ -687,6 +701,17 @@ test.describe('website smoke', () => {
     expect(signup.searchParams.get('creator')).toBe('MAYA2026');
     expect(signup.searchParams.get('ref')).toBe(ref);
     expect(signup.searchParams.get('src')).toBe('creator');
+    expect(signup.searchParams.get('kind')).toBe('signup');
+  });
+
+  test('event referral carries validated ref/src/kind/target to browser signup', async ({ page }) => {
+    const ref = '11111111-1111-4111-8111-111111111111';
+    const target = '22222222-2222-4222-8222-222222222222';
+    await page.goto(`/event.html?ref=${ref}&src=event_invite&kind=event&target=${target}`);
+    const signup = new URL(await page.locator('a[href*="mode=signup"]').first().getAttribute('href') || '');
+    expect(Object.fromEntries(signup.searchParams)).toMatchObject({
+      mode:'signup', ref, src:'event_invite', kind:'event', target,
+    });
   });
 
   test('signed-in web preserves creator codes until compliant attribution and shows active badge', () => {
@@ -701,6 +726,16 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain('id="signup-creator-code"');
     expect(appTemplate).toContain('aria-label="Drop Creator"');
     expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
+  });
+
+  test('signup referral RPC is fail-closed behind an explicit default-off capability', () => {
+    const appScript = readFileSync(resolve('app/app.js'), 'utf8');
+    expect(appScript).toContain("var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true");
+    const implementation = appScript.match(/maybeRecordSignupReferral\(user\)\{([\s\S]*?)\n  \}\n  loadUserData/);
+    expect(implementation, 'signup referral implementation is present').not.toBeNull();
+    expect(implementation?.[1]).toContain('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;');
+    expect(implementation?.[1].indexOf('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;'))
+      .toBeLessThan(implementation?.[1].indexOf("supa.rpc('record_signup_referral'"));
   });
 
   test('TikTok production stays read-only while sandbox asks for publishing consent', async ({ page }) => {

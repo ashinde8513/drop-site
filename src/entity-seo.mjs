@@ -26,6 +26,25 @@ export function routeId(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(segment || '') ? segment : null;
 }
 
+const ATTRIBUTION_SOURCES = new Set([
+  'creator', 'crew_invite', 'event_invite', 'event_share', 'friend_invite',
+  'invite_screen', 'plan_share', 'qr', 'recap_share', 'seen_history',
+  'show_memories', 'wrapped',
+]);
+
+export function safeAttributionQuery(value) {
+  let params;
+  try { params = new URL(value, 'https://trydropapp.com').searchParams; }
+  catch { return ''; }
+  const safe = new URLSearchParams();
+  const ref = routeId([params.get('ref')]);
+  const source = params.get('src');
+  if (ref) safe.set('ref', ref);
+  if (ATTRIBUTION_SOURCES.has(source)) safe.set('src', source);
+  const query = safe.toString();
+  return query ? '?' + query : '';
+}
+
 function hasText(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
@@ -300,8 +319,8 @@ export function htmlResponse(html, status = 200) {
   return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400', 'X-Content-Type-Options': 'nosniff' } });
 }
 
-export function redirectResponse(path) {
-  return new Response(null, { status: 301, headers: { Location: path, 'Cache-Control': 'public, max-age=3600' } });
+export function redirectResponse(path, requestUrl) {
+  return new Response(null, { status: 301, headers: { Location: path + safeAttributionQuery(requestUrl), 'Cache-Control': 'public, max-age=3600' } });
 }
 
 export function sitemapXml(entities) {

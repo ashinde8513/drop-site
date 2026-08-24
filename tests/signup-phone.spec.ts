@@ -4,13 +4,19 @@ const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 const FAKE_SUPABASE = String.raw`
 (function () {
-  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false, failPhoneUnavailable:false, failDelete:false, pendingDelete:false, failEmailConfirmation:false, throwEmailConfirmation:false }, window.__dropFakeConfig || {});
+  var config = Object.assign({ session:false, complianceComplete:true, failCompliance:false, failCheck:false, failPhoneUnavailable:false, failDelete:false, pendingDelete:false, failEmailConfirmation:false, throwEmailConfirmation:false, failSignupReferral:false }, window.__dropFakeConfig || {});
   var listeners = [];
   var calls = [];
   var storedSession = false;
   try { storedSession = sessionStorage.getItem('__dropFakeSession') === '1'; } catch (_) {}
+  function fakeUser() {
+    return {
+      id:'${USER_ID}', email:'founder@example.com',
+      created_at:config.createdAt || new Date(Date.now() + 1000).toISOString()
+    };
+  }
   var session = (config.session || storedSession)
-    ? { user:{ id:'${USER_ID}', email:'founder@example.com' } }
+    ? { user:fakeUser() }
     : null;
   function result(data, error, count) { return { data:data, error:error || null, count:count == null ? 0 : count }; }
   function query() {
@@ -42,7 +48,7 @@ const FAKE_SUPABASE = String.raw`
         calls.push({ kind:'verifyOtp', input:input });
         if (config.throwEmailConfirmation) throw new Error('Network unavailable');
         if (config.failEmailConfirmation) return { data:{ session:null }, error:{ message:'Token expired' } };
-        session = { user:{ id:'${USER_ID}', email:'founder@example.com' } };
+        session = { user:fakeUser() };
         emit('SIGNED_IN');
         return { data:{ session:session }, error:null };
       },
@@ -85,6 +91,9 @@ const FAKE_SUPABASE = String.raw`
         if (typeof config.phoneEnforcementEnabled === 'boolean') status.phone_enforcement_enabled = config.phoneEnforcementEnabled;
         return result(status);
       }
+      if (name === 'record_signup_referral') return config.failSignupReferral
+        ? result(null, { message:'Referral RPC unavailable' })
+        : result('recorded');
       return result(null);
     },
     from:function () { return query(); }
@@ -93,7 +102,7 @@ const FAKE_SUPABASE = String.raw`
     calls:calls,
     config:config,
     setSession:function (enabled) {
-      session = enabled ? { user:{ id:'${USER_ID}', email:'founder@example.com' } } : null;
+      session = enabled ? { user:fakeUser() } : null;
       try { sessionStorage.setItem('__dropFakeSession', enabled ? '1' : '0'); } catch (_) {}
     },
     emit:emit
@@ -104,6 +113,9 @@ const FAKE_SUPABASE = String.raw`
 
 async function installFakeSupabase(page: Page, config: Record<string, unknown> = {}) {
   await page.addInitScript((value) => { (window as any).__dropFakeConfig = value; }, config);
+  await page.addInitScript((enabled) => {
+    if (enabled) (window as any).__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ = true;
+  }, config.signupReferralRpcEnabled === true);
   await page.route('**/vendor/supabase.js', (route) => route.fulfill({
     status: 200,
     contentType: 'application/javascript',
@@ -145,6 +157,162 @@ async function openRequiredPhone(page: Page) {
 }
 
 test.describe('phone signup behavior', () => {
+  test('signup requests best-effort same-browser attribution without durable auth metadata', async ({ page }) => {
+    const ref = '22222222-2222-4222-8222-222222222222';
+    const target = '33333333-3333-4333-8333-333333333333';
+    await installFakeSupabase(page, { session:false });
+    await page.goto(`/app/index.html?mode=signup&ref=${ref}&src=event_share&kind=event&target=${target}`);
+    await page.getByPlaceholder('username').fill('attributed');
+    await page.locator('#signup-email').fill('attributed@example.com');
+    await page.locator('#signup-dob').fill('1995-04-12');
+    await page.locator('#signup-password').fill('correct-horse-battery-staple');
+    await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
+      element.checked = true;
+      element.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+    await page.getByRole('button', { name:/Create account/i }).click();
+
+    const signup = await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'signUp'));
+    expect(signup.input.options.data).not.toHaveProperty('referred_by');
+    expect(signup.input.options.data).not.toHaveProperty('referral_source');
+    expect(signup.input.options.data).not.toHaveProperty('referral_kind');
+    expect(signup.input.options.data).not.toHaveProperty('referral_target');
+    const callback = new URL(signup.input.options.emailRedirectTo);
+    expect(Object.fromEntries(callback.searchParams)).toMatchObject({
+      mode:'signup-complete', ref, src:'event_share', kind:'event', target,
+    });
+  });
+
+  test('default-off referral capability preserves eligible first touch without calling its RPC', async ({ page }) => {
+    const referral = {
+      ref:'22222222-2222-4222-8222-222222222222', source:'friend_invite',
+      kind:'signup', target:null, capturedAt:Date.now(),
+    };
+    await page.addInitScript((value) => localStorage.setItem('drop.pendingReferral', JSON.stringify(value)), referral);
+    await installFakeSupabase(page, {
+      session:true,
+      complianceComplete:true,
+      createdAt:new Date(referral.capturedAt + 1000).toISOString(),
+    });
+    await page.goto('/app/index.html');
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'signup_compliance_status')
+    )).toBe(true);
+    expect(await page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(false);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('drop.pendingReferral') || 'null')))
+      .toMatchObject(referral);
+  });
+
+  test('enabled referral capability persists first touch through the authenticated RPC', async ({ page }) => {
+    const referral = {
+      ref:'22222222-2222-4222-8222-222222222222', source:'friend_invite',
+      kind:'signup', target:null, capturedAt:Date.now(),
+    };
+    await page.addInitScript((value) => localStorage.setItem('drop.pendingReferral', JSON.stringify(value)), referral);
+    await installFakeSupabase(page, {
+      session:true,
+      complianceComplete:true,
+      createdAt:new Date(referral.capturedAt + 1000).toISOString(),
+      signupReferralRpcEnabled:true,
+    });
+    await page.goto('/app/index.html');
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(true);
+    const call = await page.evaluate(() =>
+      (window as any).__dropFake.calls.find((item: any) => item.name === 'record_signup_referral')
+    );
+    expect(call.args).toEqual({
+      p_referrer:referral.ref, p_kind:'signup', p_target:null, p_source:'friend_invite',
+    });
+    expect(await page.evaluate(() => localStorage.getItem('drop.pendingReferral'))).toBeNull();
+  });
+
+  test('enabled referral capability preserves first touch when its RPC fails', async ({ page }) => {
+    const referral = {
+      ref:'22222222-2222-4222-8222-222222222222', source:'friend_invite',
+      kind:'signup', target:null, capturedAt:Date.now(),
+    };
+    await page.addInitScript((value) => localStorage.setItem('drop.pendingReferral', JSON.stringify(value)), referral);
+    await installFakeSupabase(page, {
+      session:true,
+      complianceComplete:true,
+      createdAt:new Date(referral.capturedAt + 1000).toISOString(),
+      signupReferralRpcEnabled:true,
+      failSignupReferral:true,
+    });
+    await page.goto('/app/index.html');
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(true);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('drop.pendingReferral') || 'null')))
+      .toMatchObject(referral);
+  });
+
+  test('an account created before the invite open is never credited as a signup referral', async ({ page }) => {
+    const referral = {
+      ref:'22222222-2222-4222-8222-222222222222', source:'friend_invite',
+      kind:'signup', target:null, capturedAt:Date.now(),
+    };
+    await page.addInitScript((value) => localStorage.setItem('drop.pendingReferral', JSON.stringify(value)), referral);
+    await installFakeSupabase(page, {
+      session:true,
+      complianceComplete:true,
+      createdAt:new Date(referral.capturedAt - 1000).toISOString(),
+      signupReferralRpcEnabled:true,
+    });
+    await page.goto('/app/index.html');
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'signup_compliance_status')
+    )).toBe(true);
+    expect(await page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(false);
+    expect(await page.evaluate(() => localStorage.getItem('drop.pendingReferral'))).toBeNull();
+  });
+
+  test('fresh-browser email confirmation fails closed without referral credit', async ({ page }) => {
+    const ref = '22222222-2222-4222-8222-222222222222';
+    await installFakeSupabase(page, {
+      session:false,
+      complianceComplete:true,
+      createdAt:new Date(Date.now() - 60_000).toISOString(),
+      signupReferralRpcEnabled:true,
+    });
+    await page.goto(`/app/index.html?mode=signup-complete&token_hash=fresh-browser-token&type=email&ref=${ref}&src=friend_invite&kind=signup`);
+
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.kind === 'verifyOtp')
+    )).toBe(true);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('drop.pendingReferral'))).toBeNull();
+    expect(await page.evaluate(() =>
+      (window as any).__dropFake.calls.some((call: any) => call.name === 'record_signup_referral')
+    )).toBe(false);
+  });
+
+  test('browser referral storage keeps valid first touch and replaces only an expired touch', async ({ page }) => {
+    const a = '22222222-2222-4222-8222-222222222222';
+    const b = '33333333-3333-4333-8333-333333333333';
+    await installFakeSupabase(page, { session:false });
+    await page.goto(`/app/index.html?mode=signup&ref=${a}&src=friend_invite&kind=signup`);
+    const readRef = () => page.evaluate(() => JSON.parse(localStorage.getItem('drop.pendingReferral') || 'null')?.ref);
+    expect(await readRef()).toBe(a);
+
+    await page.goto(`/app/index.html?mode=signup&ref=${b}&src=invite_screen&kind=signup`);
+    expect(await readRef()).toBe(a);
+    await page.goto('/app/index.html?mode=signup&ref=invalid&src=invite_screen&kind=signup');
+    expect(await readRef()).toBe(a);
+
+    await page.evaluate((value) => localStorage.setItem('drop.pendingReferral', JSON.stringify({
+      ref:value, source:'friend_invite', kind:'signup', target:null,
+      capturedAt:Date.now() - 24 * 60 * 60 * 1000 - 1,
+    })), a);
+    await page.goto(`/app/index.html?mode=signup&ref=${b}&src=invite_screen&kind=signup`);
+    expect(await readRef()).toBe(b);
+  });
+
   test('password signup rejects under-13 and accepts an exact 13th birthday', async ({ page }) => {
     await installFakeSupabase(page, { session:false });
     await page.goto('/app/index.html?mode=signup');
@@ -296,10 +464,10 @@ test.describe('phone signup behavior', () => {
     await installFakeSupabase(page, { session:false });
     await page.goto('/app/index.html?mode=signup');
 
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
     await expect(page.getByText('Enter your date of birth.')).toBeVisible();
     await page.locator('#signup-dob').fill('1995-04-12');
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
     await expect(page.getByText('Agree to the Terms and Privacy Policy to continue.')).toBeVisible();
     await page.locator('#signup-dob').fill('1995-04-12');
     await page.locator('#signup-consent').evaluate((element: HTMLInputElement) => {
@@ -307,9 +475,10 @@ test.describe('phone signup behavior', () => {
       element.dispatchEvent(new Event('change', { bubbles:true }));
     });
     await expect(page.locator('#signup-consent')).toBeChecked();
-    await page.getByRole('button', { name: 'Google' }).click();
+    await page.getByRole('button', { name: 'Facebook' }).click();
 
     const oauth = await page.evaluate(() => (window as any).__dropFake.calls.find((call: any) => call.kind === 'oauth'));
+    expect(oauth.input.provider).toBe('facebook');
     expect(oauth.input.options.redirectTo).toContain('?mode=signup-complete');
     expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('drop.signup.oauth-compliance') || 'null'))).toEqual({
       birthdate:'1995-04-12',

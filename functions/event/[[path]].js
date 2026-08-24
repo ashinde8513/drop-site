@@ -10,7 +10,7 @@ export async function onRequest({ params, request }) {
     const event = await getEvent(id);
     if (!event) return htmlResponse(notFound, 404);
     const path = eventPath(event);
-    if (new URL(request.url).pathname !== path) return redirectResponse(path);
+    if (new URL(request.url).pathname !== path) return redirectResponse(path, request.url);
     const view = eventView(event);
     return htmlResponse(renderTemplate(template, { ...view, rootId: 'event-root' }));
   } catch {

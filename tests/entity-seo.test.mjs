@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
-  schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify, ticketActionText, venuePath,
+  safeAttributionQuery, schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify,
+  ticketActionText, venuePath, redirectResponse,
 } from '../src/entity-seo.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -30,6 +31,18 @@ test('stable entity paths keep UUID identity and readable slugs', () => {
   assert.equal(artistPath({ id, name: 'RL Grime' }), `/artist/${id}/rl-grime`);
   assert.equal(routeId([id, 'ignored']), id);
   assert.equal(routeId(['not-a-uuid']), null);
+});
+
+test('canonical redirects preserve only validated attribution query fields', () => {
+  assert.equal(
+    safeAttributionQuery(`https://trydropapp.com/event/${id}?ref=${id2}&src=event_share&friend=Maya&target=${venueId}`),
+    `?ref=${id2}&src=event_share`,
+  );
+  assert.equal(safeAttributionQuery('https://trydropapp.com/event/x?ref=bad&src=campaign'), '');
+  assert.equal(
+    redirectResponse(`/event/${id}/main-event`, `https://trydropapp.com/event/${id}?ref=${id2}&src=crew_invite&token=secret`).headers.get('location'),
+    `/event/${id}/main-event?ref=${id2}&src=crew_invite`,
+  );
 });
 
 test('server render adds crawlable metadata, content, and safe JSON-LD', () => {

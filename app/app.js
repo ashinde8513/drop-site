@@ -481,6 +481,66 @@
   function clearCreatorCode() {
     try { localStorage.removeItem(CREATOR_CODE_KEY); } catch (_) {}
   }
+  var PENDING_REFERRAL_KEY = 'drop.pendingReferral';
+  var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true;
+  var ATTRIBUTION_SOURCES = new Set([
+    'creator','crew_invite','event_invite','event_share','friend_invite',
+    'invite_screen','plan_share','qr','recap_share','seen_history',
+    'show_memories','wrapped'
+  ]);
+  var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  function normalizePendingReferral(value) {
+    if (!value || typeof value !== 'object') return null;
+    var ref = String(value.ref || '').toLowerCase();
+    var source = value.source == null || value.source === '' ? null : String(value.source);
+    var kind = value.kind;
+    var target = value.target == null || value.target === '' ? null : String(value.target).toLowerCase();
+    var capturedAt = Number(value.capturedAt);
+    if (!ATTRIBUTION_UUID.test(ref) || (source && !ATTRIBUTION_SOURCES.has(source))) return null;
+    if (!['event','plan','signup'].includes(kind)) return null;
+    if ((kind === 'event' || kind === 'plan') !== !!(target && ATTRIBUTION_UUID.test(target))) return null;
+    if (!Number.isFinite(capturedAt) || capturedAt <= 0 || capturedAt > Date.now() || Date.now() - capturedAt > 24 * 60 * 60 * 1000) return null;
+    return { ref:ref, source:source, kind:kind, target:kind === 'signup' ? null : target, capturedAt:capturedAt };
+  }
+  function pendingReferral() {
+    var raw = null;
+    try { raw = localStorage.getItem(PENDING_REFERRAL_KEY); } catch (_) { return null; }
+    try {
+      var value = normalizePendingReferral(JSON.parse(raw));
+      if (!value && raw) localStorage.removeItem(PENDING_REFERRAL_KEY);
+      return value;
+    } catch (_) {
+      try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch (_) {}
+      return null;
+    }
+  }
+  function savePendingReferralFromUrl() {
+    if (typeof location === 'undefined' || pendingReferral()) return;
+    var params = new URLSearchParams(location.search);
+    var value = normalizePendingReferral({
+      ref:params.get('ref'), source:params.get('src'), kind:params.get('kind') || 'signup',
+      target:params.get('target'), capturedAt:Date.now()
+    });
+    if (!value) return;
+    try { localStorage.setItem(PENDING_REFERRAL_KEY, JSON.stringify(value)); } catch (_) {}
+  }
+  function clearPendingReferral() {
+    try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch (_) {}
+  }
+  function signupCompletionUrl() {
+    var url = new URL(location.origin + location.pathname);
+    url.searchParams.set('mode', SIGNUP_COMPLETE_MODE);
+    var referral = pendingReferral();
+    if (referral) {
+      url.searchParams.set('ref', referral.ref);
+      if (referral.source) url.searchParams.set('src', referral.source);
+      url.searchParams.set('kind', referral.kind);
+      if (referral.target) url.searchParams.set('target', referral.target);
+    }
+    var creator = pendingCreatorCode();
+    if (creator) url.searchParams.set('creator', creator);
+    return url.toString();
+  }
 
   // Stable per-event gradient — real events carry no per-row art direction,
   // so pick deterministically from the design's preset palette (same trick
@@ -1040,6 +1100,32 @@ class Component extends DCLogic {
       });
     });
   }
+  maybeRecordSignupReferral(user){
+    var referral = pendingReferral();
+    var uid = user && user.id;
+    if (!supa || !uid || !referral || referral.ref === uid) {
+      if (referral && referral.ref === uid) clearPendingReferral();
+      return;
+    }
+    var createdAt = Date.parse(user.created_at || '');
+    if (!Number.isFinite(createdAt) || createdAt <= referral.capturedAt) {
+      clearPendingReferral();
+      return;
+    }
+    if (!SIGNUP_REFERRAL_RPC_ENABLED) return;
+    supa.rpc('signup_compliance_status').then(({ data, error })=>{
+      if (error || !data || data.user_id !== uid || data.complete !== true) return;
+      supa.rpc('record_signup_referral', {
+        p_referrer:referral.ref,
+        p_kind:referral.kind,
+        p_target:referral.target,
+        p_source:referral.source
+      }).then(({ data:result, error:referralError })=>{
+        if (referralError) return;
+        if (['recorded','already_attributed','ineligible','self_referral'].includes(result)) clearPendingReferral();
+      });
+    });
+  }
   loadUserData(uid){
     if (!supa) return;
     supa.from('attendance').select('event_id,status').eq('user_id', uid).then(({ data, error })=>{
@@ -1398,6 +1484,7 @@ class Component extends DCLogic {
       if (scr === 'home' || scr === 'login' || scr === 'signup') this.go('discover');
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
+      this.maybeRecordSignupReferral(session.user);
       this.maybeRecordCreatorReferral(session.user.id);
       this.resumeTikTokCallback();
       if (this.state.screen === 'festival' && this.state.festivalEvent) {
@@ -1560,7 +1647,7 @@ class Component extends DCLogic {
     } else {
       clearPendingOAuthCompliance();
     }
-    const redirectTo = location.origin + location.pathname + (signupOrigin ? '?mode=signup-complete' : '');
+    const redirectTo = signupOrigin ? signupCompletionUrl() : location.origin + location.pathname;
     this.setState({ authBusy:true, authError:'' });
     supa.auth.signInWithOAuth({ provider, options: { redirectTo } })
       .then(out=>{
@@ -2960,12 +3047,7 @@ class Component extends DCLogic {
           terms_version:'2026-07-18',
           privacy_version:'2026-08-11'
         };
-        // ponytail: referral is cosmetic (no crew-join backend yet) — same
-        // note as account.js's signUp(); the raw ref token still rides along
-        // as user metadata for a future crew-join job.
-        const referralRef = (typeof location!=='undefined' && new URLSearchParams(location.search).get('ref')) || '';
-        if (referralRef) data.referred_by = referralRef;
-        const redirectTo = location.origin + location.pathname + '?mode=signup-complete';
+        const redirectTo = signupCompletionUrl();
         (async ()=>{
           try {
             const out = await supa.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data } });
@@ -2980,6 +3062,7 @@ class Component extends DCLogic {
       },
       oauthGoogle:()=>this.oauth('google'),
       oauthApple:()=>this.oauth('apple'),
+      oauthFacebook:()=>this.oauth('facebook'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       setUsername:(e)=>this.setState({username: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
@@ -3125,6 +3208,7 @@ class Component extends DCLogic {
     // route straight to the "choose a new password" screen instead of Home.
     instance.loadEvents();
     if (typeof location !== 'undefined') {
+      savePendingReferralFromUrl();
       var incomingCreatorCode = new URLSearchParams(location.search).get('creator');
       if (incomingCreatorCode) saveCreatorCode(incomingCreatorCode);
     }
