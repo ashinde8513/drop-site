@@ -728,6 +728,16 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
   });
 
+  test('signup referral RPC is fail-closed behind an explicit default-off capability', () => {
+    const appScript = readFileSync(resolve('app/app.js'), 'utf8');
+    expect(appScript).toContain("var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true");
+    const implementation = appScript.match(/maybeRecordSignupReferral\(user\)\{([\s\S]*?)\n  \}\n  loadUserData/);
+    expect(implementation, 'signup referral implementation is present').not.toBeNull();
+    expect(implementation?.[1]).toContain('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;');
+    expect(implementation?.[1].indexOf('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;'))
+      .toBeLessThan(implementation?.[1].indexOf("supa.rpc('record_signup_referral'"));
+  });
+
   test('TikTok production stays read-only while sandbox asks for publishing consent', async ({ page }) => {
     const appScript = readFileSync(resolve('app/app.js'), 'utf8');
     const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');

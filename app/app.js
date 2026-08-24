@@ -482,6 +482,7 @@
     try { localStorage.removeItem(CREATOR_CODE_KEY); } catch (_) {}
   }
   var PENDING_REFERRAL_KEY = 'drop.pendingReferral';
+  var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true;
   var ATTRIBUTION_SOURCES = new Set([
     'creator','crew_invite','event_invite','event_share','friend_invite',
     'invite_screen','plan_share','qr','recap_share','seen_history',
@@ -1111,6 +1112,7 @@ class Component extends DCLogic {
       clearPendingReferral();
       return;
     }
+    if (!SIGNUP_REFERRAL_RPC_ENABLED) return;
     supa.rpc('signup_compliance_status').then(({ data, error })=>{
       if (error || !data || data.user_id !== uid || data.complete !== true) return;
       supa.rpc('record_signup_referral', {
