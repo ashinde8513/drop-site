@@ -178,42 +178,50 @@ test.describe('website smoke', () => {
     await expect(page.locator('#result-count')).toContainText('1 show');
   });
 
-  test('hero proof line renders exact canonical buyable-event totals', async ({ page }) => {
-    let statsRequests = 0;
-    await page.route('**/rest/v1/rpc/get_public_catalog_stats', (route) => {
-      statsRequests += 1;
+  test('hero proof line renders exact published-event total', async ({ page }) => {
+    let countRequests = 0;
+    await page.route('**/rest/v1/events?**', (route) => {
+      const request = route.request();
+      const params = new URL(request.url()).searchParams;
+      if (params.get('select') !== 'id' || params.get('status') !== 'eq.published' || params.get('limit') !== '1') {
+        return route.fallback();
+      }
+      expect(params.get('select')).toBe('id');
+      expect(params.get('status')).toBe('eq.published');
+      expect(params.get('limit')).toBe('1');
+      expect(request.headers().prefer).toBe('count=exact');
+      countRequests += 1;
       return route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{
-          event_count: 1234,
-          city_count: 236,
-          calculated_at: '2026-08-16T03:30:00Z',
-        }]),
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'Content-Range',
+          'Content-Type': 'application/json',
+          'Content-Range': '0-0/6908',
+        },
+        body: JSON.stringify([{ id: '00000000-0000-0000-0000-000000000001' }]),
       });
     });
     await page.goto('/index.html');
-    const stats = await page.evaluate(() => (window as any).Drop.fetchCatalogStats());
-    expect(stats).toEqual({ events: 1234, cities: 236, calculatedAt: '2026-08-16T03:30:00Z' });
-    expect(statsRequests).toBeGreaterThan(0);
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
-    await expect(page.locator('.hero-proof')).toContainText('1,234 events');
-    await expect(page.locator('.hero-proof')).toContainText('236 cities');
+    await expect(page.locator('.hero-proof')).toContainText('6,908 published events on Drop');
+    expect(countRequests).toBeGreaterThan(0);
     await expect(page.locator('[data-catalog-proof-pending]')).toBeHidden();
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
-  test('hero proof line never falls back to stale numbers when live stats are malformed', async ({ page }) => {
-    await page.route('**/rest/v1/rpc/get_public_catalog_stats', (route) =>
-      route.fulfill({
+  test('hero proof line never falls back to stale numbers when live count is unavailable', async ({ page }) => {
+    await page.route('**/rest/v1/events?**', (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      if (params.get('select') !== 'id' || params.get('status') !== 'eq.published' || params.get('limit') !== '1') {
+        return route.fallback();
+      }
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{
-          event_count: null,
-          city_count: null,
-          calculated_at: '2026-08-16T03:30:00Z',
-        }]),
-      }));
+        body: '[]',
+      });
+    });
     await page.goto('/index.html');
     await expect(page.locator('[data-catalog-proof]')).toBeHidden();
     await expect(page.locator('.hero-proof')).toContainText('Live catalog updated continuously');
