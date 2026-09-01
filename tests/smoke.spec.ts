@@ -594,6 +594,72 @@ test.describe('website smoke', () => {
     expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Springfield');
   });
 
+  test('home pager traverses every 24-event page and returns backward', async ({ page }) => {
+    const events = Array.from({ length: 50 }, (_, index) => ({
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      title: `Proof Event ${String(index + 1).padStart(2, '0')}`,
+      description: '',
+      date: `2027-01-${String((index % 28) + 1).padStart(2, '0')}T20:00:00Z`,
+      end_date: null,
+      venue_name: 'Proof Venue',
+      city: 'Denver',
+      state: 'CO',
+      image_url: null,
+      ticket_url: null,
+      price_min: null,
+      price_max: null,
+      currency: 'USD',
+      is_festival: false,
+      time_tbd: false,
+      timezone: 'America/Denver',
+      status: 'published',
+      created_at: '2026-07-30T00:00:00Z',
+      event_artists: [],
+    }));
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.has('is_festival')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: { 'content-range': '*/0' },
+          body: '[]',
+        });
+      }
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const limit = Number(url.searchParams.get('limit') ?? 24);
+      const rows = events.slice(offset, offset + limit);
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: {
+          'access-control-expose-headers': 'content-range',
+          'content-range': `${offset}-${offset + rows.length - 1}/${events.length}`,
+        },
+        body: JSON.stringify(rows),
+      });
+    });
+
+    await page.goto('/index.html');
+    await expect(page.locator('#home-page-label')).toHaveText('Page 1 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 01');
+    await expect(page.locator('#home-prev')).toBeDisabled();
+
+    await page.locator('#home-next').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 2 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 25');
+
+    await page.locator('#home-next').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 3 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 49');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 50');
+    await expect(page.locator('#home-next')).toBeDisabled();
+
+    await page.locator('#home-prev').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 2 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 25');
+  });
+
   test('About lives in the footer, not the nav', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('nav.wn a[href="/about.html"]')).toHaveCount(0);
