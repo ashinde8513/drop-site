@@ -460,6 +460,7 @@ test.describe('website smoke', () => {
     expect(appTemplate).not.toContain('https://trydropapp.com/terms.html');
     expect(appTemplate).toContain('Free forever. 13+ only.');
     expect(appTemplate).not.toContain('Free forever. 16+ only.');
+    expect(appTemplate).toContain('id="signup-email" type="email" value="{{ signupEmail }}" onInput="{{ setSignupEmail }}"');
 
     const signupImplementation = appScript.match(/doSignup:\(\)=>\{([\s\S]*?)\n      \},\n      oauthGoogle:/)?.[1];
     expect(signupImplementation, 'signup implementation is present').toBeDefined();
@@ -467,6 +468,8 @@ test.describe('website smoke', () => {
     const signUpIndex = signupImplementation?.indexOf('supa.auth.signUp') ?? -1;
     expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
     expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
+    expect(signupImplementation).toContain('const email = this.state.signupEmail.trim();');
+    expect(signupImplementation).not.toContain("fieldVal('signup-email')");
     expect(signupImplementation).toContain('birthdate:dobValue');
     expect(signupImplementation).toContain('years < 13');
     expect(signupImplementation).not.toContain('years < 16');

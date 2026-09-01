@@ -762,7 +762,7 @@ class Component extends DCLogic {
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'all', discPage: 0,
     city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
-    username: '', descClamped: true, toast: null,
+    username: '', signupEmail: '', descClamped: true, toast: null,
     genre: null,
     // search
     query: '', distance: '25', priceMin: 0, priceMax: 200, sGenres: {}, searchGeo: 'idle',
@@ -2565,7 +2565,7 @@ class Component extends DCLogic {
       authError: s.authError, authBusy: s.authBusy,
       loginBtnLabel: s.authBusy ? 'Working…' : 'Log in',
       signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
-      username: s.username,
+      username: s.username, signupEmail: s.signupEmail,
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
       city: s.city, cityOpen: s.cityOpen, cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents, discShowPager, discPageLabel, discPrevDisabled, discNextDisabled, genreActive, gridLabel, gridEmpty, genreName: s.genre,
@@ -3023,7 +3023,7 @@ class Component extends DCLogic {
       },
       doSignup:()=>{
         if (!supa) { this.setState({authError:'Signup is unavailable. Refresh and try again.'}); return; }
-        const email = fieldVal('signup-email').trim();
+        const email = this.state.signupEmail.trim();
         const username = cleanUsername(this.state.username);
         const password = fieldVal('signup-password');
         const rawCreatorCode = fieldVal('signup-creator-code');
@@ -3065,6 +3065,7 @@ class Component extends DCLogic {
       oauthFacebook:()=>this.oauth('facebook'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       setUsername:(e)=>this.setState({username: e.target.value}),
+      setSignupEmail:(e)=>this.setState({signupEmail: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),
