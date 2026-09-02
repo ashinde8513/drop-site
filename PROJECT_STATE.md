@@ -13,13 +13,22 @@ Last updated: 2026-09-02
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** AVAILABLE — Google Play submission is in external review
+**Status:** AVAILABLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
 - None.
 
 ## Current status
 ### What works
+- **OFFICIAL GOOGLE PLAY LINK LIVE (2026-09-02, PR #105):** the link-in-bio hub
+  now presents equal App Store and Google Play download actions, identifies Drop
+  as available on iPhone and Android, and sends Android visitors to the verified
+  public listing for package `app.resonanceventures.drop`. PR #105 exact reviewed
+  head `c8d92b51fca062bed56f3ca42889daa89e390bca` merged as
+  `fb2422819819746f748672357eb71002014cf3a5`; main workflow `33695708570`
+  passed 194/194 browser tests and deployed through Cloudflare Pages. Live
+  `/link` readback exposes the exact Play URL, and the public listing identifies
+  the app as `Drop - EDM Events` by Resonance Ventures.
 - **OFFICIAL TIKTOK PROFILE LINKS LIVE (2026-09-02, PR #103):** all 16 public
   website social surfaces, homepage Organization JSON-LD, `llms.txt`, and both
   signed-in website TikTok controls now target the verified Drop profile at
@@ -32,7 +41,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
   Drop-site console warnings/errors, and TikTok identifies the destination as
   `Drop - Music Discovery` / `trydrop.app`.
 - **EXACT PUBLISHED-EVENT TOTAL LIVE (2026-08-25, PR #100):** the homepage now requests an exact anonymous count of every `status=published` event and renders `Tracking 6,908 published events on Drop`, including past shows rather than only the currently buyable catalog. Missing or malformed count headers retain the honest nonnumeric `Live catalog updated continuously` copy. PR #100 merged as `d431516129c2225805010384ab7abc5f3343035e`; main workflow `32900683374` passed 192 desktop/mobile Playwright checks and deployed through Cloudflare Pages. Production desktop 1280×900 and mobile 390×844 both rendered 6,908 with no overflow or console warnings/errors; location and menu controls opened and closed correctly.
-- **GOOGLE PLAY LAUNCH SUBMITTED + ANDROID DAL LIVE (2026-08-18):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. Its authoritative status is **In review**. Managed publishing is off, so Google will publish the approved changes automatically; no replacement AAB was uploaded.
+- **GOOGLE PLAY LAUNCH PUBLIC + ANDROID DAL LIVE (2026-08-18/09-02):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. The public listing was live-verified on September 2 as `Drop - EDM Events` by Resonance Ventures for package `app.resonanceventures.drop`.
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
 - **ANDROID DIGITAL ASSET LINKS HOTFIX DELIVERED (2026-08-17/18):** the canonical `.well-known/assetlinks.json` names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`. The deploy workflow fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. PR #95 merged and the production apex readback matches reviewed source. `www` remains a redirect and is intentionally excluded from Android intent filters. Physical App Links acceptance remains untested because no Android test device is available.
 - **COMBINED FACEBOOK LOGIN + PHASE 2 SHARE ATTRIBUTION FAIL-CLOSED SOURCE READY (2026-08-23):** PR #92 preserves its Facebook controls and absorbs PR #93's unique referral/share implementation while excluding superseded DAL ancestry already delivered by PR #95. Validated first-touch referral context remains browser-local for at most 24 hours; same-browser password/email/OAuth completion may retain it as best-effort attribution without duplicating it into Auth metadata, while fresh-browser email confirmation fails closed without referral credit. Production referral recording is explicitly default-off because its separately gated RPC migration is not live; valid state is preserved, invalid/expired/self/older-account state clears, and no recording RPC is called until a reviewed runtime capability is enabled after live contract proof. Facebook adds no permission beyond Supabase's automatic `public_profile` plus requested `email`. Node 18/18 and Playwright 192/192 pass across desktop Chromium and mobile WebKit; independent exact-head rereview remains. No migration apply, account login, user/profile write, Meta/Supabase configuration, secret, Worker, or production deployment has occurred from this reconciliation.
@@ -155,7 +164,6 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - None.
 ### Blocked / waiting on
-- Google Play submission `1` is **In review**. Managed publishing is off, so approved changes will publish automatically. Google says reviews typically finish within seven days but can take longer.
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
   reason; reply with additional ownership evidence if requested. Direct brand
@@ -173,7 +181,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **1. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the submitted 1.0.2 (2) AAB manifest already contains that host. Ranked first because Google Play submission `1` is **In review with managed publishing off**, so approval publishes automatically with no hold — after that, the defect is live for every Android ≤11 user. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
+- **1. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the published 1.0.2 (2) AAB manifest contains that host. Ranked first because the Google Play listing is now public, so this can affect Android ≤11 users rather than a pending release. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
 - **2. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
 - **3. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
@@ -196,6 +204,24 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-09-02 — Codex — official Google Play link live
+- **Changed:** `/link` now includes an equal Google Play CTA to the exact public
+  package URL and identifies the app as available on iPhone and Android; social
+  preview descriptions mention both stores. A regression test locks the exact
+  package destination.
+- **Verified:** the public listing identifies `Drop - EDM Events` by Resonance
+  Ventures at package `app.resonanceventures.drop`. Local Node checks passed
+  18/18, the clean full Playwright rerun passed 194/194, focused desktop/mobile
+  render-and-click QA passed 2/2 without overflow or browser errors, and build
+  parity, dependency audit, secret scan, diff check, and independent review were
+  clean.
+- **Delivered:** PR #105 exact head
+  `c8d92b51fca062bed56f3ca42889daa89e390bca` merged as
+  `fb2422819819746f748672357eb71002014cf3a5`; production workflow
+  `33695708570` passed 194/194 and deployed through Cloudflare Pages. Live
+  `/link` readback contains the exact Play destination and Android availability
+  copy.
 
 ## 2026-08-18 — Codex — Google Play launch submitted and Android DAL live
 - **Delivered:** PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`; the live apex association is byte-identical to the reviewed package/fingerprint statement. Production build 1.0.2 (2) was promoted for United States availability without uploading a replacement AAB.
