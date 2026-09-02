@@ -899,11 +899,12 @@ test.describe('website smoke', () => {
     expect(buildScript).toContain(`cp ${filenames.join(' ')} dist/app/`);
   });
 
-  test('link-in-bio sends visitors to the live App Store listing', async ({ page }) => {
+  test('link-in-bio sends visitors to the live App Store and Google Play listings', async ({ page }) => {
     await page.goto('/link.html');
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
     await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/download.html');
-    await expect(page.getByText('iPhone · Free', { exact: true })).toBeVisible();
+    await expect(page.getByText('iPhone · Android · Free', { exact: true })).toBeVisible();
   });
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {
