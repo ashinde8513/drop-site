@@ -67,12 +67,31 @@ const DETAIL_PAGES = [
 
 const SOCIAL_LINKS = [
   { name: 'Instagram', href: 'https://www.instagram.com/trydropapp/', icon: 'instagram' },
-  { name: 'TikTok', href: 'https://www.tiktok.com/@trydropapp', icon: 'tiktok' },
+  { name: 'TikTok', href: 'https://www.tiktok.com/@trydrop.app', icon: 'tiktok' },
   { name: 'X', href: 'https://x.com/trydropapp', icon: 'x' },
   { name: 'YouTube', href: 'https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ', icon: 'youtube' },
   { name: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61591821453151', icon: 'facebook' },
   { name: 'Reddit', href: 'https://www.reddit.com/user/trydrop/', icon: 'reddit' },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/company/trydropapp/', icon: 'linkedin' },
+];
+
+const SOCIAL_PAGES = [
+  '/404.html',
+  '/about.html',
+  '/artist.html',
+  '/artists.html',
+  '/city.html',
+  '/download.html',
+  '/event.html',
+  '/events.html',
+  '/genre.html',
+  '/index.html',
+  '/link.html',
+  '/privacy.html',
+  '/promoters.html',
+  '/terms.html',
+  '/venue.html',
+  '/venues.html',
 ];
 
 test.describe('website smoke', () => {
@@ -318,7 +337,7 @@ test.describe('website smoke', () => {
   });
 
   test('public footer and link hub expose every official social profile safely', async ({ page }) => {
-    for (const path of ['/index.html', '/link.html']) {
+    for (const path of SOCIAL_PAGES) {
       await page.goto(path);
       const socials = page.locator('.foot-social').first();
       await expect(socials).toBeVisible();
@@ -330,6 +349,20 @@ test.describe('website smoke', () => {
         await expect(link.locator('use')).toHaveAttribute('href', `/social-icons.svg#${icon}`);
       }
     }
+
+    await page.context().route('https://www.tiktok.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>Drop TikTok profile</h1>' }));
+    const [tiktokPage] = await Promise.all([
+      page.waitForEvent('popup'),
+      page.getByRole('link', { name: 'TikTok', exact: true }).click(),
+    ]);
+    await expect(tiktokPage).toHaveURL('https://www.tiktok.com/@trydrop.app');
+    await expect(tiktokPage.getByRole('heading', { name: 'Drop TikTok profile' })).toBeVisible();
+    await tiktokPage.close();
+
+    const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
+    expect(appTemplate.match(/href="https:\/\/www\.tiktok\.com\/@trydrop\.app"/g)).toHaveLength(2);
+    expect(appTemplate).not.toMatch(/href="#" onClick="\{\{ noop \}\}"[^>]*>TikTok<\/a>/);
   });
 
   test('SMS opt-in proof mirrors the shipped one-time verification consent', async ({ page }) => {
