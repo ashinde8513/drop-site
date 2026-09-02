@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-25
+Last updated: 2026-09-02
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **OFFICIAL TIKTOK PROFILE LINKS LIVE (2026-09-02, PR #103):** all 16 public
+  website social surfaces, homepage Organization JSON-LD, `llms.txt`, and both
+  signed-in website TikTok controls now target the verified Drop profile at
+  `https://www.tiktok.com/@trydrop.app`; the two signed-in no-op links are gone.
+  PR #103 exact reviewed head `752029bf011ed30c9165ce86a23c4b1d4b860a24`
+  merged as `04126b3dc61527a801b02d321416485353b25df5`. Main workflow
+  `33692784321` passed 194/194 browser tests and deployed through Cloudflare
+  Pages. Live `/link`, `/`, `/app/index.html`, and `app.trydropapp.com` readbacks
+  contain only the corrected profile URL; the live link hub rendered without
+  Drop-site console warnings/errors, and TikTok identifies the destination as
+  `Drop - Music Discovery` / `trydrop.app`.
 - **EXACT PUBLISHED-EVENT TOTAL LIVE (2026-08-25, PR #100):** the homepage now requests an exact anonymous count of every `status=published` event and renders `Tracking 6,908 published events on Drop`, including past shows rather than only the currently buyable catalog. Missing or malformed count headers retain the honest nonnumeric `Live catalog updated continuously` copy. PR #100 merged as `d431516129c2225805010384ab7abc5f3343035e`; main workflow `32900683374` passed 192 desktop/mobile Playwright checks and deployed through Cloudflare Pages. Production desktop 1280×900 and mobile 390×844 both rendered 6,908 with no overflow or console warnings/errors; location and menu controls opened and closed correctly.
 - **GOOGLE PLAY LAUNCH SUBMITTED + ANDROID DAL LIVE (2026-08-18):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. Its authoritative status is **In review**. Managed publishing is off, so Google will publish the approved changes automatically; no replacement AAB was uploaded.
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
@@ -476,6 +487,26 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-09-02 — Codex — official TikTok profile links corrected live
+- **Root cause:** TikTok no longer resolves the old `@trydropapp` handle; the
+  official authenticated account is `@trydrop.app`. Two signed-in website
+  TikTok controls were also still explicit no-ops.
+- **Changed:** replaced the stale destination across every public page,
+  Organization metadata, and `llms.txt`; wired both signed-in controls to the
+  same safe new-tab destination; expanded regression coverage across all 16
+  public pages, both signed-in links, and an exercised popup navigation.
+- **Verified:** 18 Node checks plus 194/194 Playwright tests passed at stable
+  two-worker concurrency; deploy build, `git diff --check`, npm audit (zero
+  vulnerabilities), gitleaks, 1280×900/390×844 rendering, and independent
+  adversarial re-review passed with no remaining P0–P2 findings.
+- **Delivery:** PR #103 reviewed head `752029bf011ed30c9165ce86a23c4b1d4b860a24`
+  merged as `04126b3dc61527a801b02d321416485353b25df5`; exact main workflow
+  `33692784321` passed and deployed. Live public and signed-in readbacks match
+  the corrected URL, and the live link-hub DOM exposes `_blank` plus
+  `noopener noreferrer` with no Drop-site console warnings/errors.
+- **Boundary:** no TikTok account setting, OAuth scope, content, backend,
+  database, secret, Worker, or manual deployment changed.
+
 ### 2026-08-25 — Codex — exact published-event total live
 - **Changed:** replaced the buyable-catalog RPC proof with one exact `status=published` count query, removed the unrelated city count, and kept the existing nonnumeric offline fallback.
 - **Verified:** local Node checks, build parity, 18 Node contracts, and 192 desktop/mobile Playwright checks passed; independent adversarial review found no actionable defect. PR #100 exact head `e75548c8924fb83355d689f3576b784fec60ff01` merged as `d431516129c2225805010384ab7abc5f3343035e`; main workflow `32900683374` passed and deployed. Live desktop/mobile QA rendered `Tracking 6,908 published events on Drop` with no console warnings/errors or horizontal overflow and working navigation controls.
