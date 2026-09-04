@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-09-02
+Last updated: 2026-09-04
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **GOOGLE PLAY AVAILABILITY + SAFE PUBLIC EVENT CONTINUATION REVIEWED (2026-09-04):** the website candidate exposes the verified iPhone and Android store destinations on `/download`, device-aware download controls, signed-in app controls, `/go` fallback, metadata, and `llms.txt`. Public event Going/Interested/Follow actions now retain only an exact UUID, allowlisted action, and at-most-24-hour expiry through login, signup, recovery, age, and phone gates; nothing writes before explicit final confirmation, failed/stale writes cannot report success, and missing events fail closed. Save/Plan/Invite remain honest native/install alternatives. Local gates pass 18/18 Node contracts and the 224-case Chromium/mobile-WebKit CI-mode matrix (223 direct passes plus one clean automatic retry after a local static-server timeout); focused event/auth/store coverage passes 30/30. Build parity, Android association validation, dependency audit, secret scan, and independent security/correctness review are clean. Standard PR/main auto-deploy and live provenance verification remain.
 - **OFFICIAL GOOGLE PLAY LINK LIVE (2026-09-02, PR #105):** the link-in-bio hub
   now presents equal App Store and Google Play download actions, identifies Drop
   as available on iPhone and Android, and sends Android visitors to the verified
@@ -162,7 +163,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- None.
+- Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
@@ -513,6 +514,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-09-04 — Codex — store availability and event-action continuation reviewed
+- **Changed:** added equal App Store/Google Play availability across `/download`, device-aware routes, signed-in controls, metadata, and discovery text. Public event actions now carry a strict 24-hour exact-event intent through existing authentication/compliance gates; RSVP/venue-follow writes require explicit confirmation, while Save/Plan/Invite retain truthful native/install paths.
+- **Security:** rejects external, protocol-relative, encoded, malformed, duplicate, oversized, expired, and overlong return targets; scrubs accepted targets from the browser URL; invalidates canceled/replaced/sign-out async work; suppresses stale and failed success; fetches the exact published event and fails closed when unavailable.
+- **Verified:** 18/18 Node contracts, focused 30/30 Chromium/mobile-WebKit cases, CI-mode 224-case suite with 223 direct passes plus one clean automatic retry after a local static-server timeout, generated-dist parity, Android association validator, zero-vulnerability offline audit, gitleaks, diff/syntax checks, and independent security/correctness review are clean.
+- **Delivery:** standard PR/main Cloudflare Pages auto-deploy and exact live readback remain.
+- **Boundary:** no backend, database, mobile, Worker, Edge Function, secret, production user write, SMS, or external communication changed.
+
 ### 2026-09-02 — Codex — official TikTok profile links corrected live
 - **Root cause:** TikTok no longer resolves the old `@trydropapp` handle; the
   official authenticated account is `@trydrop.app`. Two signed-in website

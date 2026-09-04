@@ -15,6 +15,7 @@
 
 const EDGE_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co/functions/v1/drop-card?k=drop-card-v1';
 const IOS_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825';
+const ANDROID_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
 const WEB_URL = 'https://trydropapp.com/';
 const FORWARDED = ['placement', 'distributor', 'batch', 'variant'];
 const TIMEOUT_MS = 1500;
@@ -23,6 +24,10 @@ function isIOS(userAgent) {
   if (/iPhone|iPad|iPod/i.test(userAgent)) return true;
   // iPadOS 13+ reports a desktop Safari UA; the touch hint is the only tell.
   return /Macintosh/i.test(userAgent) && /Mobile\/|Touch/i.test(userAgent);
+}
+
+function isAndroid(userAgent) {
+  return /Android/i.test(userAgent);
 }
 
 function redirect(location) {
@@ -60,5 +65,5 @@ export async function onRequest({ request }) {
     // fall through to the untracked redirect below
   }
 
-  return redirect(isIOS(userAgent) ? IOS_STORE_URL : WEB_URL);
+  return redirect(isIOS(userAgent) ? IOS_STORE_URL : (isAndroid(userAgent) ? ANDROID_STORE_URL : WEB_URL));
 }

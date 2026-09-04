@@ -489,6 +489,64 @@
     'show_memories','wrapped'
   ]);
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  var EVENT_INTENT_KEY = 'drop.eventIntent';
+  var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
+  var EVENT_INTENT_WEB_ACTIONS = new Set(['going','interested','follow']);
+  var EVENT_INTENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  function parseEventIntentReturn(value, now) {
+    if (typeof value !== 'string' || value.length > 220 || value !== value.trim()) return null;
+    if (!value.startsWith('/event/') || value.startsWith('//') || value.includes('\\') || value.includes('%') || /[\u0000-\u001f\u007f]/.test(value)) return null;
+    var url;
+    try { url = new URL(value, 'https://drop.invalid'); } catch (_) { return null; }
+    if (url.origin !== 'https://drop.invalid' || url.hash || url.username || url.password || value !== url.pathname + url.search) return null;
+    var match = url.pathname.match(/^\/event\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
+    var keys = Array.from(url.searchParams.keys());
+    if (!match || keys.length !== 2 || url.searchParams.getAll('action').length !== 1 || url.searchParams.getAll('expires').length !== 1) return null;
+    if (!keys.every(function (key) { return key === 'action' || key === 'expires'; })) return null;
+    var action = url.searchParams.get('action');
+    var expires = url.searchParams.get('expires');
+    var current = Number.isFinite(now) ? now : Date.now();
+    var expiresAt = /^\d{10}$/.test(expires || '') ? Number(expires) * 1000 : NaN;
+    if (!EVENT_INTENT_ACTIONS.has(action) || !Number.isFinite(expiresAt) || expiresAt <= current || expiresAt > current + EVENT_INTENT_MAX_AGE_MS) return null;
+    return { eventId:match[1].toLowerCase(), action:action, expiresAt:expiresAt };
+  }
+  function eventIntentReturnTo(intent) {
+    if (!intent || !ATTRIBUTION_UUID.test(intent.eventId || '') || !EVENT_INTENT_ACTIONS.has(intent.action)) return '';
+    var expires = Math.floor(Number(intent.expiresAt) / 1000);
+    if (!Number.isFinite(expires)) return '';
+    return '/event/' + String(intent.eventId).toLowerCase() + '?action=' + intent.action + '&expires=' + expires;
+  }
+  function clearPendingEventIntent() {
+    try { sessionStorage.removeItem(EVENT_INTENT_KEY); } catch (_) {}
+  }
+  function pendingEventIntent() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(EVENT_INTENT_KEY); } catch (_) { return null; }
+    var value = parseEventIntentReturn(raw);
+    if (!value && raw) clearPendingEventIntent();
+    return value;
+  }
+  function captureEventIntentFromUrl() {
+    if (typeof location === 'undefined') return pendingEventIntent();
+    var url = new URL(location.href);
+    var values = url.searchParams.getAll('returnTo');
+    if (!values.length) return pendingEventIntent();
+    var intent = values.length === 1 ? parseEventIntentReturn(values[0]) : null;
+    url.searchParams.delete('returnTo');
+    history.replaceState({}, '', url.pathname + url.search + url.hash);
+    if (!intent) { clearPendingEventIntent(); return null; }
+    try { sessionStorage.setItem(EVENT_INTENT_KEY, eventIntentReturnTo(intent)); }
+    catch (_) { return null; }
+    return intent;
+  }
+  function authCallbackUrl(mode) {
+    var url = new URL(location.origin + location.pathname);
+    if (mode) url.searchParams.set('mode', mode);
+    var intent = pendingEventIntent();
+    var destination = eventIntentReturnTo(intent);
+    if (destination) url.searchParams.set('returnTo', destination);
+    return url.toString();
+  }
   function normalizePendingReferral(value) {
     if (!value || typeof value !== 'object') return null;
     var ref = String(value.ref || '').toLowerCase();
@@ -539,6 +597,8 @@
     }
     var creator = pendingCreatorCode();
     if (creator) url.searchParams.set('creator', creator);
+    var intentDestination = eventIntentReturnTo(pendingEventIntent());
+    if (intentDestination) url.searchParams.set('returnTo', intentDestination);
     return url.toString();
   }
 
@@ -694,7 +754,7 @@
   const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming' };
   const stateName = st => STATE_NAMES[st] || st || '';
 
-  const APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = '';
+  const APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
   function appDownloadHref() {
     const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
     if (/iPhone|iPad|iPod/i.test(ua) && APP_STORE_URL) return APP_STORE_URL;
@@ -828,6 +888,9 @@ class Component extends DCLogic {
     claimNotListed: false, claimNewName: '', claimWebsite: '', claimSocial: '', claimEmail: '',
     claimSubmitted: false, claimBusy: false, claimError: '',
     editLinksOpen: false, editMerch: '', editWebsite: '',
+    // Public event action continuation — validated before storage or render.
+    eventIntent: null, eventIntentEvent: null, eventDetailRow: null, eventIntentLoading: false,
+    eventIntentReady: false, eventIntentBusy: false, eventIntentStatus: '',
   };
 
   // City picker catalog — the cities Drop covers, for the nav dropdown's
@@ -939,18 +1002,37 @@ class Component extends DCLogic {
   openGate(title){ this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false }); }
 
   toggleRsvp(id, status){
-    if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return; }
+    if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return Promise.resolve(false); }
     const cur = this.state.rsvp[id];
-    const next = cur===status ? null : status;
+    return this.writeRsvp(id, cur===status ? null : status);
+  }
+  async writeRsvp(id, next){
+    if (!supa || !this.state.authed || !this.state.userId || !ATTRIBUTION_UUID.test(String(id || ''))) return false;
+    const uid = this.state.userId;
+    const previous = this.state.rsvp[id] || null;
+    const token = {};
+    if (!this._rsvpWrites) this._rsvpWrites = new Map();
+    if (this._rsvpWrites.has(id)) return false;
+    this._rsvpWrites.set(id, token);
     this.setState(s=>{ const rsvp={...s.rsvp}; rsvp[id]=next; return {rsvp}; });
-    // PHASE 1: real write — attendance(user_id,event_id,status), same
-    // upsert/delete shape as DropApp/src/data/index.ts's setAttendance().
-    if (supa && this.state.userId) {
-      const uid = this.state.userId;
-      const p = next===null
-        ? supa.from('attendance').delete().eq('user_id', uid).eq('event_id', id)
-        : supa.from('attendance').upsert({ user_id: uid, event_id: id, status: next }, { onConflict: 'user_id,event_id' });
-      p.then(r=>{ if (r && r.error) console.error('[app] attendance write failed:', r.error.message); else this.loadMyShows(uid); });
+    try {
+      const result = next===null
+        ? await supa.from('attendance').delete().eq('user_id', uid).eq('event_id', id)
+        : await supa.from('attendance').upsert({ user_id: uid, event_id: id, status: next }, { onConflict: 'user_id,event_id' });
+      if (this._rsvpWrites.get(id) !== token) return false;
+      if (!this.state.authed || this.state.userId !== uid) { this._rsvpWrites.delete(id); return false; }
+      if (result && result.error) throw result.error;
+      this._rsvpWrites.delete(id);
+      this.loadMyShows(uid);
+      return true;
+    } catch (error) {
+      if (this._rsvpWrites.get(id) !== token) return false;
+      this._rsvpWrites.delete(id);
+      if (!this.state.authed || this.state.userId !== uid) return false;
+      this.setState(s=>{ const rsvp={...s.rsvp}; rsvp[id]=previous; return {rsvp}; });
+      console.error('[app] attendance write failed:', error && error.message || 'unknown error');
+      this.flash('Could not update your RSVP — try again');
+      return false;
     }
   }
   toggleSave(id){
@@ -959,6 +1041,111 @@ class Component extends DCLogic {
     // interested/attended) — stays a local-only bookmark, not persisted.
     this.setState(s=>({ saved:{...s.saved, [id]: !s.saved[id]} }));
     this.flash(this.state.saved[id] ? 'Removed from saved' : 'Saved to My Shows');
+  }
+
+  primeEventIntent(intent){
+    intent = intent || pendingEventIntent();
+    if (!intent) return Promise.resolve(false);
+    const requestToken = {};
+    this._eventIntentRequest = requestToken;
+    this.setState({ eventIntent:intent, eventIntentLoading:true, eventIntentReady:false, eventIntentStatus:'' });
+    const cached = (this.CATALOG || []).find(row=>row.id===intent.eventId)
+      || (this.state.realEvents || []).find(row=>row.id===intent.eventId);
+    const request = cached ? Promise.resolve(cached) : (Drop && Drop.fetchEvent ? Drop.fetchEvent(intent.eventId) : Promise.reject(new Error('unavailable')));
+    return request.then(row=>{
+      const current = pendingEventIntent();
+      if (this._eventIntentRequest !== requestToken || !current || current.eventId !== intent.eventId || current.action !== intent.action) return false;
+      if (!row || row.id !== intent.eventId) throw new Error('not found');
+      if (!this.CATALOG) this.CATALOG = [];
+      if (!this.CATALOG.some(item=>item.id===row.id)) this.CATALOG.push(row);
+      const rows = (this.state.realEvents || []).some(item=>item.id===row.id)
+        ? this.state.realEvents : [...(this.state.realEvents || []), row];
+      this.setState({ eventIntentEvent:row, eventDetailRow:row, eventIntentLoading:false, eventIntentStatus:'', realEvents:rows });
+      if (this.state.authed) this.maybeResumeEventIntent();
+      return true;
+    }).catch(error=>{
+      const current = pendingEventIntent();
+      if (this._eventIntentRequest !== requestToken || !current || current.eventId !== intent.eventId || current.action !== intent.action) return false;
+      if (error && error.message === 'not found') {
+        clearPendingEventIntent();
+        this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentLoading:false, eventIntentReady:false, eventIntentStatus:'' });
+        this.flash('This event is no longer available');
+      } else {
+        console.error('[app] event intent fetch failed:', error && error.message || 'unknown error');
+        this.setState({ eventIntentLoading:false, eventIntentStatus:'Could not load this event. Retry when you are ready.' });
+      }
+      return false;
+    });
+  }
+  maybeResumeEventIntent(){
+    const intent = pendingEventIntent();
+    if (!intent) {
+      if (this.state.eventIntent) this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentReady:false, eventIntentStatus:'' });
+      return false;
+    }
+    if (!EVENT_INTENT_WEB_ACTIONS.has(intent.action)) {
+      if (this.state.eventIntentReady) this.setState({ eventIntentReady:false });
+      return true;
+    }
+    if (!this.state.authed || !this.state.userId || this.state.wizPhoneRequired) return false;
+    if (['activation','rsvpmoment','reset','verify'].includes(this.state.screen)) return false;
+    const row = this.state.eventIntentEvent;
+    if (!row || row.id !== intent.eventId) { this.primeEventIntent(intent); return true; }
+    this.setState({ screen:'event', activeId:intent.eventId, eventIntent:intent, eventIntentReady:true, eventIntentStatus:'', loading:false });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+    return true;
+  }
+  finishActivation(){
+    this.setState({ screen:'discover' });
+    this.maybeResumeEventIntent();
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+  }
+  cancelEventIntent(){
+    this._eventIntentRequest = null;
+    this._eventIntentConfirm = null;
+    clearPendingEventIntent();
+    this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentLoading:false, eventIntentReady:false, eventIntentBusy:false, eventIntentStatus:'' });
+  }
+  retryEventIntent(){
+    this.primeEventIntent(pendingEventIntent());
+  }
+  async confirmEventIntent(){
+    if (this.state.eventIntentBusy || !this.state.eventIntentReady || this.state.wizPhoneRequired) return;
+    const intent = pendingEventIntent();
+    const row = this.state.eventIntentEvent;
+    if (!intent || !row || row.id !== intent.eventId || !EVENT_INTENT_WEB_ACTIONS.has(intent.action)) {
+      this.cancelEventIntent();
+      return;
+    }
+    if (!supa || !this.state.authed || !this.state.userId) {
+      this.setState({ eventIntentStatus:'Log in before confirming this action.' });
+      return;
+    }
+    const uid = this.state.userId;
+    const confirmationToken = {};
+    this._eventIntentConfirm = confirmationToken;
+    this.setState({ eventIntentBusy:true, eventIntentStatus:'' });
+    let ok = false;
+    if (intent.action === 'going' || intent.action === 'interested') {
+      ok = await this.writeRsvp(intent.eventId, intent.action);
+    } else if (intent.action === 'follow' && row.venue_name) {
+      try {
+        const result = await supa.from('venue_follows').insert({ user_id:this.state.userId, venue_name:row.venue_name, city:row.city || '' });
+        ok = !result.error || result.error.code === '23505';
+      } catch (_) { ok = false; }
+    }
+    const current = pendingEventIntent();
+    if (this._eventIntentConfirm !== confirmationToken || !this.state.authed || this.state.userId !== uid
+      || !current || current.eventId !== intent.eventId || current.action !== intent.action) return;
+    this._eventIntentConfirm = null;
+    if (ok && intent.action === 'follow') this.setState(s=>({ followingVenue:{...s.followingVenue, [row.venue_name]:true} }));
+    if (!ok) {
+      this.setState({ eventIntentBusy:false, eventIntentStatus:'Nothing changed. Try again or cancel.' });
+      return;
+    }
+    const label = intent.action === 'going' ? 'Going' : intent.action === 'interested' ? 'Interested' : 'Following venue';
+    this.cancelEventIntent();
+    this.flash(label + ' saved');
   }
 
   // ===== PHASE 1: real data loaders =====================================
@@ -1491,6 +1678,7 @@ class Component extends DCLogic {
         this.openFestival(this.state.festivalEvent.id);
       }
       this.maybeResumeClaimDeepLink();
+      this.maybeResumeEventIntent();
   }
   async connectTikTok(){
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
@@ -1612,9 +1800,12 @@ class Component extends DCLogic {
     this.openClaimFor(id);
   }
   logout(){
+    if (this._rsvpWrites) this._rsvpWrites.clear();
+    this._eventIntentRequest = null;
+    this._eventIntentConfirm = null;
     clearPendingOAuthCompliance();
     if (supa) supa.auth.signOut().catch(()=>{});
-    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
+    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
   async switchPhoneAccount(){
     clearPendingOAuthCompliance();
@@ -1647,7 +1838,7 @@ class Component extends DCLogic {
     } else {
       clearPendingOAuthCompliance();
     }
-    const redirectTo = signupOrigin ? signupCompletionUrl() : location.origin + location.pathname;
+    const redirectTo = signupOrigin ? signupCompletionUrl() : authCallbackUrl();
     this.setState({ authBusy:true, authError:'' });
     supa.auth.signInWithOAuth({ provider, options: { redirectTo } })
       .then(out=>{
@@ -1683,7 +1874,9 @@ class Component extends DCLogic {
         share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
       };
     };
-    const events = (s.realEvents||[]).map(mapRealEvent).map(decorate);
+    const eventRows = (s.realEvents||[]).slice();
+    if (s.eventDetailRow && !eventRows.some(row=>row.id===s.eventDetailRow.id)) eventRows.push(s.eventDetailRow);
+    const events = eventRows.map(mapRealEvent).map(decorate);
     const ae = events.find(e=>e.id===s.activeId) || events[0] || {
       id:null, title:'', venue:'', venueCity:'', dateShort:'', dateLong:'', price:'See tickets', genre:'',
       grad:EVENT_GRADS[0], gradStyle:'background-image:'+EVENT_GRADS[0], friends:0, goingCount:'—', interestedCount:'—',
@@ -2510,6 +2703,17 @@ class Component extends DCLogic {
     const reviewQueue = this.REVIEW_QUEUE.filter(r=>!s.reviewActioned[r.id]).map(r=>({ ...r, approve:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'approved'}})); this.flash('Approved — event is now live'); }, reject:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'rejected'}})); this.flash('Rejected'); } }));
     const REPORT_ST = { open:{label:'Open', color:'var(--gold)', bg:'rgba(255,203,61,0.12)'}, dismissed:{label:'Dismissed', color:'var(--text-muted)', bg:'var(--surface-hi)'}, reviewed:{label:'Reviewed', color:'var(--accent)', bg:'rgba(77,226,255,0.12)'}, actioned:{label:'Actioned', color:'var(--danger)', bg:'rgba(255,77,109,0.12)'} };
     const reports = this.REPORTS.map(r=>{ const key=s.reportState[r.id]||'open'; const st=REPORT_ST[key]; return { ...r, stLabel:st.label, stColor:st.color, stBg:st.bg, dismiss:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'dismissed'}})); this.flash('Report dismissed'); }, reviewed:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'reviewed'}})); this.flash('Marked reviewed'); }, action:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'actioned'}})); this.flash('Content removed'); } }; });
+
+    const eventIntent = pendingEventIntent();
+    const eventIntentRow = eventIntent && s.eventIntentEvent && s.eventIntentEvent.id===eventIntent.eventId ? s.eventIntentEvent : null;
+    const eventIntentName = eventIntentRow && eventIntentRow.title || 'this event';
+    const eventIntentVenue = eventIntentRow && eventIntentRow.venue_name || 'this venue';
+    const eventIntentNativeOnly = !!eventIntent && !EVENT_INTENT_WEB_ACTIONS.has(eventIntent.action);
+    const eventIntentAction = eventIntent ? ({going:'RSVP Going',interested:'RSVP Interested',follow:'Follow venue',save:'Save event',plan:'Plan with friends',invite:'Invite friends'}[eventIntent.action] || 'Continue') : '';
+    const eventIntentBody = eventIntent && eventIntent.action==='follow'
+      ? 'Confirm following '+eventIntentVenue+'. Nothing changes until you confirm.'
+      : 'Confirm '+eventIntentAction.toLowerCase()+' for '+eventIntentName+'. Nothing changes until you confirm.';
+    const eventIntentNativeHref = eventIntent ? 'https://trydropapp.com/event/'+eventIntent.eventId : 'https://trydropapp.com/download.html';
     const maxSignup = Math.max(1, ...this.ADMIN_SIGNUPS);
     const signupBars = this.ADMIN_SIGNUPS.map(v=>({ h:(v/maxSignup*100)+'%', value:v+' signups' }));
 
@@ -2537,6 +2741,15 @@ class Component extends DCLogic {
       screenTaste: s.screen==='taste', screenSuggest: s.screen==='suggest', screenError: s.screen==='error',
       screenPromoter: s.screen==='promoter', screenPromoManage: s.screen==='promomanage', screenAdmin: s.screen==='admin',
       isPromoter: s.isPromoter, notPromoter: !s.isPromoter,
+      eventIntentVisible:!!eventIntent,
+      eventIntentWaiting:!!eventIntent && !s.eventIntentReady && !eventIntentNativeOnly,
+      eventIntentReady:!!eventIntent && s.eventIntentReady,
+      eventIntentLoading:s.eventIntentLoading,
+      eventIntentLoadFailed:!!s.eventIntentStatus && !s.eventIntentReady,
+      eventIntentNativeOnly,eventIntentWeb:!!eventIntent && !eventIntentNativeOnly,
+      eventIntentAction,eventIntentName,eventIntentBody,eventIntentNativeHref,
+      eventIntentStatus:s.eventIntentStatus,eventIntentHasStatus:!!s.eventIntentStatus,eventIntentBusy:s.eventIntentBusy,
+      eventIntentConfirmLabel:s.eventIntentBusy?'Saving…':'Confirm '+eventIntentAction,
       promoEvents, promoEventsEmpty, promoEventCount: promoEvents.length, pm, promoTabs, promoTabDetails: s.promoTab==='details', promoTabGuests: s.promoTab==='guests', promoTabCodes: s.promoTab==='codes',
       promoDelConfirm: s.promoDelConfirm, promoDelDisabled: !promoDelOk, promoDelOpacity: promoDelOk?'1':'0.5',
       guests, guestsEmpty, guestTotal, guestCheckedIn, guestPending, codes, codesEmpty,
@@ -2747,7 +2960,9 @@ class Component extends DCLogic {
       goSharePlan:(e)=>{ this.prevent(e); this.go('shareplan'); },
       goShareRecap:(e)=>{ this.prevent(e); this.go('sharerecap'); },
       goShareWrapped:(e)=>{ this.prevent(e); this.go('sharewrapped'); },
-      appToast:()=>this.flash('App Store — coming soon'),
+      appToast:()=>{ if (typeof location !== 'undefined') location.href = 'https://trydropapp.com/download.html'; },
+      downloadIos:()=>{ if (typeof location !== 'undefined') location.href = APP_STORE_URL; },
+      downloadAndroid:()=>{ if (typeof location !== 'undefined') location.href = PLAY_STORE_URL; },
       promoterToast:()=>this.flash('Promoter signup — coming soon'),
       goTaste:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to manage your taste'); return; } this.go('taste'); },
       goSuggest:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to suggest events'); return; } this.go('suggest'); },
@@ -2789,7 +3004,7 @@ class Component extends DCLogic {
         const email = fieldVal('forgot-email').trim();
         if (!email) { this.setState({authError:'Enter your account email.'}); return; }
         this.setState({authBusy:true, authError:''});
-        supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '?mode=reset-password' }).then(out=>{
+        supa.auth.resetPasswordForEmail(email, { redirectTo: authCallbackUrl('reset-password') }).then(out=>{
           this.setState({authBusy:false});
           if (out.error) { this.setState({authError: out.error.message}); return; }
           this.flash('Reset link sent — check your email');
@@ -2836,7 +3051,7 @@ class Component extends DCLogic {
         supa.auth.resend({
           type:'signup',
           email:this.state.verifyEmail,
-          options:{ emailRedirectTo:location.origin + location.pathname + '?mode=signup-complete' }
+          options:{ emailRedirectTo:signupCompletionUrl() }
         }).then(out=>{
           this.setState({ verifyMessage: out.error ? (out.error.message||'Could not resend — try again.') : 'Email resent — check your inbox.' });
         });
@@ -3067,6 +3282,9 @@ class Component extends DCLogic {
       setUsername:(e)=>this.setState({username: e.target.value}),
       setSignupEmail:(e)=>this.setState({signupEmail: e.target.value}),
       closeGate:()=>this.setState({gate:false}),
+      cancelEventIntent:()=>this.cancelEventIntent(),
+      retryEventIntent:()=>this.retryEventIntent(),
+      confirmEventIntent:()=>this.confirmEventIntent(),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),
       aeGoing:()=>this.toggleRsvp(ae.id,'going'),
@@ -3116,8 +3334,8 @@ class Component extends DCLogic {
         ? this.switchPhoneAccount()
         : (this.logout(), this.go('home')),
       setWizArtQuery:(e)=>this.setState({wizArtQuery:e.target.value}),
-      rmGoing:()=>{ if(rmEv) this.toggleRsvp(rmEv.id,'going'); this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
-      rmSkip:()=>{ this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      rmGoing:async()=>{ const ok=rmEv ? await this.writeRsvp(rmEv.id,'going') : true; this.finishActivation(); if(ok) this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
+      rmSkip:()=>this.finishActivation(),
       toastPhoto:()=>this.flash('Photo uploaded'),
       toastLoc:()=>this.flash('Using your current location'),
       toastSc:()=>this.flash('SoundCloud connect — coming soon'),
@@ -3209,6 +3427,8 @@ class Component extends DCLogic {
     // route straight to the "choose a new password" screen instead of Home.
     instance.loadEvents();
     if (typeof location !== 'undefined') {
+      const incomingEventIntent = captureEventIntentFromUrl();
+      if (incomingEventIntent) instance.primeEventIntent(incomingEventIntent);
       savePendingReferralFromUrl();
       var incomingCreatorCode = new URLSearchParams(location.search).get('creator');
       if (incomingCreatorCode) saveCreatorCode(incomingCreatorCode);
@@ -3237,9 +3457,13 @@ class Component extends DCLogic {
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
           if (instance._festivalWrites) instance._festivalWrites.clear();
+          if (instance._rsvpWrites) instance._rsvpWrites.clear();
+          instance._eventIntentRequest = null;
+          instance._eventIntentConfirm = null;
           clearPendingOAuthCompliance();
           instance.clearPhoneVerificationState({
-            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login'
+            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login',
+            rsvp:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false
           });
         } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {
           // Supabase warns against starting another auth call while its auth

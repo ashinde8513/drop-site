@@ -1,6 +1,6 @@
 # Drop
 
-> Drop is a social website and iOS app for discovering live music — concerts, EDM shows, festivals, and club nights — with one-tap official ticket links. Available on the App Store.
+> Drop is a social website, iPhone app, and Android app for discovering live music — concerts, EDM shows, festivals, and club nights — with one-tap official ticket links. Available on the App Store and Google Play.
 
 Drop is built by Resonance Ventures LLC. Primary site: https://trydropapp.com
 
@@ -12,7 +12,8 @@ Drop is built by Resonance Ventures LLC. Primary site: https://trydropapp.com
 - [Artists](https://trydropapp.com/artists): browse artists with upcoming shows by city
 - [For Promoters](https://trydropapp.com/promoters): list an event free on Drop
 - [About](https://trydropapp.com/about): who builds Drop, why it exists
-- [Download Drop](https://apps.apple.com/us/app/drop-edm-events/id6790662825): iPhone app
+- [Download Drop for iPhone](https://apps.apple.com/us/app/drop-edm-events/id6790662825): App Store
+- [Download Drop for Android](https://play.google.com/store/apps/details?id=app.resonanceventures.drop): Google Play
 - [Privacy Policy](https://trydropapp.com/privacy)
 - [Terms of Service](https://trydropapp.com/terms)
 - [Get the app / links](https://trydropapp.com/link): app links, launch list, social — link-in-bio hub
