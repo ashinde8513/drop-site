@@ -242,31 +242,65 @@
   }
 
   // Full-tree render into `container`, preserving focus + caret/selection on
-  // whatever bound input the user was typing into (see walkElement's
-  // bindKey) — otherwise every keystroke would blur the field.
+  // bound fields and ephemeral values on the same auth screen. Auth snapshots
+  // exist only for this synchronous DOM replacement; a screen change or
+  // sign-out discards them instead of putting passwords in state or storage.
+  const AUTH_FORM_FIELDS = new Set([
+    'login-email','login-password','signup-creator-code','signup-dob','signup-password','signup-consent',
+    'forgot-email','reset-password','reset-password-confirm'
+  ]);
+  const AUTH_MOUNT_STATE = new WeakMap();
+  let authFormEpoch = 0;
+  function authScreenKey(vals) {
+    if (vals.screenLogin) return 'login';
+    if (vals.screenSignup) return 'signup';
+    if (vals.screenForgot) return 'forgot';
+    if (vals.screenReset) return 'reset';
+    return '';
+  }
   function mount(container, render, vals) {
     const active = document.activeElement;
+    const nextAuthScreen = authScreenKey(vals);
+    const previousAuthMount = AUTH_MOUNT_STATE.get(container);
+    const sameAuthScreen = !!nextAuthScreen && !!previousAuthMount
+      && previousAuthMount.screen === nextAuthScreen && previousAuthMount.epoch === authFormEpoch;
+    const authFields = [];
+    if (sameAuthScreen) {
+      container.querySelectorAll('input[id]').forEach(function (field) {
+        if (!AUTH_FORM_FIELDS.has(field.id)) return;
+        authFields.push({ id:field.id, value:field.value, checked:field.checked });
+      });
+    }
     let savedKey = null;
+    let savedAuthId = null;
     let savedStart = null;
     let savedEnd = null;
-    if (active && active.dataset && active.dataset.bindKey && container.contains(active)) {
-      savedKey = active.dataset.bindKey;
-      if ('selectionStart' in active) {
+    if (active && container.contains(active)) {
+      if (sameAuthScreen && AUTH_FORM_FIELDS.has(active.id)) savedAuthId = active.id;
+      else if (active.dataset && active.dataset.bindKey) savedKey = active.dataset.bindKey;
+      if ((savedAuthId || savedKey) && 'selectionStart' in active) {
         savedStart = active.selectionStart;
         savedEnd = active.selectionEnd;
       }
     }
     container.replaceChildren(render(vals));
-    if (savedKey) {
-      const el = container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]');
-      if (el) {
-        el.focus();
-        if (savedStart != null && 'setSelectionRange' in el) {
-          try {
-            el.setSelectionRange(savedStart, savedEnd);
-          } catch (e) {
-            /* not a text-selectable input type (e.g. range) — ignore */
-          }
+    AUTH_MOUNT_STATE.set(container, { screen:nextAuthScreen, epoch:authFormEpoch });
+    authFields.forEach(function (snapshot) {
+      const field = document.getElementById(snapshot.id);
+      if (!field || !container.contains(field)) return;
+      field.value = snapshot.value;
+      if (field.type === 'checkbox') field.checked = snapshot.checked;
+    });
+    const focusEl = savedAuthId
+      ? document.getElementById(savedAuthId)
+      : savedKey ? container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]') : null;
+    if (focusEl && container.contains(focusEl)) {
+      focusEl.focus();
+      if (savedStart != null && 'setSelectionRange' in focusEl) {
+        try {
+          focusEl.setSelectionRange(savedStart, savedEnd);
+        } catch (e) {
+          /* not a text-selectable input type (e.g. range) — ignore */
         }
       }
     }
@@ -3456,6 +3490,7 @@ class Component extends DCLogic {
     if (supa) {
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
+          authFormEpoch += 1;
           if (instance._festivalWrites) instance._festivalWrites.clear();
           if (instance._rsvpWrites) instance._rsvpWrites.clear();
           instance._eventIntentRequest = null;
