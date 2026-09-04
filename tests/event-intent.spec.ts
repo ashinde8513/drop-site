@@ -241,6 +241,9 @@ test.describe('public event intent continuation', () => {
     await expect(page.getByText('Bad login')).toBeVisible({timeout:15000});
     expect(await page.evaluate(()=>sessionStorage.getItem('drop.eventIntent'))).toContain('action=going');
     expect(await writes(page)).toHaveLength(0);
+    await page.evaluate(() => (window as any).__eventIntentFake.signOut());
+    await expect(loginEmail).toHaveValue('');
+    await expect(loginPassword).toHaveValue('');
     await page.evaluate(() => { (window as any).__eventIntentFake.config.loginError=false; });
     await page.getByPlaceholder('you@example.com').fill('test@example.com');
     await page.getByPlaceholder('••••••••').fill('correct-horse-battery-staple');

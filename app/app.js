@@ -249,6 +249,8 @@
     'login-email','login-password','signup-creator-code','signup-dob','signup-password','signup-consent',
     'forgot-email','reset-password','reset-password-confirm'
   ]);
+  const AUTH_MOUNT_STATE = new WeakMap();
+  let authFormEpoch = 0;
   function authScreenKey(vals) {
     if (vals.screenLogin) return 'login';
     if (vals.screenSignup) return 'signup';
@@ -259,7 +261,9 @@
   function mount(container, render, vals) {
     const active = document.activeElement;
     const nextAuthScreen = authScreenKey(vals);
-    const sameAuthScreen = !!nextAuthScreen && container.dataset.authScreen === nextAuthScreen;
+    const previousAuthMount = AUTH_MOUNT_STATE.get(container);
+    const sameAuthScreen = !!nextAuthScreen && !!previousAuthMount
+      && previousAuthMount.screen === nextAuthScreen && previousAuthMount.epoch === authFormEpoch;
     const authFields = [];
     if (sameAuthScreen) {
       container.querySelectorAll('input[id]').forEach(function (field) {
@@ -280,8 +284,7 @@
       }
     }
     container.replaceChildren(render(vals));
-    if (nextAuthScreen) container.dataset.authScreen = nextAuthScreen;
-    else delete container.dataset.authScreen;
+    AUTH_MOUNT_STATE.set(container, { screen:nextAuthScreen, epoch:authFormEpoch });
     authFields.forEach(function (snapshot) {
       const field = document.getElementById(snapshot.id);
       if (!field || !container.contains(field)) return;
@@ -3487,6 +3490,7 @@ class Component extends DCLogic {
     if (supa) {
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
+          authFormEpoch += 1;
           if (instance._festivalWrites) instance._festivalWrites.clear();
           if (instance._rsvpWrites) instance._rsvpWrites.clear();
           instance._eventIntentRequest = null;
