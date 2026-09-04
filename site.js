@@ -489,7 +489,7 @@
   }
 
   // ---- download-the-app buttons -------------------------------------------
-  var APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = '';
+  var APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
   function initDownloadBtns() {
     var ua = navigator.userAgent || '';
     var store = /iPhone|iPad|iPod/i.test(ua) ? APP_STORE_URL : (/Android/i.test(ua) ? PLAY_STORE_URL : '');

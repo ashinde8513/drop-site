@@ -39,7 +39,7 @@ const PAGES = [
   { path: '/artists.html', title: /Artists/ },
   { path: '/promoters.html', title: /For Promoters/ },
   { path: '/about.html', title: /About/ },
-  { path: '/download.html', title: /Download Drop on the App Store/ },
+  { path: '/download.html', title: /Download Drop for iPhone and Android/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
   { path: '/delete-account.html', title: /Delete your Drop account/ },
@@ -725,22 +725,26 @@ test.describe('website smoke', () => {
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
 
-  test('download page uses Apple-provided artwork and the live App Store destination', async ({ page }) => {
+  test('download page uses official artwork and live App Store and Google Play destinations', async ({ page }) => {
     await page.goto('/download.html');
-    const badge = page.getByRole('link', { name: 'Download Drop on the App Store' });
-    await expect(badge).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
-    await expect(badge.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
-    await expect(page.getByText('Available for iPhone', { exact: true })).toBeVisible();
-    await expect(page.getByText(/iPhone\s*(?:&|and)\s*iPad/i)).toHaveCount(0);
+    const apple = page.getByRole('link', { name: 'Download Drop on the App Store' });
+    const google = page.getByRole('link', { name: 'Get Drop on Google Play' });
+    await expect(apple).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(google).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
+    await expect(apple.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
+    await expect(google.locator('img')).toHaveAttribute('alt', 'Get it on Google Play');
+    expect(await google.locator('img').evaluate((img:HTMLImageElement)=>img.complete && img.naturalWidth>0)).toBe(true);
+    await expect(page.getByText('Available for iPhone and Android', { exact: true })).toBeVisible();
+    await expect(page.getByText('Is Android coming?')).toHaveCount(0);
     await expect(page.locator('#waitlist')).toHaveCount(0);
 
     const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
-    expect(appTemplate).toContain('Available for iPhone');
-    expect(appTemplate).not.toMatch(/iPhone\s*(?:&amp;|&|and)\s*iPad/i);
+    expect(appTemplate).toContain('Available for iPhone and Android');
+    expect(appTemplate).toContain('downloadAndroid');
 
     const crawlerGuide = readFileSync(resolve('llms.txt'), 'utf8');
-    expect(crawlerGuide).toContain('id6790662825): iPhone app');
-    expect(crawlerGuide).not.toMatch(/iPhone\s*(?:&|and)\s*iPad/i);
+    expect(crawlerGuide).toContain('id6790662825): App Store');
+    expect(crawlerGuide).toContain('app.resonanceventures.drop): Google Play');
   });
 
   test('creator application submits accessible normalized fields without production writes', async ({ page }) => {

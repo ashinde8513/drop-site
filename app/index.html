@@ -123,6 +123,23 @@
   </sc-if>
 </sc-if>
 
+<!-- Pending public-event intent. The action is never applied until the explicit confirmation below. -->
+<sc-if value="{{ eventIntentVisible }}">
+  <aside role="status" style="max-width:960px;margin:var(--sp-md) auto 0;padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
+    <div style="flex:1;min-width:220px;">
+      <div style="font-family:var(--font-display);font-weight:700;">{{ eventIntentAction }} · {{ eventIntentName }}</div>
+      <sc-if value="{{ eventIntentLoading }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">Loading the event…</div></sc-if>
+      <sc-if value="{{ eventIntentWaiting }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">Log in or finish account setup, then review the action. Nothing changes automatically.</div></sc-if>
+      <sc-if value="{{ eventIntentNativeOnly }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">This action is available in the Drop app.</div></sc-if>
+      <sc-if value="{{ eventIntentHasStatus }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-top:4px;">{{ eventIntentStatus }}</div></sc-if>
+    </div>
+    <sc-if value="{{ eventIntentNativeOnly }}"><a class="btn btn--primary btn--sm" href="{{ eventIntentNativeHref }}">Open this event in Drop</a><button type="button" class="btn btn--secondary btn--sm" onClick="{{ appToast }}">Get Drop</button></sc-if>
+    <sc-if value="{{ eventIntentReady }}"><button type="button" class="btn btn--primary btn--sm" onClick="{{ confirmEventIntent }}" disabled="{{ eventIntentBusy }}">{{ eventIntentConfirmLabel }}</button></sc-if>
+    <sc-if value="{{ eventIntentLoadFailed }}"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ retryEventIntent }}">Retry</button></sc-if>
+    <button type="button" class="btn btn--ghost btn--sm" onClick="{{ cancelEventIntent }}" disabled="{{ eventIntentBusy }}">Cancel</button>
+  </aside>
+</sc-if>
+
 <!-- ============ HOME (signed-out) ============ -->
 <sc-if value="{{ screenHome }}" hint-placeholder-val="{{ true }}">
   <main>
@@ -2477,12 +2494,12 @@
     <div style="position:relative;max-width:1100px;margin:0 auto;padding:var(--sp-xxxl) var(--sp-xl);">
       <div class="m-stack" style="display:grid;grid-template-columns:1fr 300px;gap:var(--sp-xxxl);align-items:center;">
         <div>
-          <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-lg);">Available for iPhone</div>
+          <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-lg);">Available for iPhone and Android</div>
           <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(34px,5vw,56px);letter-spacing:var(--tr-tight);line-height:1.03;margin:0 0 var(--sp-md);">Drop in your pocket</h1>
           <p style="color:var(--text-secondary);font-size:var(--fs-lg);line-height:var(--lh-base);max-width:520px;margin:0 0 var(--sp-xl);">Push alerts the second presale drops, contacts sync to find your crew, and your ticket wallet on the go.</p>
           <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
-            <button type="button" class="btn btn--primary" onClick="{{ appToast }}"> App Store</button>
-            <button type="button" class="btn btn--secondary" onClick="{{ appToast }}">▶ Google Play</button>
+            <button type="button" class="btn btn--primary" onClick="{{ downloadIos }}">App Store</button>
+            <button type="button" class="btn btn--secondary" onClick="{{ downloadAndroid }}">▶ Google Play</button>
           </div>
           <a href="#" onClick="{{ goDiscover }}" style="font-size:var(--fs-sm);">Prefer the web? Browse shows in your browser →</a>
         </div>
@@ -3218,7 +3235,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   var appScript = document.createElement('script');
-  appScript.src = appAssetBase + 'app.js?v=cf4d0dc';
+  appScript.src = appAssetBase + 'app.js?v=20260904-event-intent';
   document.body.appendChild(appScript);
 </script>
 </body>

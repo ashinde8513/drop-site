@@ -239,13 +239,26 @@
         document.head.appendChild(s);
       }
 
-      // ---- Login gate — Going/Interested/Save/Follow have no signed-out
-      // meaning on a static site; link straight to the account shell instead
-      // of faking local toggle state. ------------------------------------------
-      function gateLink(cls, label, title) {
+      // ---- Event intent handoff — carry only a validated event UUID, an
+      // allowlisted action and a short expiry. The app shell revalidates this
+      // return target and still requires the user to confirm any real write.
+      var EVENT_INTENT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      var EVENT_INTENT_ACTIONS = new Set(['going', 'interested', 'save', 'follow', 'plan', 'invite']);
+      var WEB_SUPPORTED_ACTIONS = new Set(['going', 'interested', 'follow']);
+      function gateLink(ev, action, cls, label, title) {
         var a = el('a', cls, label);
-        a.href = 'https://app.trydropapp.com/?mode=login';
-        a.title = title || 'Log in on Drop';
+        var eventId = String(ev && ev.id || '').toLowerCase();
+        var url = new URL('https://app.trydropapp.com/');
+        if (EVENT_INTENT_UUID.test(eventId) && EVENT_INTENT_ACTIONS.has(action)) {
+          if (WEB_SUPPORTED_ACTIONS.has(action)) url.searchParams.set('mode', 'login');
+          var destination = '/event/' + eventId + '?action=' + action
+            + '&expires=' + (Math.floor(Date.now() / 1000) + 24 * 60 * 60);
+          url.searchParams.set('returnTo', destination);
+        } else {
+          url.searchParams.set('mode', 'login');
+        }
+        a.href = url.toString();
+        a.title = title || 'Continue on Drop';
         return a;
       }
 
@@ -319,8 +332,8 @@
 
         var actions = el('div', 'ed-hero__actions');
         var circleStyle = 'width:44px;height:44px;border-radius:50%;background:var(--glass-dark);border:1px solid var(--glass-border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
-        var saveBtn = gateLink(null, '🔖', 'Log in to save this show');
-        saveBtn.setAttribute('aria-label', 'Log in to save this show');
+        var saveBtn = gateLink(ev, 'save', null, '🔖', 'Open this show in the Drop app to save it');
+        saveBtn.setAttribute('aria-label', 'Save this show in the Drop app');
         saveBtn.style.cssText = circleStyle;
         actions.appendChild(saveBtn);
         var shareBtn = el('button', null, '↗');
@@ -454,7 +467,7 @@
           schedule.href = 'https://app.trydropapp.com/?festival=' + encodeURIComponent(ev.id);
           row.appendChild(schedule);
         }
-        row.appendChild(gateLink('chip gate', '👥 Plan with friends', 'Log in to plan with your crew'));
+        row.appendChild(gateLink(ev, 'plan', 'chip gate', '👥 Plan with friends', 'Open this show in the Drop app to plan with your crew'));
         var ics = el('button', 'chip', '📅 Download .ics');
         ics.type = 'button';
         ics.addEventListener('click', function () { icsFor(ev); });
@@ -464,8 +477,8 @@
           directions.href = D.mapsUrl(ev.venue_name, ev.city, ev.state);
           directions.target = '_blank'; directions.rel = 'noopener';
           row.appendChild(directions);
+          row.appendChild(gateLink(ev, 'follow', 'chip gate', '＋ Follow venue', 'Log in to follow this venue'));
         }
-        row.appendChild(gateLink('chip gate', '＋ Follow venue', 'Log in to follow this venue'));
         return row;
       }
 
@@ -489,9 +502,9 @@
 
         var rsvpRow = el('div');
         rsvpRow.style.cssText = 'display:flex;gap:var(--sp-sm);';
-        var going = gateLink('chip gate', '✓ Going', 'Log in to RSVP');
+        var going = gateLink(ev, 'going', 'chip gate', '✓ Going', 'Log in to RSVP');
         going.style.flex = '1'; going.style.justifyContent = 'center';
-        var interested = gateLink('chip gate', '☆ Interested', 'Log in to RSVP');
+        var interested = gateLink(ev, 'interested', 'chip gate', '☆ Interested', 'Log in to RSVP');
         interested.style.flex = '1'; interested.style.justifyContent = 'center';
         rsvpRow.appendChild(going); rsvpRow.appendChild(interested);
         box.appendChild(rsvpRow);
@@ -502,21 +515,21 @@
         box.appendChild(onsale);
 
         aside.appendChild(box);
-        aside.appendChild(gateLink('btn btn--ghost btn--block gate', 'Invite friends to this show', 'Log in to invite friends'));
+        aside.appendChild(gateLink(ev, 'invite', 'btn btn--ghost btn--block gate', 'Invite friends to this show', 'Open this show in the Drop app to invite friends'));
         return aside;
       }
 
       function renderBottomBar(ev) {
         stickyBar.innerHTML = '';
-        var save = gateLink('gate ed-bottombar__icon', '🔖', 'Log in to save this show');
+        var save = gateLink(ev, 'save', 'gate ed-bottombar__icon', '🔖', 'Open this show in the Drop app to save it');
         save.setAttribute('aria-label', 'Save event');
         save.style.cssText = 'width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(save);
-        var interested = gateLink('chip gate ed-bottombar__icon', '☆', 'Log in to RSVP');
+        var interested = gateLink(ev, 'interested', 'chip gate ed-bottombar__icon', '☆', 'Log in to RSVP');
         interested.setAttribute('aria-label', 'Mark interested');
         interested.style.cssText = 'height:48px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(interested);
-        var going = gateLink('chip gate ed-bottombar__going', '✓ Going', 'Log in to RSVP');
+        var going = gateLink(ev, 'going', 'chip gate ed-bottombar__going', '✓ Going', 'Log in to RSVP');
         going.style.cssText = 'height:48px;display:inline-flex;align-items:center;justify-content:center;';
         stickyBar.appendChild(going);
         var ticketUrl = D.safeUrl(ev.ticket_url);
