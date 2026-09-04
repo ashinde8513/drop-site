@@ -80,7 +80,7 @@ async function install(page:Page, config:Record<string,unknown>={}) {
   await page.route('**/rest/v1/events?**', async route => {
     const url=new URL(route.request().url());
     const exact=url.searchParams.get('id')===`eq.${EVENT_ID}`;
-    if(!exact) await new Promise(resolve=>setTimeout(resolve,250));
+    if(!exact) await new Promise(resolve=>setTimeout(resolve,Number((config as any).catalogDelayMs||250)));
     await route.fulfill({status:200,contentType:'application/json',headers:{'content-range':'*/0'},body:JSON.stringify(exact?[eventRow]:[])});
   });
 }
@@ -226,10 +226,17 @@ test.describe('public event intent continuation', () => {
   });
 
   test('password login error preserves context, then success restores explicit review', async ({page}) => {
-    await install(page,{loginError:true});
+    await install(page,{loginError:true,catalogDelayMs:800});
     await page.goto('/app/index.html?mode=login&returnTo='+encodeURIComponent(destination('going')));
-    await page.getByPlaceholder('you@example.com').fill('test@example.com');
-    await page.getByPlaceholder('••••••••').fill('correct-horse-battery-staple');
+    const loginEmail=page.getByPlaceholder('you@example.com');
+    const loginPassword=page.getByPlaceholder('••••••••');
+    await loginEmail.fill('test@example.com');
+    await loginPassword.fill('correct-horse-battery-staple');
+    await loginPassword.evaluate((field:HTMLInputElement)=>field.setSelectionRange(8,8));
+    await page.waitForTimeout(900); // delayed catalog forces a same-screen full-tree render
+    await expect(loginEmail).toHaveValue('test@example.com');
+    await expect(loginPassword).toHaveValue('correct-horse-battery-staple');
+    expect(await page.evaluate(()=>({id:(document.activeElement as HTMLElement)?.id,start:(document.activeElement as HTMLInputElement)?.selectionStart}))).toEqual({id:'login-password',start:8});
     await page.getByRole('button',{name:'Log in',exact:true}).click();
     await expect(page.getByText('Bad login')).toBeVisible({timeout:15000});
     expect(await page.evaluate(()=>sessionStorage.getItem('drop.eventIntent'))).toContain('action=going');
@@ -278,11 +285,18 @@ test.describe('public event intent continuation', () => {
   });
 
   test('completed password recovery still returns to review, not an automatic RSVP', async ({page}) => {
-    await install(page,{session:true});
+    await install(page,{session:true,catalogDelayMs:800});
     await page.goto('/app/index.html?mode=reset-password&returnTo='+encodeURIComponent(destination('going')));
     await expect(page.getByRole('heading',{name:'Choose a new password'})).toBeVisible();
-    await page.locator('#reset-password').fill('new-correct-password');
-    await page.locator('#reset-password-confirm').fill('new-correct-password');
+    const resetPassword=page.locator('#reset-password');
+    const resetConfirm=page.locator('#reset-password-confirm');
+    await resetPassword.fill('new-correct-password');
+    await resetConfirm.fill('new-correct-password');
+    await resetConfirm.evaluate((field:HTMLInputElement)=>field.setSelectionRange(6,6));
+    await page.waitForTimeout(900); // delayed catalog forces a same-screen full-tree render
+    await expect(resetPassword).toHaveValue('new-correct-password');
+    await expect(resetConfirm).toHaveValue('new-correct-password');
+    expect(await page.evaluate(()=>({id:(document.activeElement as HTMLElement)?.id,start:(document.activeElement as HTMLInputElement)?.selectionStart}))).toEqual({id:'reset-password-confirm',start:6});
     await page.getByRole('button',{name:'Update password'}).click();
     await expect(page.getByRole('heading',{name:'Choose a new password'})).toHaveCount(0);
     const loginHeading=page.getByRole('heading',{name:'Welcome back'});
