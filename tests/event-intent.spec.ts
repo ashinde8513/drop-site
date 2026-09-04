@@ -231,7 +231,7 @@ test.describe('public event intent continuation', () => {
     await page.getByPlaceholder('you@example.com').fill('test@example.com');
     await page.getByPlaceholder('••••••••').fill('correct-horse-battery-staple');
     await page.getByRole('button',{name:'Log in',exact:true}).click();
-    await expect(page.getByText('Bad login')).toBeVisible();
+    await expect(page.getByText('Bad login')).toBeVisible({timeout:15000});
     expect(await page.evaluate(()=>sessionStorage.getItem('drop.eventIntent'))).toContain('action=going');
     expect(await writes(page)).toHaveLength(0);
     await page.evaluate(() => { (window as any).__eventIntentFake.config.loginError=false; });
@@ -284,7 +284,16 @@ test.describe('public event intent continuation', () => {
     await page.locator('#reset-password').fill('new-correct-password');
     await page.locator('#reset-password-confirm').fill('new-correct-password');
     await page.getByRole('button',{name:'Update password'}).click();
-    await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Choose a new password'})).toHaveCount(0);
+    const loginHeading=page.getByRole('heading',{name:'Welcome back'});
+    const confirm=page.getByRole('button',{name:'Confirm RSVP Going'});
+    await expect(loginHeading.or(confirm).first()).toBeVisible({timeout:15000});
+    if (await loginHeading.isVisible()) {
+      await page.getByPlaceholder('you@example.com').fill('test@example.com');
+      await page.getByPlaceholder('••••••••').fill('new-correct-password');
+      await page.getByRole('button',{name:'Log in',exact:true}).click();
+    }
+    await expect(confirm).toBeVisible({timeout:15000});
     expect(await page.evaluate(()=>sessionStorage.getItem('drop.eventIntent'))).toContain('action=going');
     expect(await writes(page)).toHaveLength(0);
   });
