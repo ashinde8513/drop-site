@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-09-04
+Last updated: 2026-09-08
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -20,6 +20,17 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **OFFICIAL FRENS PARTNER LOGO LIVE (2026-09-08, PR #109):** the homepage
+  partner row now links the official FRENS mark to `https://heyfrens.org/` with
+  safe new-tab attributes and accessible text. The checked-in SVG is
+  byte-identical to the official site's declared `/logo.svg` favicon (SHA-256
+  `6f4056e93ab7d387f70505ed50c26dcc576a265cd1d813399ed65da5f47465f7`).
+  PR #109 reviewed head `6b492d88b295dd24e860f5215ec2b14bcc55a263`
+  merged as `894c024f02df5527d8b0e4c8ef6c46ac49c9a83e`; main workflow
+  `34256133237` passed and deployed through Cloudflare Pages. Live desktop and
+  mobile QA found the intended 52px/44px rendering, exact partner destination,
+  no horizontal overflow, and no console errors; the live SVG is byte-identical
+  to the reviewed asset.
 - **GOOGLE PLAY AVAILABILITY + SAFE PUBLIC EVENT CONTINUATION REVIEWED (2026-09-04):** the website candidate exposes the verified iPhone and Android store destinations on `/download`, device-aware download controls, signed-in app controls, `/go` fallback, metadata, and `llms.txt`. Public event Going/Interested/Follow actions now retain only an exact UUID, allowlisted action, and at-most-24-hour expiry through login, signup, recovery, age, and phone gates; nothing writes before explicit final confirmation, failed/stale writes cannot report success, and missing events fail closed. Save/Plan/Invite remain honest native/install alternatives. Local gates pass 18/18 Node contracts and the 224-case Chromium/mobile-WebKit CI-mode matrix (223 direct passes plus one clean automatic retry after a local static-server timeout); focused event/auth/store coverage passes 30/30. Build parity, Android association validation, dependency audit, secret scan, and independent security/correctness review are clean. Standard PR/main auto-deploy and live provenance verification remain.
 - **OFFICIAL GOOGLE PLAY LINK LIVE (2026-09-02, PR #105):** the link-in-bio hub
   now presents equal App Store and Google Play download actions, identifies Drop
@@ -182,9 +193,14 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **1. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the published 1.0.2 (2) AAB manifest contains that host. Ranked first because the Google Play listing is now public, so this can affect Android ≤11 users rather than a pending release. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
-- **2. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
-- **3. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
+- **1. Founder visually approve the live FRENS mark and placement on
+  `https://trydropapp.com/` at desktop and phone widths.** If FRENS supplies a
+  different official lockup, replace only from that partner-provided source and
+  retain exact asset provenance; no further website implementation is pending
+  for the current logo request.
+- **2. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the published 1.0.2 (2) AAB manifest contains that host. Ranked second because the Google Play listing is now public, so this can affect Android ≤11 users rather than a pending release. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
+- **3. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
+- **4. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -514,6 +530,26 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-09-08 — Codex — official FRENS partner logo live
+- **Changed:** added the official FRENS SVG to the existing homepage partner row,
+  preserving its blue/pink colors and linking it to `https://heyfrens.org/` with
+  accessible, safe new-tab behavior. No event date, venue, offer, partnership
+  term, backend, authentication, or PR #108 file changed.
+- **Provenance:** `assets/partners/frens.svg` is byte-identical to the official
+  site's declared `/logo.svg` favicon, SHA-256
+  `6f4056e93ab7d387f70505ed50c26dcc576a265cd1d813399ed65da5f47465f7`.
+- **Verified:** 18/18 Node checks passed; 223/224 browser checks passed directly
+  and the sole unrelated event-intent timeout passed focused. The exact later CI
+  auth failures passed 4/4 locally. Build parity, zero-vulnerability offline
+  audit, gitleaks, diff check, exact asset identity, desktop/mobile rendering,
+  link interaction, and independent adversarial review passed.
+- **Delivery:** PR #109 exact reviewed head
+  `6b492d88b295dd24e860f5215ec2b14bcc55a263` merged as
+  `894c024f02df5527d8b0e4c8ef6c46ac49c9a83e`; exact-main workflow
+  `34256133237` passed test and Cloudflare deploy jobs. Live HTML exposes the
+  reviewed link and the live SVG is byte-identical to reviewed source; 1280×900
+  and 390×844 live QA found no overflow or console errors.
+
 ### 2026-09-04 — Codex — store availability and event-action continuation reviewed
 - **Changed:** added equal App Store/Google Play availability across `/download`, device-aware routes, signed-in controls, metadata, and discovery text. Public event actions now carry a strict 24-hour exact-event intent through existing authentication/compliance gates; RSVP/venue-follow writes require explicit confirmation, while Save/Plan/Invite retain truthful native/install paths.
 - **Security:** rejects external, protocol-relative, encoded, malformed, duplicate, oversized, expired, and overlong return targets; scrubs accepted targets from the browser URL; invalidates canceled/replaced/sign-out async work; suppresses stale and failed success; fetches the exact published event and fails closed when unavailable.
