@@ -255,17 +255,19 @@ test.describe('website smoke', () => {
     await expect(sources.locator(':scope > p')).toHaveCount(0);
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
-    await expect(sources.locator('img')).toHaveCount(6);
+    await expect(sources.locator('img')).toHaveCount(7);
     await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Cervantes’ Masterpiece Ballroom');
-    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'Eventim');
-    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Ticketmaster');
-    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'SeatGeek');
-    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'Etix');
-    await expect(sources.locator('img').nth(5)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'FRENS');
+    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Eventim');
+    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Ticketmaster');
+    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'SeatGeek');
+    await expect(sources.locator('img').nth(5)).toHaveAttribute('alt', 'Etix');
+    await expect(sources.locator('img').nth(6)).toHaveAttribute('alt', 'Ticketsauce');
     await expect(sources.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
       'href',
       'https://cervantesmasterpiece.com/',
     );
+    await expect(sources.locator('a[aria-label="Visit FRENS"]')).toHaveAttribute('href', 'https://heyfrens.org/');
     await expect(sources.locator('a[aria-label="Visit Eventim"]')).toHaveAttribute('href', 'https://www.eventim.us/');
     await expect(sources.locator('a[aria-label="Visit Ticketsauce"]')).toHaveAttribute('href', 'https://www.ticketsauce.com/');
     for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
