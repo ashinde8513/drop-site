@@ -355,9 +355,16 @@
   // =======================================================================
   var SUPA_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co';
   var SUPA_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
+  var emailChangeReturn = new URLSearchParams(location.search).get('mode') === 'email-change';
+  var emailChangeReturnError = emailChangeReturn && ['error', 'error_code', 'error_description'].some(function (key) {
+    return new URLSearchParams(location.search).has(key) || new URLSearchParams(location.hash.slice(1)).has(key);
+  });
+  var emailChangeReturnMessage = emailChangeReturnError
+    ? 'This email link could not be confirmed. Request new verification emails in Settings, then confirm both links.'
+    : 'Confirm both email links, then return to your signed-in device and check email status in Settings. You can also sign in here to check.';
   var supa = window.supabase && window.supabase.createClient
     ? window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !emailChangeReturn, flowType: 'pkce' }
       })
     : null;
   var Drop = window.Drop || null; // from data.js — public event catalog + formatters
@@ -862,6 +869,7 @@ class Component extends DCLogic {
     wizPhoneRequired: false,
     wizPhoneVerified: false, wizPhoneStatus: '', wizPhoneResendBlocked: false,
     // settings
+    emailInput:'', emailPending:'', emailBusy:false, emailStatus:'',
     setToggles: { reminders: true, sales: true, comments: false, plans: true },
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
@@ -1017,6 +1025,7 @@ class Component extends DCLogic {
     const withSkel = (s==='discover'||s==='event'||s==='search'||s==='myshows');
     this.setState({ screen: s, cityOpen:false, menuOpen:false, navOpen:false, loading: withSkel });
     if(typeof window!=='undefined') window.scrollTo(0,0);
+    if (s === 'settings') void this.checkEmailStatus();
     if(withSkel){ clearTimeout(this._skelT); this._skelT = setTimeout(()=>this.setState({loading:false}), 750); }
   }
   prevent(e){ if(e&&e.preventDefault) e.preventDefault(); }
@@ -1688,7 +1697,8 @@ class Component extends DCLogic {
           return;
         }
       }
-      this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
+      this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '', emailPending:session.user.new_email || '' });
+      if (emailChangeReturn) this.go('settings');
       // Authed users never sit on the marketing hero or an auth form —
       // Discover is the logged-in home (design: doLogin/doVerify → discover).
       const scr = this.state.screen;
@@ -1703,6 +1713,70 @@ class Component extends DCLogic {
       }
       this.maybeResumeClaimDeepLink();
       this.maybeResumeEventIntent();
+  }
+  async checkEmailStatus(){
+    if (!supa || !this.state.authed || this.state.emailBusy) return;
+    const userId = this.state.userId;
+    const pending = this.state.emailPending;
+    this.setState({ emailBusy:true, emailStatus:'' });
+    try {
+      const out = await supa.auth.getUser();
+      if (this.state.userId !== userId) return;
+      const account = out.data && out.data.user;
+      if (out.error || !account || account.id !== userId) throw new Error();
+      this.setState({
+        userEmail:account.email || '', emailPending:account.new_email || '',
+        emailStatus:account.new_email
+          ? 'Still pending. Confirm the links in both inboxes, then check status again.'
+          : pending && account.email === pending ? 'Your new email is verified.' : ''
+      });
+    } catch (_) {
+      if (this.state.userId === userId) this.setState({ emailStatus:'Could not check your email. Try again or sign in again.' });
+    } finally {
+      if (this.state.userId === userId) this.setState({ emailBusy:false });
+    }
+  }
+  async changeEmail(resend){
+    if (!supa || !this.state.authed || this.state.emailBusy) return;
+    const userId = this.state.userId;
+    const email = (resend ? this.state.emailPending : this.state.emailInput).trim();
+    if (!looksLikeEmail(email) || email.length > 254) {
+      this.setState({ emailStatus:'Enter a valid email address.' });
+      return;
+    }
+    if (email.toLowerCase() === this.state.userEmail.toLowerCase()) {
+      this.setState({ emailStatus:'Enter a different email address.' });
+      return;
+    }
+    this.setState({ emailBusy:true, emailStatus:'' });
+    try {
+      const current = await supa.auth.getUser();
+      if (this.state.userId !== userId) return;
+      if (current.error || !current.data || !current.data.user || current.data.user.id !== userId) throw new Error();
+      const out = resend
+        ? await supa.auth.resend({ type:'email_change', email:current.data.user.email, options:{ emailRedirectTo:authCallbackUrl('email-change') } })
+        : await supa.auth.updateUser({ email }, { emailRedirectTo:authCallbackUrl('email-change') });
+      if (this.state.userId !== userId) return;
+      if (out.error) {
+        const rateLimited = out.error.status === 429 || /rate|too_many/.test(out.error.code || '');
+        this.setState({ emailStatus:rateLimited
+          ? 'Please wait a minute before requesting another email.'
+          : 'Could not request this email change. Check the address and try again.' });
+        return;
+      }
+      const account = out.data && out.data.user;
+      if (!resend && (!account || account.id !== userId)) throw new Error();
+      this.setState({
+        userEmail:account && account.email || current.data.user.email || '',
+        emailPending:account ? account.new_email || '' : current.data.user.new_email || '',
+        emailInput:resend ? this.state.emailInput : '',
+        emailStatus:'Check both your current and new inboxes. Confirm both links, then return here and check status.'
+      });
+    } catch (_) {
+      if (this.state.userId === userId) this.setState({ emailStatus:'Could not request this email change. Check your connection and try again.' });
+    } finally {
+      if (this.state.userId === userId) this.setState({ emailBusy:false });
+    }
   }
   async connectTikTok(){
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
@@ -2933,6 +3007,13 @@ class Component extends DCLogic {
       prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0,
       notifBadge: String(notifications.filter(n=>n.unread).length), hasNotifBadge: notifications.some(n=>n.unread),
       settingsToggles, recapPrivacy: s.recapPrivacy,
+      accountEmail:s.userEmail || 'Not available', emailInput:s.emailInput,
+      emailPending:s.emailPending, hasPendingEmail:!!s.emailPending,
+      emailBusy:s.emailBusy, emailStatus:s.emailStatus || (emailChangeReturnError ? emailChangeReturnMessage : ''),
+      emailSubmitLabel:s.emailBusy?'Please wait…':'Send verification emails',
+      setEmailInput:(e)=>this.setState({emailInput:e.target.value}),
+      submitEmail:(e)=>{ this.prevent(e); void this.changeEmail(false); },
+      resendEmail:()=>void this.changeEmail(true), checkEmail:()=>void this.checkEmailStatus(),
       tiktokConnecting: s.tiktokConnecting,
       tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
       blocked, blockedEmpty: blocked.length===0,
@@ -3480,6 +3561,12 @@ class Component extends DCLogic {
       const mode = new URLSearchParams(location.search).get('mode');
       if (mode === 'login') instance.setState({ screen: 'login' });
       if (mode === 'signup') instance.setState({ screen: 'signup' });
+      if (emailChangeReturn) {
+        // ConfirmationURL already verified the link at Auth. Do not exchange
+        // its PKCE code in a different browser or reuse the signup OTP route.
+        scrubSignupCompletionUrl();
+        instance.setState({ screen:'login', authError:emailChangeReturnMessage });
+      }
       const claimId = new URLSearchParams(location.search).get('claim');
       if (claimId) instance.setState({ pendingClaimArtistId: claimId });
       // Public-site "suggest an event" deep link → the suggest screen once the
@@ -3499,7 +3586,7 @@ class Component extends DCLogic {
           instance._eventIntentConfirm = null;
           clearPendingOAuthCompliance();
           instance.clearPhoneVerificationState({
-            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login',
+            authed:false, userId:null, userEmail:'', emailInput:'', emailPending:'', emailStatus:'', emailBusy:false, profile:null, stars:{}, festTab:'All', screen:'login',
             rsvp:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false
           });
         } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {
