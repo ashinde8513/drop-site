@@ -20,7 +20,15 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
-- **AUTH FORMS, FEEDBACK, AND BROWSER CI REVIEWED (2026-09-09, source only):** Login/signup/recovery inputs now survive unrelated catalog renders without copying passwords to state or browser storage; screen/auth/account transitions clear them. Settings Help & feedback opens an editable private draft, with a visible email fallback.  Google's Chrome APT repository serves a package file that fails its signed checksum, blocking Playwright browser installation before tests. The test job now uses the official Playwright 1.61.1 image pinned by digest and matched to the lockfile. Runner, Node 22, npm integrity checks, full browser assertions, and the production deploy job are preserved. A Node contract rejects image-version drift. Required CI and delivery remain pending.
+- **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
+  canonical Drop wordmark, presents Website first followed by App Store,
+  Google Play, About Drop, and then the social row, and adds the official
+  Threads profile to Instagram, TikTok, X, YouTube, Facebook, Reddit, and
+  LinkedIn. The four-file source diff was independently approved unchanged;
+  focused desktop/mobile acceptance passes 2/2 on repaired main `0a114e9`.
+  Exact-head CI, merge, Pages delivery, and live readback are in progress.
+- **EMAIL CHANGE REVIEWED, SOURCE ONLY (PR #112):** current/pending email, dual-inbox verification, resend, safe callback, and server refresh are implemented and reviewed on top of PR #113. The matching mobile candidate is draft PR #984. Exact shared migration approval remains blocked by automatic review until the user explicitly names its SECURITY DEFINER function/auth.users trigger; nothing has been applied.
+- **AUTH FORMS, FEEDBACK, AND BROWSER CI LIVE (2026-09-09, PR #113):** Login/signup/recovery inputs now survive unrelated catalog renders without copying passwords to state or browser storage; screen/auth/account transitions clear them. Settings Help & feedback opens an editable private draft, with a visible email fallback.  Google's Chrome APT repository serves a package file that fails its signed checksum, blocking Playwright browser installation before tests. The test job now uses the official Playwright 1.61.1 image pinned by digest and matched to the lockfile. Runner, Node 22, npm integrity checks, full browser assertions, and the production deploy job are preserved. A Node contract rejects image-version drift. Reviewed head `ad0395cd8500cb7abffef660b49ffc8326f0b778` passed 19 Node contracts and 232 browser cases; merge `0a114e92d3f8ca276979a0241591cb59caaedbef` passed main workflow `34387057850` and deployed. Both public app.js surfaces are byte-identical to review. HTML differs only by expected Cloudflare email protection; the live DOM confirms its feedback address decodes correctly. Existing browser account stops at phone activation; no SMS or bypass, and Settings geometry remains automated-test evidence.
 - **OFFICIAL FRENS PARTNER LOGO LIVE (2026-09-08, PR #109):** the homepage
   partner row now links the official FRENS mark to `https://heyfrens.org/` with
   safe new-tab attributes and accessible text. The checked-in SVG is
@@ -177,6 +185,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
+- Email PR #112/mobile PR #984: exact migration `20260909170719_sync_verified_auth_email_to_profiles.sql`, SHA-256 `512396823a0f32c76ba83bd2ea3d8701678a83f6aef4fcbec42d70a969de30d4`, remains unapplied. User approved the packet, but automatic review rejected the privileged DDL and an explicit follow-up is pending. No retry or email-UI activation before explicit approval plus fresh preflight/application/postflight.
 - Founder visual acceptance of the already delivered FRENS mark on desktop/phone remains waiting; no implementation required for that request.
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
@@ -195,8 +204,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **1. Deliver `codex/website-ci-playwright-20260909` through required website CI and the normal protected main/Pages path.** Review the trace-proven auth-input preservation fix alongside the independent browser-image repair; verify current source, real test steps, and deployed artifact.
-- **2. Reconcile PR #111 and #112 onto the delivered fix in their respective owner lanes.** Each still needs green exact-head CI. Keep #112 email activation held until the separately approved Auth-to-profile sync migration is live and verified.
+- **1. In the existing email-change owner lane, finish exact-head CI for rebased PR #112; keep it draft while the explicit database blocker above remains.** Preserve both PR #113's auth-input fix and a single private-feedback handler. Activation follows only the approved migration's verified live installation.
 - **2. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the published 1.0.2 (2) AAB manifest contains that host. Ranked second because the Google Play listing is now public, so this can affect Android ≤11 users rather than a pending release. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
 - **3. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
 - **4. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
@@ -220,6 +228,15 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-09-09 — Codex — link hub refresh reviewed
+- **Changed:** `/link` uses the current Drop wordmark and orders Website, App
+  Store, Google Play, and About Drop before the social row. Threads joins the
+  seven existing official social destinations with accessible, safe new-tab
+  behavior.
+- **Verified:** the rebased four-file diff is unchanged from independent source
+  and rendered review. Focused desktop Chromium and mobile WebKit acceptance
+  passes 2/2; required exact-head CI and production delivery remain in progress.
 
 ## 2026-09-02 — Codex — official Google Play link live
 - **Changed:** `/link` now includes an equal Google Play CTA to the exact public
@@ -529,6 +546,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-09-09 — Codex — website repair delivered, email candidate reconciled
+- PR #113 merged as `0a114e92d3f8ca276979a0241591cb59caaedbef`; required PR and main checks passed. Production workflow `34387057850` deployed successfully; live app script bytes match approved SHA-256 `a493481e977b1b0bfcbe9476a8367a00d544cda7d1c5b0375b6b9525e0ca824d` on apex and app subdomain.
+- Live HTML's only differences are Cloudflare's email protection transform and decoder insertion; its decoder processes templates, and live DOM confirms the visible mailbox fallback is decoded. No overflow or console warnings/errors on the available phone-activation surface. No account mutation/SMS or activation bypass was performed.
+- Email PR #112 rebased onto that delivered source. Combined email/auth regression passes 16/16; duplicate identical feedback handler introduced by rebase was removed. Production migration remains unapplied after automatic approval rejection; explicit privileged-DDL follow-up pending.
 ### 2026-09-09 — Codex — website delivery blocker repair
 - Isolated from DB-gated email PR #112 so other website work can resume independently. Official Google InRelease/Packages readback at 17:41 UTC reproduced the exact failed checksum from CI; no integrity bypass was attempted.
 - Test job uses official Playwright 1.61.1 image SHA-256 `5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48`; source lockfile matches. Nineteen Node contracts pass; independent CI review approves. Required browser CI still must execute successfully.
