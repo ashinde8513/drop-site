@@ -1171,9 +1171,19 @@
 
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Account</div>
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);margin-bottom:var(--sp-xxl);">
-        <div style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
-          <span style="flex:1;font-size:var(--fs-sm);color:var(--text-secondary);">Email</span><span style="font-size:var(--fs-sm);color:var(--text);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f2939e978ab2978a939f829e97dc919d9f">[email&#160;protected]</a></span>
-        </div>
+        <form onSubmit="{{ submitEmail }}" style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);">
+          <p style="margin:0 0 var(--sp-md);overflow-wrap:anywhere;">Current email: <strong data-testid="account-current-email">{{ accountEmail }}</strong></p>
+          <sc-if value="{{ hasPendingEmail }}"><p style="color:var(--text-secondary);overflow-wrap:anywhere;">Pending verification: <strong data-testid="account-pending-email">{{ emailPending }}</strong></p></sc-if>
+          <label for="account-new-email" style="display:block;margin-bottom:var(--sp-sm);">New email address</label>
+          <input id="account-new-email" type="email" autocomplete="email" required maxlength="254" value="{{ emailInput }}" onInput="{{ setEmailInput }}" disabled="{{ emailBusy }}" aria-describedby="email-change-help email-change-status" style="width:100%;box-sizing:border-box;min-height:48px;padding:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font:inherit;" />
+          <p id="email-change-help" style="color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-base);">Confirm the links sent to both email addresses. Your current email stays active until both are confirmed.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-sm);">
+            <button type="submit" class="btn btn--primary" disabled="{{ emailBusy }}">{{ emailSubmitLabel }}</button>
+            <button type="button" class="btn btn--secondary" onClick="{{ checkEmail }}" disabled="{{ emailBusy }}">Check verification status</button>
+            <sc-if value="{{ hasPendingEmail }}"><button type="button" class="btn btn--ghost" onClick="{{ resendEmail }}" disabled="{{ emailBusy }}">Resend verification emails</button></sc-if>
+          </div>
+          <p id="email-change-status" role="status" aria-live="polite" style="color:var(--text-secondary);line-height:var(--lh-base);">{{ emailStatus }}</p>
+        </form>
         <button type="button" onClick="{{ goTaste }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Music taste</span><span style="color:var(--text-muted);">›</span></button>
         <button type="button" onClick="{{ connectTikTok }}" disabled="{{ tiktokConnecting }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">{{ tiktokButtonLabel }}</span><span style="color:var(--text-muted);">›</span></button>
         <button type="button" onClick="{{ goBlocked }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Blocked accounts</span><span style="color:var(--text-muted);">›</span></button>
@@ -3238,7 +3248,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   var appScript = document.createElement('script');
-  appScript.src = appAssetBase + 'app.js?v=20260904-event-intent';
+  appScript.src = appAssetBase + 'app.js?v=20260909-email-change';
   document.body.appendChild(appScript);
 </script>
 </body>
