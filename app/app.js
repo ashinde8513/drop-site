@@ -3011,10 +3011,6 @@ class Component extends DCLogic {
       emailPending:s.emailPending, hasPendingEmail:!!s.emailPending,
       emailBusy:s.emailBusy, emailStatus:s.emailStatus || (emailChangeReturnError ? emailChangeReturnMessage : ''),
       emailSubmitLabel:s.emailBusy?'Please wait…':'Send verification emails',
-      emailFeedback:()=>{
-        const body = 'Which screen or task?\n\nWhat happened, or what would you improve?\n\nWhat did you expect?\n\nSent from the Drop website.';
-        location.href = 'mailto:trydropapp@gmail.com?subject=' + encodeURIComponent('Drop feedback') + '&body=' + encodeURIComponent(body);
-      },
       setEmailInput:(e)=>this.setState({emailInput:e.target.value}),
       submitEmail:(e)=>{ this.prevent(e); void this.changeEmail(false); },
       resendEmail:()=>void this.changeEmail(true), checkEmail:()=>void this.checkEmailStatus(),
