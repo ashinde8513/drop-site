@@ -905,11 +905,23 @@ test.describe('website smoke', () => {
     expect(buildScript).toContain(`cp ${filenames.join(' ')} dist/app/`);
   });
 
-  test('link-in-bio sends visitors to the live App Store and Google Play listings', async ({ page }) => {
+  test('link-in-bio orders the website, downloads, about, then every current social', async ({ page }) => {
     await page.goto('/link.html');
+    await expect(page.locator('#visitWebsite')).toHaveAttribute('href', 'https://trydropapp.com/');
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
     await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
-    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/download.html');
+    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about.html');
+    await expect(page.locator('.lh-links > *')).toHaveCount(5);
+    await expect(page.locator('.lh-links > *').nth(0)).toHaveAttribute('id', 'visitWebsite');
+    await expect(page.locator('.lh-links > *').nth(1)).toHaveAttribute('id', 'getApp');
+    await expect(page.locator('.lh-links > *').nth(2)).toHaveAttribute('id', 'getGooglePlay');
+    await expect(page.locator('.lh-links > *').nth(3)).toHaveAttribute('id', 'aboutDrop');
+    await expect(page.locator('.lh-links > *').nth(4)).toHaveClass(/lh-socials/);
+    const threads = page.getByRole('link', { name: 'Threads', exact: true });
+    await expect(threads).toHaveAttribute('href', 'https://www.threads.com/@trydropapp');
+    await expect(threads).toHaveAttribute('target', '_blank');
+    await expect(threads).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(threads.locator('use')).toHaveAttribute('href', '/social-icons.svg#threads');
     await expect(page.getByText('iPhone · Android · Free', { exact: true })).toBeVisible();
   });
 
