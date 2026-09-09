@@ -241,24 +241,48 @@
     };
   }
 
+  const TRANSIENT_AUTH_INPUT_IDS = new Set([
+    'login-email', 'login-password',
+    'signup-creator-code', 'signup-dob', 'signup-password', 'signup-consent',
+    'forgot-email', 'reset-password', 'reset-password-confirm'
+  ]);
+
   // Full-tree render into `container`, preserving focus + caret/selection on
-  // whatever bound input the user was typing into (see walkElement's
-  // bindKey) — otherwise every keystroke would blur the field.
-  function mount(container, render, vals) {
+  // whatever input the user was typing into. Uncontrolled auth values survive
+  // unrelated renders only; boot() disables restoration across screen/session
+  // transitions, and nothing is copied to state or browser storage.
+  function mount(container, render, vals, preserveAuthInputs) {
     const active = document.activeElement;
     let savedKey = null;
+    let savedId = null;
     let savedStart = null;
     let savedEnd = null;
-    if (active && active.dataset && active.dataset.bindKey && container.contains(active)) {
-      savedKey = active.dataset.bindKey;
+    if (active && container.contains(active)) {
+      savedKey = active.dataset && active.dataset.bindKey;
+      savedId = active.id && TRANSIENT_AUTH_INPUT_IDS.has(active.id) ? active.id : null;
       if ('selectionStart' in active) {
         savedStart = active.selectionStart;
         savedEnd = active.selectionEnd;
       }
     }
+    const authValues = new Map();
+    if (preserveAuthInputs) {
+      TRANSIENT_AUTH_INPUT_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && container.contains(el)) authValues.set(id, el.type === 'checkbox' ? el.checked : el.value);
+      });
+    }
     container.replaceChildren(render(vals));
-    if (savedKey) {
-      const el = container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]');
+    authValues.forEach((value, id) => {
+      const el = document.getElementById(id);
+      if (!el || !container.contains(el)) return;
+      if (el.type === 'checkbox') el.checked = value;
+      else el.value = value;
+    });
+    if (savedKey || savedId) {
+      const el = savedKey
+        ? container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]')
+        : document.getElementById(savedId);
       if (el) {
         el.focus();
         if (savedStart != null && 'setSelectionRange' in el) {
@@ -3341,6 +3365,10 @@ class Component extends DCLogic {
       toastSc:()=>this.flash('SoundCloud connect — coming soon'),
 
       // profile / settings
+      emailFeedback:()=>{
+        const body = 'Which screen or task?\n\nWhat happened, or what would you improve?\n\nWhat did you expect?\n\nSent from the Drop website.';
+        location.href = 'mailto:trydropapp@gmail.com?subject=' + encodeURIComponent('Drop feedback') + '&body=' + encodeURIComponent(body);
+      },
       goProfile:(e)=>{ this.prevent(e); this.go('profile'); },
       goEditProfile:(e)=>{ this.prevent(e); this.go('editprofile'); },
       goSettings:(e)=>{ this.prevent(e); this.go('settings'); },
@@ -3409,12 +3437,21 @@ class Component extends DCLogic {
     const render = compileTemplate(tplEl.innerHTML);
     const instance = new Component({});
     let pending = false;
+    let renderedScreen = instance.state.screen;
+    let renderedAuthed = instance.state.authed;
+    let renderedUserId = instance.state.userId;
     scheduleRender = () => {
       if (pending) return;
       pending = true;
       queueMicrotask(() => {
         pending = false;
-        mount(container, render, instance.renderVals());
+        const preserveAuthInputs = instance.state.screen === renderedScreen
+          && instance.state.authed === renderedAuthed
+          && instance.state.userId === renderedUserId;
+        mount(container, render, instance.renderVals(), preserveAuthInputs);
+        renderedScreen = instance.state.screen;
+        renderedAuthed = instance.state.authed;
+        renderedUserId = instance.state.userId;
         wireGenreRail();
       });
     };
