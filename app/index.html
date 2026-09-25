@@ -541,7 +541,7 @@
           <div style="padding:var(--sp-xl) 0;">
             <div class="sec__title" style="margin-bottom:var(--sp-lg);">Comments</div>
             <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-xl);">
-              <input type="text" placeholder="Add a comment…" onFocus="{{ requireComment }}" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+              <input type="text" placeholder="Add a comment…" onFocus="{{ requireComment }}" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
               <button type="button" class="btn btn--secondary btn--sm" onClick="{{ requireComment }}">Post</button>
             </div>
             <sc-if value="{{ commentsEmpty }}">
@@ -594,7 +594,7 @@
     <div style="max-width:1440px;margin:0 auto;padding:var(--sp-lg) var(--sp-xl) var(--sp-xxxl);">
       <!-- Search field + typeahead -->
       <div style="position:relative;max-width:720px;margin:0 auto var(--sp-xl);">
-        <input type="text" value="{{ query }}" onInput="{{ setQuery }}" placeholder="Search artists, venues, shows, cities, genres" style="width:100%;height:56px;padding:0 var(--sp-xl) 0 52px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-lg);outline:none;" />
+        <input type="text" value="{{ query }}" onInput="{{ setQuery }}" placeholder="Search artists, venues, shows, cities, genres" style="width:100%;height:56px;padding:0 var(--sp-xl) 0 52px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-lg);" />
         <span style="position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:18px;">⌕</span>
         <sc-if value="{{ typeaheadOpen }}">
           <div style="position:absolute;top:64px;left:0;right:0;z-index:40;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-sm);max-height:360px;overflow:auto;">
@@ -654,7 +654,7 @@
             <button type="button" onClick="{{ toggleSearchGenre }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchGenreLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchGenreOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:32;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ searchGenreFilter }}" onInput="{{ setSearchGenreFilter }}" placeholder="Search genres" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ searchGenreFilter }}" onInput="{{ setSearchGenreFilter }}" placeholder="Search genres" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ searchGenreAll }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--glass-border);flex:0 0 auto;"></span><span>All genres</span></button>
                   <sc-for list="{{ searchGenreList }}" as="g" hint-placeholder-count="6">
@@ -670,7 +670,7 @@
             <button type="button" onClick="{{ toggleSCity }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchCityLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchCityOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:31;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ sCityFilter }}" onInput="{{ setSCityFilter }}" placeholder="Search cities" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ sCityFilter }}" onInput="{{ setSCityFilter }}" placeholder="Search cities" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ sCityAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All cities</button>
                   <sc-for list="{{ searchCityList }}" as="c" hint-placeholder-count="6">
@@ -686,7 +686,7 @@
             <button type="button" onClick="{{ toggleSVenue }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchVenueLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchVenueOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ sVenueFilter }}" onInput="{{ setSVenueFilter }}" placeholder="Search venues" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ sVenueFilter }}" onInput="{{ setSVenueFilter }}" placeholder="Search venues" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ sVenueAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All venues</button>
                   <sc-for list="{{ searchVenueList }}" as="v" hint-placeholder-count="6">
@@ -895,7 +895,7 @@
           </sc-if>
           <sc-if value="{{ wizPhoneEntry }}">
             <label for="wiz-phone" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Phone number</label>
-            <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <p style="color:var(--text-muted);font-size:var(--fs-xs);line-height:1.55;margin:0 0 var(--sp-lg);">
               By selecting Text me a code, you agree to receive one automated transactional verification text from Drop. One message per request. Message and data rates may apply. Reply STOP to opt out or HELP for help where supported. No marketing. See our <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.
             </p>
@@ -904,7 +904,7 @@
           <sc-if value="{{ wizPhoneCodeEntry }}">
             <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0 0 var(--sp-lg);">Enter the 6-digit code sent to {{ wizPhonePending }}.</p>
             <label for="wiz-phone-code" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Verification code</label>
-            <input id="wiz-phone-code" type="text" value="{{ wizPhoneCode }}" onInput="{{ setWizPhoneCode }}" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;height:56px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;letter-spacing:0.16em;text-align:center;outline:none;" />
+            <input id="wiz-phone-code" type="text" value="{{ wizPhoneCode }}" onInput="{{ setWizPhoneCode }}" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;height:56px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;letter-spacing:0.16em;text-align:center;" />
             <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
               <button type="button" class="btn btn--secondary btn--block" onClick="{{ wizPhoneVerify }}" disabled="{{ wizPhoneBusy }}">{{ wizPhoneVerifyLabel }}</button>
               <button type="button" class="btn btn--ghost btn--block" onClick="{{ wizPhoneResend }}" disabled="{{ wizPhoneResendDisabled }}">{{ wizPhoneResendLabel }}</button>
@@ -930,12 +930,12 @@
             <div style="width:96px;height:96px;border-radius:50%;background:var(--grad-glow-fill);box-shadow:0 0 0 3px var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;">📷</div>
             <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Upload a photo</button>
           </div>
-          <input type="text" placeholder="Display name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" placeholder="Display name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         </sc-if>
 
         <!-- Step 2: location -->
         <sc-if value="{{ wizStep1 }}">
-          <input type="text" value="Denver, CO" placeholder="City, State" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="Denver, CO" placeholder="City, State" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <button type="button" class="chip" onClick="{{ toastLoc }}"><span class="chip__dot"></span>Use my current location</button>
         </sc-if>
 
@@ -948,7 +948,7 @@
           </div>
           <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Add artists you love</div>
           <div style="position:relative;margin-bottom:var(--sp-md);">
-            <input type="text" value="{{ wizArtQuery }}" onInput="{{ setWizArtQuery }}" placeholder="Search artists — e.g. ODESZA, Skrillex" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" value="{{ wizArtQuery }}" onInput="{{ setWizArtQuery }}" placeholder="Search artists — e.g. ODESZA, Skrillex" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
             <sc-if value="{{ wizArtOpen }}">
               <div style="position:absolute;top:56px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);max-height:200px;overflow:auto;">
@@ -971,7 +971,7 @@
         <!-- Step 4: friends -->
         <sc-if value="{{ wizStep3 }}">
           <div style="position:relative;margin-bottom:var(--sp-lg);">
-            <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
@@ -1104,13 +1104,13 @@
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Change photo</button>
       </div>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
-      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
-      <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
-      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:none;">{{ prof.bio }}</textarea>
+      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:none;">{{ prof.bio }}</textarea>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
-      <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label class="sw" style="justify-content:space-between;width:100%;margin-bottom:var(--sp-xxl);">
         <span style="font-size:var(--fs-sm);color:var(--text);">Let friends find me by phone number</span>
         <input class="sw__input" type="checkbox" role="switch" /><span class="sw__track"><span class="sw__thumb"></span></span>
@@ -1218,7 +1218,7 @@
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-md);color:var(--danger);">Delete account</h1>
       <p style="color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-base);margin:0 0 var(--sp-lg);">This permanently erases your profile, RSVPs, saved shows, crew, plans, and Drop Wrapped history. This cannot be undone. Any banked Drop+ credit is forfeited.</p>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Type DELETE to confirm</label>
-      <input type="text" value="{{ deleteConfirm }}" onInput="{{ setDeleteConfirm }}" placeholder="DELETE" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;letter-spacing:2px;" />
+      <input type="text" value="{{ deleteConfirm }}" onInput="{{ setDeleteConfirm }}" placeholder="DELETE" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);letter-spacing:2px;" />
       <button type="button" onClick="{{ confirmDelete }}" disabled="{{ deleteDisabled }}" class="btn btn--block" style="background:{{ deleteBtnBg }};color:{{ deleteBtnColor }};border:1px solid var(--danger);cursor:{{ deleteCursor }};">{{ deleteButtonLabel }}</button>
       <sc-if value="{{ deleteHasStatus }}"><p role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ deleteStatus }}</p></sc-if>
     </div>
@@ -1533,7 +1533,7 @@
     <div style="margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-lg);">Venues</h1>
       <div style="position:relative;margin-bottom:var(--sp-xl);">
-        <input type="text" value="{{ venueQuery }}" onInput="{{ setVenueQuery }}" placeholder="Search venues, cities, states" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ venueQuery }}" onInput="{{ setVenueQuery }}" placeholder="Search venues, cities, states" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--accent);">⌕</span>
       </div>
       <sc-if value="{{ venuesEmpty }}">
@@ -1620,7 +1620,7 @@
       <!-- Find -->
       <sc-if value="{{ crewFind }}">
         <div style="position:relative;margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
         </div>
         <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Suggested — based on your taste</div>
@@ -1729,7 +1729,7 @@
           </sc-for>
         </div>
         <div style="display:flex;gap:var(--sp-md);">
-          <input type="text" placeholder="Message your crew…" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+          <input type="text" placeholder="Message your crew…" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
           <button type="button" class="btn btn--secondary btn--sm" onClick="{{ planSend }}">Send</button>
         </div>
       </div>
@@ -1795,7 +1795,7 @@
       <!-- share link -->
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Your invite link</label>
       <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-xl);">
-        <input type="text" value="drop.fm/join/{{ inviteHandle }}" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="drop.fm/join/{{ inviteHandle }}" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <button type="button" class="btn btn--primary" onClick="{{ inviteCopy }}">Copy</button>
       </div>
 
@@ -2006,18 +2006,18 @@
           </button>
           <sc-if value="{{ claimNotListed }}">
             <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin:var(--sp-lg) 0 6px;">Artist / project name</label>
-            <input type="text" value="{{ claimNewName }}" onInput="{{ setClaimNewName }}" placeholder="e.g. your artist name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" value="{{ claimNewName }}" onInput="{{ setClaimNewName }}" placeholder="e.g. your artist name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           </sc-if>
         </sc-if>
 
         <!-- Step 2: evidence -->
         <sc-if value="{{ claimStep2 }}">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Official website</label>
-          <input type="text" value="{{ claimWebsite }}" onInput="{{ setClaimWebsite }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ claimWebsite }}" onInput="{{ setClaimWebsite }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Official social link (Instagram, SoundCloud…)</label>
-          <input type="text" value="{{ claimSocial }}" onInput="{{ setClaimSocial }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ claimSocial }}" onInput="{{ setClaimSocial }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Contact email</label>
-          <input type="email" value="{{ claimEmail }}" onInput="{{ setClaimEmail }}" placeholder="you@domain.com" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="email" value="{{ claimEmail }}" onInput="{{ setClaimEmail }}" placeholder="you@domain.com" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <div style="margin-top:var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">Tip: an email on your official domain speeds up verification.</div>
         </sc-if>
 
@@ -2057,7 +2057,7 @@
       <!-- ===== Section 1: "I was there" — pick from the archive ===== -->
       <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">I was there — pick from the archive</div></div>
       <div style="position:relative;margin-bottom:var(--sp-md);">
-        <input type="text" value="{{ logQuery }}" onInput="{{ setLogQuery }}" placeholder="Search past shows by artist, venue or title" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ logQuery }}" onInput="{{ setLogQuery }}" placeholder="Search past shows by artist, venue or title" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
       </div>
       <div class="m-rail" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-lg);">
@@ -2103,27 +2103,27 @@
       <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-md);border-top:1px solid var(--border);margin-top:var(--sp-lg);"><div class="sec__title">Not listed? Add it manually</div></div>
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner *</label>
-      <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
-      <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
 
       <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-lg);flex-wrap:wrap;">
         <div style="flex:2;min-width:160px;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label>
-          <input type="text" value="{{ logCity }}" onInput="{{ setLogCity }}" placeholder="e.g. Morrison" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ logCity }}" onInput="{{ setLogCity }}" placeholder="e.g. Morrison" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         </div>
         <div style="flex:1;min-width:90px;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">State</label>
-          <input type="text" value="{{ logState }}" onInput="{{ setLogState }}" maxlength="2" placeholder="CO" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
+          <input type="text" value="{{ logState }}" onInput="{{ setLogState }}" maxlength="2" placeholder="CO" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-transform:uppercase;" />
         </div>
       </div>
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date *</label>
-      <input type="date" value="{{ logDate }}" onInput="{{ setLogDate }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
+      <input type="date" value="{{ logDate }}" onInput="{{ setLogDate }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Notes</label>
-      <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:vertical;"></textarea>
+      <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:vertical;"></textarea>
 
       <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}">Add to my history</button>
     </div>
@@ -2400,7 +2400,7 @@
       </div>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop.</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Create your free account and you'll land right in Maya's crew.</p>
-      <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Claim my free week</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-lg);">Already on Drop? <a href="#" onClick="{{ goLogin }}">Log in</a></p>
     </div>
@@ -2806,7 +2806,7 @@
         <span style="font-size:var(--fs-sm);color:{{ tasteCapColor }};">{{ tasteCapLabel }}</span>
       </div>
       <div style="position:relative;margin-bottom:var(--sp-md);">
-        <input type="text" value="{{ tasteQuery }}" onInput="{{ setTasteQuery }}" placeholder="Add an artist — e.g. Flume" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ tasteQuery }}" onInput="{{ setTasteQuery }}" placeholder="Add an artist — e.g. Flume" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
         <sc-if value="{{ tasteQueryOpen }}">
           <div style="position:absolute;top:52px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
@@ -2853,7 +2853,7 @@
       <div style="display:flex;flex-direction:column;gap:var(--sp-lg);margin-bottom:var(--sp-xl);">
         <div style="position:relative;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner</label>
-          <input type="text" value="{{ sugArtist }}" onInput="{{ setSugArtist }}" placeholder="Search artists" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ sugArtist }}" onInput="{{ setSugArtist }}" placeholder="Search artists" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <sc-if value="{{ sugArtistOpen }}">
             <div style="position:absolute;top:78px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
               <sc-for list="{{ sugArtistMatches }}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{ a.pick }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:10px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:26px;height:26px;border-radius:50%;background:var(--grad-brand);"></span>{{ a.name }}</button></sc-for>
@@ -2862,7 +2862,7 @@
         </div>
         <div style="position:relative;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
-          <input type="text" value="{{ sugVenue }}" onInput="{{ setSugVenue }}" placeholder="Search venues" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ sugVenue }}" onInput="{{ setSugVenue }}" placeholder="Search venues" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <sc-if value="{{ sugVenueOpen }}">
             <div style="position:absolute;top:78px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
               <sc-for list="{{ sugVenueMatches }}" as="v" hint-placeholder-count="3"><button type="button" onClick="{{ v.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:10px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="font-weight:600;">{{ v.name }}</span><span style="font-size:var(--fs-xs);color:var(--text-muted);">{{ v.city }}</span></button></sc-for>
@@ -2870,10 +2870,10 @@
           </sc-if>
         </div>
         <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
-          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
-          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label><input type="text" value="{{ sugCity }}" onInput="{{ setSugCity }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
+          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label><input type="text" value="{{ sugCity }}" onInput="{{ setSugCity }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
         </div>
-        <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="{{ sugLink }}" onInput="{{ setSugLink }}" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+        <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="{{ sugLink }}" onInput="{{ setSugLink }}" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
         <button type="button" class="btn btn--primary btn--block" onClick="{{ submitSuggestion }}">{{ submitLabel }}</button>
       </div>
 
@@ -2967,19 +2967,19 @@
       <!-- DETAILS -->
       <sc-if value="{{ promoTabDetails }}">
         <div style="display:flex;flex-direction:column;gap:var(--sp-lg);margin-bottom:var(--sp-xxl);">
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Event title</label><input type="text" value="{{ pm.title }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Event title</label><input type="text" value="{{ pm.title }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
           <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
-            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
-            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Doors</label><input type="time" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
+            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
+            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Doors</label><input type="time" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
           </div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" placeholder="Venue name" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" placeholder="Venue name" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
           <button type="button" class="btn btn--primary btn--sm" style="align-self:flex-start;" onClick="{{ promoSaveDetails }}">Save changes</button>
         </div>
         <div style="padding:var(--sp-lg);border:1px solid var(--danger-border);border-radius:var(--r-md);background:rgba(255,77,109,0.06);">
           <div style="font-family:var(--font-display);font-weight:700;color:var(--danger);margin-bottom:6px;">Delete this event</div>
           <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0 0 var(--sp-md);">This removes the event, its guest list, and its codes. Type <b>DELETE</b> to confirm.</p>
-          <input type="text" value="{{ promoDelConfirm }}" onInput="{{ setPromoDel }}" placeholder="DELETE" style="width:100%;height:44px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--danger-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;margin-bottom:var(--sp-md);" />
+          <input type="text" value="{{ promoDelConfirm }}" onInput="{{ setPromoDel }}" placeholder="DELETE" style="width:100%;height:44px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--danger-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);margin-bottom:var(--sp-md);" />
           <button type="button" class="btn btn--sm" disabled="{{ promoDelDisabled }}" onClick="{{ promoDelete }}" style="background:var(--danger);color:var(--white);opacity:{{ promoDelOpacity }};">Delete event</button>
         </div>
       </sc-if>
@@ -2992,8 +2992,8 @@
           <div style="padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:center;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--gold);">{{ guestPending }}</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Awaiting door</div></div>
         </div>
         <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="Add guest name" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-          <input type="number" min="0" value="0" style="width:88px;height:46px;padding:0 var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
+          <input type="text" placeholder="Add guest name" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+          <input type="number" min="0" value="0" style="width:88px;height:46px;padding:0 var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddGuest }}">Add</button>
         </div>
         <sc-if value="{{ guestsEmpty }}"><div class="empty"><div class="empty__ico">📋</div><div class="empty__title">No guests yet</div><div class="empty__body">Add a name above.</div></div></sc-if>
@@ -3011,7 +3011,7 @@
       <!-- CODES -->
       <sc-if value="{{ promoTabCodes }}">
         <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="NEWCODE20" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
+          <input type="text" placeholder="NEWCODE20" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-transform:uppercase;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddCode }}">Create code</button>
         </div>
         <sc-if value="{{ codesEmpty }}"><div class="empty"><div class="empty__ico">◆</div><div class="empty__title">No codes yet</div><div class="empty__body">Create one above.</div></div></sc-if>
@@ -3199,9 +3199,9 @@
       <div class="modal__title">Edit your links</div>
       <div class="modal__body">These appear on the public {{ editArtistName }} profile.</div>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Merch URL</label>
-      <input type="text" value="{{ editMerch }}" onInput="{{ setEditMerch }}" placeholder="https://shop.…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ editMerch }}" onInput="{{ setEditMerch }}" placeholder="https://shop.…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Website URL</label>
-      <input type="text" value="{{ editWebsite }}" onInput="{{ setEditWebsite }}" placeholder="https://…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ editWebsite }}" onInput="{{ setEditWebsite }}" placeholder="https://…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <button type="button" class="btn btn--primary btn--block" onClick="{{ saveEditLinks }}">Save links</button>
       <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ closeEditLinks }}">Cancel</button>
     </div>
