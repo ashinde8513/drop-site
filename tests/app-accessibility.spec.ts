@@ -51,6 +51,31 @@ test('signup fields have names, focus, and Enter validation', async ({ page }) =
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });
 
+test('public and mocked form inputs retain visible focus outlines', async ({ page }) => {
+  await page.goto('/app/index.html');
+  await page.getByRole('textbox', { name:'Search shows, artists, venues near you' }).click();
+  const search = page.getByPlaceholder('Search artists, venues, shows, cities, genres');
+  await expect(search).toBeVisible();
+  await search.focus();
+  await expect.poll(() => search.evaluate(input => getComputedStyle(input).outlineStyle)).toBe('solid');
+
+  await page.evaluate(() => {
+    const template = document.querySelector<HTMLTemplateElement>('#dc-template')!;
+    const fixture = document.createElement('div');
+    fixture.id = 'mock-form-controls';
+    for (const id of ['wiz-phone', 'wiz-phone-code', 'edit-name']) {
+      fixture.append(template.content.querySelector(`#${id}`)!.cloneNode(true));
+    }
+    document.body.append(fixture);
+  });
+  for (const id of ['wiz-phone', 'wiz-phone-code', 'edit-name']) {
+    const input = page.locator(`#mock-form-controls #${id}`);
+    await input.focus();
+    await expect.poll(() => input.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('solid');
+    await expect.poll(() => input.evaluate(node => getComputedStyle(node).outlineWidth)).toBe('2px');
+  }
+});
+
 test('login and recovery share named fields and Enter handling', async ({ page }) => {
   await page.goto('/app/index.html?mode=login');
   await expect(page.getByLabel('Email or username')).toBeVisible();
