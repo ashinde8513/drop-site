@@ -130,6 +130,27 @@ test.describe('website smoke', () => {
     });
   }
 
+  test('discovery pages point to their sitemap URLs', async ({ page }) => {
+    const sitemap = readFileSync('sitemap.xml', 'utf8');
+    for (const path of ['events', 'venues', 'artists', 'promoters', 'about', 'download']) {
+      const canonical = `https://trydropapp.com/${path}`;
+      expect(sitemap).toContain(`<loc>${canonical}</loc>`);
+      await page.goto(`/${path}.html`);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
+      expect(JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent() || '{}').url).toBe(canonical);
+    }
+
+    for (const [path, query] of [['city', 'city=Denver'], ['genre', 'genre=House']]) {
+      const canonical = `https://trydropapp.com/${path}?${query}`;
+      expect(sitemap).toContain(`<loc>${canonical}</loc>`);
+      await page.goto(`/${path}.html`);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
+      expect(JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent() || '{}').url).toBe(canonical);
+    }
+  });
+
   for (const { path, backHref } of DETAIL_PAGES) {
     test(`${path} with no params renders not-found state cleanly`, async ({ page }) => {
       const errors = trackPageErrors(page);

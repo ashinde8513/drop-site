@@ -4,6 +4,8 @@
     "/event/*",
     "/venue/*",
     "/artist/*",
+    "/city",
+    "/genre",
     "/sitemap-entities.xml",
     "/go"
   ],
