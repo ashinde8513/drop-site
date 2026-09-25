@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { CITIES, cleanCity, knownCity, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
 import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
@@ -13,6 +15,33 @@ const venueId = '33333333-3333-4333-8333-333333333333';
 const venueId2 = '44444444-4444-4444-8444-444444444444';
 const artistId = '55555555-5555-4555-8555-555555555555';
 const artistId2 = '66666666-6666-4666-8666-666666666666';
+
+test('city and genre routes render query-specific crawl metadata in initial HTML', () => {
+  const routes = JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8'));
+  assert.ok(routes.include.includes('/city'));
+  assert.ok(routes.include.includes('/genre'));
+  assert.equal(cleanCity('<script>'), null);
+  assert.equal(cleanCity('Los Angeles'), 'Los Angeles');
+  assert.equal(knownCity('los angeles'), 'Los Angeles');
+  assert.equal(knownCity('Atlantis'), null);
+  const data = readFileSync(new URL('../data.js', import.meta.url), 'utf8');
+  const liveCities = [...data.match(/var CITIES = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+  assert.deepEqual(CITIES, liveCities, 'Keep acquisition cities aligned with Drop.CITIES');
+
+  const city = renderCityPage(readFileSync(new URL('../city.html', import.meta.url), 'utf8'), 'Los Angeles');
+  assert.match(city, /<title id="doc-title">EDM Shows in Los Angeles \| Drop<\/title>/);
+  assert.match(city, /<h1 id="city-h1"[^>]*>EDM shows in Los Angeles<\/h1>/);
+  assert.match(city, /<link rel="canonical" href="https:\/\/trydropapp\.com\/city\?city=Los%20Angeles"/);
+  assert.match(city, /<meta property="og:url" content="https:\/\/trydropapp\.com\/city\?city=Los%20Angeles"/);
+  assert.match(city, /"url":"https:\/\/trydropapp\.com\/city\?city=Los%20Angeles"/);
+
+  const genre = renderGenrePage(readFileSync(new URL('../genre.html', import.meta.url), 'utf8'), 'Drum & Bass', 'Denver', false);
+  assert.match(genre, /<title id="doc-title">Drum &amp; Bass Events Near Denver \| Drop<\/title>/);
+  assert.match(genre, /<link rel="canonical" href="https:\/\/trydropapp\.com\/genre\?genre=Drum%20%26%20Bass"/);
+  assert.match(genre, /<meta property="og:url" content="https:\/\/trydropapp\.com\/genre\?genre=Drum%20%26%20Bass"/);
+  assert.match(genre, /"url":"https:\/\/trydropapp\.com\/genre\?genre=Drum%20%26%20Bass"/);
+  assert.match(renderGenrePage(readFileSync(new URL('../genre.html', import.meta.url), 'utf8'), 'House', 'Miami', true, false), /name="robots" content="noindex, follow"/);
+});
 
 function catalogEvent(overrides = {}) {
   return {
