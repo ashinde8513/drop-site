@@ -259,7 +259,7 @@
     let savedEnd = null;
     if (active && container.contains(active)) {
       savedKey = active.dataset && active.dataset.bindKey;
-      savedId = active.id && TRANSIENT_AUTH_INPUT_IDS.has(active.id) ? active.id : null;
+      savedId = active.id && (preserveAuthInputs || TRANSIENT_AUTH_INPUT_IDS.has(active.id)) ? active.id : null;
       if ('selectionStart' in active) {
         savedStart = active.selectionStart;
         savedEnd = active.selectionEnd;
@@ -1965,7 +1965,7 @@ class Component extends DCLogic {
         label: c.label,
         count: c.count + (c.count===1?' show':' shows'),
         dotStyle: c.label===s.city ? 'background:var(--accent);' : 'background:transparent;',
-        pick:()=>{ this.setState({city:c.label, cityOpen:false, cityFilter:''}); this.loadEvents(); },
+        pick:()=>{ this.setState({city:c.label, cityOpen:false, cityFilter:''}); this.loadEvents(); queueMicrotask(()=>document.getElementById('city-toggle')?.focus()); },
       }));
     const cityFilterEmpty = cityList.length===0;
 
@@ -2804,7 +2804,7 @@ class Component extends DCLogic {
       signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
       username: s.username, signupEmail: s.signupEmail,
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
-      city: s.city, cityOpen: s.cityOpen, cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
+      city: s.city, cityOpen: s.cityOpen, cityExpanded: s.cityOpen ? 'true' : 'false', cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents, discShowPager, discPageLabel, discPrevDisabled, discNextDisabled, genreActive, gridLabel, gridEmpty, genreName: s.genre,
       homeEmpty: !s.eventsLoading && events.length===0,
       eventsLoading: s.eventsLoading, eventsError: s.eventsError,
@@ -2955,6 +2955,7 @@ class Component extends DCLogic {
 
       // handlers
       noop:(e)=>{ this.prevent(e); this.setState({cityOpen:false,menuOpen:false}); },
+      preventAuthSubmit:(e)=>this.prevent(e),
       stop:(e)=>{ if(e&&e.stopPropagation) e.stopPropagation(); },
       goHome:(e)=>{ this.prevent(e); this.go('home'); },
       goLogin:(e)=>{ this.prevent(e); this.go('login'); },
@@ -3200,13 +3201,24 @@ class Component extends DCLogic {
       },
       bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
       onSearchFocus:()=>this.go('search'),
-      toggleCity:(e)=>{ this.prevent(e); this.setState(st=>({cityOpen:!st.cityOpen, menuOpen:false})); },
+      toggleCity:(e)=>{
+        this.prevent(e);
+        const opening = !this.state.cityOpen;
+        this.setState({cityOpen:opening, menuOpen:false});
+        queueMicrotask(()=>document.getElementById(opening ? 'city-filter' : 'city-toggle')?.focus());
+      },
+      cityEscape:(e)=>{
+        if(e.key!=='Escape') return;
+        this.prevent(e);
+        this.setState({cityOpen:false, cityFilter:''});
+        queueMicrotask(()=>document.getElementById('city-toggle')?.focus());
+      },
       // City picker (design round 4) — filter/type + "Back to Denver"
       discPrev:(e)=>{ this.prevent(e); this.setState(st=>({discPage: Math.max(0, st.discPage-1)})); },
       discNext:(e)=>{ this.prevent(e); this.setState(st=>({discPage: st.discPage+1})); },
       cityToDenver:(e)=>{ this.prevent(e); this.setState({city:'Denver, CO', cityOpen:false, cityFilter:''}); this.loadEvents(); },
       setCityFilter:(e)=>this.setState({cityFilter:e.target.value}),
-      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); } },
+      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); queueMicrotask(()=>document.getElementById('city-toggle')?.focus()); } },
       // Search filter dropdowns (design round 4)
       toggleSDist:(e)=>{ this.prevent(e); this.setState(st=>({sDistOpen:!st.sDistOpen, searchGenreOpen:false, sCityOpen:false, sVenueOpen:false})); },
       toggleSearchGenre:(e)=>{ this.prevent(e); this.setState(st=>({searchGenreOpen:!st.searchGenreOpen, sDistOpen:false, sCityOpen:false, sVenueOpen:false})); },
@@ -3303,8 +3315,8 @@ class Component extends DCLogic {
       oauthApple:()=>this.oauth('apple'),
       oauthFacebook:()=>this.oauth('facebook'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
-      setUsername:(e)=>this.setState({username: e.target.value}),
-      setSignupEmail:(e)=>this.setState({signupEmail: e.target.value}),
+      setUsername:(e)=>this.setState({username: e.target.value, authError:''}),
+      setSignupEmail:(e)=>this.setState({signupEmail: e.target.value, authError:''}),
       closeGate:()=>this.setState({gate:false}),
       cancelEventIntent:()=>this.cancelEventIntent(),
       retryEventIntent:()=>this.retryEventIntent(),
