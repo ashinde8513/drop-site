@@ -76,6 +76,27 @@ test('public and mocked form inputs retain visible focus outlines', async ({ pag
   }
 });
 
+test('mocked profile edit fields have associated labels', async ({ page }) => {
+  await page.goto('/app/index.html');
+  await page.evaluate(() => {
+    const template = document.querySelector<HTMLTemplateElement>('#dc-template')!;
+    const fixture = document.createElement('div');
+    fixture.id = 'mock-profile-fields';
+    for (const id of ['edit-name', 'edit-username', 'edit-bio', 'edit-city']) {
+      const field = template.content.querySelector(`#${id}`)!;
+      fixture.append(field.previousElementSibling!.cloneNode(true), field.cloneNode(true));
+    }
+    const phoneDiscovery = template.content.querySelector('#edit-city')!.nextElementSibling!;
+    fixture.append(phoneDiscovery.cloneNode(true));
+    document.body.append(fixture);
+  });
+  for (const label of ['Display name', 'Username', 'Bio · 200 max', 'City, State']) {
+    await expect(page.getByLabel(label)).toBeVisible();
+  }
+  await expect(page.getByText('Phone discovery settings are not available on the website.')).toBeVisible();
+  await expect(page.locator('#mock-profile-fields input[role="switch"]')).toHaveCount(0);
+});
+
 test('login and recovery share named fields and Enter handling', async ({ page }) => {
   await page.goto('/app/index.html?mode=login');
   await expect(page.getByLabel('Email or username')).toBeVisible();

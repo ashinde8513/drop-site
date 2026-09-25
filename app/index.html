@@ -1103,18 +1103,15 @@
         <span style="width:80px;height:80px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Change photo</button>
       </div>
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
+      <label for="edit-name" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
       <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
+      <label for="edit-username" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
       <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
+      <label for="edit-bio" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
       <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:none;">{{ prof.bio }}</textarea>
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
+      <label for="edit-city" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
       <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
-      <label class="sw" style="justify-content:space-between;width:100%;margin-bottom:var(--sp-xxl);">
-        <span style="font-size:var(--fs-sm);color:var(--text);">Let friends find me by phone number</span>
-        <input class="sw__input" type="checkbox" role="switch" /><span class="sw__track"><span class="sw__thumb"></span></span>
-      </label>
+      <p style="margin:0 0 var(--sp-xxl);font-size:var(--fs-sm);color:var(--text-secondary);">Phone discovery settings are not available on the website.</p>
       <button type="button" class="btn btn--primary btn--block" onClick="{{ saveProfile }}">Save changes</button>
     </div>
   </main>
