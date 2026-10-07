@@ -20,7 +20,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
-- **PUBLIC DATE/FILTER REPAIR REVIEWED (2026-10-07):** the shared catalog request now includes the selected date upper bound. Discovery renders only the latest request's rows/errors, including price-slider redraws while a newer request is pending or failed. Five regression scenarios run on desktop Chromium and mobile WebKit; source passed independent correctness/refuter/security review. Delivery and live proof are tracked in `state.d/2026-10-07-ticket-path.md`.
+- **PUBLIC DATE/FILTER REPAIR (2026-10-07, PR118):** the shared catalog request now includes the selected date upper bound. Discovery renders only the latest request's rows/errors, including price-slider redraws while a newer request is pending or failed. Location labels and header search/picker follow the actual discovery city. Seven regression scenarios run on desktop Chromium and mobile WebKit; correctness/refuter/security reviewers approved amended source, with fresh exact-head CI required before merge. Delivery and live proof are tracked in `state.d/2026-10-07-ticket-path.md`.
 - **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
   canonical Drop wordmark, presents Website first followed by App Store,
   Google Play, About Drop, and then the social row, and adds the official

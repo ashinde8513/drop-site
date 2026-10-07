@@ -17,11 +17,18 @@
   Drop.ALL_CITIES = 'All cities';
 
   Drop.city = function () {
+    var selected = new URLSearchParams(location.search).get('city');
+    if (selected) return selected;
     try { return localStorage.getItem('drop.city') || 'Denver'; }
     catch (e) { return 'Denver'; } // ponytail: private-mode localStorage throws — default
   };
   Drop.setCity = function (c) {
     try { localStorage.setItem('drop.city', c); } catch (e) {}
+    var url = new URL(location.href);
+    if (url.searchParams.has('city') || /^\/events(?:\.html)?$/.test(url.pathname)) {
+      url.searchParams.set('city', c);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
     return c;
   };
 

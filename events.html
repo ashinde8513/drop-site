@@ -658,9 +658,10 @@
       }
 
       function syncUrl() {
+        D.reflectCity(state.city);
         var p = new URLSearchParams();
         if (state.q) p.set('q', state.q);
-        if (state.city && (state.city !== D.ALL_CITIES || !isFestivalMode())) p.set('city', state.city);
+        if (state.city) p.set('city', state.city);
         if (state.genres.length) p.set('genre', state.genres.join(','));
         if (state.when) p.set('when', state.when);
         if (state.venue) p.set('venue', state.venue);

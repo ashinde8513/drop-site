@@ -89,3 +89,39 @@ test('price changes cannot restore old cards during a new filter request or erro
   await expect(page.locator('#grid .state-error')).toBeVisible();
   await expect(page.locator('#grid .wsc-card')).toHaveCount(0);
 });
+
+test('query city, interactive city and global festivals keep every location label aligned', async ({ page }) => {
+  await page.route('**/rest/v1/events?**', route => respond(route, []));
+  await page.goto('/events.html?city=Seattle');
+  await expect(page.locator('#fb-city-btn')).toHaveText('Seattle');
+  await expect(page.locator('.loc-city')).toHaveText(['Seattle', 'Seattle']);
+  await page.locator('#fb-city-btn').click();
+  await page.locator('#fb-city-pop input').fill('Denver');
+  await page.locator('#fb-city-pop input').press('Enter');
+  await expect(page.locator('.loc-city')).toHaveText(['Denver', 'Denver']);
+  await expect(page).toHaveURL(/city=Denver/);
+  await page.goto('/events.html?festival=1');
+  await expect(page.locator('.loc-city')).toHaveText(['All cities', 'All cities']);
+});
+
+test('header search and picker use the current query city while implicit festivals preserve preference', async ({ page }) => {
+  await page.route('**/rest/v1/events?**', route => respond(route, []));
+  await page.goto('/events.html?city=Seattle');
+  const search = page.locator(await page.locator('#nav-q').isVisible() ? '#nav-q' : '#events-q');
+  await search.fill('Tonight');
+  await search.press('Enter');
+  await expect(page).toHaveURL(/city=Seattle/);
+  await expect(page).toHaveURL(/q=Tonight/);
+  await page.getByRole('button', { name: 'Change location', exact: true }).click();
+  await page.locator('.wn .loc-filter input').fill('Denver');
+  await page.locator('.wn .loc-filter input').press('Enter');
+  await expect(page).toHaveURL(/city=Denver/);
+  await expect(page).toHaveURL(/q=Tonight/);
+  await expect(page.locator('.loc-city')).toHaveText(['Denver', 'Denver']);
+  await page.goto('/events.html?festival=1');
+  await expect(page.locator('.loc-city')).toHaveText(['All cities', 'All cities']);
+  expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Denver');
+  await search.fill('Festival');
+  await search.press('Enter');
+  await expect(page).toHaveURL(/city=All\+cities/);
+});
