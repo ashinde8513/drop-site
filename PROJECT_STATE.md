@@ -9,17 +9,18 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-09-09
+Last updated: 2026-10-07
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
 **Status:** AVAILABLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Ticket-path lane: `codex/ticket-path-20261007`, public date filtering and stale-result repair. Existing email, affiliate, recovery, and migration holds remain with their owners.
 
 ## Current status
 ### What works
+- **PUBLIC DATE/FILTER REPAIR REVIEWED (2026-10-07):** the shared catalog request now includes the selected date upper bound. Discovery renders only the latest request's rows/errors, including price-slider redraws while a newer request is pending or failed. Five regression scenarios run on desktop Chromium and mobile WebKit; source passed independent correctness/refuter/security review. Delivery and live proof are tracked in `state.d/2026-10-07-ticket-path.md`.
 - **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
   canonical Drop wordmark, presents Website first followed by App Store,
   Google Play, About Drop, and then the social row, and adds the official
@@ -204,8 +205,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Ticket-path lane:** finish exact-head website `Test & Deploy`, merge after green, verify automatic main deployment and public desktop/mobile search/date/location → real event → external ticket destination. Close this lane in `state.d/2026-10-07-ticket-path.md`; existing held lanes below retain their original owners.
 - **1. In the existing email-change owner lane, finish exact-head CI for rebased PR #112; keep it draft while the explicit database blocker above remains.** Preserve both PR #113's auth-input fix and a single private-feedback handler. Activation follows only the approved migration's verified live installation.
-- **2. Decide the Android App Links host mismatch, and route the fix to `Drop-App`.** `www.trydropapp.com/.well-known/assetlinks.json` returns **301** while `Drop-App` `DropApp/app.json` declares `autoVerify: true` for both `trydropapp.com` and `www.trydropapp.com` — so on **Android 11 and lower no deep link opens the app at all** (Android verifies all-or-nothing below API 31). **This repo should not change**: `www` redirecting to apex is a deliberate, recorded decision. The fix is to remove the `www.trydropapp.com` host from the Android intent filter in `DropApp/app.json`, and to confirm whether the published 1.0.2 (2) AAB manifest contains that host. Ranked second because the Google Play listing is now public, so this can affect Android ≤11 users rather than a pending release. Evidence and the Android documentation quote are in the 2026-08-24 session entry below.
+- **2. Android www source repair is already complete in current Drop-App main.** Fresh `DropApp/app.json` at `e6b703a31778f31cecbb9aba1fd5488258ab35b4` uses only `trydropapp.com` in Android intent filters. Preserve the deliberate www-to-apex redirect. Native delivery and installed-device App Links acceptance remain separate evidence in the mobile owner lane; no website source change is required.
 - **3. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
 - **4. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**

@@ -137,8 +137,7 @@
     // date window — default: from start-of-today forward.
     params.date = 'gte.' + (opts.from || todayISO());
 
-    var and = [];
-    if (opts.to) and.push('date.lte.' + opts.to);
+    if (opts.to) params.and = '(date.lte.' + opts.to + ')';
     // City: exact match unless "All cities".
     if (opts.city && opts.city !== Drop.ALL_CITIES) {
       params.city = 'ilike.' + opts.city; // ilike = case-insensitive exact (no wildcards)

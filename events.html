@@ -283,7 +283,7 @@
       var PAGE = 24;
       var PRICE_MIN = 0, PRICE_MAX = 300;
       var page = 0, totalPages = 1;
-      var loaded = []; // current page — feeds the venue select + price refinement
+      var loaded = [], loadedRequest = 0; // current page — price refinement
 
       var gridEl = document.getElementById('grid');
       var countEl = document.getElementById('result-count');
@@ -736,6 +736,7 @@
       }
 
       function renderGrid() {
+        if (loadedRequest !== latestLoad) return;
         var vis = visibleEvents();
         gridEl.classList.remove('is-loading');
         gridEl.innerHTML = '';
@@ -745,7 +746,9 @@
         countEl.textContent = vis.length + (vis.length === 1 ? ' show' : ' shows') + ' shown' + (filtered ? ' (price filter applied)' : '');
       }
 
+      var latestLoad = 0;
       function load(reset) {
+        var requestId = ++latestLoad;
         if (reset) { page = 0; syncUrl(); }
         D.skeletonGrid(gridEl, 8);
         prevBtn.disabled = nextBtn.disabled = true;
@@ -764,7 +767,9 @@
           request = D.fetchEvents(opts);
         }
         request.then(function (res) {
+          if (requestId !== latestLoad) return;
           loaded = res.rows;
+          loadedRequest = requestId;
           renderGrid();
           // Pages are server fetch-windows; with a genre set a window can render
           // sparse (genre refines client-side) but Next still walks the catalog.
@@ -774,6 +779,7 @@
           prevBtn.disabled = page === 0;
           nextBtn.disabled = page >= totalPages - 1;
         }).catch(function () {
+          if (requestId !== latestLoad) return;
           D.stateError(gridEl, function () { load(false); });
         });
       }
