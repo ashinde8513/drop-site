@@ -209,6 +209,11 @@
   };
 
   // ---- Nav: drawer, location popover, search ------------------------------
+  Drop.reflectCity = function (city) {
+    var locLabels = doc.querySelectorAll('.loc-city');
+    for (var i = 0; i < locLabels.length; i++) locLabels[i].textContent = city;
+  };
+
   // Binds the Prism .wn nav (replaces the old .site-nav — see shell.css).
   function initNav() {
     var nav = doc.querySelector('.wn');
@@ -216,9 +221,7 @@
 
     // Reflect current city into every location label — nav pill AND in-page
     // eyebrows/headings ("Near <city>", "Happening in <city>"), not just the nav.
-    var city = Drop.city();
-    var locLabels = doc.querySelectorAll('.loc-city');
-    for (var i = 0; i < locLabels.length; i++) locLabels[i].textContent = city;
+    Drop.reflectCity(Drop.city());
 
     // Hamburger → mobile drawer (.mnav). Inline `display` toggle — the drawer
     // markup ships with `style="display:none"` so it stays hidden on desktop

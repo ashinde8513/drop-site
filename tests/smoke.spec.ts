@@ -212,7 +212,8 @@ test.describe('website smoke', () => {
     ))).toBe(true);
 
     await page.getByRole('link', { name: /Browse festivals/ }).click();
-    await expect(page).toHaveURL(/events\.html\?genre=Festivals/);
+    await expect(page).toHaveURL(/events\.html\?/);
+    expect(new URL(page.url()).searchParams.get('genre')).toBe('Festivals');
     expect(new URL(page.url()).searchParams.get('city')).not.toBe('Denver');
     await expect(page.locator('#grid')).toContainText('Ongoing Test Festival');
     await expect(page.locator('#result-count')).toContainText('1 show');
