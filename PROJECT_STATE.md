@@ -20,6 +20,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **QA MATRIX SALVAGED (2026-10-13, docs only):** closed #28's 677-row website feature matrix, route matrix, parity plan and workbook generator re-landed under `docs/qa/` (PR pending). Statuses are a 2026-07-29 snapshot of an unshipped React candidate; no product change.
 - **PUBLIC DATE/FILTER REPAIR LIVE (2026-10-07, PR118):** shared date bounds, current-request rendering and active city semantics are repaired. PR118 merged as 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; exact-head PR/main CI passed 20 Node and 258 browser checks. Main workflow 37683814143 deployed Pages 19cf2e3c. Live source bytes match review; desktop/mobile date, location, search, Madeon detail and exact AXS destination checks pass. Evidence and limits: state.d/2026-10-07-ticket-path.md.
 - **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
   canonical Drop wordmark, presents Website first followed by App Store,
