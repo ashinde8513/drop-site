@@ -418,6 +418,7 @@ test.describe('website smoke', () => {
     expect(association.applinks.details[0].components.map((component) => component['/'])).toEqual([
       '/event/*',
       '/plan/*',
+      '/crew-picks/*',
       '/reset-password',
       '/',
     ]);
