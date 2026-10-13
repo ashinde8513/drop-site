@@ -4,6 +4,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Now
 
+- [ ] Qualify the reviewed Crew canonical link companion with exact-head website CI and PR794 compatibility, then deliver through the existing website PR/main automatic lane when the coordinator clears it. Generic install fallback only; anonymous board preview and native/device acceptance remain separate.
 - [ ] Deliver equal iPhone/Android install availability and safe public event-action continuation through the standard website PR/main deploy. Exact reviewed source is ready: bounded UUID/action/expiry intent, explicit RSVP/follow confirmation, honest Save/Plan/Invite native fallback, and 18 Node plus 224 Chromium/mobile-WebKit CI-mode checks.
 - [x] Deliver Android Digital Asset Links and submit Google Play launch — complete 2026-08-18. PR #95 merged as `a66eb6d`; the apex response is HTTP 200 JSON and byte-identical to reviewed source. Production 1.0.2 (2) is in Google review as submission `1`, United States only, with managed publishing off for automatic publication after approval. Physical App Links acceptance remains device-QA flagged because no Android test device is available.
 - [ ] Deliver the combined Facebook Login and Phase 2 share-attribution website candidate through PR #92. Preserve validated first-touch referral data across password/email/OAuth signup without adding Meta permissions; keep referral recording default-off until the separately gated migration is live-verified and a reviewed runtime capability enables the exact RPC.
