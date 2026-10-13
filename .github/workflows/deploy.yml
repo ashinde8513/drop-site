@@ -20,6 +20,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Match package-lock.json; official image includes verified browsers and OS
+    # dependencies without depending on unrelated runner APT repositories.
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
+      options: --user 1001
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,7 +32,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm test
       - uses: actions/upload-artifact@v4
         if: failure()

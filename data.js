@@ -17,11 +17,18 @@
   Drop.ALL_CITIES = 'All cities';
 
   Drop.city = function () {
+    var selected = new URLSearchParams(location.search).get('city');
+    if (selected) return selected;
     try { return localStorage.getItem('drop.city') || 'Denver'; }
     catch (e) { return 'Denver'; } // ponytail: private-mode localStorage throws — default
   };
   Drop.setCity = function (c) {
     try { localStorage.setItem('drop.city', c); } catch (e) {}
+    var url = new URL(location.href);
+    if (url.searchParams.has('city') || /^\/events(?:\.html)?$/.test(url.pathname)) {
+      url.searchParams.set('city', c);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
     return c;
   };
 
@@ -38,20 +45,14 @@
       .catch(function () { return CITIES; });
   };
 
-  // Exact, current buyable-catalog totals from one server-side filtered set.
-  Drop.fetchCatalogStats = function () {
-    return get('rpc/get_public_catalog_stats').then(function (rows) {
-      var stats = rows && rows[0];
-      var events = stats && stats.event_count != null ? Number(stats.event_count) : NaN;
-      var cities = stats && stats.city_count != null ? Number(stats.city_count) : NaN;
-      var calculatedAt = stats && stats.calculated_at;
-      if (!Number.isSafeInteger(events) || events < 0 ||
-          !Number.isSafeInteger(cities) || cities < 0 ||
-          !calculatedAt || !Number.isFinite(Date.parse(calculatedAt))) {
-        throw new Error('catalog stats unavailable');
-      }
-      return { events: events, cities: cities, calculatedAt: calculatedAt };
-    });
+  // Exact current count of every published Drop event, including past shows.
+  Drop.fetchPublishedEventCount = function () {
+    return get('events?' + q({ select: 'id', status: 'eq.published', limit: 1 }), { count: true })
+      .then(function (result) {
+        var events = result && result.total;
+        if (!Number.isSafeInteger(events) || events < 0) throw new Error('published event count unavailable');
+        return events;
+      });
   };
 
   // ---- REST helper --------------------------------------------------------
@@ -143,8 +144,7 @@
     // date window — default: from start-of-today forward.
     params.date = 'gte.' + (opts.from || todayISO());
 
-    var and = [];
-    if (opts.to) and.push('date.lte.' + opts.to);
+    if (opts.to) params.and = '(date.lte.' + opts.to + ')';
     // City: exact match unless "All cities".
     if (opts.city && opts.city !== Drop.ALL_CITIES) {
       params.city = 'ilike.' + opts.city; // ilike = case-insensitive exact (no wildcards)

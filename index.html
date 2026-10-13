@@ -72,7 +72,7 @@
     "email": "trydropapp@gmail.com",
     "sameAs": [
       "https://www.instagram.com/trydropapp/",
-      "https://www.tiktok.com/@trydropapp",
+      "https://www.tiktok.com/@trydrop.app",
       "https://x.com/trydropapp",
       "https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ",
       "https://www.facebook.com/profile.php?id=61591821453151",
@@ -160,7 +160,7 @@
         </div>
         <div class="hero-proof" style="display:flex;align-items:center;gap:var(--sp-sm);margin-top:var(--sp-xxl);color:var(--text-muted);font-size:var(--fs-sm);">
           <span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:var(--grad-glow);box-shadow:var(--shadow-glow);flex:0 0 auto;"></span>
-          <span data-catalog-proof aria-live="polite" hidden>Tracking <b data-catalog-events style="color:var(--text);"></b> events across <b data-catalog-cities style="color:var(--text);"></b> cities</span>
+          <span data-catalog-proof aria-live="polite" hidden>Tracking <b data-catalog-events style="color:var(--text);"></b> published events on Drop</span>
           <span data-catalog-proof-pending>Live catalog updated continuously</span>
         </div>
       </div>
@@ -215,6 +215,9 @@
         <a class="ticket-sources__logo--cervantes" href="https://cervantesmasterpiece.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Cervantes' Masterpiece Ballroom">
           <img src="/assets/partners/cervantes.png" alt="Cervantes’ Masterpiece Ballroom" loading="lazy" decoding="async" />
         </a>
+        <a class="ticket-sources__logo--frens" href="https://heyfrens.org/" target="_blank" rel="noopener noreferrer" aria-label="Visit FRENS">
+          <img src="/assets/partners/frens.svg" alt="FRENS" loading="lazy" decoding="async" />
+        </a>
         <a class="ticket-sources__logo--eventim" href="https://www.eventim.us/" target="_blank" rel="noopener noreferrer" aria-label="Visit Eventim">
           <img src="/assets/partners/eventim.png" alt="Eventim" loading="lazy" decoding="async" />
         </a>
@@ -238,7 +241,7 @@
         <p>The social way to discover live music. Built in Colorado by Resonance Ventures.</p>
         <div class="foot-social">
           <a href="https://www.instagram.com/trydropapp/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg aria-hidden="true"><use href="/social-icons.svg#instagram"></use></svg></a>
-          <a href="https://www.tiktok.com/@trydropapp" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><svg aria-hidden="true"><use href="/social-icons.svg#tiktok"></use></svg></a>
+          <a href="https://www.tiktok.com/@trydrop.app" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><svg aria-hidden="true"><use href="/social-icons.svg#tiktok"></use></svg></a>
           <a href="https://x.com/trydropapp" target="_blank" rel="noopener noreferrer" aria-label="X"><svg aria-hidden="true"><use href="/social-icons.svg#x"></use></svg></a>
           <a href="https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><svg aria-hidden="true"><use href="/social-icons.svg#youtube"></use></svg></a>
           <a href="https://www.facebook.com/profile.php?id=61591821453151" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg aria-hidden="true"><use href="/social-icons.svg#facebook"></use></svg></a>
@@ -282,9 +285,8 @@
     (function () {
       var D = window.Drop;
       var city = D.city();
-      D.fetchCatalogStats().then(function (stats) {
-        document.querySelector('[data-catalog-events]').textContent = stats.events.toLocaleString('en-US');
-        document.querySelector('[data-catalog-cities]').textContent = stats.cities.toLocaleString('en-US');
+      D.fetchPublishedEventCount().then(function (eventCount) {
+        document.querySelector('[data-catalog-events]').textContent = eventCount.toLocaleString('en-US');
         document.querySelector('[data-catalog-proof]').hidden = false;
         document.querySelector('[data-catalog-proof-pending]').hidden = true;
       }).catch(function () {}); // nonnumeric live-catalog copy remains visible offline

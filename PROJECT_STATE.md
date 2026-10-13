@@ -9,21 +9,65 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-18
+Last updated: 2026-10-07
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
-**Status:** AVAILABLE — Google Play submission is in external review
+**Status:** AVAILABLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- None.
+- Completed ticket-path lane: `codex/ticket-path-20261007`, public date filtering and stale-result repair. Existing email, affiliate, recovery, and migration holds remain with their owners.
 
 ## Current status
 ### What works
-- **GOOGLE PLAY LAUNCH SUBMITTED + ANDROID DAL LIVE (2026-08-18):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. Its authoritative status is **In review**. Managed publishing is off, so Google will publish the approved changes automatically; no replacement AAB was uploaded.
+- **PUBLIC DATE/FILTER REPAIR LIVE (2026-10-07, PR118):** shared date bounds, current-request rendering and active city semantics are repaired. PR118 merged as 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; exact-head PR/main CI passed 20 Node and 258 browser checks. Main workflow 37683814143 deployed Pages 19cf2e3c. Live source bytes match review; desktop/mobile date, location, search, Madeon detail and exact AXS destination checks pass. Evidence and limits: state.d/2026-10-07-ticket-path.md.
+- **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
+  canonical Drop wordmark, presents Website first followed by App Store,
+  Google Play, About Drop, and then the social row, and adds the official
+  Threads profile to Instagram, TikTok, X, YouTube, Facebook, Reddit, and
+  LinkedIn. The four-file source diff was independently approved unchanged;
+  focused desktop/mobile acceptance passes 2/2 on repaired main `0a114e9`.
+  Exact-head CI, merge, Pages delivery, and live readback are in progress.
+- **EMAIL CHANGE REVIEWED, SOURCE ONLY (PR #112):** current/pending email, dual-inbox verification, resend, safe callback, and server refresh are implemented and reviewed on top of PR #113. The matching mobile candidate is draft PR #984. Exact shared migration approval remains blocked by automatic review until the user explicitly names its SECURITY DEFINER function/auth.users trigger; nothing has been applied.
+- **AUTH FORMS, FEEDBACK, AND BROWSER CI LIVE (2026-09-09, PR #113):** Login/signup/recovery inputs now survive unrelated catalog renders without copying passwords to state or browser storage; screen/auth/account transitions clear them. Settings Help & feedback opens an editable private draft, with a visible email fallback.  Google's Chrome APT repository serves a package file that fails its signed checksum, blocking Playwright browser installation before tests. The test job now uses the official Playwright 1.61.1 image pinned by digest and matched to the lockfile. Runner, Node 22, npm integrity checks, full browser assertions, and the production deploy job are preserved. A Node contract rejects image-version drift. Reviewed head `ad0395cd8500cb7abffef660b49ffc8326f0b778` passed 19 Node contracts and 232 browser cases; merge `0a114e92d3f8ca276979a0241591cb59caaedbef` passed main workflow `34387057850` and deployed. Both public app.js surfaces are byte-identical to review. HTML differs only by expected Cloudflare email protection; the live DOM confirms its feedback address decodes correctly. Existing browser account stops at phone activation; no SMS or bypass, and Settings geometry remains automated-test evidence.
+- **OFFICIAL FRENS PARTNER LOGO LIVE (2026-09-08, PR #109):** the homepage
+  partner row now links the official FRENS mark to `https://heyfrens.org/` with
+  safe new-tab attributes and accessible text. The checked-in SVG is
+  byte-identical to the official site's declared `/logo.svg` favicon (SHA-256
+  `6f4056e93ab7d387f70505ed50c26dcc576a265cd1d813399ed65da5f47465f7`).
+  PR #109 reviewed head `6b492d88b295dd24e860f5215ec2b14bcc55a263`
+  merged as `894c024f02df5527d8b0e4c8ef6c46ac49c9a83e`; main workflow
+  `34256133237` passed and deployed through Cloudflare Pages. Live desktop and
+  mobile QA found the intended 52px/44px rendering, exact partner destination,
+  no horizontal overflow, and no console errors; the live SVG is byte-identical
+  to the reviewed asset.
+- **GOOGLE PLAY AVAILABILITY + SAFE PUBLIC EVENT CONTINUATION REVIEWED (2026-09-04):** the website candidate exposes the verified iPhone and Android store destinations on `/download`, device-aware download controls, signed-in app controls, `/go` fallback, metadata, and `llms.txt`. Public event Going/Interested/Follow actions now retain only an exact UUID, allowlisted action, and at-most-24-hour expiry through login, signup, recovery, age, and phone gates; nothing writes before explicit final confirmation, failed/stale writes cannot report success, and missing events fail closed. Save/Plan/Invite remain honest native/install alternatives. Local gates pass 18/18 Node contracts and the 224-case Chromium/mobile-WebKit CI-mode matrix (223 direct passes plus one clean automatic retry after a local static-server timeout); focused event/auth/store coverage passes 30/30. Build parity, Android association validation, dependency audit, secret scan, and independent security/correctness review are clean. Standard PR/main auto-deploy and live provenance verification remain.
+- **OFFICIAL GOOGLE PLAY LINK LIVE (2026-09-02, PR #105):** the link-in-bio hub
+  now presents equal App Store and Google Play download actions, identifies Drop
+  as available on iPhone and Android, and sends Android visitors to the verified
+  public listing for package `app.resonanceventures.drop`. PR #105 exact reviewed
+  head `c8d92b51fca062bed56f3ca42889daa89e390bca` merged as
+  `fb2422819819746f748672357eb71002014cf3a5`; main workflow `33695708570`
+  passed 194/194 browser tests and deployed through Cloudflare Pages. Live
+  `/link` readback exposes the exact Play URL, and the public listing identifies
+  the app as `Drop - EDM Events` by Resonance Ventures.
+- **OFFICIAL TIKTOK PROFILE LINKS LIVE (2026-09-02, PR #103):** all 16 public
+  website social surfaces, homepage Organization JSON-LD, `llms.txt`, and both
+  signed-in website TikTok controls now target the verified Drop profile at
+  `https://www.tiktok.com/@trydrop.app`; the two signed-in no-op links are gone.
+  PR #103 exact reviewed head `752029bf011ed30c9165ce86a23c4b1d4b860a24`
+  merged as `04126b3dc61527a801b02d321416485353b25df5`. Main workflow
+  `33692784321` passed 194/194 browser tests and deployed through Cloudflare
+  Pages. Live `/link`, `/`, `/app/index.html`, and `app.trydropapp.com` readbacks
+  contain only the corrected profile URL; the live link hub rendered without
+  Drop-site console warnings/errors, and TikTok identifies the destination as
+  `Drop - Music Discovery` / `trydrop.app`.
+- **EXACT PUBLISHED-EVENT TOTAL LIVE (2026-08-25, PR #100):** the homepage now requests an exact anonymous count of every `status=published` event and renders `Tracking 6,908 published events on Drop`, including past shows rather than only the currently buyable catalog. Missing or malformed count headers retain the honest nonnumeric `Live catalog updated continuously` copy. PR #100 merged as `d431516129c2225805010384ab7abc5f3343035e`; main workflow `32900683374` passed 192 desktop/mobile Playwright checks and deployed through Cloudflare Pages. Production desktop 1280×900 and mobile 390×844 both rendered 6,908 with no overflow or console warnings/errors; location and menu controls opened and closed correctly.
+- **GOOGLE PLAY LAUNCH PUBLIC + ANDROID DAL LIVE (2026-08-18/09-02):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. The public listing was live-verified on September 2 as `Drop - EDM Events` by Resonance Ventures for package `app.resonanceventures.drop`.
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
 - **ANDROID DIGITAL ASSET LINKS HOTFIX DELIVERED (2026-08-17/18):** the canonical `.well-known/assetlinks.json` names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`. The deploy workflow fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. PR #95 merged and the production apex readback matches reviewed source. `www` remains a redirect and is intentionally excluded from Android intent filters. Physical App Links acceptance remains untested because no Android test device is available.
-- **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
+- **COMBINED FACEBOOK LOGIN + PHASE 2 SHARE ATTRIBUTION FAIL-CLOSED SOURCE READY (2026-08-23):** PR #92 preserves its Facebook controls and absorbs PR #93's unique referral/share implementation while excluding superseded DAL ancestry already delivered by PR #95. Validated first-touch referral context remains browser-local for at most 24 hours; same-browser password/email/OAuth completion may retain it as best-effort attribution without duplicating it into Auth metadata, while fresh-browser email confirmation fails closed without referral credit. Production referral recording is explicitly default-off because its separately gated RPC migration is not live; valid state is preserved, invalid/expired/self/older-account state clears, and no recording RPC is called until a reviewed runtime capability is enabled after live contract proof. Facebook adds no permission beyond Supabase's automatic `public_profile` plus requested `email`. Node 18/18 and Playwright 192/192 pass across desktop Chromium and mobile WebKit; independent exact-head rereview remains. No migration apply, account login, user/profile write, Meta/Supabase configuration, secret, Worker, or production deployment has occurred from this reconciliation.
+- **CANONICAL BUYABLE CATALOG STATS SUPERSEDED (2026-08-16, PR #90):** this historical RPC-backed event/city proof shipped successfully, then PR #100 replaced it with the exact all-published-event total above. Missing or malformed responses still fail closed to nonnumeric copy.
 - **MOBILE EVENT TICKET BAR LIVE (2026-08-14, PR #88):** the public event detail and signed-in web app now reserve compact 48px icon actions and a bounded Going action so the ticket CTA receives the remaining mobile width. The sticky-only CTA omits redundant price copy and uses neutral `Tickets` for unknown/cancelled ticket state while retaining the full `View ticket details` accessible name and desktop copy. Exact-event QA for `e1572fcc-218a-4fe2-9f7d-a4b301d31bdb` passed at 498×608, 390×844, 320×568, and 1280×800 with no clipping, overlap, horizontal overflow, or console warnings/errors; the live CTA still targets SeatGeek with safe sponsored new-tab attributes. PR #88 merged as `5a26c85d84c76e25ac2f5eae716ded56303f6a71`; main workflow `31852082349` passed 164/164 and deployed through Cloudflare Pages. Live `shell.css` and app-subdomain `index.html`/`app.css` are byte-identical to reviewed source, and the exact pretty event route contains the reviewed public CTA markers.
 - **BUYABLE HOMEPAGE EVENT COUNT SUPERSEDED (2026-08-14, PR #86):** this historical browser-local rounded-count implementation shipped successfully, then PR #90 replaced it with the canonical exact server count above. No rounded or numeric offline fallback remains.
 - **EXPLICIT POST-OTP DUPLICATE-PHONE PROMPT REVIEWED (2026-08-13):** exact `phone_unavailable` after OTP check explains that the number is linked to another Drop account and offers a direct sign-out-to-login action without exposing its email or identity. Send/resend responses stay generic; required deletion/recovery remain reachable; 7 Node contracts and 162 desktop/mobile Playwright checks pass, with independent adversarial re-review clean. PR/merge/live deploy verification remain.
@@ -140,9 +184,10 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 - UI consistency cleanup is LIVE on trydropapp.com (2026-07-08, Codex; final Pages deployment `3bcc25b0.drop-site.pages.dev`): link hub now uses the same desaturated Prism CTA fill/pill geometry, time tabs and filter chips share selected-state tokens, native emoji/symbol UI was replaced with Prism-styled marks/labels, Bass/Dubstep and Clubs have distinct tints, venue/artist detail H1s use Space Grotesk, promoter section labels/wrap are cleaned up, and the download waitlist no longer emits the mailto mixed-content console warning. Verified with `npm test` 42/42, targeted Playwright screenshots in `/tmp/drop-site-fix-qa`, live CSS/HTML marker checks, and live browser pass on `/link.html`, `/download.html`, `/promoters.html`, `/events.html` with zero console/page errors.
 ### In progress — Active Claims
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
-- None.
+- Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
-- Google Play submission `1` is **In review**. Managed publishing is off, so approved changes will publish automatically. Google says reviews typically finish within seven days but can take longer.
+- Email PR #112/mobile PR #984: exact migration `20260909170719_sync_verified_auth_email_to_profiles.sql`, SHA-256 `512396823a0f32c76ba83bd2ea3d8701678a83f6aef4fcbec42d70a969de30d4`, remains unapplied. User approved the packet, but automatic review rejected the privileged DDL and an explicit follow-up is pending. No retry or email-UI activation before explicit approval plus fresh preflight/application/postflight.
+- Founder visual acceptance of the already delivered FRENS mark on desktop/phone remains waiting; no implementation required for that request.
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
   application was immediately declined. Wait for Impact's specific compliance
   reason; reply with additional ownership evidence if requested. Direct brand
@@ -160,6 +205,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Ticket-path lane complete:** source, required CI, automatic production deploy, byte provenance and available desktop/mobile live QA verified. No source/deploy action remains in this lane; existing held lanes below retain their original owners. Founder device acceptance remains separate from the available browser proof.
+- **1. In the existing email-change owner lane, finish exact-head CI for rebased PR #112; keep it draft while the explicit database blocker above remains.** Preserve both PR #113's auth-input fix and a single private-feedback handler. Activation follows only the approved migration's verified live installation.
+- **2. Android www source repair is already complete in current Drop-App main.** Fresh `DropApp/app.json` at `e6b703a31778f31cecbb9aba1fd5488258ab35b4` uses only `trydropapp.com` in Android intent filters. Preserve the deliberate www-to-apex redirect. Native delivery and installed-device App Links acceptance remain separate evidence in the mobile owner lane; no website source change is required.
+- **3. PR #92 (Facebook Login) has now MERGED** — `origin/main` is `7fa29f6`, so the "after PR #92 passes … and the normal protected website deploy" precondition is satisfied. Next is the approved no-follow Facebook callback-initiation QA, then the separately approved disposable tester login plus zero-residue cleanup canary. Keep referral recording off until the shared migration is separately approved/applied, live-verified, and a reviewed source change enables its exact runtime capability. *(This is another lane's work; only the merge status was corrected here.)*
+- **4. Fix the `/delete-account` retention wording before the next website deploy.** The page says data is deleted or de-identified *"within a reasonable period"*, which is not a period. Google Play's Data Safety form asks for retention directly, so the page, the privacy policy, and the console answer should state the same concrete commitment (e.g. 30 days, except where a longer period is legally required). Also point the Play Console's Privacy Policy URL at canonical `/privacy` rather than `/privacy.html`, which 301s.
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -180,6 +230,33 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-09-09 — Codex — link hub refresh reviewed
+- **Changed:** `/link` uses the current Drop wordmark and orders Website, App
+  Store, Google Play, and About Drop before the social row. Threads joins the
+  seven existing official social destinations with accessible, safe new-tab
+  behavior.
+- **Verified:** the rebased four-file diff is unchanged from independent source
+  and rendered review. Focused desktop Chromium and mobile WebKit acceptance
+  passes 2/2; required exact-head CI and production delivery remain in progress.
+
+## 2026-09-02 — Codex — official Google Play link live
+- **Changed:** `/link` now includes an equal Google Play CTA to the exact public
+  package URL and identifies the app as available on iPhone and Android; social
+  preview descriptions mention both stores. A regression test locks the exact
+  package destination.
+- **Verified:** the public listing identifies `Drop - EDM Events` by Resonance
+  Ventures at package `app.resonanceventures.drop`. Local Node checks passed
+  18/18, the clean full Playwright rerun passed 194/194, focused desktop/mobile
+  render-and-click QA passed 2/2 without overflow or browser errors, and build
+  parity, dependency audit, secret scan, diff check, and independent review were
+  clean.
+- **Delivered:** PR #105 exact head
+  `c8d92b51fca062bed56f3ca42889daa89e390bca` merged as
+  `fb2422819819746f748672357eb71002014cf3a5`; production workflow
+  `33695708570` passed 194/194 and deployed through Cloudflare Pages. Live
+  `/link` readback contains the exact Play destination and Android availability
+  copy.
 
 ## 2026-08-18 — Codex — Google Play launch submitted and Android DAL live
 - **Delivered:** PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`; the live apex association is byte-identical to the reviewed package/fingerprint statement. Production build 1.0.2 (2) was promoted for United States availability without uploading a replacement AAB.
@@ -471,6 +548,77 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - Verified live: all 12 pages 200, /link 200, /legal/* 301s, /event/<uuid> serves event page (200 rewrite + path-parsed id), AASA application/json at root, www→apex 301. Browser check: h1 renders, 24 live event cards, body scrolls (no app overflow:hidden), zero page errors. 2026-07-08 check: `/app/` and `/app/login` 302 to `/account.html`; `app.trydropapp.com/login`, `app.trydropapp.com/account.html`, and `/signup` serve the static account shell; account assets serve 200.
 
 ## Recent sessions (last 5 — older entries in PROJECT_HISTORY.md)
+### 2026-10-07 — Codex — public discovery and ticket path delivered
+- Corrected shared upper date filtering, old-response/cache redraw races and active-city label/search/picker semantics. Seven new regression scenarios cover desktop Chromium and mobile WebKit; independent correctness/refuter/security approval.
+- PR118 final head 07936d5d0b496ecbd70b0a6ef4b9e288d25e1b4f, base 5b41b5bad4ee7867cc0848865ade4ddabebe575b; workflow 37669328520 passed. Merge 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; main workflow 37683814143 passed 20 Node/258 browser cases and deployed Cloudflare Pages 19cf2e3c.
+- Live JS and discovery inline scripts match reviewed bytes. Codex browser desktop 1280×720/mobile 390×844 verified bounded dates, Seattle labels/results, global festival All cities, header search/city-picker query preservation and Madeon → matching AXS event. No overflow or app console warnings/errors on checked detail surfaces. Physical devices, authenticated production writes and native popup handoff remain unverified.
+- Corrected stale Android www-removal next action from fresh mobile main; no native/backend/auth/affiliate/workflow change. Existing owners/holds preserved.
+### 2026-09-09 — Codex — website repair delivered, email candidate reconciled
+- PR #113 merged as `0a114e92d3f8ca276979a0241591cb59caaedbef`; required PR and main checks passed. Production workflow `34387057850` deployed successfully; live app script bytes match approved SHA-256 `a493481e977b1b0bfcbe9476a8367a00d544cda7d1c5b0375b6b9525e0ca824d` on apex and app subdomain.
+- Live HTML's only differences are Cloudflare's email protection transform and decoder insertion; its decoder processes templates, and live DOM confirms the visible mailbox fallback is decoded. No overflow or console warnings/errors on the available phone-activation surface. No account mutation/SMS or activation bypass was performed.
+- Email PR #112 rebased onto that delivered source. Combined email/auth regression passes 16/16; duplicate identical feedback handler introduced by rebase was removed. Production migration remains unapplied after automatic approval rejection; explicit privileged-DDL follow-up pending.
+### 2026-09-09 — Codex — website delivery blocker repair
+- Isolated from DB-gated email PR #112 so other website work can resume independently. Official Google InRelease/Packages readback at 17:41 UTC reproduced the exact failed checksum from CI; no integrity bypass was attempted.
+- Test job uses official Playwright 1.61.1 image SHA-256 `5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48`; source lockfile matches. Nineteen Node contracts pass; independent CI review approves. Required browser CI still must execute successfully.
+- PR #111's earlier trace separately proved catalog completion can rerender the login form while typing, erase the email, and prevent authentication. The centralized transient-input fix passed independent review, 8 new desktop/WebKit cases, and 92 combined auth/signup/event-intent regressions. It keeps values only within one synchronous render and clears across screen/auth/account changes; no test-only timing workaround.
+- The reviewed private-feedback Settings entry is included independently of email activation. It opens a user-reviewed mail draft and shows trydropapp@gmail.com as a fallback; no new analytics collector or external send.
+### 2026-09-08 — Codex — official FRENS partner logo live
+- **Changed:** added the official FRENS SVG to the existing homepage partner row,
+  preserving its blue/pink colors and linking it to `https://heyfrens.org/` with
+  accessible, safe new-tab behavior. No event date, venue, offer, partnership
+  term, backend, authentication, or PR #108 file changed.
+- **Provenance:** `assets/partners/frens.svg` is byte-identical to the official
+  site's declared `/logo.svg` favicon, SHA-256
+  `6f4056e93ab7d387f70505ed50c26dcc576a265cd1d813399ed65da5f47465f7`.
+- **Verified:** 18/18 Node checks passed; 223/224 browser checks passed directly
+  and the sole unrelated event-intent timeout passed focused. The exact later CI
+  auth failures passed 4/4 locally. Build parity, zero-vulnerability offline
+  audit, gitleaks, diff check, exact asset identity, desktop/mobile rendering,
+  link interaction, and independent adversarial review passed.
+- **Delivery:** PR #109 exact reviewed head
+  `6b492d88b295dd24e860f5215ec2b14bcc55a263` merged as
+  `894c024f02df5527d8b0e4c8ef6c46ac49c9a83e`; exact-main workflow
+  `34256133237` passed test and Cloudflare deploy jobs. Live HTML exposes the
+  reviewed link and the live SVG is byte-identical to reviewed source; 1280×900
+  and 390×844 live QA found no overflow or console errors.
+
+### 2026-09-04 — Codex — store availability and event-action continuation reviewed
+- **Changed:** added equal App Store/Google Play availability across `/download`, device-aware routes, signed-in controls, metadata, and discovery text. Public event actions now carry a strict 24-hour exact-event intent through existing authentication/compliance gates; RSVP/venue-follow writes require explicit confirmation, while Save/Plan/Invite retain truthful native/install paths.
+- **Security:** rejects external, protocol-relative, encoded, malformed, duplicate, oversized, expired, and overlong return targets; scrubs accepted targets from the browser URL; invalidates canceled/replaced/sign-out async work; suppresses stale and failed success; fetches the exact published event and fails closed when unavailable.
+- **Verified:** 18/18 Node contracts, focused 30/30 Chromium/mobile-WebKit cases, CI-mode 224-case suite with 223 direct passes plus one clean automatic retry after a local static-server timeout, generated-dist parity, Android association validator, zero-vulnerability offline audit, gitleaks, diff/syntax checks, and independent security/correctness review are clean.
+- **Delivery:** standard PR/main Cloudflare Pages auto-deploy and exact live readback remain.
+- **Boundary:** no backend, database, mobile, Worker, Edge Function, secret, production user write, SMS, or external communication changed.
+
+### 2026-09-02 — Codex — official TikTok profile links corrected live
+- **Root cause:** TikTok no longer resolves the old `@trydropapp` handle; the
+  official authenticated account is `@trydrop.app`. Two signed-in website
+  TikTok controls were also still explicit no-ops.
+- **Changed:** replaced the stale destination across every public page,
+  Organization metadata, and `llms.txt`; wired both signed-in controls to the
+  same safe new-tab destination; expanded regression coverage across all 16
+  public pages, both signed-in links, and an exercised popup navigation.
+- **Verified:** 18 Node checks plus 194/194 Playwright tests passed at stable
+  two-worker concurrency; deploy build, `git diff --check`, npm audit (zero
+  vulnerabilities), gitleaks, 1280×900/390×844 rendering, and independent
+  adversarial re-review passed with no remaining P0–P2 findings.
+- **Delivery:** PR #103 reviewed head `752029bf011ed30c9165ce86a23c4b1d4b860a24`
+  merged as `04126b3dc61527a801b02d321416485353b25df5`; exact main workflow
+  `33692784321` passed and deployed. Live public and signed-in readbacks match
+  the corrected URL, and the live link-hub DOM exposes `_blank` plus
+  `noopener noreferrer` with no Drop-site console warnings/errors.
+- **Boundary:** no TikTok account setting, OAuth scope, content, backend,
+  database, secret, Worker, or manual deployment changed.
+
+### 2026-08-25 — Codex — exact published-event total live
+- **Changed:** replaced the buyable-catalog RPC proof with one exact `status=published` count query, removed the unrelated city count, and kept the existing nonnumeric offline fallback.
+- **Verified:** local Node checks, build parity, 18 Node contracts, and 192 desktop/mobile Playwright checks passed; independent adversarial review found no actionable defect. PR #100 exact head `e75548c8924fb83355d689f3576b784fec60ff01` merged as `d431516129c2225805010384ab7abc5f3343035e`; main workflow `32900683374` passed and deployed. Live desktop/mobile QA rendered `Tracking 6,908 published events on Drop` with no console warnings/errors or horizontal overflow and working navigation controls.
+- **Boundary:** the count is read-only and updates naturally with publication state; no database, ingestion, cron, provider, secret, or manual deployment mutation occurred.
+
+### 2026-08-23 — Codex — combined Facebook Login and share attribution source ready
+- **Changed:** PR #92 retained the least-privilege Facebook login/signup controls and absorbed PR #93's unique bounded referral/share implementation. The reconciliation excluded PR #93's inherited DAL commits already delivered by PR #95 and did not touch PR #98's promoter route.
+- **Security behavior:** OAuth signup still requires DOB and legal consent, routes all providers through the same compliance callback, and requests no Facebook scope beyond automatic `public_profile` plus `email`. Referral state is validated, first-touch, browser-local, 24-hour bounded, absent from Auth metadata, recorded only after compliance, rejected for older accounts, and intentionally loses credit on a fresh-browser email callback.
+- **Verified/boundary:** the first combined head passed Node 18/18 and Playwright 186/186, but adversarial review found production lacked the referral RPC and the browser fake masked that absence. The corrected candidate defaults recording off; focused referral/Facebook/OAuth checks pass 24/24 and the full suite passes Node 18/18 plus Playwright 192/192 across desktop Chromium and mobile WebKit. Independent exact-head rereview, required CI, automatic deployment, and no-follow live callback QA remain. No login completion, account/user/profile mutation, migration, Meta/Supabase configuration, secret, Worker, or manual deployment occurred.
+
 ### 2026-08-17 — Codex — Google Play deletion resource reviewed
 - **Changed:** added `/delete-account`, linked it from the privacy policy and sitemap, and covered the page at desktop and mobile sizes.
 - **Verified:** 7 Node checks and 168 Playwright checks pass; browser QA is clean; `dist/delete-account.html` is byte-identical to reviewed source.
@@ -480,6 +628,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 - **Root cause:** the public website still carried the retired `app.drop.mobile` package and a TODO signing fingerprint because Android launch had previously been deferred. Google Play now exposes the authoritative App Signing public certificate for the current package.
 - **Changed:** canonical assetlinks source now uses `app.resonanceventures.drop` plus the exact Play-generated SHA-256; the deploy build preserves it byte-for-byte; the regression asserts the complete statement and rejects stale/TODO/empty values. The runbook defines apex-only Android App Links because `www` redirects rather than directly serving an association file.
 - **Verified/boundary:** focused 2/2, full Playwright 172/172, Node 8/8, build parity, diff check, and gitleaks pass after rebasing over the account-deletion page. Production remained stale until ordinary PR merge/Cloudflare delivery. That source-review session made no signing credential, build, bundle upload, Play release, store/device configuration, database, secret, or production mutation; a later session activated Play-signed 1.0.2 (2) in Internal Testing.
+
+### 2026-08-17 — Codex — Phase 2 share attribution source ready
+- **Fixed:** event canonicalization preserves only validated ref/source; public event/plan/signup handoff carries validated ref/source/kind/target; browser signup retains a 24-hour first touch for same-browser completion and calls the authenticated shared referral RPC only after compliance. Fresh-browser email confirmation intentionally fails closed without credit because the hosted template does not transport that local state.
+- **Privacy/truthfulness:** the plan fallback retains its UUID while removing all personal query rendering and fake roster/event defaults. Android association inherits the approved exact package/fingerprint hotfix and its fail-closed deploy validator; `docs/android-app-links.md` records the apex-only contract and separate build/device gate.
+- **Verified/boundary:** the original PR #93 candidate passed Node 9/9 and Playwright 182/182 including fresh-browser no-credit behavior. Combined PR #92 exact-head validation and rereview are pending; no migration, deploy, secret, production write, account login, or public release occurred in this reconciliation.
 
 ### 2026-08-16 — Codex — canonical public catalog stats live
 - **Delivered:** backend migration `20260816032731_public_catalog_stats.sql` SHA-256 `35da83dc1f180f39b1cb605887ce29decd9ce463f360c3e60f56187ee3e5b68a` is live as ledger `20260816084907`. Website PR #90 merged as `9f0d1a2f`; workflow `31937512102` passed 164/164 and deployed through Cloudflare Pages.
@@ -678,35 +831,30 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-08-24 — Claude (Opus) — Google Play readiness audit (read-only here); Android App Links defect found
+- **Changed in this repo: nothing.** Read-only throughout. Sources were read via `git show origin/main:<file>`, never from the working tree, and the only live actions were HTTP GETs against public URLs.
+- **Attribution note:** the dirty tree on `feat/past-show-ticket-import` — `app/app.js`, `app/index.html`, `privacy.html`, `terms.html`, `tests/smoke.spec.ts`, and the TikTok-callback edits inside `PROJECT_STATE.md` — is an earlier session's uncommitted work, **not this session's**. This repeats the same warning the 2026-08-19 entry already recorded; a session-end draft misattributed all seven files to this session and that draft was discarded rather than filled in.
+- **NEW FINDING — Android App Links are broken on Android 11 and lower.** Measured live 2026-08-24:
+  - `https://trydropapp.com/.well-known/assetlinks.json` → **HTTP 200, `application/json`, 0 redirects**, correct package `app.resonanceventures.drop` and Play App Signing fingerprint `E3:15:2D:…:F2`. Correct.
+  - `https://www.trydropapp.com/.well-known/assetlinks.json` → **HTTP 301** to the apex.
+  - But `Drop-App` `DropApp/app.json` declares an Android intent filter with **`autoVerify: true` covering both hosts**. Android's documentation: *"On Android 11 (API level 30) and lower, the system establishes your app as the default handler for the specified URL patterns only if it finds a matching Digital Asset Links file for **all** hosts in the manifest."* So on Android ≤11 the redirecting `www` host fails verification for **every** host and **no `trydropapp.com` link opens the app at all**. Android 12+ verifies per-domain, so only `www` links fall back to the browser there.
+  - **The fix belongs in `Drop-App`, not here.** This repo already decided deliberately that `www` redirects to apex — recorded in the existing next-step bullet that keeps `www` AASA-host hardening out of the release claim. That decision is right; the manifest simply drifted out of step with it.
+- **Closed two stale items from the 2026-08-19 entry, with evidence:**
+  - Its next step *"implement `functions/go.js`, add `/go` to `_routes.json`"* is **done**. Both are on `origin/main` today: `functions/go.js` exists and `_routes.json` lists `/go` in its `include` array. Verified at source level only — `/go` was deliberately **not** requested, because a GET writes a real `physical_qr_scan` row and would pollute the live Camp Alderwild campaign's counts.
+  - Its **SECURITY FINDING** (`physical_campaign_windows` had RLS disabled with `anon` holding INSERT/UPDATE/DELETE) is **resolved**. Migration `physical_campaign_windows_rls` is applied in production, and the deployed `drop-card` function reads the table with a server-side secret key precisely because the publishable key can no longer reach it.
+- **Also verified live (for the Play submission):** `/privacy.html` 301 → `/privacy` (200); `/terms.html` 301 → `/terms` (200); `/delete-account` **200 with 0 redirects**, reachable signed-out, offering both the in-app path and a working prefilled `mailto:` deletion request. `/support` returns **404**.
+- **Tested:** no test suite was run in this repo — nothing here was changed. All figures above are measured HTTP responses and `origin/main` file reads.
+- **Remaining:** the App Links fix (in `Drop-App`); the `/delete-account` retention wording (`"within a reasonable period"` is not a period); `/support` has no page.
+- **Full audit:** `/Users/aryashinde/Documents/Codex/2026-08-23/claude-google-play-readiness/GOOGLE_PLAY_READINESS.md`.
+
+### 2026-08-20 — Facebook Login PR #92 refreshed on current main
+- **Changed:** login/signup call the existing `oauth('facebook')` path; signup still enforces DOB and legal consent before OAuth. Source and behavioral regressions assert the Facebook provider.
+- **Reconciled:** the held branch was rebased onto current `origin/main` `30a7cda1f529dfd350590bf8372f797c48cf19a6`, preserving current 13+ and account-safety fixes while dropping stale status-only history.
+- **Verified:** `node --check`, 17/17 Node checks, 172/172 desktop/mobile Playwright checks, local rendered login/signup inspection, generated source/dist parity, and the Android association validator pass. Exact-head diff/secret review and hosted CI are required at branch closeout.
+- **Boundary:** PR #92 remains open and must not auto-deploy until the provider canary gate is satisfied. No provider/dashboard configuration, live Facebook round trip, backend/database, secret, Worker, merge, or deploy occurred.
+
 ### 2026-07-18 — Codex — Google favicon correction
 - **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
 - **Changed:** added 96×96 Prism spectrum `favicon.png`, a matching root `favicon.ico` fallback, made the PNG the homepage's primary declared favicon, and added both files to the deploy whitelist.
 - **Verified:** final deploy build contains byte-identical PNG/ICO assets; local rendered homepage declares `/favicon.png` at 96×96 with the SVG fallback and zero console warnings/errors; Playwright desktop + Mobile Safari suite passes 100/100; `git diff --check` clean. Commit `cceb03b` pushed to `main`; GitHub run `29672347775` passed 100/100 and deployed; production PNG/ICO bytes match source and the live homepage declares the new PNG.
 - **Google refresh:** Search Console confirmed the homepage is indexed and accepted a fresh request into its priority crawl queue. Remaining wait is Google-controlled; its favicon docs allow several days to several weeks.
-
-### 2026-07-12 — Claude (Fable) — account.html retired + round-4 port; logged-in web = Prism SPA (LIVE: Pages d8fb2117→1e5712a6, worker c650cc64)
-- **Changed:** `workers/app-path/worker.js` (root-shared assets `/vendor/`, `/data.js`, `/favicon*` pass through un-prefixed — they 404'd as text/html on app.trydropapp.com, killing auth/data there); all 18 landing pages' Log in / Get started → `https://app.trydropapp.com/?mode=login|signup` (`?ref=` → signup, `?next=` inert); `app/app.js` boot handles `?mode=login|signup` + authed session on home/login/signup hops to Discover; `_redirects` `/login|/login.html|/account.html` → app shell (root copy reconciled with dist — stale `/app*→/account.html` rule dropped); `account.html/.css/.js` DELETED; `tests/smoke.spec.ts` rewritten for new hrefs; dist/ mirrored.
-- **Tested:** `npm test` 66/66 (desktop + mobile-safari); local python http.server + Playwright: `/app/?mode=login` renders split-panel login, `?mode=signup` renders signup, zero console errors. **Unverified:** authed→Discover boot (needs prod deploy — localhost has no session); Supabase OAuth redirect allowlist for app.trydropapp.com.
-- **Remaining (RESOLVED same session):** founder named the deploy → both shipped + live-verified (authed Discover boot, round-4 city dropdown, assets 200). Round-4 port landed: 782 changed lines in the "Website design prompt" design (project 5b6f000f-c206-44b6-ab8a-5981e36f2af9) vs `design-drop/Drop Website.dc.html` — filter-panel rework, scrollable city dropdowns, "Know of one?" CTAs, `cityToDenver`, log-form month labels; `<link rel="icon" href="/favicon.svg">` still missing from `app/index.html` head.
-- **Next steps (ranked):**
-  1. Deploy: `npx wrangler pages deploy dist --project-name=drop-site --branch=main` + `cd workers/app-path && npx wrangler deploy` (founder names the deploy in-session). Verify: `curl -sI https://app.trydropapp.com/vendor/supabase.js` → 200 JS; founder's logged-in Chrome tab at `trydropapp.com/app/` boots to Discover.
-  2. Land the round-4 design port into `app/index.html` + `app/app.js` (markers to grep when done: 'Know of one', 'Back to Denver', 'overflow-y:auto', "moL=['Jan'", 'cityToDenver'); add the favicon link to `app/index.html` head; `npm test` 66/66; sync `dist/app/`; deploy. Refetch design if needed: POST `/design/anthropic.omelette.api.v1alpha.OmeletteService/GetFile` `{projectId:"5b6f000f-c206-44b6-ab8a-5981e36f2af9", path:"Drop Website.dc.html"}` in a claude.ai tab → `{content: base64}`.
-  3. Founder QA of logged-in write paths on app.trydropapp.com (see Exact next step 3 above).
-
-### 2026-07-09 — Claude — Full Prism web-shell redesign ingest (IN PROGRESS, branch `redesign/prism-web-shell`)
-- **Changed:** Whole-site replacement per founder directive ("literally everything") from the finished claude.ai design (design-drop/"Drop Website.dc.html", 49 screens, desktop+mobile). Committed so far: `design-drop/INGEST_PLAN.md` (scope/entity-split: website standalone on Supabase, Expo mobile-only), `shell.css` (web-shell component layer, token-pure, aa490da), legal/link/404/tests (6e93492). IN FLIGHT via 4 parallel subagents: `app/` (post-login web app ported from the design SPA — index/app.js/app.css/tokens.css, mock state), core browse (index/events/event), artist+venue pages, auth+acquisition (account states, city/genre SEO templates, share-plan/recap/wrapped, download/about/promoters). account.html keeps the Codex Supabase shell wiring (login/dashboard via RLS).
-- **Tested:** shell.css verified token-pure (0 hexes, 0 undefined vars); track-4 pages Playwright-checked on a scratch server (7/7, console-clean); full `npm test` NOT yet run (pages in flux) — everything in flight is **unverified** until tracks land.
-- **Remaining:** collect + commit the 4 in-flight tracks; run `npm test` (fix reds); design-auditor pass; open PR "Prism web-shell redesign"; Arya review → deploy (manual `dist/` mirror + wrangler, founder-gated) → repoint app.trydropapp.com Worker at `/app/` and retire the Expo web export; follow-on: wire `app/` to Supabase (replace mock state).
-- **Next steps (ranked):**
-  1. On branch `redesign/prism-web-shell`: collect the 4 subagent tracks (files listed above), commit per track, then `npm test` in /Users/aryashinde/Developer/Drop/drop-website and fix failures.
-  2. Refresh `dist/` mirror (`cp` changed files; rm removed ones), open PR "Prism web-shell redesign", get Arya review + explicit deploy go.
-  3. After deploy: repoint the drop-app-path Worker so app.trydropapp.com serves `/app/`; retire drop-web (Expo export) CF Pages project; then Supabase wiring for `app/` mock state.
-
-### 2026-07-08 — Claude (Opus) — Native hero effects BUILT + spec (not yet deployed)
-- **Changed:** spec `docs/superpowers/specs/2026-07-08-drop-native-effects-design.md` (29efed8); then implemented (commit 2b8dbc1): **A1** hero flip-words — new `flipwords.js` cycles the h1 word (shows/sets/drops), reserves widest-word width so copy doesn't reflow, static under reduced-motion; hero h1 in `index.html` wraps the word in `<span class="flip" data-flip>`; `.flip` iridescent gradient text in `site.css`. **A2** aurora — `.aurora` CSS glow (Prism cyan/magenta radial gradients, `aurora-drift` keyframes) behind `.discover-head`, `<div class="aurora">` added, static under reduced-motion. `playwright.config.ts` → `reducedMotion:'reduce'` for deterministic hero. `BACKLOG.md` points at `prism-tokens/DESIGN_RESOURCES.md`.
-- **Context:** reviewed 3 UI-inspiration sites (refero.design, Aceternity, Componentry) — neither imports (site = vanilla HTML, app = RN), so effects reimplemented natively + Prism-tokened + reduced-motion guarded, zero deps. Cross-repo (this session): `prism-tokens/DESIGN_RESOURCES.md` created (d4fbff2); resonance BACKLOG pointer (5a61a44); app `<RecapCelebration />` confetti component → Drop-App PR #146 (unwired, tsc-green). Backlogged: site moving-cards (needs real logos). Cut: app always-on animated hero.
-- **Tested:** `npm test` 46/46 (desktop + mobile-safari, zero console errors, h1 intact, flipwords.js loads). **DEPLOYED** to trydropapp.com (`npx wrangler pages deploy dist`, CF account `ba8c4fed…`, deployment `a367ae37.drop-site.pages.dev`); live browser verify on trydropapp.com: `.aurora` present + `aurora-drift` animating + gradient; `.flip` cycling (sets→shows), 100px reserved, no reflow; zero console errors.
-- **Remaining:** App PR #146 needs wiring into the recap screen + device QA (separate follow-up).
-- **Next steps (ranked):**
-  1. Deploy hero effects to trydropapp.com (Exact next step #1) + live-verify.
-  2. Drop-App PR #146: wire `<RecapCelebration>` into the recap screen root View, device-QA burst + reduce-motion skip, then merge.

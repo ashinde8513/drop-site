@@ -241,24 +241,48 @@
     };
   }
 
+  const TRANSIENT_AUTH_INPUT_IDS = new Set([
+    'login-email', 'login-password',
+    'signup-creator-code', 'signup-dob', 'signup-password', 'signup-consent',
+    'forgot-email', 'reset-password', 'reset-password-confirm'
+  ]);
+
   // Full-tree render into `container`, preserving focus + caret/selection on
-  // whatever bound input the user was typing into (see walkElement's
-  // bindKey) — otherwise every keystroke would blur the field.
-  function mount(container, render, vals) {
+  // whatever input the user was typing into. Uncontrolled auth values survive
+  // unrelated renders only; boot() disables restoration across screen/session
+  // transitions, and nothing is copied to state or browser storage.
+  function mount(container, render, vals, preserveAuthInputs) {
     const active = document.activeElement;
     let savedKey = null;
+    let savedId = null;
     let savedStart = null;
     let savedEnd = null;
-    if (active && active.dataset && active.dataset.bindKey && container.contains(active)) {
-      savedKey = active.dataset.bindKey;
+    if (active && container.contains(active)) {
+      savedKey = active.dataset && active.dataset.bindKey;
+      savedId = active.id && (preserveAuthInputs || TRANSIENT_AUTH_INPUT_IDS.has(active.id)) ? active.id : null;
       if ('selectionStart' in active) {
         savedStart = active.selectionStart;
         savedEnd = active.selectionEnd;
       }
     }
+    const authValues = new Map();
+    if (preserveAuthInputs) {
+      TRANSIENT_AUTH_INPUT_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && container.contains(el)) authValues.set(id, el.type === 'checkbox' ? el.checked : el.value);
+      });
+    }
     container.replaceChildren(render(vals));
-    if (savedKey) {
-      const el = container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]');
+    authValues.forEach((value, id) => {
+      const el = document.getElementById(id);
+      if (!el || !container.contains(el)) return;
+      if (el.type === 'checkbox') el.checked = value;
+      else el.value = value;
+    });
+    if (savedKey || savedId) {
+      const el = savedKey
+        ? container.querySelector('[data-bind-key="' + CSS.escape(savedKey) + '"]')
+        : document.getElementById(savedId);
       if (el) {
         el.focus();
         if (savedStart != null && 'setSelectionRange' in el) {
@@ -481,6 +505,126 @@
   function clearCreatorCode() {
     try { localStorage.removeItem(CREATOR_CODE_KEY); } catch (_) {}
   }
+  var PENDING_REFERRAL_KEY = 'drop.pendingReferral';
+  var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true;
+  var ATTRIBUTION_SOURCES = new Set([
+    'creator','crew_invite','event_invite','event_share','friend_invite',
+    'invite_screen','plan_share','qr','recap_share','seen_history',
+    'show_memories','wrapped'
+  ]);
+  var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  var EVENT_INTENT_KEY = 'drop.eventIntent';
+  var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
+  var EVENT_INTENT_WEB_ACTIONS = new Set(['going','interested','follow']);
+  var EVENT_INTENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  function parseEventIntentReturn(value, now) {
+    if (typeof value !== 'string' || value.length > 220 || value !== value.trim()) return null;
+    if (!value.startsWith('/event/') || value.startsWith('//') || value.includes('\\') || value.includes('%') || /[\u0000-\u001f\u007f]/.test(value)) return null;
+    var url;
+    try { url = new URL(value, 'https://drop.invalid'); } catch (_) { return null; }
+    if (url.origin !== 'https://drop.invalid' || url.hash || url.username || url.password || value !== url.pathname + url.search) return null;
+    var match = url.pathname.match(/^\/event\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
+    var keys = Array.from(url.searchParams.keys());
+    if (!match || keys.length !== 2 || url.searchParams.getAll('action').length !== 1 || url.searchParams.getAll('expires').length !== 1) return null;
+    if (!keys.every(function (key) { return key === 'action' || key === 'expires'; })) return null;
+    var action = url.searchParams.get('action');
+    var expires = url.searchParams.get('expires');
+    var current = Number.isFinite(now) ? now : Date.now();
+    var expiresAt = /^\d{10}$/.test(expires || '') ? Number(expires) * 1000 : NaN;
+    if (!EVENT_INTENT_ACTIONS.has(action) || !Number.isFinite(expiresAt) || expiresAt <= current || expiresAt > current + EVENT_INTENT_MAX_AGE_MS) return null;
+    return { eventId:match[1].toLowerCase(), action:action, expiresAt:expiresAt };
+  }
+  function eventIntentReturnTo(intent) {
+    if (!intent || !ATTRIBUTION_UUID.test(intent.eventId || '') || !EVENT_INTENT_ACTIONS.has(intent.action)) return '';
+    var expires = Math.floor(Number(intent.expiresAt) / 1000);
+    if (!Number.isFinite(expires)) return '';
+    return '/event/' + String(intent.eventId).toLowerCase() + '?action=' + intent.action + '&expires=' + expires;
+  }
+  function clearPendingEventIntent() {
+    try { sessionStorage.removeItem(EVENT_INTENT_KEY); } catch (_) {}
+  }
+  function pendingEventIntent() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(EVENT_INTENT_KEY); } catch (_) { return null; }
+    var value = parseEventIntentReturn(raw);
+    if (!value && raw) clearPendingEventIntent();
+    return value;
+  }
+  function captureEventIntentFromUrl() {
+    if (typeof location === 'undefined') return pendingEventIntent();
+    var url = new URL(location.href);
+    var values = url.searchParams.getAll('returnTo');
+    if (!values.length) return pendingEventIntent();
+    var intent = values.length === 1 ? parseEventIntentReturn(values[0]) : null;
+    url.searchParams.delete('returnTo');
+    history.replaceState({}, '', url.pathname + url.search + url.hash);
+    if (!intent) { clearPendingEventIntent(); return null; }
+    try { sessionStorage.setItem(EVENT_INTENT_KEY, eventIntentReturnTo(intent)); }
+    catch (_) { return null; }
+    return intent;
+  }
+  function authCallbackUrl(mode) {
+    var url = new URL(location.origin + location.pathname);
+    if (mode) url.searchParams.set('mode', mode);
+    var intent = pendingEventIntent();
+    var destination = eventIntentReturnTo(intent);
+    if (destination) url.searchParams.set('returnTo', destination);
+    return url.toString();
+  }
+  function normalizePendingReferral(value) {
+    if (!value || typeof value !== 'object') return null;
+    var ref = String(value.ref || '').toLowerCase();
+    var source = value.source == null || value.source === '' ? null : String(value.source);
+    var kind = value.kind;
+    var target = value.target == null || value.target === '' ? null : String(value.target).toLowerCase();
+    var capturedAt = Number(value.capturedAt);
+    if (!ATTRIBUTION_UUID.test(ref) || (source && !ATTRIBUTION_SOURCES.has(source))) return null;
+    if (!['event','plan','signup'].includes(kind)) return null;
+    if ((kind === 'event' || kind === 'plan') !== !!(target && ATTRIBUTION_UUID.test(target))) return null;
+    if (!Number.isFinite(capturedAt) || capturedAt <= 0 || capturedAt > Date.now() || Date.now() - capturedAt > 24 * 60 * 60 * 1000) return null;
+    return { ref:ref, source:source, kind:kind, target:kind === 'signup' ? null : target, capturedAt:capturedAt };
+  }
+  function pendingReferral() {
+    var raw = null;
+    try { raw = localStorage.getItem(PENDING_REFERRAL_KEY); } catch (_) { return null; }
+    try {
+      var value = normalizePendingReferral(JSON.parse(raw));
+      if (!value && raw) localStorage.removeItem(PENDING_REFERRAL_KEY);
+      return value;
+    } catch (_) {
+      try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch (_) {}
+      return null;
+    }
+  }
+  function savePendingReferralFromUrl() {
+    if (typeof location === 'undefined' || pendingReferral()) return;
+    var params = new URLSearchParams(location.search);
+    var value = normalizePendingReferral({
+      ref:params.get('ref'), source:params.get('src'), kind:params.get('kind') || 'signup',
+      target:params.get('target'), capturedAt:Date.now()
+    });
+    if (!value) return;
+    try { localStorage.setItem(PENDING_REFERRAL_KEY, JSON.stringify(value)); } catch (_) {}
+  }
+  function clearPendingReferral() {
+    try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch (_) {}
+  }
+  function signupCompletionUrl() {
+    var url = new URL(location.origin + location.pathname);
+    url.searchParams.set('mode', SIGNUP_COMPLETE_MODE);
+    var referral = pendingReferral();
+    if (referral) {
+      url.searchParams.set('ref', referral.ref);
+      if (referral.source) url.searchParams.set('src', referral.source);
+      url.searchParams.set('kind', referral.kind);
+      if (referral.target) url.searchParams.set('target', referral.target);
+    }
+    var creator = pendingCreatorCode();
+    if (creator) url.searchParams.set('creator', creator);
+    var intentDestination = eventIntentReturnTo(pendingEventIntent());
+    if (intentDestination) url.searchParams.set('returnTo', intentDestination);
+    return url.toString();
+  }
 
   // Stable per-event gradient — real events carry no per-row art direction,
   // so pick deterministically from the design's preset palette (same trick
@@ -634,7 +778,7 @@
   const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming' };
   const stateName = st => STATE_NAMES[st] || st || '';
 
-  const APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = '';
+  const APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
   function appDownloadHref() {
     const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
     if (/iPhone|iPad|iPod/i.test(ua) && APP_STORE_URL) return APP_STORE_URL;
@@ -702,7 +846,7 @@ class Component extends DCLogic {
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'all', discPage: 0,
     city: 'Denver, CO', cityOpen: false, cityFilter: '', menuOpen: false,
-    username: '', descClamped: true, toast: null,
+    username: '', signupEmail: '', descClamped: true, toast: null,
     genre: null,
     // search
     query: '', distance: '25', priceMin: 0, priceMax: 200, sGenres: {}, searchGeo: 'idle',
@@ -768,6 +912,9 @@ class Component extends DCLogic {
     claimNotListed: false, claimNewName: '', claimWebsite: '', claimSocial: '', claimEmail: '',
     claimSubmitted: false, claimBusy: false, claimError: '',
     editLinksOpen: false, editMerch: '', editWebsite: '',
+    // Public event action continuation — validated before storage or render.
+    eventIntent: null, eventIntentEvent: null, eventDetailRow: null, eventIntentLoading: false,
+    eventIntentReady: false, eventIntentBusy: false, eventIntentStatus: '',
   };
 
   // City picker catalog — the cities Drop covers, for the nav dropdown's
@@ -879,18 +1026,37 @@ class Component extends DCLogic {
   openGate(title){ this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false }); }
 
   toggleRsvp(id, status){
-    if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return; }
+    if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return Promise.resolve(false); }
     const cur = this.state.rsvp[id];
-    const next = cur===status ? null : status;
+    return this.writeRsvp(id, cur===status ? null : status);
+  }
+  async writeRsvp(id, next){
+    if (!supa || !this.state.authed || !this.state.userId || !ATTRIBUTION_UUID.test(String(id || ''))) return false;
+    const uid = this.state.userId;
+    const previous = this.state.rsvp[id] || null;
+    const token = {};
+    if (!this._rsvpWrites) this._rsvpWrites = new Map();
+    if (this._rsvpWrites.has(id)) return false;
+    this._rsvpWrites.set(id, token);
     this.setState(s=>{ const rsvp={...s.rsvp}; rsvp[id]=next; return {rsvp}; });
-    // PHASE 1: real write — attendance(user_id,event_id,status), same
-    // upsert/delete shape as DropApp/src/data/index.ts's setAttendance().
-    if (supa && this.state.userId) {
-      const uid = this.state.userId;
-      const p = next===null
-        ? supa.from('attendance').delete().eq('user_id', uid).eq('event_id', id)
-        : supa.from('attendance').upsert({ user_id: uid, event_id: id, status: next }, { onConflict: 'user_id,event_id' });
-      p.then(r=>{ if (r && r.error) console.error('[app] attendance write failed:', r.error.message); else this.loadMyShows(uid); });
+    try {
+      const result = next===null
+        ? await supa.from('attendance').delete().eq('user_id', uid).eq('event_id', id)
+        : await supa.from('attendance').upsert({ user_id: uid, event_id: id, status: next }, { onConflict: 'user_id,event_id' });
+      if (this._rsvpWrites.get(id) !== token) return false;
+      if (!this.state.authed || this.state.userId !== uid) { this._rsvpWrites.delete(id); return false; }
+      if (result && result.error) throw result.error;
+      this._rsvpWrites.delete(id);
+      this.loadMyShows(uid);
+      return true;
+    } catch (error) {
+      if (this._rsvpWrites.get(id) !== token) return false;
+      this._rsvpWrites.delete(id);
+      if (!this.state.authed || this.state.userId !== uid) return false;
+      this.setState(s=>{ const rsvp={...s.rsvp}; rsvp[id]=previous; return {rsvp}; });
+      console.error('[app] attendance write failed:', error && error.message || 'unknown error');
+      this.flash('Could not update your RSVP — try again');
+      return false;
     }
   }
   toggleSave(id){
@@ -899,6 +1065,111 @@ class Component extends DCLogic {
     // interested/attended) — stays a local-only bookmark, not persisted.
     this.setState(s=>({ saved:{...s.saved, [id]: !s.saved[id]} }));
     this.flash(this.state.saved[id] ? 'Removed from saved' : 'Saved to My Shows');
+  }
+
+  primeEventIntent(intent){
+    intent = intent || pendingEventIntent();
+    if (!intent) return Promise.resolve(false);
+    const requestToken = {};
+    this._eventIntentRequest = requestToken;
+    this.setState({ eventIntent:intent, eventIntentLoading:true, eventIntentReady:false, eventIntentStatus:'' });
+    const cached = (this.CATALOG || []).find(row=>row.id===intent.eventId)
+      || (this.state.realEvents || []).find(row=>row.id===intent.eventId);
+    const request = cached ? Promise.resolve(cached) : (Drop && Drop.fetchEvent ? Drop.fetchEvent(intent.eventId) : Promise.reject(new Error('unavailable')));
+    return request.then(row=>{
+      const current = pendingEventIntent();
+      if (this._eventIntentRequest !== requestToken || !current || current.eventId !== intent.eventId || current.action !== intent.action) return false;
+      if (!row || row.id !== intent.eventId) throw new Error('not found');
+      if (!this.CATALOG) this.CATALOG = [];
+      if (!this.CATALOG.some(item=>item.id===row.id)) this.CATALOG.push(row);
+      const rows = (this.state.realEvents || []).some(item=>item.id===row.id)
+        ? this.state.realEvents : [...(this.state.realEvents || []), row];
+      this.setState({ eventIntentEvent:row, eventDetailRow:row, eventIntentLoading:false, eventIntentStatus:'', realEvents:rows });
+      if (this.state.authed) this.maybeResumeEventIntent();
+      return true;
+    }).catch(error=>{
+      const current = pendingEventIntent();
+      if (this._eventIntentRequest !== requestToken || !current || current.eventId !== intent.eventId || current.action !== intent.action) return false;
+      if (error && error.message === 'not found') {
+        clearPendingEventIntent();
+        this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentLoading:false, eventIntentReady:false, eventIntentStatus:'' });
+        this.flash('This event is no longer available');
+      } else {
+        console.error('[app] event intent fetch failed:', error && error.message || 'unknown error');
+        this.setState({ eventIntentLoading:false, eventIntentStatus:'Could not load this event. Retry when you are ready.' });
+      }
+      return false;
+    });
+  }
+  maybeResumeEventIntent(){
+    const intent = pendingEventIntent();
+    if (!intent) {
+      if (this.state.eventIntent) this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentReady:false, eventIntentStatus:'' });
+      return false;
+    }
+    if (!EVENT_INTENT_WEB_ACTIONS.has(intent.action)) {
+      if (this.state.eventIntentReady) this.setState({ eventIntentReady:false });
+      return true;
+    }
+    if (!this.state.authed || !this.state.userId || this.state.wizPhoneRequired) return false;
+    if (['activation','rsvpmoment','reset','verify'].includes(this.state.screen)) return false;
+    const row = this.state.eventIntentEvent;
+    if (!row || row.id !== intent.eventId) { this.primeEventIntent(intent); return true; }
+    this.setState({ screen:'event', activeId:intent.eventId, eventIntent:intent, eventIntentReady:true, eventIntentStatus:'', loading:false });
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+    return true;
+  }
+  finishActivation(){
+    this.setState({ screen:'discover' });
+    this.maybeResumeEventIntent();
+    if (typeof window!=='undefined') window.scrollTo(0,0);
+  }
+  cancelEventIntent(){
+    this._eventIntentRequest = null;
+    this._eventIntentConfirm = null;
+    clearPendingEventIntent();
+    this.setState({ eventIntent:null, eventIntentEvent:null, eventIntentLoading:false, eventIntentReady:false, eventIntentBusy:false, eventIntentStatus:'' });
+  }
+  retryEventIntent(){
+    this.primeEventIntent(pendingEventIntent());
+  }
+  async confirmEventIntent(){
+    if (this.state.eventIntentBusy || !this.state.eventIntentReady || this.state.wizPhoneRequired) return;
+    const intent = pendingEventIntent();
+    const row = this.state.eventIntentEvent;
+    if (!intent || !row || row.id !== intent.eventId || !EVENT_INTENT_WEB_ACTIONS.has(intent.action)) {
+      this.cancelEventIntent();
+      return;
+    }
+    if (!supa || !this.state.authed || !this.state.userId) {
+      this.setState({ eventIntentStatus:'Log in before confirming this action.' });
+      return;
+    }
+    const uid = this.state.userId;
+    const confirmationToken = {};
+    this._eventIntentConfirm = confirmationToken;
+    this.setState({ eventIntentBusy:true, eventIntentStatus:'' });
+    let ok = false;
+    if (intent.action === 'going' || intent.action === 'interested') {
+      ok = await this.writeRsvp(intent.eventId, intent.action);
+    } else if (intent.action === 'follow' && row.venue_name) {
+      try {
+        const result = await supa.from('venue_follows').insert({ user_id:this.state.userId, venue_name:row.venue_name, city:row.city || '' });
+        ok = !result.error || result.error.code === '23505';
+      } catch (_) { ok = false; }
+    }
+    const current = pendingEventIntent();
+    if (this._eventIntentConfirm !== confirmationToken || !this.state.authed || this.state.userId !== uid
+      || !current || current.eventId !== intent.eventId || current.action !== intent.action) return;
+    this._eventIntentConfirm = null;
+    if (ok && intent.action === 'follow') this.setState(s=>({ followingVenue:{...s.followingVenue, [row.venue_name]:true} }));
+    if (!ok) {
+      this.setState({ eventIntentBusy:false, eventIntentStatus:'Nothing changed. Try again or cancel.' });
+      return;
+    }
+    const label = intent.action === 'going' ? 'Going' : intent.action === 'interested' ? 'Interested' : 'Following venue';
+    this.cancelEventIntent();
+    this.flash(label + ' saved');
   }
 
   // ===== PHASE 1: real data loaders =====================================
@@ -1037,6 +1308,32 @@ class Component extends DCLogic {
       supa.rpc('record_creator_referral', { p_code: code }).then(({ data: result, error: referralError })=>{
         if (referralError) return;
         if (['recorded', 'already_attributed', 'invalid_code', 'self_referral'].includes(result)) clearCreatorCode();
+      });
+    });
+  }
+  maybeRecordSignupReferral(user){
+    var referral = pendingReferral();
+    var uid = user && user.id;
+    if (!supa || !uid || !referral || referral.ref === uid) {
+      if (referral && referral.ref === uid) clearPendingReferral();
+      return;
+    }
+    var createdAt = Date.parse(user.created_at || '');
+    if (!Number.isFinite(createdAt) || createdAt <= referral.capturedAt) {
+      clearPendingReferral();
+      return;
+    }
+    if (!SIGNUP_REFERRAL_RPC_ENABLED) return;
+    supa.rpc('signup_compliance_status').then(({ data, error })=>{
+      if (error || !data || data.user_id !== uid || data.complete !== true) return;
+      supa.rpc('record_signup_referral', {
+        p_referrer:referral.ref,
+        p_kind:referral.kind,
+        p_target:referral.target,
+        p_source:referral.source
+      }).then(({ data:result, error:referralError })=>{
+        if (referralError) return;
+        if (['recorded','already_attributed','ineligible','self_referral'].includes(result)) clearPendingReferral();
       });
     });
   }
@@ -1398,12 +1695,14 @@ class Component extends DCLogic {
       if (scr === 'home' || scr === 'login' || scr === 'signup') this.go('discover');
       this.loadProfile(session.user.id);
       this.loadUserData(session.user.id);
+      this.maybeRecordSignupReferral(session.user);
       this.maybeRecordCreatorReferral(session.user.id);
       this.resumeTikTokCallback();
       if (this.state.screen === 'festival' && this.state.festivalEvent) {
         this.openFestival(this.state.festivalEvent.id);
       }
       this.maybeResumeClaimDeepLink();
+      this.maybeResumeEventIntent();
   }
   async connectTikTok(){
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
@@ -1525,9 +1824,12 @@ class Component extends DCLogic {
     this.openClaimFor(id);
   }
   logout(){
+    if (this._rsvpWrites) this._rsvpWrites.clear();
+    this._eventIntentRequest = null;
+    this._eventIntentConfirm = null;
     clearPendingOAuthCompliance();
     if (supa) supa.auth.signOut().catch(()=>{});
-    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
+    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
   async switchPhoneAccount(){
     clearPendingOAuthCompliance();
@@ -1560,7 +1862,7 @@ class Component extends DCLogic {
     } else {
       clearPendingOAuthCompliance();
     }
-    const redirectTo = location.origin + location.pathname + (signupOrigin ? '?mode=signup-complete' : '');
+    const redirectTo = signupOrigin ? signupCompletionUrl() : authCallbackUrl();
     this.setState({ authBusy:true, authError:'' });
     supa.auth.signInWithOAuth({ provider, options: { redirectTo } })
       .then(out=>{
@@ -1596,7 +1898,9 @@ class Component extends DCLogic {
         share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
       };
     };
-    const events = (s.realEvents||[]).map(mapRealEvent).map(decorate);
+    const eventRows = (s.realEvents||[]).slice();
+    if (s.eventDetailRow && !eventRows.some(row=>row.id===s.eventDetailRow.id)) eventRows.push(s.eventDetailRow);
+    const events = eventRows.map(mapRealEvent).map(decorate);
     const ae = events.find(e=>e.id===s.activeId) || events[0] || {
       id:null, title:'', venue:'', venueCity:'', dateShort:'', dateLong:'', price:'See tickets', genre:'',
       grad:EVENT_GRADS[0], gradStyle:'background-image:'+EVENT_GRADS[0], friends:0, goingCount:'—', interestedCount:'—',
@@ -1661,7 +1965,7 @@ class Component extends DCLogic {
         label: c.label,
         count: c.count + (c.count===1?' show':' shows'),
         dotStyle: c.label===s.city ? 'background:var(--accent);' : 'background:transparent;',
-        pick:()=>{ this.setState({city:c.label, cityOpen:false, cityFilter:''}); this.loadEvents(); },
+        pick:()=>{ this.setState({city:c.label, cityOpen:false, cityFilter:''}); this.loadEvents(); queueMicrotask(()=>document.getElementById('city-toggle')?.focus()); },
       }));
     const cityFilterEmpty = cityList.length===0;
 
@@ -2423,6 +2727,17 @@ class Component extends DCLogic {
     const reviewQueue = this.REVIEW_QUEUE.filter(r=>!s.reviewActioned[r.id]).map(r=>({ ...r, approve:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'approved'}})); this.flash('Approved — event is now live'); }, reject:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'rejected'}})); this.flash('Rejected'); } }));
     const REPORT_ST = { open:{label:'Open', color:'var(--gold)', bg:'rgba(255,203,61,0.12)'}, dismissed:{label:'Dismissed', color:'var(--text-muted)', bg:'var(--surface-hi)'}, reviewed:{label:'Reviewed', color:'var(--accent)', bg:'rgba(77,226,255,0.12)'}, actioned:{label:'Actioned', color:'var(--danger)', bg:'rgba(255,77,109,0.12)'} };
     const reports = this.REPORTS.map(r=>{ const key=s.reportState[r.id]||'open'; const st=REPORT_ST[key]; return { ...r, stLabel:st.label, stColor:st.color, stBg:st.bg, dismiss:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'dismissed'}})); this.flash('Report dismissed'); }, reviewed:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'reviewed'}})); this.flash('Marked reviewed'); }, action:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'actioned'}})); this.flash('Content removed'); } }; });
+
+    const eventIntent = pendingEventIntent();
+    const eventIntentRow = eventIntent && s.eventIntentEvent && s.eventIntentEvent.id===eventIntent.eventId ? s.eventIntentEvent : null;
+    const eventIntentName = eventIntentRow && eventIntentRow.title || 'this event';
+    const eventIntentVenue = eventIntentRow && eventIntentRow.venue_name || 'this venue';
+    const eventIntentNativeOnly = !!eventIntent && !EVENT_INTENT_WEB_ACTIONS.has(eventIntent.action);
+    const eventIntentAction = eventIntent ? ({going:'RSVP Going',interested:'RSVP Interested',follow:'Follow venue',save:'Save event',plan:'Plan with friends',invite:'Invite friends'}[eventIntent.action] || 'Continue') : '';
+    const eventIntentBody = eventIntent && eventIntent.action==='follow'
+      ? 'Confirm following '+eventIntentVenue+'. Nothing changes until you confirm.'
+      : 'Confirm '+eventIntentAction.toLowerCase()+' for '+eventIntentName+'. Nothing changes until you confirm.';
+    const eventIntentNativeHref = eventIntent ? 'https://trydropapp.com/event/'+eventIntent.eventId : 'https://trydropapp.com/download.html';
     const maxSignup = Math.max(1, ...this.ADMIN_SIGNUPS);
     const signupBars = this.ADMIN_SIGNUPS.map(v=>({ h:(v/maxSignup*100)+'%', value:v+' signups' }));
 
@@ -2450,6 +2765,15 @@ class Component extends DCLogic {
       screenTaste: s.screen==='taste', screenSuggest: s.screen==='suggest', screenError: s.screen==='error',
       screenPromoter: s.screen==='promoter', screenPromoManage: s.screen==='promomanage', screenAdmin: s.screen==='admin',
       isPromoter: s.isPromoter, notPromoter: !s.isPromoter,
+      eventIntentVisible:!!eventIntent,
+      eventIntentWaiting:!!eventIntent && !s.eventIntentReady && !eventIntentNativeOnly,
+      eventIntentReady:!!eventIntent && s.eventIntentReady,
+      eventIntentLoading:s.eventIntentLoading,
+      eventIntentLoadFailed:!!s.eventIntentStatus && !s.eventIntentReady,
+      eventIntentNativeOnly,eventIntentWeb:!!eventIntent && !eventIntentNativeOnly,
+      eventIntentAction,eventIntentName,eventIntentBody,eventIntentNativeHref,
+      eventIntentStatus:s.eventIntentStatus,eventIntentHasStatus:!!s.eventIntentStatus,eventIntentBusy:s.eventIntentBusy,
+      eventIntentConfirmLabel:s.eventIntentBusy?'Saving…':'Confirm '+eventIntentAction,
       promoEvents, promoEventsEmpty, promoEventCount: promoEvents.length, pm, promoTabs, promoTabDetails: s.promoTab==='details', promoTabGuests: s.promoTab==='guests', promoTabCodes: s.promoTab==='codes',
       promoDelConfirm: s.promoDelConfirm, promoDelDisabled: !promoDelOk, promoDelOpacity: promoDelOk?'1':'0.5',
       guests, guestsEmpty, guestTotal, guestCheckedIn, guestPending, codes, codesEmpty,
@@ -2478,9 +2802,9 @@ class Component extends DCLogic {
       authError: s.authError, authBusy: s.authBusy,
       loginBtnLabel: s.authBusy ? 'Working…' : 'Log in',
       signupBtnLabel: s.authBusy ? 'Working…' : 'Create account',
-      username: s.username,
+      username: s.username, signupEmail: s.signupEmail,
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
-      city: s.city, cityOpen: s.cityOpen, cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
+      city: s.city, cityOpen: s.cityOpen, cityExpanded: s.cityOpen ? 'true' : 'false', cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents, discShowPager, discPageLabel, discPrevDisabled, discNextDisabled, genreActive, gridLabel, gridEmpty, genreName: s.genre,
       homeEmpty: !s.eventsLoading && events.length===0,
       eventsLoading: s.eventsLoading, eventsError: s.eventsError,
@@ -2631,6 +2955,7 @@ class Component extends DCLogic {
 
       // handlers
       noop:(e)=>{ this.prevent(e); this.setState({cityOpen:false,menuOpen:false}); },
+      preventAuthSubmit:(e)=>this.prevent(e),
       stop:(e)=>{ if(e&&e.stopPropagation) e.stopPropagation(); },
       goHome:(e)=>{ this.prevent(e); this.go('home'); },
       goLogin:(e)=>{ this.prevent(e); this.go('login'); },
@@ -2660,7 +2985,9 @@ class Component extends DCLogic {
       goSharePlan:(e)=>{ this.prevent(e); this.go('shareplan'); },
       goShareRecap:(e)=>{ this.prevent(e); this.go('sharerecap'); },
       goShareWrapped:(e)=>{ this.prevent(e); this.go('sharewrapped'); },
-      appToast:()=>this.flash('App Store — coming soon'),
+      appToast:()=>{ if (typeof location !== 'undefined') location.href = 'https://trydropapp.com/download.html'; },
+      downloadIos:()=>{ if (typeof location !== 'undefined') location.href = APP_STORE_URL; },
+      downloadAndroid:()=>{ if (typeof location !== 'undefined') location.href = PLAY_STORE_URL; },
       promoterToast:()=>this.flash('Promoter signup — coming soon'),
       goTaste:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to manage your taste'); return; } this.go('taste'); },
       goSuggest:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to suggest events'); return; } this.go('suggest'); },
@@ -2702,7 +3029,7 @@ class Component extends DCLogic {
         const email = fieldVal('forgot-email').trim();
         if (!email) { this.setState({authError:'Enter your account email.'}); return; }
         this.setState({authBusy:true, authError:''});
-        supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '?mode=reset-password' }).then(out=>{
+        supa.auth.resetPasswordForEmail(email, { redirectTo: authCallbackUrl('reset-password') }).then(out=>{
           this.setState({authBusy:false});
           if (out.error) { this.setState({authError: out.error.message}); return; }
           this.flash('Reset link sent — check your email');
@@ -2749,7 +3076,7 @@ class Component extends DCLogic {
         supa.auth.resend({
           type:'signup',
           email:this.state.verifyEmail,
-          options:{ emailRedirectTo:location.origin + location.pathname + '?mode=signup-complete' }
+          options:{ emailRedirectTo:signupCompletionUrl() }
         }).then(out=>{
           this.setState({ verifyMessage: out.error ? (out.error.message||'Could not resend — try again.') : 'Email resent — check your inbox.' });
         });
@@ -2874,13 +3201,24 @@ class Component extends DCLogic {
       },
       bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
       onSearchFocus:()=>this.go('search'),
-      toggleCity:(e)=>{ this.prevent(e); this.setState(st=>({cityOpen:!st.cityOpen, menuOpen:false})); },
+      toggleCity:(e)=>{
+        this.prevent(e);
+        const opening = !this.state.cityOpen;
+        this.setState({cityOpen:opening, menuOpen:false});
+        queueMicrotask(()=>document.getElementById(opening ? 'city-filter' : 'city-toggle')?.focus());
+      },
+      cityEscape:(e)=>{
+        if(e.key!=='Escape') return;
+        this.prevent(e);
+        this.setState({cityOpen:false, cityFilter:''});
+        queueMicrotask(()=>document.getElementById('city-toggle')?.focus());
+      },
       // City picker (design round 4) — filter/type + "Back to Denver"
       discPrev:(e)=>{ this.prevent(e); this.setState(st=>({discPage: Math.max(0, st.discPage-1)})); },
       discNext:(e)=>{ this.prevent(e); this.setState(st=>({discPage: st.discPage+1})); },
       cityToDenver:(e)=>{ this.prevent(e); this.setState({city:'Denver, CO', cityOpen:false, cityFilter:''}); this.loadEvents(); },
       setCityFilter:(e)=>this.setState({cityFilter:e.target.value}),
-      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); } },
+      cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); queueMicrotask(()=>document.getElementById('city-toggle')?.focus()); } },
       // Search filter dropdowns (design round 4)
       toggleSDist:(e)=>{ this.prevent(e); this.setState(st=>({sDistOpen:!st.sDistOpen, searchGenreOpen:false, sCityOpen:false, sVenueOpen:false})); },
       toggleSearchGenre:(e)=>{ this.prevent(e); this.setState(st=>({searchGenreOpen:!st.searchGenreOpen, sDistOpen:false, sCityOpen:false, sVenueOpen:false})); },
@@ -2936,7 +3274,7 @@ class Component extends DCLogic {
       },
       doSignup:()=>{
         if (!supa) { this.setState({authError:'Signup is unavailable. Refresh and try again.'}); return; }
-        const email = fieldVal('signup-email').trim();
+        const email = this.state.signupEmail.trim();
         const username = cleanUsername(this.state.username);
         const password = fieldVal('signup-password');
         const rawCreatorCode = fieldVal('signup-creator-code');
@@ -2960,12 +3298,7 @@ class Component extends DCLogic {
           terms_version:'2026-07-18',
           privacy_version:'2026-08-11'
         };
-        // ponytail: referral is cosmetic (no crew-join backend yet) — same
-        // note as account.js's signUp(); the raw ref token still rides along
-        // as user metadata for a future crew-join job.
-        const referralRef = (typeof location!=='undefined' && new URLSearchParams(location.search).get('ref')) || '';
-        if (referralRef) data.referred_by = referralRef;
-        const redirectTo = location.origin + location.pathname + '?mode=signup-complete';
+        const redirectTo = signupCompletionUrl();
         (async ()=>{
           try {
             const out = await supa.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data } });
@@ -2980,9 +3313,14 @@ class Component extends DCLogic {
       },
       oauthGoogle:()=>this.oauth('google'),
       oauthApple:()=>this.oauth('apple'),
+      oauthFacebook:()=>this.oauth('facebook'),
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
-      setUsername:(e)=>this.setState({username: e.target.value}),
+      setUsername:(e)=>this.setState({username: e.target.value, authError:''}),
+      setSignupEmail:(e)=>this.setState({signupEmail: e.target.value, authError:''}),
       closeGate:()=>this.setState({gate:false}),
+      cancelEventIntent:()=>this.cancelEventIntent(),
+      retryEventIntent:()=>this.retryEventIntent(),
+      confirmEventIntent:()=>this.confirmEventIntent(),
       goLoginFromGate:()=>this.setState({gate:false, gateReturn: this.state.screen, screen:'login'}),
       goSignupFromGate:()=>this.setState({gate:false, gateReturn:null, screen:'signup'}),
       aeGoing:()=>this.toggleRsvp(ae.id,'going'),
@@ -3032,13 +3370,17 @@ class Component extends DCLogic {
         ? this.switchPhoneAccount()
         : (this.logout(), this.go('home')),
       setWizArtQuery:(e)=>this.setState({wizArtQuery:e.target.value}),
-      rmGoing:()=>{ if(rmEv) this.toggleRsvp(rmEv.id,'going'); this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
-      rmSkip:()=>{ this.setState({screen:'discover'}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      rmGoing:async()=>{ const ok=rmEv ? await this.writeRsvp(rmEv.id,'going') : true; this.finishActivation(); if(ok) this.flash(rmEv ? ('You\u2019re going to '+rmEv.title.split(' \u2014 ')[0]+' \u2014 welcome to Drop') : 'Welcome to Drop'); },
+      rmSkip:()=>this.finishActivation(),
       toastPhoto:()=>this.flash('Photo uploaded'),
       toastLoc:()=>this.flash('Using your current location'),
       toastSc:()=>this.flash('SoundCloud connect — coming soon'),
 
       // profile / settings
+      emailFeedback:()=>{
+        const body = 'Which screen or task?\n\nWhat happened, or what would you improve?\n\nWhat did you expect?\n\nSent from the Drop website.';
+        location.href = 'mailto:trydropapp@gmail.com?subject=' + encodeURIComponent('Drop feedback') + '&body=' + encodeURIComponent(body);
+      },
       goProfile:(e)=>{ this.prevent(e); this.go('profile'); },
       goEditProfile:(e)=>{ this.prevent(e); this.go('editprofile'); },
       goSettings:(e)=>{ this.prevent(e); this.go('settings'); },
@@ -3107,12 +3449,21 @@ class Component extends DCLogic {
     const render = compileTemplate(tplEl.innerHTML);
     const instance = new Component({});
     let pending = false;
+    let renderedScreen = instance.state.screen;
+    let renderedAuthed = instance.state.authed;
+    let renderedUserId = instance.state.userId;
     scheduleRender = () => {
       if (pending) return;
       pending = true;
       queueMicrotask(() => {
         pending = false;
-        mount(container, render, instance.renderVals());
+        const preserveAuthInputs = instance.state.screen === renderedScreen
+          && instance.state.authed === renderedAuthed
+          && instance.state.userId === renderedUserId;
+        mount(container, render, instance.renderVals(), preserveAuthInputs);
+        renderedScreen = instance.state.screen;
+        renderedAuthed = instance.state.authed;
+        renderedUserId = instance.state.userId;
         wireGenreRail();
       });
     };
@@ -3125,6 +3476,9 @@ class Component extends DCLogic {
     // route straight to the "choose a new password" screen instead of Home.
     instance.loadEvents();
     if (typeof location !== 'undefined') {
+      const incomingEventIntent = captureEventIntentFromUrl();
+      if (incomingEventIntent) instance.primeEventIntent(incomingEventIntent);
+      savePendingReferralFromUrl();
       var incomingCreatorCode = new URLSearchParams(location.search).get('creator');
       if (incomingCreatorCode) saveCreatorCode(incomingCreatorCode);
     }
@@ -3152,9 +3506,13 @@ class Component extends DCLogic {
       supa.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
           if (instance._festivalWrites) instance._festivalWrites.clear();
+          if (instance._rsvpWrites) instance._rsvpWrites.clear();
+          instance._eventIntentRequest = null;
+          instance._eventIntentConfirm = null;
           clearPendingOAuthCompliance();
           instance.clearPhoneVerificationState({
-            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login'
+            authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login',
+            rsvp:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false
           });
         } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {
           // Supabase warns against starting another auth call while its auth

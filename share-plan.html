@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Join a plan on Drop</title>
-  <meta name="description" content="See who's going, and join the plan on Drop — the EDM show discovery app." />
+  <meta name="description" content="Open a private plan invitation on Drop — the EDM show discovery app." />
   <meta name="theme-color" content="#0B0D12" />
   <meta name="robots" content="noindex" />
 
   <meta property="og:title" content="Join a plan on Drop" />
-  <meta property="og:description" content="See who's going, and join the plan on Drop." />
+  <meta property="og:description" content="Open a private plan invitation on Drop." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://trydropapp.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -30,21 +30,17 @@
       <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
 
       <div class="share-card">
-        <div class="share-card__media" id="plan-media" style="background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);">
+        <div class="share-card__media" style="background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);">
           <div class="wsc__scrim"></div>
-          <span class="share-card__pill" id="plan-genre">House</span>
+          <span class="share-card__pill">PRIVATE PLAN</span>
           <div class="share-card__text">
-            <div class="wsc__date" id="plan-date">FRI, JUL 18</div>
-            <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-xl); letter-spacing:var(--tr-snug); line-height:1.1; color:var(--text);" id="plan-title">Test Event Title</div>
-            <div style="color:var(--text-secondary); font-size:var(--fs-sm);" id="plan-venue">Venue, Denver</div>
+            <div class="wsc__date">PLAN INVITATION</div>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-xl); letter-spacing:var(--tr-snug); line-height:1.1; color:var(--text);">Make the night happen</div>
+            <div style="color:var(--text-secondary); font-size:var(--fs-sm);">Sign in to view details shared with you.</div>
           </div>
         </div>
         <div class="share-card__body">
-          <div class="share-social">
-            <span class="avstack"><span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span></span>
-            <span id="plan-social">Maya + 4 friends are going</span>
-          </div>
-          <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md);" id="plan-headline">Join Maya's plan on Drop</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:var(--fs-lg); margin-bottom:var(--sp-md);">You received a Drop plan invitation</div>
           <a class="btn btn--primary btn--block" id="plan-join" href="https://app.trydropapp.com/?mode=login">Join on Drop — it's free</a>
           <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
         </div>
@@ -56,29 +52,20 @@
   <script>
     (function () {
       var p = new URLSearchParams(location.search);
-      var friend = p.get('friend') || 'Maya';
-      var friendHandle = p.get('u') || friend.toLowerCase().replace(/[^a-z0-9]/g, '');
-      var extra = parseInt(p.get('count') || '4', 10);
-      var title = p.get('event') || 'Test Event Title';
-      var venue = p.get('venue') || 'Venue';
-      var city = p.get('city') || 'Denver';
-      var genre = p.get('genre') || 'House';
-      var date = p.get('date') || '';
-
-      document.title = 'Join ' + friend + "'s plan on Drop";
-      document.getElementById('plan-genre').textContent = genre;
-      document.getElementById('plan-title').textContent = title;
-      document.getElementById('plan-venue').textContent = venue + ', ' + city;
-      document.getElementById('plan-social').textContent = friend + (extra > 0 ? ' + ' + extra + ' friends are going' : ' is going');
-      document.getElementById('plan-headline').textContent = "Join " + friend + "'s plan on Drop";
-      if (date) {
-        try {
-          document.getElementById('plan-date').textContent =
-            new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
-        } catch (e) { /* keep default */ }
+      var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      var sources = new Set(['creator','crew_invite','event_invite','event_share','friend_invite','invite_screen','plan_share','qr','recap_share','seen_history','show_memories','wrapped']);
+      var match = location.pathname.match(/^\/plan\/([0-9a-f-]{36})(?:\/|$)/i);
+      var planId = match && uuid.test(match[1]) ? match[1].toLowerCase() : '';
+      var ref = uuid.test(p.get('ref') || '') ? p.get('ref').toLowerCase() : '';
+      var source = sources.has(p.get('src')) ? p.get('src') : '';
+      var signup = new URL('https://app.trydropapp.com/?mode=signup');
+      if (ref && planId) {
+        signup.searchParams.set('ref', ref);
+        if (source) signup.searchParams.set('src', source);
+        signup.searchParams.set('kind', 'plan');
+        signup.searchParams.set('target', planId);
       }
-      // Carry the referral through — the app shell reads ?ref= at signup.
-      document.getElementById('plan-join').href = 'https://app.trydropapp.com/?mode=signup&ref=' + encodeURIComponent(friendHandle);
+      document.getElementById('plan-join').href = signup.toString();
     })();
   </script>
 </body>

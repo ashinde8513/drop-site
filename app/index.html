@@ -47,15 +47,15 @@
       </a>
       <div class="wn__links">
         <div style="position:relative;">
-          <button type="button" onClick="{{ toggleCity }}" class="locchip" style="cursor:pointer;border:1px solid var(--glass-border);background:var(--glass);">
+          <button id="city-toggle" type="button" onClick="{{ toggleCity }}" class="locchip" aria-expanded="{{ cityExpanded }}" aria-controls="city-options" style="cursor:pointer;border:1px solid var(--glass-border);background:var(--glass);">
             <span class="dot"></span>{{ city }}<span style="color:var(--text-muted);font-size:10px;">▾</span>
           </button>
           <sc-if value="{{ cityOpen }}">
-            <div style="position:absolute;top:44px;left:0;z-index:60;width:250px;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-              <input type="text" value="{{ cityFilter }}" onInput="{{ setCityFilter }}" onKeyDown="{{ cityKey }}" placeholder="Filter or type a city" style="width:100%;height:40px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+            <div id="city-options" onKeyDown="{{ cityEscape }}" style="position:absolute;top:44px;left:0;z-index:60;width:250px;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
+              <input id="city-filter" type="text" aria-label="Filter or type a city" value="{{ cityFilter }}" onInput="{{ setCityFilter }}" onKeyDown="{{ cityKey }}" placeholder="Filter or type a city" style="width:100%;height:40px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
               <div style="max-height:248px;overflow-y:auto;">
                 <sc-for list="{{ cityList }}" as="c" hint-placeholder-count="6">
-                  <button type="button" onClick="{{ c.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;border-radius:50%;{{ c.dotStyle }}flex:0 0 auto;"></span>{{ c.label }}</span><span style="color:var(--text-muted);font-size:var(--fs-xs);">{{ c.count }}</span></button>
+                  <button type="button" onClick="{{ c.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;border-radius:50%;{{ c.dotStyle }}flex:0 0 auto;"></span>{{ c.label }}</span><span style="color:var(--text-secondary);font-size:var(--fs-xs);">{{ c.count }}</span></button>
                 </sc-for>
                 <sc-if value="{{ cityFilterEmpty }}">
                   <div style="padding:9px var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">Press Enter to use “{{ cityFilter }}”</div>
@@ -65,7 +65,7 @@
           </sc-if>
         </div>
         <div style="position:relative;flex:1;max-width:360px;" class="wn__search-inline">
-          <input type="text" placeholder="Search artists, venues, shows" onFocus="{{ onSearchFocus }}" style="width:100%;height:38px;padding:0 var(--sp-lg) 0 38px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+          <input type="text" aria-label="Search artists, venues, shows" placeholder="Search artists, venues, shows" onFocus="{{ onSearchFocus }}" style="width:100%;height:38px;padding:0 var(--sp-lg) 0 38px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;">⌕</span>
         </div>
         <a class="wn__link wn__navlink" href="#" onClick="{{ goDiscover }}">Events</a>
@@ -123,6 +123,23 @@
   </sc-if>
 </sc-if>
 
+<!-- Pending public-event intent. The action is never applied until the explicit confirmation below. -->
+<sc-if value="{{ eventIntentVisible }}">
+  <aside role="status" style="max-width:960px;margin:var(--sp-md) auto 0;padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;">
+    <div style="flex:1;min-width:220px;">
+      <div style="font-family:var(--font-display);font-weight:700;">{{ eventIntentAction }} · {{ eventIntentName }}</div>
+      <sc-if value="{{ eventIntentLoading }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">Loading the event…</div></sc-if>
+      <sc-if value="{{ eventIntentWaiting }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">Log in or finish account setup, then review the action. Nothing changes automatically.</div></sc-if>
+      <sc-if value="{{ eventIntentNativeOnly }}"><div style="color:var(--text-secondary);font-size:var(--fs-sm);margin-top:4px;">This action is available in the Drop app.</div></sc-if>
+      <sc-if value="{{ eventIntentHasStatus }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-top:4px;">{{ eventIntentStatus }}</div></sc-if>
+    </div>
+    <sc-if value="{{ eventIntentNativeOnly }}"><a class="btn btn--primary btn--sm" href="{{ eventIntentNativeHref }}">Open this event in Drop</a><button type="button" class="btn btn--secondary btn--sm" onClick="{{ appToast }}">Get Drop</button></sc-if>
+    <sc-if value="{{ eventIntentReady }}"><button type="button" class="btn btn--primary btn--sm" onClick="{{ confirmEventIntent }}" disabled="{{ eventIntentBusy }}">{{ eventIntentConfirmLabel }}</button></sc-if>
+    <sc-if value="{{ eventIntentLoadFailed }}"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ retryEventIntent }}">Retry</button></sc-if>
+    <button type="button" class="btn btn--ghost btn--sm" onClick="{{ cancelEventIntent }}" disabled="{{ eventIntentBusy }}">Cancel</button>
+  </aside>
+</sc-if>
+
 <!-- ============ HOME (signed-out) ============ -->
 <sc-if value="{{ screenHome }}" hint-placeholder-val="{{ true }}">
   <main>
@@ -152,7 +169,7 @@
       <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
         <h2 class="wsh__title m-wrap" style="font-size:var(--fs-xxl);margin:0;white-space:nowrap;">Happening in {{ city }}</h2>
         <div class="home-search" style="position:relative;flex:1;min-width:260px;max-width:420px;">
-          <input type="text" placeholder="Search shows, artists, venues near you" onFocus="{{ onSearchFocus }}" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:16px;outline:none;text-align:left;" />
+          <input type="text" aria-label="Search shows, artists, venues near you" placeholder="Search shows, artists, venues near you" onFocus="{{ onSearchFocus }}" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:16px;text-align:left;" />
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:16px;">⌕</span>
         </div>
       </div>
@@ -207,28 +224,28 @@
       <div class="auth-foot" style="position:relative;color:var(--text-muted);font-size:var(--fs-sm);">© Resonance Ventures LLC</div>
     </div>
     <div class="auth-form" style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px var(--sp-xl);">
-      <div style="width:100%;max-width:400px;">
+      <form novalidate onSubmit="{{ preventAuthSubmit }}" style="width:100%;max-width:400px;">
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Welcome back</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Log in to RSVP, save shows and find your crew.</p>
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email or username</label>
-        <input id="login-email" type="text" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <label for="login-email" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email or username</label>
+        <input id="login-email" type="text" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-          <label style="font-size:var(--fs-sm);color:var(--text-secondary);">Password</label>
+          <label for="login-password" style="font-size:var(--fs-sm);color:var(--text-secondary);">Password</label>
           <a href="#" onClick="{{ goForgot }}" style="font-size:var(--fs-xs);">Forgot?</a>
         </div>
-        <input id="login-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-        <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ doLogin }}" disabled="{{ authBusy }}">{{ loginBtnLabel }}</button>
+        <input id="login-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+        <sc-if value="{{ authError }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+        <button id="login-submit" type="submit" class="btn btn--primary btn--block" onClick="{{ doLogin }}" disabled="{{ authBusy }}">{{ loginBtnLabel }}</button>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
           <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthGoogle }}">Continue with Google</button>
           <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthApple }}">Continue with Apple</button>
+          <button type="button" class="btn btn--secondary btn--block" onClick="{{ oauthFacebook }}">Continue with Facebook</button>
         </div>
-        <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;">Facebook sign-in coming soon</p>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">New to Drop? <a href="#" onClick="{{ goSignup }}">Create an account</a></p>
-      </div>
+      </form>
     </div>
   </main>
 </sc-if>
@@ -253,26 +270,26 @@
       <div class="auth-foot" style="position:relative;color:var(--text-muted);font-size:var(--fs-sm);">© Resonance Ventures LLC</div>
     </div>
     <div class="auth-form" style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px var(--sp-xl);">
-      <div style="width:100%;max-width:400px;">
+      <form novalidate onSubmit="{{ preventAuthSubmit }}" style="width:100%;max-width:400px;">
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Create your account</h1>
         <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Free forever. 13+ only.</p>
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email</label>
-        <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
-        <input type="text" value="{{ username }}" onInput="{{ setUsername }}" placeholder="username" autocomplete="username" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Creator code <span style="color:var(--text-muted);">(optional)</span></label>
-        <input id="signup-creator-code" type="text" placeholder="MAYA2026" autocomplete="off" autocapitalize="characters" maxlength="24" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date of birth</label>
-        <input id="signup-dob" type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
-        <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Password</label>
-        <input id="signup-password" type="password" placeholder="Create a password" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <label for="signup-email" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email</label>
+        <input id="signup-email" type="email" value="{{ signupEmail }}" onInput="{{ setSignupEmail }}" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+        <label for="signup-username" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
+        <input id="signup-username" type="text" value="{{ username }}" onInput="{{ setUsername }}" placeholder="username" autocomplete="username" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+        <label for="signup-creator-code" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Creator code <span style="color:var(--text-muted);">(optional)</span></label>
+        <input id="signup-creator-code" type="text" placeholder="MAYA2026" autocomplete="off" autocapitalize="characters" maxlength="24" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-transform:uppercase;" />
+        <label for="signup-dob" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date of birth</label>
+        <input id="signup-dob" type="date" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" />
+        <label for="signup-password" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Password</label>
+        <input id="signup-password" type="password" placeholder="Create a password" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <label class="cb" style="margin-bottom:var(--sp-xl);">
           <input id="signup-consent" class="cb__input" type="checkbox" />
           <span class="cb__box"></span>
           <span class="cb__label">I agree to Drop's <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.</span>
         </label>
-        <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
+        <sc-if value="{{ authError }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+        <button id="signup-submit" type="submit" class="btn btn--primary btn--block" onClick="{{ doSignup }}" disabled="{{ authBusy }}">{{ signupBtnLabel }}</button>
         <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin:var(--sp-sm) 0 0;">A verified phone is required before account activation.</p>
         <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;color:var(--text-muted);font-size:var(--fs-xs);">
           <span style="flex:1;height:1px;background:var(--border);"></span>OR<span style="flex:1;height:1px;background:var(--border);"></span>
@@ -280,10 +297,10 @@
         <div style="display:flex;gap:var(--sp-md);">
           <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthGoogle }}">Google</button>
           <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthApple }}">Apple</button>
+          <button type="button" class="btn btn--secondary" style="flex:1;" onClick="{{ oauthFacebook }}">Facebook</button>
         </div>
-        <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;">Facebook sign-in coming soon</p>
         <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);">Already have an account? <a href="#" onClick="{{ goLogin }}">Log in</a></p>
-      </div>
+      </form>
     </div>
   </main>
 </sc-if>
@@ -524,7 +541,7 @@
           <div style="padding:var(--sp-xl) 0;">
             <div class="sec__title" style="margin-bottom:var(--sp-lg);">Comments</div>
             <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-xl);">
-              <input type="text" placeholder="Add a comment…" onFocus="{{ requireComment }}" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+              <input type="text" placeholder="Add a comment…" onFocus="{{ requireComment }}" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
               <button type="button" class="btn btn--secondary btn--sm" onClick="{{ requireComment }}">Post</button>
             </div>
             <sc-if value="{{ commentsEmpty }}">
@@ -577,7 +594,7 @@
     <div style="max-width:1440px;margin:0 auto;padding:var(--sp-lg) var(--sp-xl) var(--sp-xxxl);">
       <!-- Search field + typeahead -->
       <div style="position:relative;max-width:720px;margin:0 auto var(--sp-xl);">
-        <input type="text" value="{{ query }}" onInput="{{ setQuery }}" placeholder="Search artists, venues, shows, cities, genres" style="width:100%;height:56px;padding:0 var(--sp-xl) 0 52px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-lg);outline:none;" />
+        <input type="text" value="{{ query }}" onInput="{{ setQuery }}" placeholder="Search artists, venues, shows, cities, genres" style="width:100%;height:56px;padding:0 var(--sp-xl) 0 52px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-lg);" />
         <span style="position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:18px;">⌕</span>
         <sc-if value="{{ typeaheadOpen }}">
           <div style="position:absolute;top:64px;left:0;right:0;z-index:40;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-sm);max-height:360px;overflow:auto;">
@@ -637,7 +654,7 @@
             <button type="button" onClick="{{ toggleSearchGenre }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchGenreLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchGenreOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:32;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ searchGenreFilter }}" onInput="{{ setSearchGenreFilter }}" placeholder="Search genres" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ searchGenreFilter }}" onInput="{{ setSearchGenreFilter }}" placeholder="Search genres" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ searchGenreAll }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--glass-border);flex:0 0 auto;"></span><span>All genres</span></button>
                   <sc-for list="{{ searchGenreList }}" as="g" hint-placeholder-count="6">
@@ -653,7 +670,7 @@
             <button type="button" onClick="{{ toggleSCity }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchCityLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchCityOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:31;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ sCityFilter }}" onInput="{{ setSCityFilter }}" placeholder="Search cities" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ sCityFilter }}" onInput="{{ setSCityFilter }}" placeholder="Search cities" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ sCityAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All cities</button>
                   <sc-for list="{{ searchCityList }}" as="c" hint-placeholder-count="6">
@@ -669,7 +686,7 @@
             <button type="button" onClick="{{ toggleSVenue }}" class="fsel" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);height:48px;padding:0 var(--sp-lg);border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ searchVenueLabel }}</span><span style="width:8px;height:8px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin-top:-3px;flex:0 0 auto;"></span></button>
             <sc-if value="{{ searchVenueOpen }}">
               <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
-                <input type="text" value="{{ sVenueFilter }}" onInput="{{ setSVenueFilter }}" placeholder="Search venues" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;" />
+                <input type="text" value="{{ sVenueFilter }}" onInput="{{ setSVenueFilter }}" placeholder="Search venues" style="width:100%;height:38px;padding:0 var(--sp-md);margin-bottom:var(--sp-xs);border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:15px;" />
                 <div style="max-height:220px;overflow-y:auto;">
                   <button type="button" onClick="{{ sVenueAll }}" style="display:block;width:100%;text-align:left;padding:9px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;">All venues</button>
                   <sc-for list="{{ searchVenueList }}" as="v" hint-placeholder-count="6">
@@ -878,7 +895,7 @@
           </sc-if>
           <sc-if value="{{ wizPhoneEntry }}">
             <label for="wiz-phone" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Phone number</label>
-            <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input id="wiz-phone" type="tel" value="{{ wizPhone }}" onInput="{{ setWizPhone }}" autocomplete="tel" inputmode="tel" placeholder="(303) 555-0100" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-sm);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <p style="color:var(--text-muted);font-size:var(--fs-xs);line-height:1.55;margin:0 0 var(--sp-lg);">
               By selecting Text me a code, you agree to receive one automated transactional verification text from Drop. One message per request. Message and data rates may apply. Reply STOP to opt out or HELP for help where supported. No marketing. See our <a href="https://trydropapp.com/terms">Terms</a> and <a href="https://trydropapp.com/privacy">Privacy Policy</a>.
             </p>
@@ -887,7 +904,7 @@
           <sc-if value="{{ wizPhoneCodeEntry }}">
             <p style="color:var(--text-secondary);font-size:var(--fs-sm);margin:0 0 var(--sp-lg);">Enter the 6-digit code sent to {{ wizPhonePending }}.</p>
             <label for="wiz-phone-code" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Verification code</label>
-            <input id="wiz-phone-code" type="text" value="{{ wizPhoneCode }}" onInput="{{ setWizPhoneCode }}" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;height:56px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;letter-spacing:0.16em;text-align:center;outline:none;" />
+            <input id="wiz-phone-code" type="text" value="{{ wizPhoneCode }}" onInput="{{ setWizPhoneCode }}" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="width:100%;height:56px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;letter-spacing:0.16em;text-align:center;" />
             <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
               <button type="button" class="btn btn--secondary btn--block" onClick="{{ wizPhoneVerify }}" disabled="{{ wizPhoneBusy }}">{{ wizPhoneVerifyLabel }}</button>
               <button type="button" class="btn btn--ghost btn--block" onClick="{{ wizPhoneResend }}" disabled="{{ wizPhoneResendDisabled }}">{{ wizPhoneResendLabel }}</button>
@@ -913,12 +930,12 @@
             <div style="width:96px;height:96px;border-radius:50%;background:var(--grad-glow-fill);box-shadow:0 0 0 3px var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;">📷</div>
             <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Upload a photo</button>
           </div>
-          <input type="text" placeholder="Display name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" placeholder="Display name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         </sc-if>
 
         <!-- Step 2: location -->
         <sc-if value="{{ wizStep1 }}">
-          <input type="text" value="Denver, CO" placeholder="City, State" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="Denver, CO" placeholder="City, State" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <button type="button" class="chip" onClick="{{ toastLoc }}"><span class="chip__dot"></span>Use my current location</button>
         </sc-if>
 
@@ -931,7 +948,7 @@
           </div>
           <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Add artists you love</div>
           <div style="position:relative;margin-bottom:var(--sp-md);">
-            <input type="text" value="{{ wizArtQuery }}" onInput="{{ setWizArtQuery }}" placeholder="Search artists — e.g. ODESZA, Skrillex" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" value="{{ wizArtQuery }}" onInput="{{ setWizArtQuery }}" placeholder="Search artists — e.g. ODESZA, Skrillex" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
             <sc-if value="{{ wizArtOpen }}">
               <div style="position:absolute;top:56px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);max-height:200px;overflow:auto;">
@@ -954,7 +971,7 @@
         <!-- Step 4: friends -->
         <sc-if value="{{ wizStep3 }}">
           <div style="position:relative;margin-bottom:var(--sp-lg);">
-            <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
             <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
@@ -1086,18 +1103,15 @@
         <span style="width:80px;height:80px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px var(--accent);flex:0 0 auto;"></span>
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Change photo</button>
       </div>
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
-      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
-      <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
-      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:none;">{{ prof.bio }}</textarea>
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
-      <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <label class="sw" style="justify-content:space-between;width:100%;margin-bottom:var(--sp-xxl);">
-        <span style="font-size:var(--fs-sm);color:var(--text);">Let friends find me by phone number</span>
-        <input class="sw__input" type="checkbox" role="switch" /><span class="sw__track"><span class="sw__thumb"></span></span>
-      </label>
+      <label for="edit-name" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
+      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <label for="edit-username" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
+      <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <label for="edit-bio" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
+      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:none;">{{ prof.bio }}</textarea>
+      <label for="edit-city" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
+      <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <p style="margin:0 0 var(--sp-xxl);font-size:var(--fs-sm);color:var(--text-secondary);">Phone discovery settings are not available on the website.</p>
       <button type="button" class="btn btn--primary btn--block" onClick="{{ saveProfile }}">Save changes</button>
     </div>
   </main>
@@ -1163,6 +1177,9 @@
         <button type="button" onClick="{{ goDelete }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--danger);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Delete account</span><span>›</span></button>
       </div>
 
+      <div class="sec__title" style="margin-bottom:var(--sp-md);">Help &amp; feedback</div>
+      <p style="color:var(--text-secondary);font-size:var(--fs-sm);">Found a problem or have an idea? Email the Drop team. Your email app opens a draft for you to review and send. You can also email trydropapp@gmail.com directly.</p>
+      <button type="button" class="btn btn--secondary btn--block" onClick="{{ emailFeedback }}" style="margin-bottom:var(--sp-xl);">Email feedback</button>
       <button type="button" class="btn btn--ghost btn--block" onClick="{{ doLogout }}">Log out</button>
     </div>
   </main>
@@ -1198,7 +1215,7 @@
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-md);color:var(--danger);">Delete account</h1>
       <p style="color:var(--text-secondary);font-size:var(--fs-sm);line-height:var(--lh-base);margin:0 0 var(--sp-lg);">This permanently erases your profile, RSVPs, saved shows, crew, plans, and Drop Wrapped history. This cannot be undone. Any banked Drop+ credit is forfeited.</p>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Type DELETE to confirm</label>
-      <input type="text" value="{{ deleteConfirm }}" onInput="{{ setDeleteConfirm }}" placeholder="DELETE" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;letter-spacing:2px;" />
+      <input type="text" value="{{ deleteConfirm }}" onInput="{{ setDeleteConfirm }}" placeholder="DELETE" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);letter-spacing:2px;" />
       <button type="button" onClick="{{ confirmDelete }}" disabled="{{ deleteDisabled }}" class="btn btn--block" style="background:{{ deleteBtnBg }};color:{{ deleteBtnColor }};border:1px solid var(--danger);cursor:{{ deleteCursor }};">{{ deleteButtonLabel }}</button>
       <sc-if value="{{ deleteHasStatus }}"><p role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;text-align:center;">{{ deleteStatus }}</p></sc-if>
     </div>
@@ -1513,7 +1530,7 @@
     <div style="margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-lg);">Venues</h1>
       <div style="position:relative;margin-bottom:var(--sp-xl);">
-        <input type="text" value="{{ venueQuery }}" onInput="{{ setVenueQuery }}" placeholder="Search venues, cities, states" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ venueQuery }}" onInput="{{ setVenueQuery }}" placeholder="Search venues, cities, states" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--accent);">⌕</span>
       </div>
       <sc-if value="{{ venuesEmpty }}">
@@ -1600,7 +1617,7 @@
       <!-- Find -->
       <sc-if value="{{ crewFind }}">
         <div style="position:relative;margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
         </div>
         <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Suggested — based on your taste</div>
@@ -1709,7 +1726,7 @@
           </sc-for>
         </div>
         <div style="display:flex;gap:var(--sp-md);">
-          <input type="text" placeholder="Message your crew…" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);outline:none;" />
+          <input type="text" placeholder="Message your crew…" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
           <button type="button" class="btn btn--secondary btn--sm" onClick="{{ planSend }}">Send</button>
         </div>
       </div>
@@ -1775,7 +1792,7 @@
       <!-- share link -->
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Your invite link</label>
       <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-xl);">
-        <input type="text" value="drop.fm/join/{{ inviteHandle }}" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="drop.fm/join/{{ inviteHandle }}" readonly="{{ true }}" style="flex:1;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <button type="button" class="btn btn--primary" onClick="{{ inviteCopy }}">Copy</button>
       </div>
 
@@ -1986,18 +2003,18 @@
           </button>
           <sc-if value="{{ claimNotListed }}">
             <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin:var(--sp-lg) 0 6px;">Artist / project name</label>
-            <input type="text" value="{{ claimNewName }}" onInput="{{ setClaimNewName }}" placeholder="e.g. your artist name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+            <input type="text" value="{{ claimNewName }}" onInput="{{ setClaimNewName }}" placeholder="e.g. your artist name" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           </sc-if>
         </sc-if>
 
         <!-- Step 2: evidence -->
         <sc-if value="{{ claimStep2 }}">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Official website</label>
-          <input type="text" value="{{ claimWebsite }}" onInput="{{ setClaimWebsite }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ claimWebsite }}" onInput="{{ setClaimWebsite }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Official social link (Instagram, SoundCloud…)</label>
-          <input type="text" value="{{ claimSocial }}" onInput="{{ setClaimSocial }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ claimSocial }}" onInput="{{ setClaimSocial }}" placeholder="https://" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Contact email</label>
-          <input type="email" value="{{ claimEmail }}" onInput="{{ setClaimEmail }}" placeholder="you@domain.com" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="email" value="{{ claimEmail }}" onInput="{{ setClaimEmail }}" placeholder="you@domain.com" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <div style="margin-top:var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);">Tip: an email on your official domain speeds up verification.</div>
         </sc-if>
 
@@ -2037,7 +2054,7 @@
       <!-- ===== Section 1: "I was there" — pick from the archive ===== -->
       <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">I was there — pick from the archive</div></div>
       <div style="position:relative;margin-bottom:var(--sp-md);">
-        <input type="text" value="{{ logQuery }}" onInput="{{ setLogQuery }}" placeholder="Search past shows by artist, venue or title" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ logQuery }}" onInput="{{ setLogQuery }}" placeholder="Search past shows by artist, venue or title" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
       </div>
       <div class="m-rail" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-lg);">
@@ -2083,27 +2100,27 @@
       <div class="sec" style="padding:var(--sp-xl) 0 var(--sp-md);border-top:1px solid var(--border);margin-top:var(--sp-lg);"><div class="sec__title">Not listed? Add it manually</div></div>
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner *</label>
-      <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ logArtist }}" onInput="{{ setLogArtist }}" placeholder="e.g. Flume" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
-      <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ logVenue }}" onInput="{{ setLogVenue }}" placeholder="e.g. Red Rocks Amphitheatre" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
 
       <div style="display:flex;gap:var(--sp-md);margin-bottom:var(--sp-lg);flex-wrap:wrap;">
         <div style="flex:2;min-width:160px;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label>
-          <input type="text" value="{{ logCity }}" onInput="{{ setLogCity }}" placeholder="e.g. Morrison" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ logCity }}" onInput="{{ setLogCity }}" placeholder="e.g. Morrison" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         </div>
         <div style="flex:1;min-width:90px;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">State</label>
-          <input type="text" value="{{ logState }}" onInput="{{ setLogState }}" maxlength="2" placeholder="CO" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
+          <input type="text" value="{{ logState }}" onInput="{{ setLogState }}" maxlength="2" placeholder="CO" style="width:100%;height:52px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-transform:uppercase;" />
         </div>
       </div>
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date *</label>
-      <input type="date" value="{{ logDate }}" onInput="{{ setLogDate }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
+      <input type="date" value="{{ logDate }}" onInput="{{ setLogDate }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" />
 
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Notes</label>
-      <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;resize:vertical;"></textarea>
+      <textarea id="log-notes" placeholder="Anything you want to remember about the night (optional)" style="width:100%;min-height:88px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:vertical;"></textarea>
 
       <button type="button" class="btn btn--primary btn--block" onClick="{{ submitManualLog }}">Add to my history</button>
     </div>
@@ -2326,31 +2343,32 @@
 <!-- ============ FORGOT PASSWORD ============ -->
 <sc-if value="{{ screenForgot }}">
   <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px var(--sp-xl);">
-    <div style="width:100%;max-width:400px;">
+    <form novalidate onSubmit="{{ preventAuthSubmit }}" style="width:100%;max-width:400px;">
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-xxl);"><span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Reset your password</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Enter your email and we'll send a reset link.</p>
-      <input id="forgot-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ goReset }}" disabled="{{ authBusy }}">Send reset link</button>
+      <label for="forgot-email" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Email</label>
+      <input id="forgot-email" type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <sc-if value="{{ authError }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+      <button id="forgot-submit" type="submit" class="btn btn--primary btn--block" onClick="{{ goReset }}" disabled="{{ authBusy }}">Send reset link</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-xl);"><a href="#" onClick="{{ goLogin }}">Back to log in</a></p>
-    </div>
+    </form>
   </main>
 </sc-if>
 
 <!-- ============ RESET PASSWORD ============ -->
 <sc-if value="{{ screenReset }}">
   <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px var(--sp-xl);">
-    <div style="width:100%;max-width:400px;">
+    <form novalidate onSubmit="{{ preventAuthSubmit }}" style="width:100%;max-width:400px;">
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-xxl);"><span style="width:16px;height:16px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xl);">Choose a new password</h1>
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">New password</label>
-      <input id="reset-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Confirm password</label>
-      <input id="reset-password-confirm" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-      <sc-if value="{{ authError }}"><div style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ doReset }}" disabled="{{ authBusy }}">Update password</button>
-    </div>
+      <label for="reset-password" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">New password</label>
+      <input id="reset-password" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <label for="reset-password-confirm" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Confirm password</label>
+      <input id="reset-password-confirm" type="password" placeholder="••••••••" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <sc-if value="{{ authError }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin-bottom:var(--sp-md);">{{ authError }}</div></sc-if>
+      <button id="reset-submit" type="submit" class="btn btn--primary btn--block" onClick="{{ doReset }}" disabled="{{ authBusy }}">Update password</button>
+    </form>
   </main>
 </sc-if>
 
@@ -2379,7 +2397,7 @@
       </div>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop.</h1>
       <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Create your free account and you'll land right in Maya's crew.</p>
-      <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Claim my free week</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-lg);">Already on Drop? <a href="#" onClick="{{ goLogin }}">Log in</a></p>
     </div>
@@ -2424,7 +2442,7 @@
       </div>
       <div style="display:flex;justify-content:center;gap:var(--sp-lg);margin-top:var(--sp-xxl);color:var(--text-muted);font-size:var(--fs-sm);">
         <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">Instagram</a>
-        <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">TikTok</a>
+        <a href="https://www.tiktok.com/@trydrop.app" target="_blank" rel="noopener noreferrer" style="color:var(--text-secondary);">TikTok</a>
         <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">SoundCloud</a>
       </div>
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:var(--sp-xl);font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;"><span style="width:12px;height:12px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);"></span>Made with DROP</a>
@@ -2477,12 +2495,12 @@
     <div style="position:relative;max-width:1100px;margin:0 auto;padding:var(--sp-xxxl) var(--sp-xl);">
       <div class="m-stack" style="display:grid;grid-template-columns:1fr 300px;gap:var(--sp-xxxl);align-items:center;">
         <div>
-          <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-lg);">Available for iPhone</div>
+          <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-lg);">Available for iPhone and Android</div>
           <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(34px,5vw,56px);letter-spacing:var(--tr-tight);line-height:1.03;margin:0 0 var(--sp-md);">Drop in your pocket</h1>
           <p style="color:var(--text-secondary);font-size:var(--fs-lg);line-height:var(--lh-base);max-width:520px;margin:0 0 var(--sp-xl);">Push alerts the second presale drops, contacts sync to find your crew, and your ticket wallet on the go.</p>
           <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
-            <button type="button" class="btn btn--primary" onClick="{{ appToast }}"> App Store</button>
-            <button type="button" class="btn btn--secondary" onClick="{{ appToast }}">▶ Google Play</button>
+            <button type="button" class="btn btn--primary" onClick="{{ downloadIos }}">App Store</button>
+            <button type="button" class="btn btn--secondary" onClick="{{ downloadAndroid }}">▶ Google Play</button>
           </div>
           <a href="#" onClick="{{ goDiscover }}" style="font-size:var(--fs-sm);">Prefer the web? Browse shows in your browser →</a>
         </div>
@@ -2785,7 +2803,7 @@
         <span style="font-size:var(--fs-sm);color:{{ tasteCapColor }};">{{ tasteCapLabel }}</span>
       </div>
       <div style="position:relative;margin-bottom:var(--sp-md);">
-        <input type="text" value="{{ tasteQuery }}" onInput="{{ setTasteQuery }}" placeholder="Add an artist — e.g. Flume" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+        <input type="text" value="{{ tasteQuery }}" onInput="{{ setTasteQuery }}" placeholder="Add an artist — e.g. Flume" style="width:100%;height:48px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
         <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
         <sc-if value="{{ tasteQueryOpen }}">
           <div style="position:absolute;top:52px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
@@ -2832,7 +2850,7 @@
       <div style="display:flex;flex-direction:column;gap:var(--sp-lg);margin-bottom:var(--sp-xl);">
         <div style="position:relative;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Artist / headliner</label>
-          <input type="text" value="{{ sugArtist }}" onInput="{{ setSugArtist }}" placeholder="Search artists" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ sugArtist }}" onInput="{{ setSugArtist }}" placeholder="Search artists" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <sc-if value="{{ sugArtistOpen }}">
             <div style="position:absolute;top:78px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
               <sc-for list="{{ sugArtistMatches }}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{ a.pick }}" style="display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;padding:10px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="width:26px;height:26px;border-radius:50%;background:var(--grad-brand);"></span>{{ a.name }}</button></sc-for>
@@ -2841,7 +2859,7 @@
         </div>
         <div style="position:relative;">
           <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label>
-          <input type="text" value="{{ sugVenue }}" onInput="{{ setSugVenue }}" placeholder="Search venues" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+          <input type="text" value="{{ sugVenue }}" onInput="{{ setSugVenue }}" placeholder="Search venues" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
           <sc-if value="{{ sugVenueOpen }}">
             <div style="position:absolute;top:78px;left:0;right:0;z-index:20;background:var(--surface-hi);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--overlay-shadow);padding:var(--sp-xs);">
               <sc-for list="{{ sugVenueMatches }}" as="v" hint-placeholder-count="3"><button type="button" onClick="{{ v.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:10px var(--sp-md);border:0;background:none;color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);border-radius:var(--r-sm);cursor:pointer;"><span style="font-weight:600;">{{ v.name }}</span><span style="font-size:var(--fs-xs);color:var(--text-muted);">{{ v.city }}</span></button></sc-for>
@@ -2849,10 +2867,10 @@
           </sc-if>
         </div>
         <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
-          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
-          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label><input type="text" value="{{ sugCity }}" onInput="{{ setSugCity }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
+          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label><input type="text" value="{{ sugCity }}" onInput="{{ setSugCity }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
         </div>
-        <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="{{ sugLink }}" onInput="{{ setSugLink }}" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+        <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="{{ sugLink }}" onInput="{{ setSugLink }}" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
         <button type="button" class="btn btn--primary btn--block" onClick="{{ submitSuggestion }}">{{ submitLabel }}</button>
       </div>
 
@@ -2946,19 +2964,19 @@
       <!-- DETAILS -->
       <sc-if value="{{ promoTabDetails }}">
         <div style="display:flex;flex-direction:column;gap:var(--sp-lg);margin-bottom:var(--sp-xxl);">
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Event title</label><input type="text" value="{{ pm.title }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Event title</label><input type="text" value="{{ pm.title }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
           <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
-            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
-            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Doors</label><input type="time" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" /></div>
+            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
+            <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Doors</label><input type="time" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
           </div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" placeholder="Venue name" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
-          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Venue</label><input type="text" placeholder="Venue name" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
+          <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
           <button type="button" class="btn btn--primary btn--sm" style="align-self:flex-start;" onClick="{{ promoSaveDetails }}">Save changes</button>
         </div>
         <div style="padding:var(--sp-lg);border:1px solid var(--danger-border);border-radius:var(--r-md);background:rgba(255,77,109,0.06);">
           <div style="font-family:var(--font-display);font-weight:700;color:var(--danger);margin-bottom:6px;">Delete this event</div>
           <p style="font-size:var(--fs-sm);color:var(--text-secondary);margin:0 0 var(--sp-md);">This removes the event, its guest list, and its codes. Type <b>DELETE</b> to confirm.</p>
-          <input type="text" value="{{ promoDelConfirm }}" onInput="{{ setPromoDel }}" placeholder="DELETE" style="width:100%;height:44px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--danger-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;margin-bottom:var(--sp-md);" />
+          <input type="text" value="{{ promoDelConfirm }}" onInput="{{ setPromoDel }}" placeholder="DELETE" style="width:100%;height:44px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--danger-border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);margin-bottom:var(--sp-md);" />
           <button type="button" class="btn btn--sm" disabled="{{ promoDelDisabled }}" onClick="{{ promoDelete }}" style="background:var(--danger);color:var(--white);opacity:{{ promoDelOpacity }};">Delete event</button>
         </div>
       </sc-if>
@@ -2971,8 +2989,8 @@
           <div style="padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:center;"><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);color:var(--gold);">{{ guestPending }}</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">Awaiting door</div></div>
         </div>
         <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="Add guest name" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
-          <input type="number" min="0" value="0" style="width:88px;height:46px;padding:0 var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;color-scheme:dark;" />
+          <input type="text" placeholder="Add guest name" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+          <input type="number" min="0" value="0" style="width:88px;height:46px;padding:0 var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddGuest }}">Add</button>
         </div>
         <sc-if value="{{ guestsEmpty }}"><div class="empty"><div class="empty__ico">📋</div><div class="empty__title">No guests yet</div><div class="empty__body">Add a name above.</div></div></sc-if>
@@ -2990,7 +3008,7 @@
       <!-- CODES -->
       <sc-if value="{{ promoTabCodes }}">
         <div style="display:flex;gap:var(--sp-sm);margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="NEWCODE20" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;text-transform:uppercase;" />
+          <input type="text" placeholder="NEWCODE20" style="flex:1;height:46px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);text-transform:uppercase;" />
           <button type="button" class="btn btn--primary btn--sm" onClick="{{ promoAddCode }}">Create code</button>
         </div>
         <sc-if value="{{ codesEmpty }}"><div class="empty"><div class="empty__ico">◆</div><div class="empty__title">No codes yet</div><div class="empty__body">Create one above.</div></div></sc-if>
@@ -3160,7 +3178,7 @@
       <div style="display:flex;flex-wrap:wrap;gap:var(--sp-lg);align-items:center;justify-content:space-between;padding-top:var(--sp-lg);border-top:1px solid var(--border);color:var(--text-muted);font-size:var(--fs-sm);">
         <div style="display:flex;gap:var(--sp-lg);flex-wrap:wrap;">
           <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">Instagram</a>
-          <a href="#" onClick="{{ noop }}" style="color:var(--text-secondary);">TikTok</a>
+          <a href="https://www.tiktok.com/@trydrop.app" target="_blank" rel="noopener noreferrer" style="color:var(--text-secondary);">TikTok</a>
           <a href="https://trydropapp.com/privacy" style="color:var(--text-secondary);">Privacy</a>
           <a href="https://trydropapp.com/terms" style="color:var(--text-secondary);">Terms</a>
           <span>Drop may earn a commission on ticket links.</span>
@@ -3178,9 +3196,9 @@
       <div class="modal__title">Edit your links</div>
       <div class="modal__body">These appear on the public {{ editArtistName }} profile.</div>
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Merch URL</label>
-      <input type="text" value="{{ editMerch }}" onInput="{{ setEditMerch }}" placeholder="https://shop.…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ editMerch }}" onInput="{{ setEditMerch }}" placeholder="https://shop.…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Website URL</label>
-      <input type="text" value="{{ editWebsite }}" onInput="{{ setEditWebsite }}" placeholder="https://…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);outline:none;" />
+      <input type="text" value="{{ editWebsite }}" onInput="{{ setEditWebsite }}" placeholder="https://…" style="width:100%;height:48px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <button type="button" class="btn btn--primary btn--block" onClick="{{ saveEditLinks }}">Save links</button>
       <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ closeEditLinks }}">Cancel</button>
     </div>
@@ -3218,7 +3236,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   var appScript = document.createElement('script');
-  appScript.src = appAssetBase + 'app.js?v=cf4d0dc';
+  appScript.src = appAssetBase + 'app.js?v=20260904-event-intent';
   document.body.appendChild(appScript);
 </script>
 </body>

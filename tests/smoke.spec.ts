@@ -39,7 +39,7 @@ const PAGES = [
   { path: '/artists.html', title: /Artists/ },
   { path: '/promoters.html', title: /For Promoters/ },
   { path: '/about.html', title: /About/ },
-  { path: '/download.html', title: /Download Drop on the App Store/ },
+  { path: '/download.html', title: /Download Drop for iPhone and Android/ },
   { path: '/privacy.html', title: /Drop/ },
   { path: '/terms.html', title: /Drop/ },
   { path: '/delete-account.html', title: /Delete your Drop account/ },
@@ -67,12 +67,31 @@ const DETAIL_PAGES = [
 
 const SOCIAL_LINKS = [
   { name: 'Instagram', href: 'https://www.instagram.com/trydropapp/', icon: 'instagram' },
-  { name: 'TikTok', href: 'https://www.tiktok.com/@trydropapp', icon: 'tiktok' },
+  { name: 'TikTok', href: 'https://www.tiktok.com/@trydrop.app', icon: 'tiktok' },
   { name: 'X', href: 'https://x.com/trydropapp', icon: 'x' },
   { name: 'YouTube', href: 'https://www.youtube.com/channel/UCvzbdCiHMW6ZHDe04PUEdTQ', icon: 'youtube' },
   { name: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61591821453151', icon: 'facebook' },
   { name: 'Reddit', href: 'https://www.reddit.com/user/trydrop/', icon: 'reddit' },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/company/trydropapp/', icon: 'linkedin' },
+];
+
+const SOCIAL_PAGES = [
+  '/404.html',
+  '/about.html',
+  '/artist.html',
+  '/artists.html',
+  '/city.html',
+  '/download.html',
+  '/event.html',
+  '/events.html',
+  '/genre.html',
+  '/index.html',
+  '/link.html',
+  '/privacy.html',
+  '/promoters.html',
+  '/terms.html',
+  '/venue.html',
+  '/venues.html',
 ];
 
 test.describe('website smoke', () => {
@@ -110,6 +129,27 @@ test.describe('website smoke', () => {
       expect(errors, `unexpected errors on ${path}`).toEqual([]);
     });
   }
+
+  test('discovery pages point to their sitemap URLs', async ({ page }) => {
+    const sitemap = readFileSync('sitemap.xml', 'utf8');
+    for (const path of ['events', 'venues', 'artists', 'promoters', 'about', 'download']) {
+      const canonical = `https://trydropapp.com/${path}`;
+      expect(sitemap).toContain(`<loc>${canonical}</loc>`);
+      await page.goto(`/${path}.html`);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
+      expect(JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent() || '{}').url).toBe(canonical);
+    }
+
+    for (const [path, query] of [['city', 'city=Denver'], ['genre', 'genre=House']]) {
+      const canonical = `https://trydropapp.com/${path}?${query}`;
+      expect(sitemap).toContain(`<loc>${canonical}</loc>`);
+      await page.goto(`/${path}.html`);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
+      expect(JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent() || '{}').url).toBe(canonical);
+    }
+  });
 
   for (const { path, backHref } of DETAIL_PAGES) {
     test(`${path} with no params renders not-found state cleanly`, async ({ page }) => {
@@ -172,48 +212,57 @@ test.describe('website smoke', () => {
     ))).toBe(true);
 
     await page.getByRole('link', { name: /Browse festivals/ }).click();
-    await expect(page).toHaveURL(/events\.html\?genre=Festivals/);
+    await expect(page).toHaveURL(/events\.html\?/);
+    expect(new URL(page.url()).searchParams.get('genre')).toBe('Festivals');
     expect(new URL(page.url()).searchParams.get('city')).not.toBe('Denver');
     await expect(page.locator('#grid')).toContainText('Ongoing Test Festival');
     await expect(page.locator('#result-count')).toContainText('1 show');
   });
 
-  test('hero proof line renders exact canonical buyable-event totals', async ({ page }) => {
-    let statsRequests = 0;
-    await page.route('**/rest/v1/rpc/get_public_catalog_stats', (route) => {
-      statsRequests += 1;
+  test('hero proof line renders exact published-event total', async ({ page }) => {
+    let countRequests = 0;
+    await page.route('**/rest/v1/events?**', (route) => {
+      const request = route.request();
+      const params = new URL(request.url()).searchParams;
+      if (params.get('select') !== 'id' || params.get('status') !== 'eq.published' || params.get('limit') !== '1') {
+        return route.fallback();
+      }
+      expect(params.get('select')).toBe('id');
+      expect(params.get('status')).toBe('eq.published');
+      expect(params.get('limit')).toBe('1');
+      expect(request.headers().prefer).toBe('count=exact');
+      countRequests += 1;
       return route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{
-          event_count: 1234,
-          city_count: 236,
-          calculated_at: '2026-08-16T03:30:00Z',
-        }]),
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'Content-Range',
+          'Content-Type': 'application/json',
+          'Content-Range': '0-0/6908',
+        },
+        body: JSON.stringify([{ id: '00000000-0000-0000-0000-000000000001' }]),
       });
     });
     await page.goto('/index.html');
-    const stats = await page.evaluate(() => (window as any).Drop.fetchCatalogStats());
-    expect(stats).toEqual({ events: 1234, cities: 236, calculatedAt: '2026-08-16T03:30:00Z' });
-    expect(statsRequests).toBeGreaterThan(0);
     await expect(page.locator('.hero-proof')).toContainText('Tracking');
-    await expect(page.locator('.hero-proof')).toContainText('1,234 events');
-    await expect(page.locator('.hero-proof')).toContainText('236 cities');
+    await expect(page.locator('.hero-proof')).toContainText('6,908 published events on Drop');
+    expect(countRequests).toBeGreaterThan(0);
     await expect(page.locator('[data-catalog-proof-pending]')).toBeHidden();
     await expect(page.locator('.hero-proof')).not.toContainText('40,000');
   });
 
-  test('hero proof line never falls back to stale numbers when live stats are malformed', async ({ page }) => {
-    await page.route('**/rest/v1/rpc/get_public_catalog_stats', (route) =>
-      route.fulfill({
+  test('hero proof line never falls back to stale numbers when live count is unavailable', async ({ page }) => {
+    await page.route('**/rest/v1/events?**', (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      if (params.get('select') !== 'id' || params.get('status') !== 'eq.published' || params.get('limit') !== '1') {
+        return route.fallback();
+      }
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{
-          event_count: null,
-          city_count: null,
-          calculated_at: '2026-08-16T03:30:00Z',
-        }]),
-      }));
+        body: '[]',
+      });
+    });
     await page.goto('/index.html');
     await expect(page.locator('[data-catalog-proof]')).toBeHidden();
     await expect(page.locator('.hero-proof')).toContainText('Live catalog updated continuously');
@@ -228,17 +277,19 @@ test.describe('website smoke', () => {
     await expect(sources.locator(':scope > p')).toHaveCount(0);
     await expect(sources).not.toContainText('partnered with');
     await expect(sources).not.toContainText('integrated with');
-    await expect(sources.locator('img')).toHaveCount(6);
+    await expect(sources.locator('img')).toHaveCount(7);
     await expect(sources.locator('img').nth(0)).toHaveAttribute('alt', 'Cervantes’ Masterpiece Ballroom');
-    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'Eventim');
-    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Ticketmaster');
-    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'SeatGeek');
-    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'Etix');
-    await expect(sources.locator('img').nth(5)).toHaveAttribute('alt', 'Ticketsauce');
+    await expect(sources.locator('img').nth(1)).toHaveAttribute('alt', 'FRENS');
+    await expect(sources.locator('img').nth(2)).toHaveAttribute('alt', 'Eventim');
+    await expect(sources.locator('img').nth(3)).toHaveAttribute('alt', 'Ticketmaster');
+    await expect(sources.locator('img').nth(4)).toHaveAttribute('alt', 'SeatGeek');
+    await expect(sources.locator('img').nth(5)).toHaveAttribute('alt', 'Etix');
+    await expect(sources.locator('img').nth(6)).toHaveAttribute('alt', 'Ticketsauce');
     await expect(sources.locator('a[aria-label="Visit Cervantes\' Masterpiece Ballroom"]')).toHaveAttribute(
       'href',
       'https://cervantesmasterpiece.com/',
     );
+    await expect(sources.locator('a[aria-label="Visit FRENS"]')).toHaveAttribute('href', 'https://heyfrens.org/');
     await expect(sources.locator('a[aria-label="Visit Eventim"]')).toHaveAttribute('href', 'https://www.eventim.us/');
     await expect(sources.locator('a[aria-label="Visit Ticketsauce"]')).toHaveAttribute('href', 'https://www.ticketsauce.com/');
     for (const src of await sources.locator('img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))) {
@@ -310,7 +361,7 @@ test.describe('website smoke', () => {
   });
 
   test('public footer and link hub expose every official social profile safely', async ({ page }) => {
-    for (const path of ['/index.html', '/link.html']) {
+    for (const path of SOCIAL_PAGES) {
       await page.goto(path);
       const socials = page.locator('.foot-social').first();
       await expect(socials).toBeVisible();
@@ -322,6 +373,20 @@ test.describe('website smoke', () => {
         await expect(link.locator('use')).toHaveAttribute('href', `/social-icons.svg#${icon}`);
       }
     }
+
+    await page.context().route('https://www.tiktok.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>Drop TikTok profile</h1>' }));
+    const [tiktokPage] = await Promise.all([
+      page.waitForEvent('popup'),
+      page.getByRole('link', { name: 'TikTok', exact: true }).click(),
+    ]);
+    await expect(tiktokPage).toHaveURL('https://www.tiktok.com/@trydrop.app');
+    await expect(tiktokPage.getByRole('heading', { name: 'Drop TikTok profile' })).toBeVisible();
+    await tiktokPage.close();
+
+    const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
+    expect(appTemplate.match(/href="https:\/\/www\.tiktok\.com\/@trydrop\.app"/g)).toHaveLength(2);
+    expect(appTemplate).not.toMatch(/href="#" onClick="\{\{ noop \}\}"[^>]*>TikTok<\/a>/);
   });
 
   test('SMS opt-in proof mirrors the shipped one-time verification consent', async ({ page }) => {
@@ -389,6 +454,16 @@ test.describe('website smoke', () => {
     );
   });
 
+  test('plan links retain UUID attribution without rendering personal query data', () => {
+    const redirects = readFileSync('_redirects', 'utf8');
+    const plan = readFileSync('share-plan.html', 'utf8');
+    expect(redirects).toContain('/plan/*     /share-plan.html  200');
+    expect(plan).toContain("signup.searchParams.set('target', planId)");
+    expect(plan).not.toMatch(/p\.get\('(friend|u|count|event|venue|city|genre|date)'\)/);
+    expect(plan).not.toContain('friends are going');
+    expect(plan).not.toContain("friendHandle");
+  });
+
   test('legal pages match the 13+ gate and audited data handling', async ({ page }) => {
     await page.goto('/terms.html');
     const terms = page.locator('.doc-inner');
@@ -442,6 +517,7 @@ test.describe('website smoke', () => {
     expect(appTemplate).not.toContain('https://trydropapp.com/terms.html');
     expect(appTemplate).toContain('Free forever. 13+ only.');
     expect(appTemplate).not.toContain('Free forever. 16+ only.');
+    expect(appTemplate).toContain('id="signup-email" type="email" value="{{ signupEmail }}" onInput="{{ setSignupEmail }}"');
 
     const signupImplementation = appScript.match(/doSignup:\(\)=>\{([\s\S]*?)\n      \},\n      oauthGoogle:/)?.[1];
     expect(signupImplementation, 'signup implementation is present').toBeDefined();
@@ -449,6 +525,8 @@ test.describe('website smoke', () => {
     const signUpIndex = signupImplementation?.indexOf('supa.auth.signUp') ?? -1;
     expect(consentGuardIndex, 'unchecked consent is rejected').toBeGreaterThanOrEqual(0);
     expect(signUpIndex, 'Supabase signup call is present').toBeGreaterThan(consentGuardIndex);
+    expect(signupImplementation).toContain('const email = this.state.signupEmail.trim();');
+    expect(signupImplementation).not.toContain("fieldVal('signup-email')");
     expect(signupImplementation).toContain('birthdate:dobValue');
     expect(signupImplementation).toContain('years < 13');
     expect(signupImplementation).not.toContain('years < 16');
@@ -456,11 +534,12 @@ test.describe('website smoke', () => {
     expect(signupImplementation).toContain("terms_version:'2026-07-18'");
     expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
     expect(signupImplementation).not.toContain('consented_at');
-    expect(signupImplementation).toContain("'?mode=signup-complete'");
+    expect(signupImplementation).toContain('signupCompletionUrl()');
+    expect(appScript).toContain("url.searchParams.set('mode', SIGNUP_COMPLETE_MODE)");
     const oauthImplementation = appScript.match(/oauth\(provider\)\{([\s\S]*?)\n  \}\n\n  renderVals\(\)\{/);
     expect(oauthImplementation, 'OAuth implementation is present').not.toBeNull();
     expect(oauthImplementation?.[1]).toContain('signInWithOAuth');
-    expect(oauthImplementation?.[1]).toContain("signupOrigin ? '?mode=signup-complete' : ''");
+    expect(oauthImplementation?.[1]).toContain('signupOrigin ? signupCompletionUrl()');
     expect(oauthImplementation?.[1]).toContain("fieldVal('signup-dob')");
     expect(oauthImplementation?.[1]).toContain("fieldChecked('signup-consent')");
     expect(oauthImplementation?.[1]).toContain('years < 13');
@@ -468,6 +547,9 @@ test.describe('website smoke', () => {
     expect(oauthImplementation?.[1]).toContain('savePendingOAuthCompliance(dobValue)');
     expect(appScript).toContain('years >= 13 && years <= 120');
     expect(appScript).not.toMatch(/16 or older|years >= 16/);
+    expect(appScript).toContain("oauthFacebook:()=>this.oauth('facebook')");
+    expect(appTemplate.match(/onClick="\{\{ oauthFacebook \}\}"/g)).toHaveLength(2);
+    expect(appTemplate).not.toContain('Facebook sign-in coming soon');
     expect(appScript).toContain("supa.rpc('complete_signup_profile'");
     expect(appScript).toContain('p_terms_version:pending.termsVersion');
     expect(appScript).toContain('p_privacy_version:pending.privacyVersion');
@@ -572,6 +654,72 @@ test.describe('website smoke', () => {
     expect(await page.evaluate(() => localStorage.getItem('drop.city'))).toBe('Springfield');
   });
 
+  test('home pager traverses every 24-event page and returns backward', async ({ page }) => {
+    const events = Array.from({ length: 50 }, (_, index) => ({
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      title: `Proof Event ${String(index + 1).padStart(2, '0')}`,
+      description: '',
+      date: `2027-01-${String((index % 28) + 1).padStart(2, '0')}T20:00:00Z`,
+      end_date: null,
+      venue_name: 'Proof Venue',
+      city: 'Denver',
+      state: 'CO',
+      image_url: null,
+      ticket_url: null,
+      price_min: null,
+      price_max: null,
+      currency: 'USD',
+      is_festival: false,
+      time_tbd: false,
+      timezone: 'America/Denver',
+      status: 'published',
+      created_at: '2026-07-30T00:00:00Z',
+      event_artists: [],
+    }));
+    await page.route('**/rest/v1/events?**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.has('is_festival')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: { 'content-range': '*/0' },
+          body: '[]',
+        });
+      }
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const limit = Number(url.searchParams.get('limit') ?? 24);
+      const rows = events.slice(offset, offset + limit);
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: {
+          'access-control-expose-headers': 'content-range',
+          'content-range': `${offset}-${offset + rows.length - 1}/${events.length}`,
+        },
+        body: JSON.stringify(rows),
+      });
+    });
+
+    await page.goto('/index.html');
+    await expect(page.locator('#home-page-label')).toHaveText('Page 1 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 01');
+    await expect(page.locator('#home-prev')).toBeDisabled();
+
+    await page.locator('#home-next').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 2 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 25');
+
+    await page.locator('#home-next').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 3 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 49');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 50');
+    await expect(page.locator('#home-next')).toBeDisabled();
+
+    await page.locator('#home-prev').click();
+    await expect(page.locator('#home-page-label')).toHaveText('Page 2 of 3');
+    await expect(page.locator('#home-grid')).toContainText('Proof Event 25');
+  });
+
   test('About lives in the footer, not the nav', async ({ page }) => {
     await page.goto('/index.html');
     await expect(page.locator('nav.wn a[href="/about.html"]')).toHaveCount(0);
@@ -601,22 +749,26 @@ test.describe('website smoke', () => {
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
 
-  test('download page uses Apple-provided artwork and the live App Store destination', async ({ page }) => {
+  test('download page uses official artwork and live App Store and Google Play destinations', async ({ page }) => {
     await page.goto('/download.html');
-    const badge = page.getByRole('link', { name: 'Download Drop on the App Store' });
-    await expect(badge).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
-    await expect(badge.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
-    await expect(page.getByText('Available for iPhone', { exact: true })).toBeVisible();
-    await expect(page.getByText(/iPhone\s*(?:&|and)\s*iPad/i)).toHaveCount(0);
+    const apple = page.getByRole('link', { name: 'Download Drop on the App Store' });
+    const google = page.getByRole('link', { name: 'Get Drop on Google Play' });
+    await expect(apple).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(google).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
+    await expect(apple.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
+    await expect(google.locator('img')).toHaveAttribute('alt', 'Get it on Google Play');
+    expect(await google.locator('img').evaluate((img:HTMLImageElement)=>img.complete && img.naturalWidth>0)).toBe(true);
+    await expect(page.getByText('Available for iPhone and Android', { exact: true })).toBeVisible();
+    await expect(page.getByText('Is Android coming?')).toHaveCount(0);
     await expect(page.locator('#waitlist')).toHaveCount(0);
 
     const appTemplate = readFileSync(resolve('app/index.html'), 'utf8');
-    expect(appTemplate).toContain('Available for iPhone');
-    expect(appTemplate).not.toMatch(/iPhone\s*(?:&amp;|&|and)\s*iPad/i);
+    expect(appTemplate).toContain('Available for iPhone and Android');
+    expect(appTemplate).toContain('downloadAndroid');
 
     const crawlerGuide = readFileSync(resolve('llms.txt'), 'utf8');
-    expect(crawlerGuide).toContain('id6790662825): iPhone app');
-    expect(crawlerGuide).not.toMatch(/iPhone\s*(?:&|and)\s*iPad/i);
+    expect(crawlerGuide).toContain('id6790662825): App Store');
+    expect(crawlerGuide).toContain('app.resonanceventures.drop): Google Play');
   });
 
   test('creator application submits accessible normalized fields without production writes', async ({ page }) => {
@@ -687,6 +839,17 @@ test.describe('website smoke', () => {
     expect(signup.searchParams.get('creator')).toBe('MAYA2026');
     expect(signup.searchParams.get('ref')).toBe(ref);
     expect(signup.searchParams.get('src')).toBe('creator');
+    expect(signup.searchParams.get('kind')).toBe('signup');
+  });
+
+  test('event referral carries validated ref/src/kind/target to browser signup', async ({ page }) => {
+    const ref = '11111111-1111-4111-8111-111111111111';
+    const target = '22222222-2222-4222-8222-222222222222';
+    await page.goto(`/event.html?ref=${ref}&src=event_invite&kind=event&target=${target}`);
+    const signup = new URL(await page.locator('a[href*="mode=signup"]').first().getAttribute('href') || '');
+    expect(Object.fromEntries(signup.searchParams)).toMatchObject({
+      mode:'signup', ref, src:'event_invite', kind:'event', target,
+    });
   });
 
   test('signed-in web preserves creator codes until compliant attribution and shows active badge', () => {
@@ -701,6 +864,16 @@ test.describe('website smoke', () => {
     expect(appTemplate).toContain('id="signup-creator-code"');
     expect(appTemplate).toContain('aria-label="Drop Creator"');
     expect(appTemplate).toContain('<sc-if value="{{ prof.isCreator }}">');
+  });
+
+  test('signup referral RPC is fail-closed behind an explicit default-off capability', () => {
+    const appScript = readFileSync(resolve('app/app.js'), 'utf8');
+    expect(appScript).toContain("var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true");
+    const implementation = appScript.match(/maybeRecordSignupReferral\(user\)\{([\s\S]*?)\n  \}\n  loadUserData/);
+    expect(implementation, 'signup referral implementation is present').not.toBeNull();
+    expect(implementation?.[1]).toContain('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;');
+    expect(implementation?.[1].indexOf('if (!SIGNUP_REFERRAL_RPC_ENABLED) return;'))
+      .toBeLessThan(implementation?.[1].indexOf("supa.rpc('record_signup_referral'"));
   });
 
   test('TikTok production stays read-only while sandbox asks for publishing consent', async ({ page }) => {
@@ -754,11 +927,24 @@ test.describe('website smoke', () => {
     expect(buildScript).toContain(`cp ${filenames.join(' ')} dist/app/`);
   });
 
-  test('link-in-bio sends visitors to the live App Store listing', async ({ page }) => {
+  test('link-in-bio orders the website, downloads, about, then every current social', async ({ page }) => {
     await page.goto('/link.html');
+    await expect(page.locator('#visitWebsite')).toHaveAttribute('href', 'https://trydropapp.com/');
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
-    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/download.html');
-    await expect(page.getByText('iPhone · Free', { exact: true })).toBeVisible();
+    await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
+    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about.html');
+    await expect(page.locator('.lh-links > *')).toHaveCount(5);
+    await expect(page.locator('.lh-links > *').nth(0)).toHaveAttribute('id', 'visitWebsite');
+    await expect(page.locator('.lh-links > *').nth(1)).toHaveAttribute('id', 'getApp');
+    await expect(page.locator('.lh-links > *').nth(2)).toHaveAttribute('id', 'getGooglePlay');
+    await expect(page.locator('.lh-links > *').nth(3)).toHaveAttribute('id', 'aboutDrop');
+    await expect(page.locator('.lh-links > *').nth(4)).toHaveClass(/lh-socials/);
+    const threads = page.getByRole('link', { name: 'Threads', exact: true });
+    await expect(threads).toHaveAttribute('href', 'https://www.threads.com/@trydropapp');
+    await expect(threads).toHaveAttribute('target', '_blank');
+    await expect(threads).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(threads.locator('use')).toHaveAttribute('href', '/social-icons.svg#threads');
+    await expect(page.getByText('iPhone · Android · Free', { exact: true })).toBeVisible();
   });
 
   test('event page shows a single honest ticket listing with no exclusivity claim', async ({ page }) => {

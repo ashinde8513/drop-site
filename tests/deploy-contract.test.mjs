@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -33,4 +33,12 @@ test('Android DAL deploy verification rejects a missing built artifact', () => {
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
+});
+
+test('CI browser image matches the locked Playwright version and pins its digest', () => {
+  const lock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+  const workflow = readFileSync(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
+  const image = workflow.match(/image: mcr\.microsoft\.com\/playwright:v([\d.]+)-noble@sha256:[a-f0-9]{64}(?=\s|$)/);
+  assert.ok(image, 'Use the official Playwright image with an immutable digest');
+  assert.equal(image[1], lock.packages['node_modules/@playwright/test'].version);
 });

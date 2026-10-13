@@ -11,6 +11,7 @@ import { onRequest as onTicketRequest } from '../functions/t.js';
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36';
 const APP_STORE = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825';
+const PLAY_STORE = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
 
 function request(url, userAgent, method = 'GET') {
   return new Request(url, { method, headers: userAgent ? { 'user-agent': userAgent } : {} });
@@ -71,12 +72,12 @@ test('still routes iOS to the App Store when tracking fails', async () => {
   assert.equal(response.headers.get('location'), APP_STORE);
 });
 
-test('still routes Android to the web when tracking fails', async () => {
+test('still routes Android to Google Play when tracking fails', async () => {
   const response = await withFetch(
     async () => { throw new Error('edge down'); },
     () => onRequest({ request: request('https://trydropapp.com/go', ANDROID_UA) }),
   );
-  assert.equal(response.headers.get('location'), 'https://trydropapp.com/');
+  assert.equal(response.headers.get('location'), PLAY_STORE);
 });
 
 test('Android is never sent to the Apple App Store', async () => {
@@ -186,7 +187,7 @@ test('all public event ticket CTAs use promoter attribution only when eligible',
   assert.equal((html.match(/buy\.href = promoterTicketUrl\(ev\)/g) || []).length, 3);
   assert.match(html, /hostname !== 'etix\.prf\.hn'/);
   assert.match(html, /if \(!ticketUrl \|\| !creatorCode\) return ticketUrl/);
-  assert.match(html, /creatorCode \? '&creator=' \+ encodeURIComponent\(creatorCode\)/);
+  assert.match(html, /if \(creatorCode\) url\.searchParams\.set\('creator', creatorCode\)/);
 });
 
 test('/t is registered as a Pages Function route', () => {
