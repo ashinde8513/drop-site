@@ -18,13 +18,13 @@ test('canonical Crew shares use an existing install fallback without leaving the
     'Crew fallback stays static, outside database-backed Pages Functions');
 });
 
-test('AASA adds Crew boards to the existing Drop identity without losing existing links', () => {
+test('AASA preserves existing links without capturing Crew URLs in older installed apps', () => {
   const association = JSON.parse(read('.well-known/apple-app-site-association'));
   assert.equal(association.applinks.details.length, 1);
   const detail = association.applinks.details[0];
   assert.deepEqual(detail.appIDs, ['S6H8PA7TUH.app.resonanceventures.drop']);
   const paths = detail.components.map((component) => component['/']);
-  assert.deepEqual(paths.toSorted(), ['/', '/crew-picks/*', '/event/*', '/plan/*', '/reset-password'].toSorted());
+  assert.deepEqual(paths, ['/event/*', '/plan/*', '/reset-password', '/']);
   assert.ok(detail.components.every((component) => !component.exclude));
 });
 

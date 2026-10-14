@@ -1,30 +1,30 @@
-# Crew canonical website companion — 2026-10-13
+# Crew generic install fallback — 2026-10-13
 
 Owner chat: `01a13783-0fa3-7121-9e8a-517f6fa9413e`; coordinator `01a13768-04e4-7b60-9660-19e4949ee3dd`.
-Isolated branch/worktree: `codex/crew-link-companion-20261013`, `/Users/aryashinde/Developer/Drop/worktrees/crew-link-companion-20261013`.
-Base: `b80e0eee45591ec43d78ee80b5ec81afd848e2ad` from fetched website main. Primary preserved.
+Worktree `/Users/aryashinde/Developer/Drop/worktrees/crew-link-companion-20261013`, branch `codex/crew-link-companion-20261013`, base `b80e0eee45591ec43d78ee80b5ec81afd848e2ad`. Primary preserved.
 
-## Contract and status
+## Final safe scope and clearance
 
-- [x] PR794 owner confirmed canonical bare `https://trydropapp.com/crew-picks/<UUID>` and native `drop` scheme; builder/parser enforce RFC UUID versions 1–5/variant 8–b. Owner source checkpoint `faf793b5a199ad8c438206e4060c8053d43e301c`.
-- [x] Static `/crew-picks/:id -> /download 200` install fallback preserves the browser path. Existing HTML/assets/store controls are reused unchanged. Missing/extra segments do not match. Malformed/new single segments may receive generic install content, expressly accepted by Crew owner; no identity/existence/membership inference or custom app target.
-- [x] Additive source AASA `/crew-picks/*` preserves team/bundle identity and all prior association paths. No Android DAL, mobile/native, Worker or account-shell source changes.
-- [x] Crew path response rules specify `Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex, nofollow`. No board data or preview RPC access added.
-- [x] 23/23 registered Node contracts, zero skips; standard `bash scripts/build-dist.sh`, source/dist parity for routing/headers/AASA/download and Android assetlinks verifier pass.
-- [x] Independent correctness/security/refuter panel: initial HTML rewrite canonicalization defect repaired by extensionless target; strict-path concern narrowed and ratified by Crew owner. Final reviews qualify bounded source, with delivery checks still open.
-- [ ] Exact-head ordinary website CI: initial run `38482993065` on `3acac76` passed 23 Node and 258/260 browser cases (including both new Crew cases); the existing desktop/mobile AASA expected-path arrays lacked the new Crew path. The expectation is repaired additively, preserving every prior path; full exact-head rerun is tracked on the draft PR. Browser test emulates only the asserted static rewrite and supplies no privacy headers; it does not prove hosted Cloudflare behavior or native interception. No local WebKit binary was present, no install/browser download/dependency sharing occurred.
-- [ ] Coordinator PR794 compatibility and website delivery clearance. Keep draft; no merge or public deployment from this lane.
-- [ ] After standard main CI/deploy: live UUID URL 200/zero redirects, generic store content, response policy headers and AASA byte provenance; negative missing/extra path checks.
-- [ ] Physical Universal/App Links using a compatible native artifact, membership/authentication and complete anonymous Crew board preview remain separate mobile/design/backend acceptance.
+PR121 delivers only `/crew-picks/:id -> /download 200` and no-referrer/noindex response rules using the existing install document. No new HTML/JS/UI/API/Functions, board data, existence/membership inference or Open Crew CTA. Missing/extra segments do not match; malformed single IDs may receive generic install content under the accepted contract. AASA and Android association remain unchanged.
 
-## Preview boundary
+Coordinator explicitly authorized removing only the proposed Crew AASA path, preserving every existing association byte/meaning. After bounded independent delta review, genuine revised exact-head CI and fresh claims/base/provenance, normal PR merge, automatic main deployment and live verification are cleared under Arya's direct instruction. No second user permission or Cloudflare token/manual deployment is needed.
 
-PR794 migration `20261013200000_crew_picks_mvp.sql` has a source-only anonymous aggregate preview contract (`get_crew_pick_preview`): board name/status/counts plus published event candidates; no roster, notes, profiles or votes. Dispatch reported migration absent in production. This companion calls no preview RPC and changes no backend privileges. Generic install metadata never implies that the board exists or that the recipient may vote.
+## Verified history and current qualification
 
-Root authorized the normal draft website PR/automatic test lane after review, but explicitly holds merge/public deployment for combined compatibility. No new screen is introduced, so no new-screen design approval was used or inferred. Richer preview needs its own concrete approved design and activation/readback proof.
+- Initial full-scope head `3acac76`: run `38482993065` passed 23 Node and 258/260 browsers; only existing AASA expectations omitted the proposed Crew path. Additive repair was independently approved.
+- Historical head `44a85877d9913ff3bc97a89ab526fa08b61f046f`: run `38483508481` passed 23 Node and 260 Chromium/mobile WebKit tests without failed/skipped/flaky tests. This proof is preserved but does not qualify the revised source.
+- Previous correctness/security/refuter panel approved the static fallback and repaired `/download.html` canonicalization by using extensionless `/download`.
+- Revised local Node contracts: 23/23 pass. Standard static build/source parity and Android association verifier pass; AASA is byte-identical to fetched main. Existing smoke AASA expectations again exactly match main. The new Node contract preserves every old path and rejects broad/new Crew capture.
+- Pending: independent revised-delta review, new exact-head website CI, normal merge/main automatic deployment and actual live checks. Browser tests emulate document rendering only and supply no privacy headers; actual hosted routing/policies/provenance are measured separately.
+
+## Explicit remaining follow-up
+
+Crew AASA `/crew-picks/*` enablement remains blocked until a provenance-verified publicly eligible Crew-capable app runtime or independently reviewed older-app-safe strategy exists. An internal build alone is insufficient while older public binaries share the bundle ID. Native strict UUID parsing/source filters belong to the mobile owner. Physical Universal/App Links, membership/authentication, anonymous board preview and backend activation remain separate; no acceptance is inferred from this generic install page.
+
+PR794's aggregate preview migration is source-only per dispatch. This website calls no preview RPC and changes no grants, Worker/provider/secret/cron configuration, native artifact or app source.
 
 ## Evidence and next action
 
-Task output handoff: `/Users/aryashinde/Documents/Codex/2026-10-13/drop-104-crew-link-delivery/outputs/CREW-WEBSITE-HANDOFF.md` contains exact final commit/PR/CI results and artifact hashes. Node log is alongside it. On initial read-only production probe, canonical UUID URL returned 404 without redirect and live apex AASA omitted Crew paths.
+Exact source, CI, deployment and live receipts are preserved in `/Users/aryashinde/Documents/Codex/2026-10-13/drop-104-crew-link-delivery/outputs/CREW-WEBSITE-HANDOFF.md` and `outputs/delivery/`. Initial live Crew URL returned 404; source AASA had no Crew path. Preserve the failed first run and repaired historical pass.
 
-Coordinator: assess this draft with PR794, obtain non-skipped exact-head website CI, then clear ordinary website delivery only when compatible. Do not substitute SPA HTTP 200, an install page, local mocks or AASA source for shared-board preview/device acceptance. Existing email/affiliate/recovery/public-catalog owners and holds remain unchanged.
+Finish the cleared fallback-only lane through reviewed exact-head CI, normal main deployment, live URL200/no redirects, generic store body, no-referrer/noindex, unchanged AASA/DAL bytes and missing/extra rejection. Report exact source/main/deployment provenance to coordinator and retain the deferred association gate. Existing email/affiliate/recovery/catalog owners remain unchanged.

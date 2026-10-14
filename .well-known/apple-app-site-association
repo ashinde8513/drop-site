@@ -6,7 +6,6 @@
         "components": [
           { "/": "/event/*", "comment": "Event detail deep link / share target" },
           { "/": "/plan/*", "comment": "Plan detail deep link / share target" },
-          { "/": "/crew-picks/*", "comment": "Crew Picks board deep link / share target" },
           { "/": "/reset-password", "comment": "Password recovery callback" },
           { "/": "/", "comment": "Generic invite/signup link (root)" }
         ]
