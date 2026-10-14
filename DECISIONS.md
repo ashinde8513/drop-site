@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-10-13 — Crew canonical links use the existing install fallback
+
+Until a separate website Crew capability and approved preview design exist, `/crew-picks/:id` internally serves the existing extensionless `/download` page. It retains the canonical browser path and returns generic store content without querying board data or claiming existence, membership, voting access or preview parity. Native strict UUID parsing and Android source filters remain mobile-owner responsibilities.
+
+Coordinator explicitly cleared fallback/privacy-header delivery with AASA unchanged. The proposed `/crew-picks/*` association could capture URLs in older installed iOS binaries sharing the bundle ID. Source compatibility or an internal Crew build alone cannot qualify that public change. Preserve every existing AASA byte/path; keep Crew enablement as a separate follow-up until a provenance-verified publicly eligible Crew-capable runtime or independently reviewed older-app-safe strategy exists.
+
+The named placeholder excludes missing and extra segments. A malformed single segment may receive generic install content; the Crew owner explicitly accepted this bounded behavior because it emits no custom board target or board claim. A new database-backed route or public RPC grant is unnecessary for this fallback. Use `/download`, not `/download.html`: Pages canonicalizes HTML targets and would otherwise lose the incoming Crew path. Route privacy headers require hosted readback after ordinary delivery; synthetic browser fulfillment is document evidence only.
+
 ## 2026-08-17 — Browser share attribution is bounded and private by default
 
 Canonical redirects and public-to-account handoffs preserve only UUID referrer/target, route-derived event/plan/signup kind, and the fixed source catalog shared with mobile and the database. Browser pending state is first-touch, expires after 24 hours, and may survive sanctioned signup callbacks only in the same browser through local storage; a fresh-browser email confirmation deliberately fails closed without referral credit. Eligible same-browser state records only after compliance through an authenticated RPC that derives the signed-in account.

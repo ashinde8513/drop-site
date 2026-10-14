@@ -4,6 +4,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Now
 
+- [ ] Deliver the coordinator-cleared Crew generic install fallback/privacy headers through revised exact-head CI and the normal PR/main automatic lane; verify live canonical routing/headers/body. Keep AASA unchanged.
 - [ ] Deliver equal iPhone/Android install availability and safe public event-action continuation through the standard website PR/main deploy. Exact reviewed source is ready: bounded UUID/action/expiry intent, explicit RSVP/follow confirmation, honest Save/Plan/Invite native fallback, and 18 Node plus 224 Chromium/mobile-WebKit CI-mode checks.
 - [x] Deliver Android Digital Asset Links and submit Google Play launch — complete 2026-08-18. PR #95 merged as `a66eb6d`; the apex response is HTTP 200 JSON and byte-identical to reviewed source. Production 1.0.2 (2) is in Google review as submission `1`, United States only, with managed publishing off for automatic publication after approval. Physical App Links acceptance remains device-QA flagged because no Android test device is available.
 - [ ] Deliver the combined Facebook Login and Phase 2 share-attribution website candidate through PR #92. Preserve validated first-touch referral data across password/email/OAuth signup without adding Meta permissions; keep referral recording default-off until the separately gated migration is live-verified and a reviewed runtime capability enables the exact RPC.
@@ -17,6 +18,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Blocked / waiting
 
+- [ ] Enable Crew AASA `/crew-picks/*` only after a provenance-verified publicly eligible Crew-capable runtime or independently reviewed older-app-safe association strategy. An internal build alone is insufficient while older public binaries share the bundle ID. Full anonymous board preview/backend/native/device acceptance remains separate.
 - [ ] After Google approves submission `1`, verify the signed-out public Play listing, package/version, and United States availability. Managed publishing is off, so no manual publish action should be required.
 - [ ] Import the verified Google Search Console property into Bing Webmaster Tools (founder OAuth remains required).
 - [ ] Obtain an official festival schedule/export source, author the reviewed v1 set-time manifest, and then live-smoke venue-timezone grouping. Production currently has zero published-festival set times.

@@ -1,6 +1,11 @@
 /.well-known/apple-app-site-association
   Content-Type: application/json
 
+# Crew share fallback contains no board data; keep identifiers out of referrers.
+/crew-picks/*
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
+
 # Revalidate all static assets so a new deploy never serves stale CSS/JS
 # against fresh HTML (the two-browser mismatch). no-cache = browser still
 # caches but must revalidate via etag → cheap 304 when unchanged.

@@ -6,6 +6,9 @@
 # the OS intercepts these via Universal/App Links; on the web they land here.
 /event/*  /event  200
 /plan/*     /share-plan.html  200
+# Crew boards have no standalone website capability yet. Keep the canonical
+# URL for installed-app handoff; reuse the existing install fallback on web.
+/crew-picks/:id /download  200
 /onboarding /download.html  302
 
 # /app* redirect removed — the standalone post-login web app (ported Prism
