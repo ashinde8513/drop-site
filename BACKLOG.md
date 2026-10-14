@@ -4,7 +4,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Now
 
-- [ ] Deliver the coordinator-cleared Crew generic install fallback/privacy headers through revised exact-head CI and the normal PR/main automatic lane; verify live canonical routing/headers/body. Keep AASA unchanged.
+- [x] Deliver Crew generic install fallback/privacy headers — PR121/merge768eed1, main workflow38518784249/Pages447d4aa2 and live canonical/header/body/negative-path/browser checks pass. AASA/DAL remain unchanged; Crew association is separately gated below.
 - [ ] Deliver equal iPhone/Android install availability and safe public event-action continuation through the standard website PR/main deploy. Exact reviewed source is ready: bounded UUID/action/expiry intent, explicit RSVP/follow confirmation, honest Save/Plan/Invite native fallback, and 18 Node plus 224 Chromium/mobile-WebKit CI-mode checks.
 - [x] Deliver Android Digital Asset Links and submit Google Play launch — complete 2026-08-18. PR #95 merged as `a66eb6d`; the apex response is HTTP 200 JSON and byte-identical to reviewed source. Production 1.0.2 (2) is in Google review as submission `1`, United States only, with managed publishing off for automatic publication after approval. Physical App Links acceptance remains device-QA flagged because no Android test device is available.
 - [ ] Deliver the combined Facebook Login and Phase 2 share-attribution website candidate through PR #92. Preserve validated first-touch referral data across password/email/OAuth signup without adding Meta permissions; keep referral recording default-off until the separately gated migration is live-verified and a reviewed runtime capability enables the exact RPC.
@@ -25,6 +25,7 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Next
 
+- [ ] Inspect hosting-injected Cloudflare analytics request URL/query payloads and consent behavior. Live HTML provenance accounts for the exact beacon, but no-referrer does not prove telemetry redaction. This is a separate read-only follow-up; provider changes retain their own gate.
 - [ ] Richer JSON-LD: add `FAQPage` schema once an FAQ section exists. The live
   App Store URL and offer are already present in SoftwareApplication metadata.
 

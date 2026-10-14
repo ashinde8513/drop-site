@@ -9,19 +9,19 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
 **Status:** AVAILABLE
 How to use: advisory + durable record only. Concurrent sessions auto-isolate in their own git worktree (session/<id>) via dev-session.zsh — there is NO global LOCKED state to set. Record Owner / Working on at session start.
 ### Active session (if any)
-- Crew website companion: `codex/crew-link-companion-20261013`, isolated source from `b80e0ee`; fallback/privacy headers only, AASA unchanged. Coordinator conditionally cleared normal delivery subject to revised-source review and exact-head CI.
+- Crew website fallback delivered; documentation closeout on `codex/crew-link-closeout-20261013`. AASA remains unchanged and its Crew enablement is a separate public-runtime-gated follow-up.
 - Completed ticket-path lane: `codex/ticket-path-20261007`, public date filtering and stale-result repair. Existing email, affiliate, recovery, and migration holds remain with their owners.
 
 ## Current status
 ### What works
-- **CREW INSTALL FALLBACK — SAFE DELIVERY CANDIDATE (2026-10-13):** `/crew-picks/:id` internally serves the existing `/download` page with no-referrer/noindex policies. AASA remains byte-identical to prior main, so this does not introduce Crew capture in older installed iOS apps. No new UI, board/RPC access, membership inference or anonymous preview. Coordinator cleared this fallback-only scope subject to bounded review and genuine revised-head CI; merge/deploy/live checks remain pending. Crew association remains an explicit compatible-public-runtime follow-up. See `state.d/2026-10-13-crew-links.md`.
+- **CREW INSTALL FALLBACK LIVE (2026-10-13):** PR121 source `6d3a9cd` merged as `768eed15790c84bc1a51df1689bd16ae9d70e46a`. Revised-head CI38518448128 and main workflow38518784249 passed 23 Node/260 Chromium-WebKit tests; actual build/sanity/production deployment completed as Pages `447d4aa2`. Live canonical Crew URL returns200 without redirect, generic install/store body, no-referrer and noindex/nofollow; missing/extra segments return404. AASA/DAL are byte-identical to source and prior main. Live desktop/mobile viewports and keyboard entry pass with no warnings/errors. No board data or native/preview acceptance. Details and hosting-transform provenance: `state.d/2026-10-13-crew-links.md`.
 - **PUBLIC DATE/FILTER REPAIR LIVE (2026-10-07, PR118):** shared date bounds, current-request rendering and active city semantics are repaired. PR118 merged as 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; exact-head PR/main CI passed 20 Node and 258 browser checks. Main workflow 37683814143 deployed Pages 19cf2e3c. Live source bytes match review; desktop/mobile date, location, search, Madeon detail and exact AXS destination checks pass. Evidence and limits: state.d/2026-10-07-ticket-path.md.
 - **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
   canonical Drop wordmark, presents Website first followed by App Store,
@@ -207,7 +207,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
-- **Crew install fallback:** finish revised PR121 review/exact-head CI, normal PR/main automatic deployment, then live UUID URL 200/zero redirects, generic store document and privacy-policy checks. Verify AASA remains unchanged. Enable `/crew-picks/*` association only after separately reviewed, provenance-verified publicly eligible Crew-capable runtime compatibility; an internal build alone is insufficient while older public binaries share the bundle ID.
+- **Crew website fallback complete:** source/review, exact-head and main CI, automatic deployment and available live HTTP/browser proof are verified. The remaining Crew association `/crew-picks/*` requires separately reviewed, provenance-verified publicly eligible Crew-capable runtime compatibility; an internal build alone is insufficient while older public binaries share the bundle ID. Anonymous board preview/backend/native/device acceptance stays with the cohort owners.
 - **Ticket-path lane complete:** source, required CI, automatic production deploy, byte provenance and available desktop/mobile live QA verified. No source/deploy action remains in this lane; existing held lanes below retain their original owners. Founder device acceptance remains separate from the available browser proof.
 - **1. In the existing email-change owner lane, finish exact-head CI for rebased PR #112; keep it draft while the explicit database blocker above remains.** Preserve both PR #113's auth-input fix and a single private-feedback handler. Activation follows only the approved migration's verified live installation.
 - **2. Android www source repair is already complete in current Drop-App main.** Fresh `DropApp/app.json` at `e6b703a31778f31cecbb9aba1fd5488258ab35b4` uses only `trydropapp.com` in Android intent filters. Preserve the deliberate www-to-apex redirect. Native delivery and installed-device App Links acceptance remain separate evidence in the mobile owner lane; no website source change is required.
@@ -836,8 +836,8 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 <!-- SESSIONS:newest-first -->
 ### 2026-10-13 — Codex — Crew canonical website companion
 - **Changed:** single-segment Crew install fallback to extensionless `/download` and route privacy headers; meaningful Node/config and synthetic browser coverage. Removed the proposed AASA enablement after coordinator identified installed older-app capture risk; all prior association bytes/paths remain. Preserved primary and unrelated owners.
-- **Verified:** 23/23 Node contracts, standard static build/source parity and Android association preservation. Independent reviewers found and repaired an HTML-target canonicalization redirect. Website CI and the exact candidate are tracked in the companion PR/handoff; no local WebKit claim.
-- **Boundary:** coordinator authorizes normal fallback-only delivery after revised-source review/CI. Native association, full preview, backend activation and physical link acceptance remain separate. No new preview UI, RPC activation/grants, Worker/provider/secret mutation or app/native change.
+- **Verified/delivered:** revised-head CI38518448128 and main workflow38518784249 passed 23/23 Node and260/260 browsers with actual production deploy `447d4aa2`. HTTP seven-request contract, canonical URL/store/header/AASA/DAL/negative-path checks, desktop1280/mobile390/narrow320 no-overflow and keyboard entry pass; console warnings/errors empty. HTML matches reviewed source after only exact observed Cloudflare email protection and analytics-beacon transforms. Raw bodies, normalization and logs preserved; no provider setting changed.
+- **Boundary:** fallback-only delivery cleared by coordinator. Native association, full preview, backend activation and physical link acceptance remain separate. No new preview UI, RPC activation/grants, Worker/provider/secret mutation or app/native change.
 
 ### 2026-08-24 — Claude (Opus) — Google Play readiness audit (read-only here); Android App Links defect found
 - **Changed in this repo: nothing.** Read-only throughout. Sources were read via `git show origin/main:<file>`, never from the working tree, and the only live actions were HTTP GETs against public URLs.
