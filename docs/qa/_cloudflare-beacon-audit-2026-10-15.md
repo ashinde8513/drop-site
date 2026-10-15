@@ -1,5 +1,10 @@
 # Website Cloudflare beacon audit — 2026-10-15
 
+Internal source document. The leading underscore excludes it from the
+repository's legacy Jekyll mirror under its current default build rules;
+it is also outside the Cloudflare deploy whitelist. Keep that prefix when
+renaming. See [Jekyll's file exclusion rules](https://jekyllrb.com/docs/structure/).
+
 Completed read-only audit; two open privacy/product findings. No provider setting,
 runtime source, database, account, or deployed asset changed.
 

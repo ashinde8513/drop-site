@@ -1,5 +1,7 @@
 # Website beacon audit — 2026-10-15
 
+Internal source receipt; underscore prefix preserves default Jekyll exclusion.
+
 Owner: Codex `01a13e34-aa5d-79d1-b2e5-be65c321405e`.
 Branch: `codex/website-beacon-audit-20261015`; source reference `47e6d918`.
 
@@ -18,7 +20,7 @@ Branch: `codex/website-beacon-audit-20261015`; source reference `47e6d918`.
   Essential only, Crew path inclusion, marker exclusions, redaction, and
   delivery/coverage boundaries verified. Reviewer made no edits or live
   requests and did not independently rerun browser/build checks.
-- Read [the complete audit](../docs/qa/cloudflare-beacon-audit-2026-10-15.md)
+- Read [the complete audit](../docs/qa/_cloudflare-beacon-audit-2026-10-15.md)
   for evidence, hashes, test cases, limits, and primary documentation.
 - Exact next action: inspect authoritative Pages/zone injection settings and
   prepare the minimum disable/readback packet. A live privacy setting change
@@ -32,3 +34,11 @@ Branch: `codex/website-beacon-audit-20261015`; source reference `47e6d918`.
 Startup reconciliation identified mobile primary/source migration-baseline
 drift. This lane used fresh website main and no migration state; it neither
 baselined nor modified that unrelated mobile drift.
+
+Publication correction: after PR123 merged, a separate legacy GitHub Pages
+root/main Jekyll build published the newly added Markdown files. The audit
+was confirmed publicly reachable (including local evidence paths), despite
+the Cloudflare docs-only deployment skip. Both new documents were renamed
+with underscore prefixes and references repaired. Verify their old and new
+public paths return 404 after the corrective merge/build; do not infer that
+from CI or the exclusion convention alone. No provider setting was changed.
