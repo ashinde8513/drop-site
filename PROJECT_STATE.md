@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -21,6 +21,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **WEBSITE BEACON AUDIT COMPLETE (2026-10-15), REMEDIATION OPEN:** seven live Chromium/mobile-WebKit cases confirm automatic RUM before consent and after Essential only/reload. Crew path identifiers enter payloads despite no-referrer; tested query/fragment markers are absent. Audit POSTs intercepted before delivery. Docs only; no provider/runtime change or repaired-production claim. Evidence/limits: `docs/qa/cloudflare-beacon-audit-2026-10-15.md` and `state.d/2026-10-15-beacon-audit.md`.
 - **CREW INSTALL FALLBACK LIVE (2026-10-13):** PR121 source `6d3a9cd` merged as `768eed15790c84bc1a51df1689bd16ae9d70e46a`. Revised-head CI38518448128 and main workflow38518784249 passed 23 Node/260 Chromium-WebKit tests; actual build/sanity/production deployment completed as Pages `447d4aa2`. Live canonical Crew URL returns200 without redirect, generic install/store body, no-referrer and noindex/nofollow; missing/extra segments return404. AASA/DAL are byte-identical to source and prior main. Live desktop/mobile viewports and keyboard entry pass with no warnings/errors. No board data or native/preview acceptance. Details and hosting-transform provenance: `state.d/2026-10-13-crew-links.md`.
 - **PUBLIC DATE/FILTER REPAIR LIVE (2026-10-07, PR118):** shared date bounds, current-request rendering and active city semantics are repaired. PR118 merged as 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; exact-head PR/main CI passed 20 Node and 258 browser checks. Main workflow 37683814143 deployed Pages 19cf2e3c. Live source bytes match review; desktop/mobile date, location, search, Madeon detail and exact AXS destination checks pass. Evidence and limits: state.d/2026-10-07-ticket-path.md.
 - **LINK HUB REFRESH REVIEWED (2026-09-09, PR #111):** `/link` now uses the
@@ -188,6 +189,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
+- Website beacon remediation: Cloudflare dashboard redirects to `/login`; user sign-in is needed to inspect authoritative Pages/zone injection settings. Exact live privacy mutation approval follows a concrete settings packet. Read-only audit is complete; see `state.d/2026-10-15-beacon-audit.md`.
 - Email PR #112/mobile PR #984: exact migration `20260909170719_sync_verified_auth_email_to_profiles.sql`, SHA-256 `512396823a0f32c76ba83bd2ea3d8701678a83f6aef4fcbec42d70a969de30d4`, remains unapplied. User approved the packet, but automatic review rejected the privileged DDL and an explicit follow-up is pending. No retry or email-UI activation before explicit approval plus fresh preflight/application/postflight.
 - Founder visual acceptance of the already delivered FRENS mark on desktop/phone remains waiting; no implementation required for that request.
 - Impact marketplace: support appeal `865870` is Open after the rebuilt
@@ -207,6 +209,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Website beacon audit follow-up:** inspect authoritative Pages/zone injection settings and prepare the minimum automatic-beacon disable/readback packet. The live privacy setting change requires exact user approval; first identify the actual injection setting and any redeploy dependency. Keep other owners' held work below intact. This source-doc lane has completed its read-only investigation.
 - **Crew website fallback complete:** source/review, exact-head and main CI, automatic deployment and available live HTTP/browser proof are verified. The remaining Crew association `/crew-picks/*` requires separately reviewed, provenance-verified publicly eligible Crew-capable runtime compatibility; an internal build alone is insufficient while older public binaries share the bundle ID. Anonymous board preview/backend/native/device acceptance stays with the cohort owners.
 - **Ticket-path lane complete:** source, required CI, automatic production deploy, byte provenance and available desktop/mobile live QA verified. No source/deploy action remains in this lane; existing held lanes below retain their original owners. Founder device acceptance remains separate from the available browser proof.
 - **1. In the existing email-change owner lane, finish exact-head CI for rebased PR #112; keep it draft while the explicit database blocker above remains.** Preserve both PR #113's auth-input fix and a single private-feedback handler. Activation follows only the approved migration's verified live installation.
@@ -834,6 +837,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-10-15 — Codex — Read-only website beacon audit
+- **Completed:** unclaimed backlog audit after fresh Claude/claim/PR checks. Seven live Chromium/mobile-WebKit cases, recorded payloads and inspected desktop/mobile screenshots establish consent bypass and Crew path capture; query/fragment markers absent. No real board/account data used; beacon POSTs intercepted locally.
+- **Verified:** static build (66 files, tracked output unchanged), focused Crew contracts 3/3, no browser/page errors/warnings or horizontal overflow. Full local browser suite not rerun for docs only; required PR CI and independent review are recorded at publication.
+- **Remaining:** authoritative provider settings read and one exact approval packet before a live privacy setting change. No runtime fix, provider toggle, analytics deletion, migration, mobile source or competing CI work. See `state.d/2026-10-15-beacon-audit.md`.
+
 ### 2026-10-13 — Codex — Crew canonical website companion
 - **Changed:** single-segment Crew install fallback to extensionless `/download` and route privacy headers; meaningful Node/config and synthetic browser coverage. Removed the proposed AASA enablement after coordinator identified installed older-app capture risk; all prior association bytes/paths remain. Preserved primary and unrelated owners.
 - **Verified/delivered:** revised-head CI38518448128 and main workflow38518784249 passed 23/23 Node and260/260 browsers with actual production deploy `447d4aa2`. HTTP seven-request contract, canonical URL/store/header/AASA/DAL/negative-path checks, desktop1280/mobile390/narrow320 no-overflow and keyboard entry pass; console warnings/errors empty. HTML matches reviewed source after only exact observed Cloudflare email protection and analytics-beacon transforms. Raw bodies, normalization and logs preserved; no provider setting changed.
