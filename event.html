@@ -169,6 +169,10 @@
       // Pages 200-rewrite in _redirects — placeholders can't fill query strings).
       var id = new URLSearchParams(location.search).get('id') ||
                (location.pathname.match(/^\/event\/([^/]+)/) || [])[1] || null;
+      var creatorCode = (function (value) {
+        var code = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return /^[A-Z0-9]{4,24}$/.test(code) ? code : null;
+      })(new URLSearchParams(location.search).get('creator'));
       var root = document.getElementById('event-root');
       var bcCurrent = document.getElementById('bc-current');
       var stickyBar = document.getElementById('sticky-cta');
@@ -257,9 +261,35 @@
         } else {
           url.searchParams.set('mode', 'login');
         }
+        if (creatorCode) url.searchParams.set('creator', creatorCode);
         a.href = url.toString();
         a.title = title || 'Continue on Drop';
         return a;
+      }
+
+      function promoterTicketUrl(ev) {
+        var ticketUrl = D.safeUrl(ev.ticket_url);
+        if (!ticketUrl || !creatorCode) return ticketUrl;
+        try {
+          var parsed = new URL(ticketUrl);
+          var owned = parsed.pathname.match(
+            /^\/click\/camref:1100l5NLJm\/pubref:(\d+)\/destination:(.+)$/i
+          );
+          if (parsed.protocol !== 'https:' || parsed.hostname !== 'etix.prf.hn' ||
+              parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash || !owned) {
+            return ticketUrl;
+          }
+          var destination = new URL(decodeURIComponent(owned[2]));
+          if (destination.protocol !== 'https:' || destination.hostname !== 'www.etix.com' ||
+              destination.username || destination.password || destination.port ||
+              !(new RegExp('^/ticket/p/' + owned[1] + '(?:/|$)')).test(destination.pathname)) {
+            return ticketUrl;
+          }
+        } catch (_) {
+          return ticketUrl;
+        }
+        return '/t?event=' + encodeURIComponent(ev.id) +
+          '&creator=' + encodeURIComponent(creatorCode) + '&surface=web';
       }
 
       // ---- .ics download — real, client-side, no network/dependency. ----------
@@ -453,7 +483,7 @@
         priceEl.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);';
         right.appendChild(priceEl);
         var buy = el('a', 'btn btn--secondary btn--sm', D.ticketActionLabel(ev));
-        buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+        buy.href = promoterTicketUrl(ev); buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
         right.appendChild(buy);
         row.appendChild(right);
         section.appendChild(row);
@@ -496,7 +526,7 @@
         var ticketUrl = D.safeUrl(ev.ticket_url);
         if (ticketUrl) {
           var buy = el('a', 'btn btn--primary btn--block', D.ticketActionLabel(ev));
-          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+          buy.href = promoterTicketUrl(ev); buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           box.appendChild(buy);
         }
 
@@ -537,7 +567,7 @@
           var ticketLabel = D.ticketActionLabel(ev);
           var buy = el('a', 'btn btn--primary ed-bottombar__tickets', ticketLabel === 'View ticket details' ? 'Tickets' : ticketLabel);
           buy.setAttribute('aria-label', ticketLabel);
-          buy.href = ticketUrl; buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
+          buy.href = promoterTicketUrl(ev); buy.target = '_blank'; buy.rel = 'noopener nofollow sponsored';
           stickyBar.appendChild(buy);
         }
       }
