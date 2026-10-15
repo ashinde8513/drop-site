@@ -25,7 +25,8 @@ Prioritized follow-ups. Update when priorities/scope change (see AGENTS.md close
 
 ## Next
 
-- [ ] Inspect hosting-injected Cloudflare analytics request URL/query payloads and consent behavior. Live HTML provenance accounts for the exact beacon, but no-referrer does not prove telemetry redaction. This is a separate read-only follow-up; provider changes retain their own gate.
+- [x] Inspect hosting-injected Cloudflare analytics request URL/query payloads and consent behavior — completed 2026-10-15 with seven live Chromium/WebKit cases. RUM attempts occur before consent and after Essential only; Crew path IDs enter payloads while tested queries/fragments do not. All audit POSTs intercepted locally. See `docs/qa/cloudflare-beacon-audit-2026-10-15.md`.
+- [ ] Inspect authoritative Pages/zone injection settings and prepare the minimum automatic-beacon disable/readback packet. Live privacy configuration requires exact approval; the completed audit does not repair production behavior.
 - [ ] Richer JSON-LD: add `FAQPage` schema once an FAQ section exists. The live
   App Store URL and offer are already present in SoftwareApplication metadata.
 
