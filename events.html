@@ -60,7 +60,7 @@
           <button type="button" class="locchip" aria-expanded="false" aria-label="Change location">
             <span class="dot"></span><span class="loc-city">Denver</span><span style="color:var(--text-muted);font-size:10px;">▾</span>
           </button>
-          <div class="loc-pop" aria-label="Choose a city" hidden><ul></ul></div>
+          <div class="loc-pop" role="group" aria-label="Choose a city" hidden><ul></ul></div>
         </div>
         <form class="wn__search-inline" role="search" aria-label="Search events" style="position:relative;flex:1;max-width:360px;">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">⌕</span>
@@ -326,7 +326,6 @@
       var gBtn = D.el('button', 'fb-select', 'All genres');
       gBtn.type = 'button';
       gBtn.style.width = '100%';
-      gBtn.setAttribute('aria-haspopup', 'listbox');
       var gPop = D.el('div', 'loc-pop');
       gPop.style.cssText = 'left:0;right:0;'; // match the full-width trigger
       gPop.hidden = true;
@@ -355,8 +354,7 @@
             var text = (on ? '✓ ' : '') + g.label + (g.n ? ' · ' + g.n : '');
             var b = D.el('button', 'loc-opt' + (on ? ' sel' : ''), text);
             b.type = 'button';
-            b.setAttribute('role', 'option');
-            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            if (on) b.setAttribute('aria-current', 'true');
             b.addEventListener('click', function () {
               if (!g.value) { gPop.hidden = true; setGenres([]); return; } // All genres
               toggleGenre(g.value); // multi-select — stays open for more picks
@@ -481,8 +479,7 @@
             var li = D.el('li');
             var b = D.el('button', 'loc-opt' + (o.sel ? ' sel' : ''), (o.sel ? '✓ ' : '') + o.label);
             b.type = 'button';
-            b.setAttribute('role', 'option');
-            b.setAttribute('aria-selected', o.sel ? 'true' : 'false');
+            if (o.sel) b.setAttribute('aria-current', 'true');
             b.addEventListener('click', function () { pop.hidden = true; onPick(o.value); });
             li.appendChild(b);
             ul.appendChild(li);
@@ -676,11 +673,8 @@
           state.priceMin > PRICE_MIN || state.priceMax < PRICE_MAX);
       }
       function renderEmpty() {
-        gridEl.classList.remove('is-loading');
-        gridEl.removeAttribute('aria-busy');
-        gridEl.innerHTML = '';
+        D.clearLoading(gridEl);
         var box = D.el('div', 'state-empty');
-        box.setAttribute('role', 'status');
         box.appendChild(D.el('span', 'state-icon', 'Drop'));
         if (!hasRefinements() && state.city && state.city !== D.ALL_CITIES) {
           // Bare city with nothing on the calendar — honest coming-soon + scout CTA.
@@ -741,9 +735,7 @@
       function renderGrid() {
         if (loadedRequest !== latestLoad) return;
         var vis = visibleEvents();
-        gridEl.classList.remove('is-loading');
-        gridEl.removeAttribute('aria-busy');
-        gridEl.innerHTML = '';
+        D.clearLoading(gridEl);
         if (!vis.length) { renderEmpty(); }
         else vis.forEach(function (ev) { gridEl.appendChild(D.ecard(ev)); });
         var filtered = vis.length !== loaded.length;

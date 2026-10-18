@@ -164,12 +164,16 @@
     }
   };
 
-  Drop.stateEmpty = function (host, msg, actionLabel, actionHref) {
+  // Every render path ends the skeleton the same way, so aria-busy can't stick.
+  Drop.clearLoading = function (host) {
     host.classList.remove('is-loading');
     host.removeAttribute('aria-busy');
     host.innerHTML = '';
+  };
+
+  Drop.stateEmpty = function (host, msg, actionLabel, actionHref) {
+    Drop.clearLoading(host);
     var box = el('div', 'state-empty');
-    box.setAttribute('role', 'status');
     box.appendChild(el('span', 'state-icon', 'Drop'));
     box.appendChild(el('p', 'state-msg', msg || 'No shows here yet.'));
     if (actionLabel) {
@@ -181,9 +185,7 @@
   };
 
   Drop.stateError = function (host, retry) {
-    host.classList.remove('is-loading');
-    host.removeAttribute('aria-busy');
-    host.innerHTML = '';
+    Drop.clearLoading(host);
     var box = el('div', 'state-error');
     box.setAttribute('role', 'alert');
     box.appendChild(el('span', 'state-icon', '!'));
@@ -198,9 +200,7 @@
   // Render a list of events into a host (rail or grid). Handles empty.
   Drop.renderEvents = function (host, events, opts) {
     opts = opts || {};
-    host.classList.remove('is-loading');
-    host.removeAttribute('aria-busy');
-    host.innerHTML = '';
+    Drop.clearLoading(host);
     if (!events || !events.length) {
       Drop.stateEmpty(host, opts.emptyMsg, opts.emptyAction, opts.emptyHref);
       return;
