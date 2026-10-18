@@ -101,7 +101,7 @@ export function faqFrom(body) {
   return items;
 }
 
-function page(template, { title, description, canonical, h1, navLinks, content, ld, lastVerified, ogType = 'article' }) {
+export function page(template, { title, description, canonical, h1, navLinks, content, ld, lastVerified, ogType = 'article' }) {
   let html = template;
   const set = (re, value) => { html = html.replace(re, (_m, a, b) => a + esc(value) + b); };
   html = html.replace(/<title>[^<]*<\/title>/, () => '<title>' + esc(title) + '</title>');
