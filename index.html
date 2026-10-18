@@ -129,10 +129,10 @@
       </a>
       <div class="wn__links">
         <div class="loc-wrap">
-          <button type="button" class="locchip" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <button type="button" class="locchip" aria-expanded="false" aria-label="Change location">
             <span class="dot"></span><span class="loc-city">Denver</span><span style="color:var(--text-muted);font-size:10px;">▾</span>
           </button>
-          <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+          <div class="loc-pop" role="group" aria-label="Choose a city" hidden><ul></ul></div>
         </div>
         <form class="wn__search-inline" role="search" aria-label="Search events" style="position:relative;flex:1;max-width:360px;">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">⌕</span>
@@ -195,10 +195,10 @@
         <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-lg);flex-wrap:wrap;margin-bottom:var(--sp-xl);">
           <h2 class="sec-h2 m-wrap" style="margin:0;white-space:nowrap;display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;">Happening in
             <span class="loc-wrap" style="display:inline-flex;">
-              <button type="button" class="city-head-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Change city" style="font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background-image:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;">
+              <button type="button" class="city-head-btn" aria-expanded="false" aria-label="Change city" style="font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background-image:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;">
                 <span class="loc-city">Denver</span><span style="font-size:0.55em;color:var(--text-muted);-webkit-text-fill-color:var(--text-muted);">▾</span>
               </button>
-              <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+              <div class="loc-pop" role="group" aria-label="Choose a city" hidden><ul></ul></div>
             </span>
           </h2>
           <form class="field-box" id="home-search" role="search" aria-label="Search shows" style="flex:1;min-width:260px;max-width:420px;">

@@ -3,6 +3,12 @@
   var Drop = (window.Drop = window.Drop || {});
   var doc = document;
 
+  // Programmatic smooth scrolling respects prefers-reduced-motion.
+  function scrollBehavior() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+  Drop.scrollBehavior = scrollBehavior;
+
   function el(tag, cls, txt) {
     var n = doc.createElement(tag);
     if (cls) n.className = cls;
@@ -152,14 +158,21 @@
   Drop.skeletonGrid = function (host, n) {
     host.innerHTML = '';
     host.classList.add('is-loading');
+    host.setAttribute('aria-busy', 'true');
     for (var i = 0; i < (n || 6); i++) {
       host.appendChild(el('div', 'skeleton wsc__skeleton'));
     }
   };
 
-  Drop.stateEmpty = function (host, msg, actionLabel, actionHref) {
+  // Every render path ends the skeleton the same way, so aria-busy can't stick.
+  Drop.clearLoading = function (host) {
     host.classList.remove('is-loading');
+    host.removeAttribute('aria-busy');
     host.innerHTML = '';
+  };
+
+  Drop.stateEmpty = function (host, msg, actionLabel, actionHref) {
+    Drop.clearLoading(host);
     var box = el('div', 'state-empty');
     box.appendChild(el('span', 'state-icon', 'Drop'));
     box.appendChild(el('p', 'state-msg', msg || 'No shows here yet.'));
@@ -172,9 +185,9 @@
   };
 
   Drop.stateError = function (host, retry) {
-    host.classList.remove('is-loading');
-    host.innerHTML = '';
+    Drop.clearLoading(host);
     var box = el('div', 'state-error');
+    box.setAttribute('role', 'alert');
     box.appendChild(el('span', 'state-icon', '!'));
     box.appendChild(el('p', 'state-msg', "We couldn't load shows just now. Check your connection and try again."));
     var btn = el('button', 'btn-ghost', 'Retry');
@@ -187,8 +200,7 @@
   // Render a list of events into a host (rail or grid). Handles empty.
   Drop.renderEvents = function (host, events, opts) {
     opts = opts || {};
-    host.classList.remove('is-loading');
-    host.innerHTML = '';
+    Drop.clearLoading(host);
     if (!events || !events.length) {
       Drop.stateEmpty(host, opts.emptyMsg, opts.emptyAction, opts.emptyHref);
       return;
@@ -223,6 +235,9 @@
   Drop.reflectCity = function (city) {
     var locLabels = doc.querySelectorAll('.loc-city');
     for (var i = 0; i < locLabels.length; i++) locLabels[i].textContent = city;
+    // Name the pickers with the city they show (WCAG 2.5.3 label in name).
+    var pickers = doc.querySelectorAll('.loc-wrap > .locchip, .city-head-btn'); // not #use-loc
+    for (var j = 0; j < pickers.length; j++) pickers[j].setAttribute('aria-label', city + ', change location');
   };
 
   // Binds the Prism .wn nav (replaces the old .site-nav — see shell.css).
@@ -291,7 +306,7 @@
         // opening the overlay row, which would cover the page heading.
         var pageSearch = doc.querySelector('[data-page-search]');
         if (pageSearch) {
-          pageSearch.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          pageSearch.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
           pageSearch.focus({ preventScroll: true });
           return;
         }
@@ -361,9 +376,8 @@
         var li = el('li');
         var b = el('button', 'loc-opt', all[i]);
         b.type = 'button';
-        b.setAttribute('role', 'option');
         b.setAttribute('data-city', all[i]);
-        if (all[i] === cur) { b.setAttribute('aria-selected', 'true'); b.classList.add('sel'); }
+        if (all[i] === cur) { b.setAttribute('aria-current', 'true'); b.classList.add('sel'); }
         li.appendChild(b);
         ul.appendChild(li);
       }
@@ -503,8 +517,8 @@
       if (prev) prev.hidden = atEnds;
       if (next) next.hidden = atEnds;
     }
-    if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
-    if (next) next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+    if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: scrollBehavior() }); });
+    if (next) next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: scrollBehavior() }); });
     track.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     // Re-check after cards land (observe child changes once).

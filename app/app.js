@@ -28,6 +28,14 @@
   const IDENT_RE = /^[A-Za-z_$][A-Za-z0-9_$]*/;
   const NUMBER_RE = /^-?\d+(\.\d+)?$/;
 
+  // a11y helpers used by the design class (gate dialog focus, reduced motion).
+  function gateFocusables() {
+    return Array.from(document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+  }
+  function scrollMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+
   function resolve(vals, src) {
     const expr = String(src).trim();
     if (!expr) return undefined;
@@ -1073,7 +1081,33 @@ class Component extends DCLogic {
 
   flash(msg){ this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(()=>this.setState({toast:null}), 2200); }
 
-  openGate(title){ this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false }); }
+  openGate(title){
+    // Re-render replaces nodes, so remember the opener by its tab-order position.
+    // ponytail: index lookup; give openers stable ids if layouts start shifting on close.
+    this._gateOpener = gateFocusables().indexOf(document.activeElement);
+    this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false });
+    // Dialog: move focus inside, keep Tab inside, Escape closes (WCAG 2.4.3 / 2.1.2).
+    requestAnimationFrame(() => { const first = document.querySelector('.modal[role="dialog"] button'); if (first) first.focus(); });
+    if (!this._gateKeys) {
+      this._gateKeys = (e) => {
+        if (!this.state.gate) return;
+        if (e.key === 'Escape') { this.dismissGate(); return; }
+        if (e.key !== 'Tab') return;
+        // Cycle manually: engines differ on which controls Tab reaches (WebKit skips buttons).
+        const items = Array.from(document.querySelectorAll('.modal[role="dialog"] button, .modal[role="dialog"] a[href]'));
+        if (!items.length) return;
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        items[(i < 0 ? 0 : i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
+      };
+      document.addEventListener('keydown', this._gateKeys);
+    }
+  }
+
+  dismissGate(){
+    this.setState({ gate:false });
+    requestAnimationFrame(() => { const el = gateFocusables()[this._gateOpener]; if (el) el.focus(); });
+  }
 
   toggleRsvp(id, status){
     if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return Promise.resolve(false); }
@@ -3018,8 +3052,8 @@ class Component extends DCLogic {
       goWrapped:(e)=>{ this.prevent(e); this.go('wrapped'); },
       goMemories:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to see your memories'); return; } this.go('memories'); },
       goLogShow:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to log shows'); return; } this.setState({logSelected:{}}); this.go('logshow'); this.logSearch(); },
-      genrePrev:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: -Math.round(r.clientWidth*0.9), behavior:'smooth' }); },
-      genreNext:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: Math.round(r.clientWidth*0.9), behavior:'smooth' }); },
+      genrePrev:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: -Math.round(r.clientWidth*0.9), behavior: scrollMotion() }); },
+      genreNext:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: Math.round(r.clientWidth*0.9), behavior: scrollMotion() }); },
       goRecap:(e)=>{ this.prevent(e); this.setState({recapWasThere:null}); this.go('recap'); },
       goSeen:(e)=>{ this.prevent(e); this.go('seen'); },
       goTagged:(e)=>{ this.prevent(e); this.go('tagged'); },
@@ -3368,7 +3402,7 @@ class Component extends DCLogic {
       downloadApp:()=>{ if (typeof location !== 'undefined') location.href = appDownloadHref(); },
       setUsername:(e)=>this.setState({username: e.target.value, authError:''}),
       setSignupEmail:(e)=>this.setState({signupEmail: e.target.value, authError:''}),
-      closeGate:()=>this.setState({gate:false}),
+      closeGate:()=>this.dismissGate(),
       cancelEventIntent:()=>this.cancelEventIntent(),
       retryEventIntent:()=>this.retryEventIntent(),
       confirmEventIntent:()=>this.confirmEventIntent(),

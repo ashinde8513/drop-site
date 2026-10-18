@@ -112,7 +112,8 @@ test('header search and picker use the current query city while implicit festiva
   await search.press('Enter');
   await expect(page).toHaveURL(/city=Seattle/);
   await expect(page).toHaveURL(/q=Tonight/);
-  await page.getByRole('button', { name: 'Change location', exact: true }).click();
+  // The chip's name now carries the visible city (WCAG 2.5.3).
+  await page.locator('.wn').getByRole('button', { name: 'Seattle, change location', exact: true }).click();
   await page.locator('.wn .loc-filter input').fill('Denver');
   await page.locator('.wn .loc-filter input').press('Enter');
   await expect(page).toHaveURL(/city=Denver/);
