@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CITIES, cleanCity, genreCityPaths, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
-import { genreOf, matchesGenre } from '../src/genres.mjs';
+import { GENERIC_KEYS, GENRE_MAP, genreOf, matchesGenre } from '../src/genres.mjs';
 import vm from 'node:vm';
 import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
@@ -248,6 +248,11 @@ test('server genre bucketing matches data.js exactly', () => {
   const window = {};
   vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
   const Drop = window.Drop;
+  const source = readFileSync(new URL('../data.js', import.meta.url), 'utf8');
+  // JSON round-trip: VM-realm arrays fail strict deep equality on prototype.
+  const clientMap = JSON.parse(vm.runInNewContext('JSON.stringify(' + source.match(/var GENRE_MAP = (\[[\s\S]*?\]);/)[1] + ')'));
+  assert.deepEqual(clientMap.map(({ label, keys }) => ({ label, keys })), GENRE_MAP);
+  assert.deepEqual(JSON.parse(vm.runInNewContext('JSON.stringify(' + source.match(/var GENERIC_KEYS = (\[[^\]]*\]);/)[1] + ')')), [...GENERIC_KEYS]);
   const samples = [[], ['edm'], ['edm', 'dubstep'], ['tech house'], ['Melodic Techno'], ['drum and bass'], ['indie pop'], ['pop'], ['rnb'], ['hardstyle'], ['jungle', 'electronic'], ['jazz']];
   for (const genres of samples) {
     const event = withGenres(genres);
@@ -279,6 +284,7 @@ test('city pages link their live genres and the sitemap lists qualifying city ×
   const chicago = Array.from({ length: MIN_GENRE_SHOWS }, (_, i) => withGenres(['dubstep'], { id: `00000000-0000-4000-8000-00000000001${i}`, city: 'Chicago', state: 'IL' }));
   const html = renderCityPage(template, 'Chicago', [...chicago, withGenres(['techno'], { city: 'Chicago' })]);
   assert.match(html, /<a href="\/genre\?genre=Bass&amp;city=Chicago">Bass in Chicago<\/a>/);
+  assert.match(renderCityPage(template, 'Denver', chicago.map((e) => ({ ...e, city: 'Denver' }))), /<a href="\/genre\?genre=Bass">Bass in Denver<\/a>/);
   assert.doesNotMatch(html, /genre=Techno&amp;city=Chicago/);
   const denver = Array.from({ length: MIN_GENRE_SHOWS }, () => withGenres(['dubstep'], { city: 'Denver' }));
   assert.deepEqual(genreCityPaths([...chicago, ...denver]), ['/genre?genre=Bass&city=Chicago']);

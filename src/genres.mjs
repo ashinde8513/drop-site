@@ -1,7 +1,7 @@
 // Server copy of data.js GENRE_MAP / bucketFor / bestBucket / Drop.genreOf and the
 // fetchEvents genre filter, so crawlable pages bucket shows exactly like the
 // browser does. tests/entity-seo.test.mjs runs data.js in a VM to keep them equal.
-const GENRE_MAP = [
+export const GENRE_MAP = [
   { label: 'Bass', keys: ['bass', 'dubstep', 'riddim', 'trap'] },
   { label: 'Techno', keys: ['techno', 'hard techno', 'hardstyle'] },
   { label: 'House', keys: ['house', 'melodic', 'tech house', 'deep house', 'progressive', 'trance', 'edm', 'electronic', 'dance'] },
@@ -9,7 +9,7 @@ const GENRE_MAP = [
   { label: 'Hip-Hop', keys: ['hip hop', 'hip-hop', 'rap', 'r&b', 'rnb'] },
   { label: 'Indie', keys: ['indie', 'rock', 'pop', 'alternative', 'folk'] },
 ];
-const GENERIC_KEYS = new Set(['edm', 'electronic', 'dance', 'pop']);
+export const GENERIC_KEYS = new Set(['edm', 'electronic', 'dance', 'pop']);
 
 function bucketFor(raw, skipGeneric) {
   if (!raw) return null;

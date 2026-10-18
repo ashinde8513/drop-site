@@ -78,8 +78,10 @@ function eventItems(events) {
     ', ' + escapeHtml(shortDate(event)) + '</li>');
 }
 
+// Denver is the server default, so its canonical genre URL has no city param
+// (that is the form listed in the static sitemap).
 export function genrePath(genre, city) {
-  return '/genre?genre=' + encodeURIComponent(genre) + (city ? '&city=' + encodeURIComponent(city) : '');
+  return '/genre?genre=' + encodeURIComponent(genre) + (city && city !== 'Denver' ? '&city=' + encodeURIComponent(city) : '');
 }
 
 // Genres with enough real shows in this sample to earn an indexable page.
