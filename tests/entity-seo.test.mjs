@@ -238,7 +238,9 @@ test('city pages carry crawlable, escaped links to upcoming indexable shows', ()
   assert.match(rail, /<h3>Upcoming shows in Denver<\/h3>/);
   assert.match(rail, new RegExp(`<a href="/event/${id}/bass-night-and-co">Bass &lt;Night&gt; &amp; Co</a> — <a href="/venue/${venueId}/mission-ballroom-morrison">Mission Ballroom</a>, Nov 6`));
   assert.match(rail, /TBA Show<\/a> — <a [^>]+>Red Rocks<\/a>, Nov 8/);
-  assert.doesNotMatch(renderCityPage(template, 'Denver'), /data-server-entity/);
+  const empty = renderCityPage(template, 'Denver');
+  assert.doesNotMatch(empty, /Upcoming shows in Denver|"@type":"ItemList"/);
+  assert.match(empty, /<h3>More in Denver<\/h3>/);
   assert.match(renderCityPage(template, 'Denver', [catalogEvent({ timezone: 'Not/AZone' })]), /Main Event<\/a> — <a [^>]+>Red Rocks<\/a>, Sep 1/);
 });
 
@@ -383,4 +385,53 @@ test('homepage LCP hint names the exact first card a Denver visitor sees', async
   assert.match(template, /var PAGE = 24, page = 0/);
   assert.match(template, /evs\.sort\(function \(a, b\) \{ return \(D\.hasRealArt\(b\) \? 1 : 0\) - \(D\.hasRealArt\(a\) \? 1 : 0\); \}\);/);
   assert.match(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), /order: opts\.sort === 'new' \? 'created_at\.desc' : 'date\.asc'/);
+});
+
+test('editorial weekend and festival views: windows, routing, schema, gates, sitemap', async () => {
+  const { CITY_TIME_ZONES, editorialPaths, editorialView, renderFestivalsPage, renderWeekendPage, weekendRange } = await import('../src/editorial.mjs');
+  assert.deepEqual(Object.keys(CITY_TIME_ZONES).sort(), [...CITIES].sort());
+  // Wed 2026-10-14 noon Denver → Fri 16 00:00 MDT .. Sun 18 23:59:59 MDT.
+  assert.deepEqual(weekendRange('America/Denver', new Date('2026-10-14T18:00:00Z')), { from: '2026-10-16T06:00:00.000Z', to: '2026-10-19T05:59:59.000Z' });
+  // Saturday and Sunday look back to that Friday; Friday is itself.
+  assert.equal(weekendRange('America/Denver', new Date('2026-10-17T18:00:00Z')).from, '2026-10-16T06:00:00.000Z');
+  assert.equal(weekendRange('America/Denver', new Date('2026-10-18T18:00:00Z')).from, '2026-10-16T06:00:00.000Z');
+  assert.equal(weekendRange('America/New_York', new Date('2026-10-16T12:00:00Z')).from, '2026-10-16T04:00:00.000Z');
+  // DST ends Nov 1: Sunday evening uses MST.
+  assert.equal(weekendRange('America/Denver', new Date('2026-10-30T18:00:00Z')).to, '2026-11-02T06:59:59.000Z');
+
+  assert.deepEqual(editorialView('https://trydropapp.com/events?when=weekend&city=chicago'), { kind: 'weekend', city: 'Chicago' });
+  assert.deepEqual(editorialView('https://trydropapp.com/events?festival=1'), { kind: 'festivals' });
+  for (const url of ['https://trydropapp.com/events', 'https://trydropapp.com/events?when=weekend', 'https://trydropapp.com/events?when=weekend&city=Atlantis', 'https://trydropapp.com/events?festival=1&q=x', 'https://trydropapp.com/events?when=tonight&city=Denver']) {
+    assert.equal(editorialView(url), null, url);
+  }
+
+  const template = readFileSync(new URL('../events.html', import.meta.url), 'utf8');
+  const shows = Array.from({ length: 3 }, (_, i) => catalogEvent({ id: `00000000-0000-4000-8000-00000000002${i}`, title: `Show <${i}>`, city: 'Chicago', state: 'IL', date: '2026-10-17T03:00:00Z' }));
+  const page = renderWeekendPage(template, 'Chicago', shows);
+  assert.match(page, /<title>EDM Shows This Weekend in Chicago \| Drop<\/title>/);
+  assert.match(page, /<h1 class="wsh__title">This weekend in Chicago<\/h1>/);
+  assert.match(page, /<link rel="canonical" href="https:\/\/trydropapp\.com\/events\?when=weekend&amp;city=Chicago"/);
+  assert.match(page, /name="description" content="3 shows this weekend in Chicago on Drop: Show &lt;0&gt;, Show &lt;1&gt;, Show &lt;2&gt;\."/);
+  assert.match(page, /<div class="grid-events" id="grid"[^>]*><div data-server-entity><h2>This weekend in Chicago<\/h2><ul><li><a href="\/event\//);
+  assert.doesNotMatch(page, /name="robots"/);
+  const ld = JSON.parse(page.match(/data-server-ldjson>([\s\S]*?)<\/script>/)[1]);
+  assert.equal(ld.itemListElement[0].item['@type'], 'MusicEvent');
+  assert.match(page, /"@type": "CollectionPage",\s*"name": "This weekend in Chicago"/);
+  assert.match(renderWeekendPage(template, 'Chicago', shows.slice(1)), /name="robots" content="noindex, follow"/);
+
+  const fests = [catalogEvent({ is_festival: true, title: 'Big Fest', end_date: '2026-11-02T06:00:00Z' })];
+  const fest = renderFestivalsPage(template, fests);
+  assert.match(fest, /<h1 class="wsh__title">Upcoming festivals<\/h1>/);
+  assert.equal(JSON.parse(fest.match(/data-server-ldjson>([\s\S]*?)<\/script>/)[1]).itemListElement[0].item['@type'], 'Festival');
+  assert.match(renderFestivalsPage(template, []), /name="robots" content="noindex, follow"/);
+
+  const now = new Date('2026-10-15T18:00:00Z');
+  const chicago = Array.from({ length: 3 }, () => catalogEvent({ city: 'Chicago', date: '2026-10-17T03:00:00Z' }));
+  assert.deepEqual(editorialPaths([...chicago, catalogEvent({ city: 'Denver', date: '2026-10-17T03:00:00Z' })], now), ['/events?when=weekend&city=Chicago']);
+  assert.deepEqual(editorialPaths([...chicago, catalogEvent({ is_festival: true })], now), ['/events?when=weekend&city=Chicago', '/events?festival=1']);
+
+  const city = renderCityPage(readFileSync(new URL('../city.html', import.meta.url), 'utf8'), 'Chicago', [withGenres(['techno'], { city: 'Chicago' })]);
+  assert.match(city, /<a href="\/events\?when=weekend&amp;city=Chicago">This weekend in Chicago<\/a>/);
+  assert.match(city, /<a href="\/events\?festival=1">Upcoming festivals<\/a>/);
+  assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/events'));
 });
