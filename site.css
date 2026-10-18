@@ -810,6 +810,19 @@ button { font: inherit; cursor: pointer; }
 .doc ul { margin: 0 0 16px; padding-left: 22px; }
 .doc li { margin: 0 0 9px; }
 .doc strong { color: var(--text); }
+/* Guides reuse the doc layout; minimal rules for elements legal pages never
+   needed (design QA pending: spec D14). Tokens only. */
+.doc ol { margin: 0 0 16px; padding-left: 24px; }
+.doc h3 { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin: 28px 0 10px; }
+.doc blockquote { margin: 0 0 20px; padding: 14px 18px; border-left: 3px solid var(--brand-cyan); border-radius: 0 8px 8px 0; background: var(--surface); }
+.doc blockquote p:last-child { margin-bottom: 0; }
+.doc-table { overflow-x: auto; margin: 0 0 20px; }
+.doc table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.doc th, .doc td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.doc th { color: var(--text); font-family: var(--font-display); font-weight: 600; }
+.doc sup a { font-size: 11px; color: var(--brand-cyan); text-decoration: none; }
+.doc .guide-list { list-style: none; padding-left: 0; }
+.doc .guide-list li { margin-bottom: 20px; }
 .doc a { color: var(--brand-cyan); }
 .doc a:hover { text-decoration: underline; text-underline-offset: 3px; }
 

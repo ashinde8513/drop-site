@@ -27,6 +27,23 @@ Drop is built in Colorado by Resonance Ventures LLC. Primary site: https://trydr
 - [Privacy Policy](https://trydropapp.com/privacy)
 - [Terms of Service](https://trydropapp.com/terms)
 
+<!-- guides:start -->
+## Guides
+
+Source-checked guides (each cites its sources):
+
+- [Denver EDM Venues: Every Room Worth Knowing](https://trydropapp.com/guides/denver-colorado-edm-venues): A fan's guide to Denver and Colorado EDM venues: Mission Ballroom, Fillmore, Ogden, Cervantes', Summit, Bluebird and more. Age rules, GA, bags. Oct 2026.
+- [EDM Festival Calendar 2027: Confirmed Dates](https://trydropapp.com/guides/edm-festival-calendar-2027): Confirmed 2027 EDM festival dates, grouped by month, each checked on the festival's own site. Festivals still waiting on dates are flagged TBA.
+- ["How to Budget for an EDM Festival (With a Worksheet)"](https://trydropapp.com/guides/festival-budgeting): "Plan your festival spend: ticket tiers and fees, payment plans, travel, lodging, food, water, merch and cashless payments, plus a simple worksheet."
+- ["EDM Festival Packing List: What to Bring (and Skip)"](https://trydropapp.com/guides/festival-packing-list): "Festival packing list built from real EDC, Ultra and Decadence rules: bags, water, sun, earplugs, chargers and cashless. Checked Oct 2026."
+- [Festival Safety Basics: Heat, Hearing, Friends, 911](https://trydropapp.com/guides/festival-safety-harm-reduction-basics): Plain festival and show safety: beat the heat, protect your ears, use a buddy, spot spiked drinks, know fentanyl and naloxone facts, and when to call 911.
+- [How to Plan a Festival Day From the Set Times](https://trydropapp.com/guides/festival-set-time-planning): Set times dropped? Here is how to read overlaps, build a must-see list, leave walking buffers, schedule water and food, and keep a backup plan.
+- [First Rave Guide: What to Expect and How to Stay Safe](https://trydropapp.com/guides/first-rave-guide): Going to your first rave, club night or festival? Here's what to expect, PLUR etiquette, hearing protection, hydration, age rules and how to get home.
+- [Going Solo to a Festival or Show: A Safety Guide](https://trydropapp.com/guides/going-solo-to-a-festival): Going to a festival or show alone? Safety habits, how to meet people, a phone and meetup plan, lodging and rides home, and when to ask staff for help.
+- [Red Rocks EDM Guide: Parking, Bags, Weather, Exit](https://trydropapp.com/guides/red-rocks-edm-guide): Going to an EDM show at Red Rocks? Parking, shuttles, bag rules, GA vs reserved, altitude, weather, what to pack and how to get out. As of Oct 2026.
+- [Getting To and From Big Venues: Rideshare and Transit](https://trydropapp.com/guides/rideshare-transit-big-venues): How to reach Red Rocks, Ball Arena, Mission Ballroom and the Fillmore in Denver: shuttles, RTD, rideshare zones, surge pricing, and leaving smart.
+<!-- guides:end -->
+
 ## Contact
 
 - Instagram: [@trydropapp](https://www.instagram.com/trydropapp/)
