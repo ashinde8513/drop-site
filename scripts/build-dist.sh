@@ -18,7 +18,7 @@ cp sitemap.xml robots.txt llms.txt tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt ti
 cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
-cp -R .well-known app assets vendor dist/
+cp -R .well-known app assets vendor okf dist/
 # app.trydropapp.com maps file-like requests into /app/. Keep the exact TikTok
 # verification artifacts available there from their tracked root sources.
 cp tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/app/

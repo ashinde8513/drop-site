@@ -29,3 +29,16 @@ test('genre page crawl links are replaced before visitors see them', async ({ pa
   await expect(page.locator('#rail-genre-shows')).toBeAttached();
   await expect(page.locator('[data-server-entity]')).toHaveCount(0);
 });
+
+test('server-rendered city FAQ is kept, not duplicated, by the client', async ({ page }) => {
+  const html = readFileSync('city.html', 'utf8').replace(
+    /(<div class="faq-list" id="city-faq"[^>]*>)/,
+    '$1<details class="faq-item"><summary>Server Q</summary><p>Server A</p></details>',
+  );
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await page.route('**/rest/v1/**', route => route.fulfill({ status:200, contentType:'application/json', body:'[]' }));
+  await page.route('**/city.html*', route => route.fulfill({ status:200, contentType:'text/html', body:html }));
+  await page.goto('/city.html?city=Denver');
+  await expect(page.locator('#city-faq .faq-item')).toHaveCount(1);
+  await expect(page.locator('#city-faq summary')).toHaveText('Server Q');
+});
