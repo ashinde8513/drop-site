@@ -6,6 +6,7 @@ const read = (path) => readFileSync(new URL('../' + path, import.meta.url), 'utf
 
 test('signed-in app shell is never indexed', () => {
   assert.match(read('app/index.html'), /<meta name="robots" content="noindex, nofollow">/);
+  assert.match(read('_headers'), /\/app\/\*\n  X-Robots-Tag: noindex, nofollow/);
 });
 
 test('sitemap lists no page that declares noindex', () => {
@@ -13,7 +14,8 @@ test('sitemap lists no page that declares noindex', () => {
   for (const path of locs) {
     const file = (path || 'index') + '.html';
     if (!existsSync(new URL('../' + file, import.meta.url))) continue;
-    assert.doesNotMatch(read(file), /<meta name="robots" content="noindex/i, file);
+    const robots = read(file).match(/<meta\b[^>]*name="robots"[^>]*>/i)?.[0] || '';
+    assert.doesNotMatch(robots, /noindex/i, file);
   }
 });
 
