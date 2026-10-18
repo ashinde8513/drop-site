@@ -808,6 +808,7 @@
       price: Drop ? Drop.fmtPrice(ev.price_min, ev.price_max) : 'See tickets',
       genre: Drop ? Drop.genreOf(ev) : 'Live music',
       grad: artFor(ev),
+      descriptionHtml: ev.description || '', // stripped only for the open event (renderVals ae)
       ticketUrl: (Drop && Drop.safeUrl(ev.ticket_url)) || '',
       friends: 0,
       goingCount: '—', interestedCount: '—',
@@ -2994,7 +2995,7 @@ class Component extends DCLogic {
 
       // event detail
       ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:ae.friends>0, friendsLabel:fl(ae.friends), lineup, priceRows,
-        description: ae.title.split(' — ')[0]+' brings a full production to '+ae.venue+' — expect a headline set built around the new album, immersive lighting and a stacked support bill. Doors open one hour before showtime. This is an 18+ event; a valid ID is required at the door. Times are subject to change, so keep an eye on your Drop reminders for set-time updates and any presale drops.' },
+        description: Drop ? Drop.plainText(ae.descriptionHtml) : '' },
       aeSingleSeller,
       descCls: s.descClamped?'is-clamped':'', descToggle: s.descClamped?'Read more':'Show less',
       aeGoingCls: 'wsc__act'+(aeSt==='going'?' is-going':''),
