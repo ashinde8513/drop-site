@@ -99,7 +99,7 @@ export function fmtPrice(min, max) {
 function cardHtml(event, index) {
   const art = firstArt(event);
   const label = [event.title, fmtDate(event.date, event.time_tbd), event.venue_name ? 'at ' + event.venue_name : '', fmtPrice(event.price_min, event.price_max)].filter(Boolean).join(', ');
-  return '<a class="wsc-card" href="' + escapeHtml(eventPath(event)) + '" data-event-id="' + escapeHtml(event.id) + '" aria-label="' + escapeHtml(label) + '">' +
+  return '<a class="wsc-card" data-ssr href="' + escapeHtml(eventPath(event)) + '" data-event-id="' + escapeHtml(event.id) + '" aria-label="' + escapeHtml(label) + '">' +
     '<img class="wsc__img" src="' + escapeHtml(art) + '" alt="" loading="eager"' + (index === 0 ? ' fetchpriority="high"' : '') + ' referrerpolicy="no-referrer">' +
     '<div class="wsc__scrim"></div><span class="genre-pill">' + escapeHtml(genreOf(event)) + '</span><span class="wsc__price">' + escapeHtml(fmtPrice(event.price_min, event.price_max)) + '</span>' +
     '<div class="wsc__text"><div class="wsc__date">' + escapeHtml(fmtDate(event.date, event.time_tbd)) + '</div><h3 class="wsc__title">' + escapeHtml(event.title) + '</h3>' +

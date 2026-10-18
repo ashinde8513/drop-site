@@ -80,7 +80,7 @@ test.describe('server-rendered first cards', () => {
     await expect(page.locator('#home-grid .wsc-card')).toHaveCount(3);
     const [client, ssr] = await page.evaluate((serverHtml) => {
       const s = (root: Element) => [...root.querySelectorAll(':scope > a.wsc-card')].map(function walk(el: Element): unknown {
-        const attrs = [...el.attributes].map((a) => [a.name, a.value]).sort();
+        const attrs = [...el.attributes].filter((a) => a.name !== 'data-ssr').map((a) => [a.name, a.value]).sort();
         return [el.tagName, attrs, el.children.length ? [...el.children].map(walk) : el.textContent];
       });
       const box = document.createElement('div');
@@ -90,4 +90,18 @@ test.describe('server-rendered first cards', () => {
     expect(ssr).toHaveLength(2); // only leading cards with real art
     expect(client).toEqual(ssr);
   });
+});
+
+test('the server card is hidden before paint for visitors in another city', async ({ page }) => {
+  const html = readFileSync('index.html', 'utf8')
+    .replace('<script data-lcp-hint>', '<meta name="drop-lcp" data-city="Denver" content="https://art.test/hero.png" />\n  <script data-lcp-hint>')
+    .replace('<div class="grid-events" id="home-grid" aria-label="Upcoming shows"></div>', '<div class="grid-events" id="home-grid" aria-label="Upcoming shows"><a class="wsc-card" data-ssr href="/event/x/y">Denver card</a></div>');
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await page.route('https://art.test/**', route => route.fulfill({ status:200, contentType:'image/png', body:'' }));
+  await page.route('**/rest/v1/**', route => new Promise(() => {})); // hold every fetch: inspect pre-hydration state
+  await page.route('**/index.html*', route => route.fulfill({ status:200, contentType:'text/html', body:html }));
+  await page.addInitScript(() => localStorage.setItem('drop.city', 'Chicago'));
+  await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+  expect(await page.evaluate(() => [...document.styleSheets].some((s) => [...s.cssRules].some((r) => r.cssText.includes('[data-ssr]'))))).toBe(true);
+  await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0);
 });

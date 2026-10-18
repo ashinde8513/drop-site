@@ -62,7 +62,13 @@
       var city;
       try { city = new URLSearchParams(location.search).get('city') || localStorage.getItem('drop.city') || 'Denver'; }
       catch (e) { city = 'Denver'; }
-      if (city !== m.getAttribute('data-city')) return;
+      if (city !== m.getAttribute('data-city')) {
+        // The server-rendered first card is for that city: hide it before paint.
+        var hide = document.createElement('style');
+        hide.textContent = '#home-grid > [data-ssr] { display: none; }';
+        document.head.appendChild(hide);
+        return;
+      }
       var l = document.createElement('link');
       l.rel = 'preload'; l.as = 'image'; l.href = m.getAttribute('content');
       l.fetchPriority = 'high'; l.referrerPolicy = 'no-referrer'; // match the card <img>
