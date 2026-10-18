@@ -4,6 +4,10 @@ name: Lighthouse
 
 on:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'history/**'
   workflow_dispatch: {}
 
 permissions:

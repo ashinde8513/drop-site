@@ -342,6 +342,7 @@ test('Function HTML is edge-cached per URL and deploy, 200s only', async () => {
     assert.equal(await (await edgeCached(ctx('https://trydropapp.com/city?city=Chicago'), page)).text(), '<p>3</p>');
     await edgeCached(ctx('https://trydropapp.com/city?city=Denver', 'abc', 'HEAD'), page);
     assert.equal(renders, 4, 'HEAD bypasses the cache');
+    assert.ok([...store.values()].every((r) => r.headers.get('Cache-Control') === 'public, max-age=600'), 'edge copy capped at 10 min');
     await edgeCached(ctx('https://trydropapp.com/event/x'), () => new Response('gone', { status: 404 }));
     await Promise.all(pending);
     assert.ok(![...store.keys()].some((k) => k.includes('/event/x')), '404s are not cached');
