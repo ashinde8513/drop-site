@@ -42,3 +42,16 @@ test('server-rendered city FAQ is kept, not duplicated, by the client', async ({
   await expect(page.locator('#city-faq .faq-item')).toHaveCount(1);
   await expect(page.locator('#city-faq summary')).toHaveText('Server Q');
 });
+
+test('events editorial crawl list is replaced by the live grid', async ({ page }) => {
+  const html = readFileSync('events.html', 'utf8').replace(
+    /(<div class="grid-events" id="grid"[^>]*>)/,
+    '$1<div data-server-entity><h2>This weekend in Denver</h2><ul><li><a href="/event/x/crawl-only">Crawl only</a></li></ul></div>',
+  );
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await page.route('**/rest/v1/**', route => route.fulfill({ status:200, contentType:'application/json', body:'[]' }));
+  await page.route('**/events.html*', route => route.fulfill({ status:200, contentType:'text/html', body:html }));
+  await page.goto('/events.html?when=weekend&city=Denver');
+  await expect(page.locator('#grid')).toBeAttached();
+  await expect(page.locator('[data-server-entity]')).toHaveCount(0);
+});

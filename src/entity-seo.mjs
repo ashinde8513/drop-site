@@ -276,7 +276,8 @@ export function renderTemplate(template, { title, description, canonical, image,
     else html = html.replace('</head>', '<meta name="robots" content="noindex, follow">\n</head>');
   }
   const safeJson = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
-  html = html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + safeJson + '</script>\n</head>');
+  // Function replacers: catalog text may contain $' / $` / $& patterns.
+  html = html.replace('</head>', () => '<script type="application/ld+json" data-server-ldjson>' + safeJson + '</script>\n</head>');
   html = html.replace(new RegExp('(<div[^>]+id="' + rootId + '"[^>]*>)', 'i'), (match) => match + '<div data-server-entity>' + body + '</div>');
   return html;
 }
