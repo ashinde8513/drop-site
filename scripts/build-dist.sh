@@ -20,6 +20,9 @@ cp _headers _redirects _routes.json dist/
 # Directories the live site serves.
 cp -R .well-known app assets vendor okf guides dist/
 rm -rf dist/guides/src # markdown sources are not published
+# Newsletter: only approved issues (newsletter/published.json) ever ship;
+# newsletter/drafts/ and newsletter/src/ stay out of the deploy.
+if [ -n "$(ls newsletter/live 2>/dev/null)" ]; then mkdir -p dist/newsletter && cp newsletter/live/*.html dist/newsletter/; fi
 # app.trydropapp.com maps file-like requests into /app/. Keep the exact TikTok
 # verification artifacts available there from their tracked root sources.
 cp tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/app/
