@@ -49,4 +49,7 @@ test('OKF bundle files carry frontmatter and only link to files that exist', asy
   }
   assert.match(read('scripts/build-dist.sh'), /cp -R [^\n]*\bokf\b[^\n]* dist\//);
   assert.match(read('llms.txt'), /trydropapp\.com\/okf\/index\.md/);
+  const { CITIES } = await import('../src/acquisition-seo.mjs');
+  const listed = [...read('okf/city-guides.md').matchAll(/^- \[([^\]]+)\]\(https:\/\/trydropapp\.com\/city\?city=/gm)].map((m) => m[1]);
+  assert.deepEqual(listed, CITIES, 'OKF city guides must list exactly CITIES');
 });

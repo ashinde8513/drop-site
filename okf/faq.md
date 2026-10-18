@@ -20,9 +20,6 @@ Free.
 ## How often is the Denver show list updated?
 Every day. New listings, price changes, and lineup updates land as soon as promoters and venues confirm them.
 
-## Are ticket prices on Drop all-in?
-Yes — where we can pull it, the price shown includes fees, so what you see is close to what you’ll pay at checkout.
-
 ## Can I see which friends are going to a show in Denver?
 Yes, once you create a free account. Drop shows you who in your crew already has a show on their radar.
 
