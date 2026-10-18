@@ -2,8 +2,14 @@ import template from '../index.html';
 import { edgeCached, htmlResponse } from '../src/entity-seo.mjs';
 import { fetchHomeLcpImage, withLcpHint } from '../src/home-lcp.mjs';
 
-export function onRequest(context) {
-  return edgeCached(context, () => render(context));
+export async function onRequest(context) {
+  try {
+    // Query-string hits (auth callbacks carry one-time codes, UTM links) are
+    // rendered but never become edge-cache keys.
+    return new URL(context.request.url).search ? await render(context) : await edgeCached(context, () => render(context));
+  } catch {
+    return context.next(); // the plain static homepage, never a 500
+  }
 }
 
 // Same static homepage, plus the LCP image hint. Any catalog failure serves

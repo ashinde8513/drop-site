@@ -379,4 +379,8 @@ test('homepage LCP hint names the exact first card a Denver visitor sees', async
   assert.match(html, /<meta name="drop-lcp" data-city="Denver" content="https:\/\/cdn\.test\/c\.jpg\?a=1&amp;b=&quot;2&quot;" \/>\n  <script data-lcp-hint>/);
   assert.equal(withLcpHint(template, null), template);
   assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/'));
+  // The hint mirrors the grid's first page: 24 rows, date order, real art first.
+  assert.match(template, /var PAGE = 24, page = 0/);
+  assert.match(template, /evs\.sort\(function \(a, b\) \{ return \(D\.hasRealArt\(b\) \? 1 : 0\) - \(D\.hasRealArt\(a\) \? 1 : 0\); \}\);/);
+  assert.match(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), /order: opts\.sort === 'new' \? 'created_at\.desc' : 'date\.asc'/);
 });
