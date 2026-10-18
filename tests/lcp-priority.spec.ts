@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 // The homepage grid's first card image is the LCP element: it must not be
 // lazy-loaded, and the first one carries fetchpriority=high.
@@ -19,4 +20,20 @@ test('above-the-fold card images load eagerly; the first is high priority', asyn
   await expect(imgs.first()).toHaveAttribute('fetchpriority', 'high');
   await expect(imgs.nth(1)).not.toHaveAttribute('fetchpriority', 'high');
   expect(await imgs.evaluateAll((list) => list.slice(4).every((img) => (img as HTMLImageElement).loading === 'lazy'))).toBe(true);
+});
+
+test('server LCP hint preloads the first card only for the default city', async ({ page }) => {
+  const html = readFileSync('index.html', 'utf8').replace('<script data-lcp-hint>', '<meta name="drop-lcp" data-city="Denver" content="https://art.test/hero.png" />\n  <script data-lcp-hint>');
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await page.route('https://art.test/**', route => route.fulfill({ status:200, contentType:'image/png', body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64') }));
+  await page.route('**/rest/v1/**', route => route.fulfill({ status:200, contentType:'application/json', body:'[]' }));
+  await page.route('**/index.html*', route => route.fulfill({ status:200, contentType:'text/html', body:html }));
+  await page.goto('/index.html');
+  const preload = page.locator('link[rel="preload"][as="image"]');
+  await expect(preload).toHaveAttribute('href', 'https://art.test/hero.png');
+  await expect(preload).toHaveAttribute('fetchpriority', 'high');
+  await expect(preload).toHaveAttribute('referrerpolicy', 'no-referrer');
+  await page.evaluate(() => localStorage.setItem('drop.city', 'Chicago'));
+  await page.reload();
+  await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0);
 });
