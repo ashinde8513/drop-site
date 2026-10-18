@@ -1,8 +1,9 @@
 // /search?q= — server-rendered results for shows, artists and venues (noindex).
-import { artistPath, escapeHtml, eventPath, isIndexableEvent, renderTemplate, rest, venuePath } from './entity-seo.mjs';
+import { artistPath, escapeHtml, eventPath, isIndexableEvent, renderTemplate, rest, routeId, venuePath } from './entity-seo.mjs';
 
-// PostgREST logic-tree values are double-quoted below, so only quotes,
-// backslashes and the reserved , ( ) * % need to go; cap length for the URL.
+// Values are double-quoted inside the or=() logic tree; a plain filter takes
+// quotes literally, so it gets the bare pattern (its , ( ) are not syntax).
+// Either way quotes, backslashes, * and % never survive cleaning.
 export function cleanQuery(value) {
   const q = String(value || '').replace(/[^\p{L}\p{N}\p{M} &'.!?-]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
   return q.length >= 2 ? q : '';
@@ -19,9 +20,18 @@ export async function searchCatalog(q, now = new Date()) {
       or: '(title.ilike.' + like + ',venue_name.ilike.' + like + ')',
       order: 'date.asc,id.asc', limit: 200,
     }),
-    rest('artists', { select: 'id,name,genres', name: 'ilike.' + like, order: 'name.asc', limit: 12 }),
+    // Only artists linked to shows; duplicates by name collapse to one row.
+    rest('artists', { select: 'id,name,genres,event_artists!inner(event_id)', name: 'ilike.*' + q + '*', 'event_artists.limit': 1, order: 'name.asc', limit: 30 }),
   ]);
-  return { events: events.filter(isIndexableEvent), artists };
+  const seen = new Set();
+  const linked = artists.filter((artist) => {
+    const key = String(artist.name || '').trim().toLowerCase();
+    // Ids the artist route rejects would link to a 404.
+    if (!key || !routeId(artist.id) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 12);
+  return { events: events.filter(isIndexableEvent), artists: linked };
 }
 
 function when(event) {

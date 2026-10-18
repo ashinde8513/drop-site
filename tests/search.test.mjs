@@ -20,16 +20,28 @@ test('query cleaning drops PostgREST syntax and keeps names', () => {
 test('catalog search asks for upcoming published shows by title or venue, plus artists', async () => {
   const urls = [];
   const real = globalThis.fetch;
-  globalThis.fetch = async (url) => { urls.push(decodeURIComponent(String(url))); return new Response(JSON.stringify([show()]), { headers: { 'Content-Range': '0-0/1' } }); };
+  const artistRows = [
+    { id: '00000000-0000-0000-0000-00000000a007', name: 'Mission Crew' },
+    { id: '44444444-4444-4444-8444-444444444444', name: 'Mission Crew' },
+    { id: '55555555-5555-4555-8555-555555555555', name: 'mission crew ' },
+  ];
+  globalThis.fetch = async (url) => {
+    urls.push(decodeURIComponent(String(url)));
+    const rows = String(url).includes('/artists?') ? artistRows : [show()];
+    return new Response(JSON.stringify(rows), { headers: { 'Content-Range': '0-0/1' } });
+  };
   try {
     const out = await searchCatalog('Mission', new Date('2026-10-18T20:00:00Z'));
     assert.equal(out.events.length, 1);
+    assert.deepEqual(out.artists.map((a) => a.id), ['44444444-4444-4444-8444-444444444444'], 'route-valid, de-duplicated');
   } finally { globalThis.fetch = real; }
   const events = urls.find((u) => u.includes('/events?'));
   assert.match(events, /or=\(title\.ilike\."\*Mission\*",venue_name\.ilike\."\*Mission\*"\)/);
   assert.match(events, /status=eq\.published/);
   assert.match(events, /date=gte\.2026-10-18T00:00:00\.000Z/);
-  assert.match(urls.find((u) => u.includes('/artists?')), /name=ilike\."\*Mission\*"/);
+  const artists = urls.find((u) => u.includes('/artists?'));
+  assert.match(artists, /name=ilike\.\*Mission\*(&|$)/, 'plain filter: no quotes (PostgREST would match them literally)');
+  assert.match(artists, /event_artists!inner\(event_id\)/);
 });
 
 test('results page lists shows, artists and venues, escaped and noindex', () => {
