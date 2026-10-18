@@ -152,8 +152,9 @@ export function renderCityPage(template, city, events = []) {
 }
 
 // City pages for the entity sitemap: only markets with enough real upcoming shows.
+// Denver (home market) stays in the static sitemap.xml, like its genre pages.
 export function cityPaths(events) {
-  return CITIES.filter((city) => events.filter((event) => String(event.city || '').toLowerCase() === city.toLowerCase()).length >= MIN_GENRE_SHOWS)
+  return CITIES.filter((city) => city !== 'Denver' && events.filter((event) => String(event.city || '').toLowerCase() === city.toLowerCase()).length >= MIN_GENRE_SHOWS)
     .map((city) => '/city?city=' + encodeURIComponent(city));
 }
 

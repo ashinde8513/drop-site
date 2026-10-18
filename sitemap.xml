@@ -60,7 +60,13 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
-  <!-- City pages are listed in sitemap-entities.xml, gated on real upcoming shows (src/acquisition-seo.mjs cityPaths). -->
+  <!-- Denver is the home market; other city pages are listed in sitemap-entities.xml, gated on real upcoming shows (src/acquisition-seo.mjs cityPaths). -->
+  <url>
+    <loc>https://trydropapp.com/city?city=Denver</loc>
+    <lastmod>2026-07-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
   <!-- Genre acquisition pages — ALL_GENRES (genre.html) is the canonical bucket list. -->
   <url>
     <loc>https://trydropapp.com/genre?genre=House</loc>

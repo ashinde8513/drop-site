@@ -502,7 +502,7 @@ test('homepage renders exactly one leading card in the HTML by default', async (
 test('markets: city pages are gated on real shows and cross-link every market', async () => {
   const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
   const three = [0, 1, 2].map((n) => catalogEvent({ id: `00000000-0000-4000-8000-00000000000${n}`, city: 'Las Vegas' }));
-  assert.deepEqual(cityPaths([...three, catalogEvent({ city: 'Miami' })]), ['/city?city=Las%20Vegas']);
+  assert.deepEqual(cityPaths([...three, ...three.map((e) => ({ ...e, city: 'Denver' })), catalogEvent({ city: 'Miami' })]), ['/city?city=Las%20Vegas'], 'Denver stays static');
   assert.doesNotMatch(renderCityPage(template, 'Las Vegas', three), /name="robots"/);
   assert.match(renderCityPage(template, 'Miami', [catalogEvent({ city: 'Miami' })]), /name="robots" content="noindex, follow"/);
   assert.doesNotMatch(renderCityPage(template, 'Miami', null), /name="robots"/, 'catalog outage keeps the page indexable');
