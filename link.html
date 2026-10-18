@@ -91,5 +91,19 @@
     </div>
   </main>
 
+  <script>
+    // Each social bio can link /link?utm_source=<platform>[&utm_campaign=…]; carry
+    // that into the Play install referrer so Play Console splits installs by
+    // platform. Values are allowlisted to [a-z0-9_-]; nothing else is read.
+    (function () {
+      var params = new URLSearchParams(location.search);
+      function clean(v) { return /^[a-z0-9_-]{1,32}$/i.test(v || '') ? v.toLowerCase() : null; }
+      var source = clean(params.get('utm_source'));
+      if (!source) return;
+      var play = document.getElementById('getGooglePlay');
+      play.href = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=' + encodeURIComponent(
+        'utm_source=' + source + '&utm_medium=link_hub&utm_campaign=' + (clean(params.get('utm_campaign')) || 'web_download'));
+    })();
+  </script>
 </body>
 </html>
