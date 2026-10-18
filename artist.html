@@ -202,7 +202,8 @@
 
       function renderArtist(data) {
         var a = data.artist, events = data.events;
-        document.title = a.name + ' — Drop';
+        // Server-rendered pages already carry the SEO title; keep it.
+        if (!document.querySelector('[data-server-ldjson]')) document.title = a.name + ' — Drop';
         var canonical = 'https://trydropapp.com' + D.artistPath(a);
         document.querySelector('link[rel="canonical"]').href = canonical;
         document.querySelector('meta[property="og:url"]').content = canonical;

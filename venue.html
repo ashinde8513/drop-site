@@ -182,7 +182,8 @@
 
       function renderVenue(data) {
         var v = data.venue, events = data.events;
-        document.title = v.name + ' — Drop';
+        // Server-rendered pages already carry the SEO title; keep it.
+        if (!document.querySelector('[data-server-ldjson]')) document.title = v.name + ' — Drop';
         var canonical = 'https://trydropapp.com' + D.venuePath(v);
         document.querySelector('link[rel="canonical"]').href = canonical;
         document.querySelector('meta[property="og:url"]').content = canonical;

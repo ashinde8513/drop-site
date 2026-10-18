@@ -298,9 +298,45 @@ test('venue pages describe their shows as MusicEvent at a Place', async () => {
   const { venueView } = await import('../src/entity-seo.mjs');
   const event = catalogEvent({ venue_address: '1 Main St' });
   const view = venueView({ venue: { id: venueId, name: 'Red Rocks', city: 'Morrison', state: 'CO', address: '1 Main St' }, events: [event, { ...event, id: id2 }] });
-  assert.equal(view.jsonLd.event[0]['@type'], 'MusicEvent');
-  assert.equal(view.jsonLd.event[0].location['@type'], 'Place');
-  assert.equal(view.jsonLd.event[0].location.address.streetAddress, '1 Main St');
+  const [place] = view.jsonLd;
+  assert.equal(place.event[0]['@type'], 'MusicEvent');
+  assert.equal(place.event[0].location['@type'], 'Place');
+  assert.equal(place.event[0].location.address.streetAddress, '1 Main St');
+});
+
+test('venue and artist pages reach event-page SEO parity', async () => {
+  const { venueView, artistView } = await import('../src/entity-seo.mjs');
+  const artist = { id: artistId, name: 'Subtronics', genres: ['dubstep'], image_url: 'https://img.test/s.jpg', website_url: 'https://subtronics.test' };
+  const show = catalogEvent({ title: 'Cyclops <Cave>', date: '2026-11-07T04:00:00Z', timezone: 'America/Denver', ticket_url: 'https://tix.test/1', price_min: 45, image_url: 'https://img.test/e.jpg', event_artists: [{ artists: artist }] });
+  const events = [show, { ...show, id: id2, date: '2026-11-08T04:00:00Z' }];
+
+  const venue = venueView({ venue: { id: venueId, name: 'Red Rocks', city: 'Morrison', state: 'CO', address: '1 Main St' }, events });
+  assert.equal(venue.title, 'Red Rocks, Morrison: Upcoming Shows | Drop');
+  assert.match(venue.description, /^2 upcoming shows at Red Rocks in Morrison, CO\. Next: Cyclops <Cave> on Nov 6\./);
+  const [place, crumbs] = venue.jsonLd;
+  assert.equal(place.event[0].offers.price, 45);
+  assert.deepEqual(place.event[0].image, ['https://img.test/e.jpg']);
+  assert.equal(place.event[0].performer[0].name, 'Subtronics');
+  assert.equal(crumbs['@type'], 'BreadcrumbList');
+  assert.deepEqual(crumbs.itemListElement.map((item) => item.name), ['Home', 'Venues', 'Red Rocks']);
+  assert.match(venue.body, /<a href="https:\/\/app\.trydropapp\.com\/\?mode=login&amp;next=%2Fvenue%2F[^"]+">Follow Red Rocks on Drop<\/a>/);
+  assert.match(venue.body, /Cyclops &lt;Cave&gt;<\/a> · November 6, 2026 at 9:00 PM/);
+
+  const page = artistView({ artist, events });
+  assert.equal(page.title, 'Subtronics: Upcoming Shows & Tour Dates | Drop');
+  assert.match(page.description, /Next: Cyclops <Cave> at Red Rocks on Nov 6\./);
+  const [group, artistCrumbs] = page.jsonLd;
+  assert.deepEqual(group.sameAs, ['https://subtronics.test/']);
+  assert.equal(group.image, 'https://img.test/s.jpg');
+  assert.equal(group.event.length, 2);
+  assert.deepEqual(artistCrumbs.itemListElement.map((item) => item.item), ['https://trydropapp.com/', 'https://trydropapp.com/artists', page.canonical]);
+  assert.match(page.body, new RegExp(`Cyclops &lt;Cave&gt;</a> — <a href="/venue/${venueId}/red-rocks-morrison">Red Rocks</a>, Morrison`));
+
+  const many = Array.from({ length: 60 }, (_, n) => ({ ...show, id: `00000000-0000-4000-8000-${String(n).padStart(12, '0')}` }));
+  const big = venueView({ venue: { id: venueId, name: 'Red Rocks', city: 'Morrison', state: 'CO' }, events: many });
+  assert.equal(big.jsonLd[0].event.length, 50);
+  assert.match(big.body, /And 10 more upcoming shows\./);
+  assert.match(artistView({ artist, events: [] }).body, /No upcoming shows listed right now\./);
 });
 
 test('event pages hand the Smart App Banner their canonical URL', () => {
