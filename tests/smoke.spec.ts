@@ -55,6 +55,8 @@ const PAGES = [
   { path: '/share-wrapped.html', title: /Drop/ },
   { path: '/sms-opt-in.html', title: /SMS verification consent/ },
   { path: '/creators.html', title: /Drop Creator Program/ },
+  { path: '/guides.html', title: /EDM Guides/ },
+  { path: '/guides/red-rocks-edm-guide.html', title: /Red Rocks/ },
   // ponytail: app/index.html is in-scope per INGEST_PLAN (track A) but owned
   // by a different in-flight track — add its PAGES entry in that track's commit.
 ];

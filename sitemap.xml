@@ -164,4 +164,50 @@
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
+  <!-- guides:start -->
+  <url>
+    <loc>https://trydropapp.com/guides</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/denver-colorado-edm-venues</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/edm-festival-calendar-2027</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/festival-budgeting</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/festival-packing-list</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/festival-safety-harm-reduction-basics</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/festival-set-time-planning</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/first-rave-guide</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/going-solo-to-a-festival</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/red-rocks-edm-guide</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://trydropapp.com/guides/rideshare-transit-big-venues</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- guides:end -->
 </urlset>

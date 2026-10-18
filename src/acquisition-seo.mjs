@@ -141,7 +141,7 @@ export function renderCityPage(template, city, events = []) {
   const genres = liveGenres(events || []).map((genre) => '<li><a href="' + escapeHtml(genrePath(genre, city)) + '">' + escapeHtml(genre) + ' in ' + escapeHtml(city) + '</a></li>');
   // Own heading: the host sits under "This weekend", these run further out.
   const guides = ['<li><a href="/events?when=weekend&amp;city=' + escapeHtml(encodeURIComponent(city)) + '">This weekend in ' + escapeHtml(city) + '</a></li>',
-    '<li><a href="/events?festival=1">Upcoming festivals</a></li>'];
+    '<li><a href="/events?festival=1">Upcoming festivals</a></li>', '<li><a href="/guides">Guides: festivals, venues and your first rave</a></li>'];
   const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides);
   return inject(withCityFaq(html, city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
 }
