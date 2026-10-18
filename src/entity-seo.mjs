@@ -372,6 +372,29 @@ export function artistView(data) {
   return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
 }
 
+// Function HTML is public and already declares s-maxage=3600, but Pages does
+// not edge-cache Function responses by itself: keep 200s in the colo cache so
+// repeat hits skip the Supabase round trip (Lighthouse: ~750 ms server time).
+export async function edgeCached(context, render) {
+  const cache = globalThis.caches?.default;
+  const { request } = context;
+  if (!cache || request.method !== 'GET') return render();
+  // Key on the deploy so a release never serves the previous build's HTML.
+  const key = new URL(request.url);
+  key.searchParams.set('__deploy', context.env?.CF_PAGES_COMMIT_SHA || 'local');
+  const hit = await cache.match(key.href);
+  if (hit) return hit;
+  const response = await render();
+  if (response.status === 200) {
+    // ponytail: edge copy capped at 10 min, so a deploy is live within that
+    // window even if CF_PAGES_COMMIT_SHA is absent at runtime.
+    const copy = new Response(response.clone().body, response);
+    copy.headers.set('Cache-Control', 'public, max-age=600');
+    context.waitUntil(cache.put(key.href, copy));
+  }
+  return response;
+}
+
 // Mirrors the `/*` block in _headers, which Function responses bypass.
 export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',

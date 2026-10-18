@@ -1,9 +1,13 @@
 import template from '../genre.html';
 import notFound from '../404.html';
 import { cleanCity, GENRES, knownCity, renderGenrePage, upcomingEvents } from '../src/acquisition-seo.mjs';
-import { htmlResponse } from '../src/entity-seo.mjs';
+import { htmlResponse, edgeCached } from '../src/entity-seo.mjs';
 
-export async function onRequest({ request }) {
+export function onRequest(context) {
+  return edgeCached(context, () => render(context));
+}
+
+async function render({ request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
   const url = new URL(request.url);
   const params = url.searchParams;

@@ -10,3 +10,4 @@ design-drop/Drop Website.dc.html
 !dist/_redirects
 !dist/_headers
 .wrangler/
+lhci-report/

@@ -1,8 +1,12 @@
 import template from '../../venue.html';
 import notFound from '../../404.html';
-import { getVenue, htmlResponse, redirectResponse, renderTemplate, routeId, venuePath, venueView } from '../../src/entity-seo.mjs';
+import { getVenue, htmlResponse, redirectResponse, renderTemplate, routeId, venuePath, venueView, edgeCached } from '../../src/entity-seo.mjs';
 
-export async function onRequest({ params, request }) {
+export function onRequest(context) {
+  return edgeCached(context, () => render(context));
+}
+
+async function render({ params, request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
   const id = routeId(params.path);
   if (!id) return htmlResponse(notFound, 404);

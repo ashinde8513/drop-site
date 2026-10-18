@@ -195,8 +195,18 @@
     }
     var lim = opts.limit || events.length;
     var ids = [];
+    // The first cards of a list at (or just under) the fold hold the LCP image:
+    // load them eagerly and hint the first (lazy loading delayed mobile LCP by
+    // ~1.1 s). ponytail: 1.5 viewports covers phones where the grid starts at the fold.
+    var aboveFold = host.getBoundingClientRect().top < (window.innerHeight || 800) * 1.5;
     for (var i = 0; i < events.length && i < lim; i++) {
-      host.appendChild(Drop.ecard(events[i]));
+      var card = Drop.ecard(events[i]);
+      var art = aboveFold && i < 4 && card.querySelector('img.wsc__img');
+      if (art) {
+        art.loading = 'eager';
+        if (i === 0) art.fetchPriority = 'high';
+      }
+      host.appendChild(card);
       ids.push(events[i].id);
     }
     // Going pill: fetched after cards land so a slow/failed count never blocks render.
