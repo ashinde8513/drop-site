@@ -281,7 +281,8 @@
     for (var w = 0; w < locWraps.length; w++) bindCityPicker(locWraps[w]);
 
     // Search forms → events.html?q= (nav search + any in-page search form).
-    var searches = doc.querySelectorAll('form[role="search"]');
+    // Forms with their own action (the /search page) submit natively.
+    var searches = doc.querySelectorAll('form[role="search"]:not([action])');
     for (var s = 0; s < searches.length; s++) {
       searches[s].addEventListener('submit', function (e) {
         e.preventDefault();
@@ -463,6 +464,7 @@
       });
       row('/events.html?city=' + encodeURIComponent(Drop.city()) + '&q=' + encodeURIComponent(q),
         'Search “' + q + '”', 'All events');
+      row('/search?q=' + encodeURIComponent(q), 'Shows, artists and venues for “' + q + '”', 'Everywhere');
       pop.hidden = false;
       input.setAttribute('aria-expanded', 'true');
       active = -1;
