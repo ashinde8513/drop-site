@@ -60,12 +60,6 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
-  <url>
-    <loc>https://trydropapp.com/link</loc>
-    <lastmod>2026-07-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.3</priority>
-  </url>
   <!-- City acquisition pages — Drop.CITIES (data.js) is the canonical city list. -->
   <url>
     <loc>https://trydropapp.com/city?city=Denver</loc>

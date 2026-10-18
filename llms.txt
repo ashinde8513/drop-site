@@ -1,12 +1,20 @@
 # Drop
 
-> Drop is a social website, iPhone app, and Android app for discovering live music — concerts, EDM shows, festivals, and club nights — with one-tap official ticket links. Available on the App Store and Google Play.
+> Drop is a social website, iPhone app, and Android app for discovering live music, with a focus on EDM and electronic shows: raves, festivals, club nights, and concerts. Listings link out to the official ticketing page when the seller provides one. Available on the App Store and Google Play.
 
-Drop is built by Resonance Ventures LLC. Primary site: https://trydropapp.com
+Drop is built in Colorado by Resonance Ventures LLC. Primary site: https://trydropapp.com
+
+## Key facts
+
+- Coverage starts in Denver, Colorado, and includes city guides for Denver, Los Angeles, Seattle, Portland, San Diego, Brooklyn, New York, Chicago, Dallas, Austin, and Boston.
+- Drop is not a ticket seller, box office, promoter, or event organizer. Ticket purchases happen on the official seller's site (see the [Terms](https://trydropapp.com/terms)).
+- Event, venue, and artist pages are listed in the entity sitemap: https://trydropapp.com/sitemap-entities.xml
+- Drop is free to download and use.
 
 ## Pages
 
 - [Home](https://trydropapp.com/): what Drop does and live-music discovery
+- [Denver EDM shows](https://trydropapp.com/city?city=Denver): Denver city guide
 - [Events](https://trydropapp.com/events): browse live concerts, raves, festivals, and club nights by city, date, genre
 - [Venues](https://trydropapp.com/venues): browse concert venues, clubs, and festival grounds by city
 - [Artists](https://trydropapp.com/artists): browse artists with upcoming shows by city
@@ -16,7 +24,6 @@ Drop is built by Resonance Ventures LLC. Primary site: https://trydropapp.com
 - [Download Drop for Android](https://play.google.com/store/apps/details?id=app.resonanceventures.drop): Google Play
 - [Privacy Policy](https://trydropapp.com/privacy)
 - [Terms of Service](https://trydropapp.com/terms)
-- [Get the app / links](https://trydropapp.com/link): app links, launch list, social — link-in-bio hub
 
 ## Contact
 

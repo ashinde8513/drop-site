@@ -6,6 +6,10 @@
   Referrer-Policy: no-referrer
   X-Robots-Tag: noindex, nofollow
 
+# Signed-in app shell (also served on app.trydropapp.com via the Worker).
+/app/*
+  X-Robots-Tag: noindex, nofollow
+
 # Revalidate all static assets so a new deploy never serves stale CSS/JS
 # against fresh HTML (the two-browser mismatch). no-cache = browser still
 # caches but must revalidate via etag → cheap 304 when unchanged.
