@@ -224,3 +224,18 @@ test('og:image size tags are dropped for non-default event art', () => {
   const fallback = renderTemplate(template, { ...base, image: 'https://trydropapp.com/og-image.png' });
   assert.match(fallback, /og:image:width/);
 });
+
+test('city pages carry crawlable, escaped links to upcoming indexable shows', () => {
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  const events = [
+    catalogEvent({ title: 'Bass <Night> & Co', date: '2026-11-07T04:00:00Z', timezone: 'America/Denver', venue_name: 'Mission Ballroom' }),
+    catalogEvent({ id: id2, title: 'TBA Show', date: '2026-11-08T00:00:00Z', time_tbd: true, timezone: 'America/Denver' }),
+  ];
+  const html = renderCityPage(template, 'Denver', events);
+  const rail = html.match(/<div class="rail" id="rail-city-weekend"[^>]*>([\s\S]*?)<\/ul>/)[1];
+  assert.match(rail, /<h3>Upcoming shows in Denver<\/h3>/);
+  assert.match(rail, new RegExp(`<a href="/event/${id}/bass-night-and-co">Bass &lt;Night&gt; &amp; Co</a> — Mission Ballroom, Nov 6`));
+  assert.match(rail, /TBA Show<\/a> — Red Rocks, Nov 8/);
+  assert.doesNotMatch(renderCityPage(template, 'Denver'), /data-server-entity/);
+  assert.match(renderCityPage(template, 'Denver', [catalogEvent({ timezone: 'Not/AZone' })]), /Main Event<\/a> — Red Rocks, Sep 1/);
+});

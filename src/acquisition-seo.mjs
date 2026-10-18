@@ -1,4 +1,4 @@
-import { escapeHtml } from './entity-seo.mjs';
+import { escapeHtml, eventPath, isIndexableEvent, rest } from './entity-seo.mjs';
 
 export const GENRES = ['House', 'Techno', 'Bass', 'Drum & Bass', 'Hip-Hop', 'Indie'];
 export const CITIES = ['Denver', 'Los Angeles', 'Seattle', 'Portland', 'San Diego', 'Brooklyn', 'New York', 'Chicago', 'Dallas', 'Austin', 'Boston'];
@@ -35,13 +35,46 @@ function render(template, { title, description, canonical, heading, subheading, 
   return indexable ? html : html.replace('</head>', '<meta name="robots" content="noindex, follow" />\n</head>');
 }
 
-export function renderCityPage(template, city) {
+// Next indexable shows for a city, for crawlable links. Never throws: the page
+// still renders (client-side rails) if the catalog is unreachable.
+export async function upcomingCityEvents(city, limit = 24) {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  try {
+    const rows = await rest('events', {
+      select: 'id,title,date,timezone,time_tbd,venue_id,venue_name,venue_address,city,state',
+      status: 'eq.published', city: 'ilike.' + city, date: 'gte.' + today.toISOString(),
+      order: 'date.asc,id.asc', limit: limit * 2,
+    });
+    return rows.filter(isIndexableEvent).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+// Plain links inside the rail host: non-JS crawlers (AI answer engines) see the
+// shows; site.js clears the host synchronously (skeletonGrid) before painting.
+function eventLinks(city, events) {
+  if (!events.length) return '';
+  const items = events.map((event) => {
+    const options = { month: 'short', day: 'numeric', timeZone: event.time_tbd ? 'UTC' : (event.timezone || 'UTC') };
+    let when;
+    try { when = new Date(event.date).toLocaleDateString('en-US', options); }
+    catch { when = new Date(event.date).toLocaleDateString('en-US', { ...options, timeZone: 'UTC' }); }
+    return '<li><a href="' + escapeHtml(eventPath(event)) + '">' + escapeHtml(event.title) + '</a> — ' + escapeHtml(event.venue_name) + ', ' + escapeHtml(when) + '</li>';
+  }).join('');
+  // Own heading: the host sits under "This weekend", these run further out.
+  return '<div data-server-entity><h3>Upcoming shows in ' + escapeHtml(city) + '</h3><ul>' + items + '</ul></div>';
+}
+
+export function renderCityPage(template, city, events = []) {
   const canonical = 'https://trydropapp.com/city?city=' + encodeURIComponent(city);
   const description = 'Every rave, festival, and club night in ' + city + ' — with all-in prices and who’s going. Updated daily.';
-  return render(template, {
+  const html = render(template, {
     title: 'EDM Shows in ' + city + ' | Drop', description, canonical, prefix: 'city',
     heading: 'EDM shows in ' + city, subheading: description,
   });
+  return html.replace(/(<div class="rail" id="rail-city-weekend"[^>]*>)/, (match) => match + eventLinks(city, events));
 }
 
 export function renderGenrePage(template, genre, city, hasCity, indexable = true) {
