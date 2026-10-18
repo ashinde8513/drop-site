@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CITIES, cleanCity, knownCity, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
+import { CITIES, cleanCity, genreCityPaths, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
+import { GENERIC_KEYS, GENRE_MAP, genreOf, matchesGenre } from '../src/genres.mjs';
+import vm from 'node:vm';
 import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
@@ -234,8 +236,67 @@ test('city pages carry crawlable, escaped links to upcoming indexable shows', ()
   const html = renderCityPage(template, 'Denver', events);
   const rail = html.match(/<div class="rail" id="rail-city-weekend"[^>]*>([\s\S]*?)<\/ul>/)[1];
   assert.match(rail, /<h3>Upcoming shows in Denver<\/h3>/);
-  assert.match(rail, new RegExp(`<a href="/event/${id}/bass-night-and-co">Bass &lt;Night&gt; &amp; Co</a> — Mission Ballroom, Nov 6`));
-  assert.match(rail, /TBA Show<\/a> — Red Rocks, Nov 8/);
+  assert.match(rail, new RegExp(`<a href="/event/${id}/bass-night-and-co">Bass &lt;Night&gt; &amp; Co</a> — <a href="/venue/${venueId}/mission-ballroom-morrison">Mission Ballroom</a>, Nov 6`));
+  assert.match(rail, /TBA Show<\/a> — <a [^>]+>Red Rocks<\/a>, Nov 8/);
   assert.doesNotMatch(renderCityPage(template, 'Denver'), /data-server-entity/);
-  assert.match(renderCityPage(template, 'Denver', [catalogEvent({ timezone: 'Not/AZone' })]), /Main Event<\/a> — Red Rocks, Sep 1/);
+  assert.match(renderCityPage(template, 'Denver', [catalogEvent({ timezone: 'Not/AZone' })]), /Main Event<\/a> — <a [^>]+>Red Rocks<\/a>, Sep 1/);
+});
+
+const withGenres = (genres, extra = {}) => catalogEvent({ event_artists: [{ artists: { id: artistId, name: 'A', genres } }], ...extra });
+
+test('server genre bucketing matches data.js exactly', () => {
+  const window = {};
+  vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
+  const Drop = window.Drop;
+  const source = readFileSync(new URL('../data.js', import.meta.url), 'utf8');
+  // JSON round-trip: VM-realm arrays fail strict deep equality on prototype.
+  const clientMap = JSON.parse(vm.runInNewContext('JSON.stringify(' + source.match(/var GENRE_MAP = (\[[\s\S]*?\]);/)[1] + ')'));
+  assert.deepEqual(clientMap.map(({ label, keys }) => ({ label, keys })), GENRE_MAP);
+  assert.deepEqual(JSON.parse(vm.runInNewContext('JSON.stringify(' + source.match(/var GENERIC_KEYS = (\[[^\]]*\]);/)[1] + ')')), [...GENERIC_KEYS]);
+  const samples = [[], ['edm'], ['edm', 'dubstep'], ['tech house'], ['Melodic Techno'], ['drum and bass'], ['indie pop'], ['pop'], ['rnb'], ['hardstyle'], ['jungle', 'electronic'], ['jazz']];
+  for (const genres of samples) {
+    const event = withGenres(genres);
+    assert.equal(genreOf(event), Drop.genreOf(event), JSON.stringify(genres));
+  }
+  assert.equal(genreOf(withGenres(['house'], { is_festival: true })), Drop.genreOf(withGenres(['house'], { is_festival: true })));
+  assert.equal(matchesGenre(withGenres(['edm', 'techno']), 'Techno'), true);
+  assert.equal(matchesGenre(withGenres(['indie']), 'House'), false);
+});
+
+test('city × genre pages show real shows, ItemList schema, and gate indexing on show count', () => {
+  const template = readFileSync(new URL('../genre.html', import.meta.url), 'utf8');
+  const shows = Array.from({ length: MIN_GENRE_SHOWS }, (_, i) => withGenres(['tech house'], { id: `00000000-0000-4000-8000-00000000000${i}`, title: `House ${i}`, city: 'Chicago', state: 'IL' }));
+  const live = renderGenrePage(template, 'House', 'Chicago', true, true, shows);
+  assert.doesNotMatch(live, /name="robots"/);
+  assert.match(live, /<h3>Upcoming House shows in Chicago<\/h3>/);
+  assert.match(live, /href="\/event\/00000000-0000-4000-8000-000000000000\/house-0">House 0<\/a>/);
+  const ld = JSON.parse(live.match(/<script type="application\/ld\+json" data-server-ldjson>([\s\S]*?)<\/script>/)[1]);
+  assert.equal(ld['@type'], 'ItemList');
+  assert.equal(ld.itemListElement.length, MIN_GENRE_SHOWS);
+  assert.equal(ld.itemListElement[0].item['@type'], 'MusicEvent');
+  assert.equal(ld.itemListElement[0].item.location['@type'], 'Place');
+  assert.match(renderGenrePage(template, 'House', 'Chicago', true, true, shows.slice(1)), /name="robots" content="noindex, follow"/);
+  assert.doesNotMatch(renderGenrePage(template, 'House', 'Chicago', true, true, null), /name="robots"|data-server-entity/);
+});
+
+test('city pages link their live genres and the sitemap lists qualifying city × genre pages', () => {
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  const chicago = Array.from({ length: MIN_GENRE_SHOWS }, (_, i) => withGenres(['dubstep'], { id: `00000000-0000-4000-8000-00000000001${i}`, city: 'Chicago', state: 'IL' }));
+  const html = renderCityPage(template, 'Chicago', [...chicago, withGenres(['techno'], { city: 'Chicago' })]);
+  assert.match(html, /<a href="\/genre\?genre=Bass&amp;city=Chicago">Bass in Chicago<\/a>/);
+  assert.match(renderCityPage(template, 'Denver', chicago.map((e) => ({ ...e, city: 'Denver' }))), /<a href="\/genre\?genre=Bass">Bass in Denver<\/a>/);
+  assert.doesNotMatch(html, /genre=Techno&amp;city=Chicago/);
+  const denver = Array.from({ length: MIN_GENRE_SHOWS }, () => withGenres(['dubstep'], { city: 'Denver' }));
+  assert.deepEqual(genreCityPaths([...chicago, ...denver]), ['/genre?genre=Bass&city=Chicago']);
+  const xml = sitemapXml({ events: [], venues: [], artists: [] }, genreCityPaths(chicago));
+  assert.match(xml, /<loc>https:\/\/trydropapp\.com\/genre\?genre=Bass&amp;city=Chicago<\/loc>/);
+});
+
+test('venue pages describe their shows as MusicEvent at a Place', async () => {
+  const { venueView } = await import('../src/entity-seo.mjs');
+  const event = catalogEvent({ venue_address: '1 Main St' });
+  const view = venueView({ venue: { id: venueId, name: 'Red Rocks', city: 'Morrison', state: 'CO', address: '1 Main St' }, events: [event, { ...event, id: id2 }] });
+  assert.equal(view.jsonLd.event[0]['@type'], 'MusicEvent');
+  assert.equal(view.jsonLd.event[0].location['@type'], 'Place');
+  assert.equal(view.jsonLd.event[0].location.address.streetAddress, '1 Main St');
 });

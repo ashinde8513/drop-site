@@ -1,9 +1,9 @@
 import template from '../genre.html';
 import notFound from '../404.html';
-import { cleanCity, GENRES, knownCity, renderGenrePage } from '../src/acquisition-seo.mjs';
+import { cleanCity, GENRES, knownCity, renderGenrePage, upcomingEvents } from '../src/acquisition-seo.mjs';
 import { htmlResponse } from '../src/entity-seo.mjs';
 
-export function onRequest({ request }) {
+export async function onRequest({ request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
   const url = new URL(request.url);
   const params = url.searchParams;
@@ -13,5 +13,7 @@ export function onRequest({ request }) {
   const genre = GENRES.includes(params.get('genre')) ? params.get('genre') : 'House';
   const canonical = '/genre?genre=' + encodeURIComponent(genre) + (params.has('city') ? '&city=' + encodeURIComponent(indexableCity || city) : '');
   if (indexableCity && url.pathname + url.search !== canonical) return new Response(null, { status: 301, headers: { Location: canonical } });
-  return htmlResponse(renderGenrePage(template, genre, indexableCity || city, params.has('city'), Boolean(indexableCity)));
+  // Real shows only for cities Drop covers; HEAD skips the catalog read.
+  const events = indexableCity && request.method !== 'HEAD' ? await upcomingEvents({ city: indexableCity, genre }) : null;
+  return htmlResponse(renderGenrePage(template, genre, indexableCity || city, params.has('city'), Boolean(indexableCity), events));
 }

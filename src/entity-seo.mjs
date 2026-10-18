@@ -203,7 +203,7 @@ export async function getEntityUrls() {
   const rows = [];
   for (let offset = 0; ; offset += 1000) {
     const page = await rest('events', {
-      select: 'id,title,date,venue_id,venue_name,venue_address,city,state,created_at,event_artists(artists(id,name,genres,image_url,website_url))',
+      select: 'id,title,date,is_festival,venue_id,venue_name,venue_address,city,state,created_at,event_artists(artists(id,name,genres,image_url,website_url))',
       status: 'eq.published',
       or: upcomingFilter(),
       order: 'date.asc,id.asc',
@@ -343,7 +343,11 @@ export function venueView(data) {
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'MusicVenue', name: venue.name, url: canonical,
     address: { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state },
-    event: events.map((event) => ({ '@type': 'Event', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event) })),
+    event: events.map((event) => ({
+      '@type': 'MusicEvent', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event),
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: { '@type': 'Place', name: venue.name, address: { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state } },
+    })),
   };
   return { title: venue.name + ' Events | Drop', description, canonical, image: 'https://trydropapp.com/og-image.png', body, jsonLd, indexable: isIndexableVenue(data) };
 }
@@ -357,7 +361,11 @@ export function artistView(data) {
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'MusicGroup', name: artist.name, url: canonical,
     genre: artist.genres || [], image: artist.image_url || undefined,
-    event: events.map((event) => ({ '@type': 'Event', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event) })),
+    event: events.map((event) => ({
+      '@type': 'MusicEvent', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event),
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', addressLocality: event.city, addressRegion: event.state } },
+    })),
   };
   return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
 }
@@ -379,8 +387,9 @@ export function redirectResponse(path, requestUrl) {
   return new Response(null, { status: 301, headers: { Location: path + safeAttributionQuery(requestUrl), 'Cache-Control': 'public, max-age=3600' } });
 }
 
-export function sitemapXml(entities) {
+export function sitemapXml(entities, extraPaths = []) {
   const urls = [
+    ...extraPaths.map((loc) => ({ loc })),
     ...entities.events.map((event) => ({ loc: eventPath(event), lastmod: event.created_at })),
     ...entities.venues.map((venue) => ({ loc: venuePath(venue) })),
     ...entities.artists.map((artist) => ({ loc: artistPath(artist) })),
