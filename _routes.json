@@ -9,7 +9,8 @@
     "/events",
     "/genre",
     "/sitemap-entities.xml",
-    "/go"
+    "/go",
+    "/search"
   ],
   "exclude": []
 }
