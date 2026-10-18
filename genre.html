@@ -234,7 +234,7 @@
       var rhost = document.getElementById('genre-related');
       ALL_GENRES.filter(function (g) { return g !== genre; }).forEach(function (g) {
         var a = D.el('a', 'chip', g);
-        a.href = '/genre.html?genre=' + encodeURIComponent(g) + '&city=' + encodeURIComponent(city);
+        a.href = '/genre?genre=' + encodeURIComponent(g) + '&city=' + encodeURIComponent(city);
         rhost.appendChild(a);
       });
     })();
