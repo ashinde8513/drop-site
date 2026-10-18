@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-10-15
+Last updated: 2026-10-18
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -21,6 +21,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **WEEKLY WEBSITE AUDIT SHIPPED (2026-10-17/18, Claude):** perf/SEO/AI-SEO/CRO/a11y/headers/links audit → 7 merged PRs: false "40,000+ ravers" claim + made-up event description removed from the web app (#125, live accounts = 102); event SEO plain-text/dated titles/MusicEvent (#126); app Discover offscreen art deferred (#127, live 241→36 requests); app shell noindex + FAQ schema + llms.txt (#128); non-visual a11y incl. auth autocomplete (#129); security header baseline + `/plan/<id>` repair (#130); WebKit smoke-noise filter (#131). Report, ranked remaining items and design-first specs D1–D10: `~/Claude/weekly-goal-2026-10-17/drop-website-REPORT.md`; approvals W1–W6 (HSTS, CSP enforce, beacon, email obfuscation, poster size, design parity) in that folder's APPROVALS.md.
 - **WEBSITE BEACON AUDIT COMPLETE (2026-10-15), REMEDIATION OPEN:** seven live Chromium/mobile-WebKit cases confirm automatic RUM before consent and after Essential only/reload. Crew path identifiers enter payloads despite no-referrer; tested query/fragment markers are absent. Audit POSTs intercepted before delivery. Docs only; no provider/runtime change or repaired-production claim. Evidence/limits: `docs/qa/_cloudflare-beacon-audit-2026-10-15.md` and `state.d/_2026-10-15-beacon-audit.md`.
 - **CREW INSTALL FALLBACK LIVE (2026-10-13):** PR121 source `6d3a9cd` merged as `768eed15790c84bc1a51df1689bd16ae9d70e46a`. Revised-head CI38518448128 and main workflow38518784249 passed 23 Node/260 Chromium-WebKit tests; actual build/sanity/production deployment completed as Pages `447d4aa2`. Live canonical Crew URL returns200 without redirect, generic install/store body, no-referrer and noindex/nofollow; missing/extra segments return404. AASA/DAL are byte-identical to source and prior main. Live desktop/mobile viewports and keyboard entry pass with no warnings/errors. No board data or native/preview acceptance. Details and hosting-transform provenance: `state.d/2026-10-13-crew-links.md`.
 - **PUBLIC DATE/FILTER REPAIR LIVE (2026-10-07, PR118):** shared date bounds, current-request rendering and active city semantics are repaired. PR118 merged as 3f56762390dc18eaf0fc2f4b21f394be8f976eaf; exact-head PR/main CI passed 20 Node and 258 browser checks. Main workflow 37683814143 deployed Pages 19cf2e3c. Live source bytes match review; desktop/mobile date, location, search, Madeon detail and exact AXS destination checks pass. Evidence and limits: state.d/2026-10-07-ticket-path.md.
@@ -209,6 +210,9 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **1. Server-render crawlable hub links (SEO-01):** `/`, `/events`, `/venues`, `/artists`, `/city` show "Loading…" to non-JS crawlers, so the 4,015 entity pages are reachable only via sitemap. Add Pages Functions that inject the top ~24 upcoming events/artists/venues as plain `<a>` links into the existing mount nodes (reuse `renderTemplate` in `src/entity-seo.mjs`; add routes to `_routes.json`); test with curl-visible links.
+- **2. Hide shows that already happened today:** homepage/events lower bound is local start-of-day (`data.js` `todayISO()`); at night the first cards are past shows. Use `max(startOfToday, now−6h)` with `end_date` overlap; add tests before touching the shared date-bounds contract.
+- **3. Design-first parity (W6/D1–D10):** remove the 40,000+ row and boilerplate description from the claude.ai "Website design prompt" design, then take the visual a11y/CRO specs through the design project.
 - **Website beacon audit follow-up:** inspect authoritative Pages/zone injection settings and prepare the minimum automatic-beacon disable/readback packet. The live privacy setting change requires exact user approval; first identify the actual injection setting and any redeploy dependency. Keep other owners' held work below intact. This source-doc lane has completed its read-only investigation.
 - **Crew website fallback complete:** source/review, exact-head and main CI, automatic deployment and available live HTTP/browser proof are verified. The remaining Crew association `/crew-picks/*` requires separately reviewed, provenance-verified publicly eligible Crew-capable runtime compatibility; an internal build alone is insufficient while older public binaries share the bundle ID. Anonymous board preview/backend/native/device acceptance stays with the cohort owners.
 - **Ticket-path lane complete:** source, required CI, automatic production deploy, byte provenance and available desktop/mobile live QA verified. No source/deploy action remains in this lane; existing held lanes below retain their original owners. Founder device acceptance remains separate from the available browser proof.
@@ -236,6 +240,11 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 4. **Schema design for remaining social features** (founder decision): crew/plans/chat/wallet still demo (wrapped is now REAL) — scope one (plans?) before building.
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
+
+## 2026-10-17 — Claude — weekly website audit → 7 merged fixes
+- **Changed:** #125 false claims removed (app hero user count, invented event description); #126 event SEO cleanup; #127 lazy card art; #128 static SEO hygiene; #129 non-visual a11y; #130 security headers + plan/venue/onboarding links; #131 smoke WebKit image-noise filter.
+- **Tested:** new specs per PR (lazy-art and honest-copy fail on prior main, pass after); `/code-review` high on each PR, findings fixed or recorded; required CI per PR; main Test & Deploy; live byte/header readback + Chrome re-measure (app Discover 241→36 requests).
+- **Remaining:** see Exact next step 1–3; approvals W1–W6. Local-only quirk: `crew-links.spec.ts:7` mobile-safari focus fails locally on clean main too (CI green).
 
 ## 2026-09-09 — Codex — link hub refresh reviewed
 - **Changed:** `/link` uses the current Drop wordmark and orders Website, App
