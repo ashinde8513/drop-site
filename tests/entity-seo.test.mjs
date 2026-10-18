@@ -418,6 +418,11 @@ test('editorial weekend and festival views: windows, routing, schema, gates, sit
   assert.equal(ld.itemListElement[0].item['@type'], 'MusicEvent');
   assert.match(page, /"@type": "CollectionPage",\s*"name": "This weekend in Chicago"/);
   assert.match(renderWeekendPage(template, 'Chicago', shows.slice(1)), /name="robots" content="noindex, follow"/);
+  const hostile = renderWeekendPage(template, 'Chicago', shows.map((e, i) => ({ ...e, title: i ? e.title : '</script><script>alert(1)</script>\u2028' })));
+  const scripts = [...hostile.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  assert.ok(scripts.length >= 2);
+  for (const body of scripts) { assert.doesNotMatch(body, /<\/script|<script|\u2028/); JSON.parse(body); }
+  assert.doesNotMatch(hostile, /<script>alert\(1\)/);
 
   const fests = [catalogEvent({ is_festival: true, title: 'Big Fest', end_date: '2026-11-02T06:00:00Z' })];
   const fest = renderFestivalsPage(template, fests);

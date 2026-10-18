@@ -115,6 +115,11 @@ function preview(events) {
   return events.slice(0, 3).map((event) => event.title).join(', ');
 }
 
+// JSON safe inside <script>: catalog titles must never close the tag.
+function scriptJson(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
+
 function render(template, { title, description, canonical, heading, events, ld, indexable }) {
   const meta = (html, marker, value) => html.replace(new RegExp('(<meta[^>]*' + marker + '[^>]*content=")[^"]*(")'), (_m, a, b) => a + escapeHtml(value) + b);
   let html = template.replace(/<title>[^<]*<\/title>/, '<title>' + escapeHtml(title) + '</title>');
@@ -128,9 +133,9 @@ function render(template, { title, description, canonical, heading, events, ld, 
   html = html.replace(/<h1 class="wsh__title">[^<]*<\/h1>/, '<h1 class="wsh__title">' + escapeHtml(heading) + '</h1>');
   // Same CollectionPage block, now naming this view.
   html = html.replace(/("@type": "CollectionPage",\s*"name": )"[^"]*"(,\s*"description": )"[^"]*"(,\s*"url": )"[^"]*"/,
-    (_m, a, b, c) => a + JSON.stringify(heading) + b + JSON.stringify(description) + c + JSON.stringify(canonical));
+    (_m, a, b, c) => a + scriptJson(heading) + b + scriptJson(description) + c + scriptJson(canonical));
   html = html.replace(/(<div class="grid-events" id="grid"[^>]*>)/, (match) => match + listHtml(heading, events));
-  if (events.length) html = html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>\n</head>');
+  if (events.length) html = html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + scriptJson(ld) + '</script>\n</head>');
   if (!indexable) html = html.replace('</head>', '<meta name="robots" content="noindex, follow" />\n</head>');
   return html;
 }
