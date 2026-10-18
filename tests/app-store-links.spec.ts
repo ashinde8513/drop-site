@@ -24,3 +24,11 @@ for (const [ua, expected] of [
     });
   });
 }
+
+test('link hub forwards an allowlisted bio utm_source into the Play referrer', async ({ page }) => {
+  await page.goto('/link.html?utm_source=Instagram&utm_campaign=bio');
+  await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', PLAY + '&referrer=utm_source%3Dinstagram%26utm_medium%3Dlink_hub%26utm_campaign%3Dbio');
+  await page.goto('/link.html?utm_source=<script>');
+  await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', PLAY + '&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Dlink_hub%26utm_campaign%3Dweb_download');
+  await expect(page.getByText('Some ticket links in Drop may be affiliate links')).toBeVisible();
+});
