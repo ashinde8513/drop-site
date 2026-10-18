@@ -401,6 +401,7 @@ test('editorial weekend and festival views: windows, routing, schema, gates, sit
 
   assert.deepEqual(editorialView('https://trydropapp.com/events?when=weekend&city=chicago'), { kind: 'weekend', city: 'Chicago' });
   assert.deepEqual(editorialView('https://trydropapp.com/events?festival=1'), { kind: 'festivals' });
+  assert.deepEqual(editorialView('https://trydropapp.com/events?when=weekend&city=Denver&utm_source=ig'), { kind: 'weekend', city: 'Denver' });
   for (const url of ['https://trydropapp.com/events', 'https://trydropapp.com/events?when=weekend', 'https://trydropapp.com/events?when=weekend&city=Atlantis', 'https://trydropapp.com/events?festival=1&q=x', 'https://trydropapp.com/events?when=tonight&city=Denver']) {
     assert.equal(editorialView(url), null, url);
   }
@@ -434,6 +435,8 @@ test('editorial weekend and festival views: windows, routing, schema, gates, sit
   const chicago = Array.from({ length: 3 }, () => catalogEvent({ city: 'Chicago', date: '2026-10-17T03:00:00Z' }));
   assert.deepEqual(editorialPaths([...chicago, catalogEvent({ city: 'Denver', date: '2026-10-17T03:00:00Z' })], now), ['/events?when=weekend&city=Chicago']);
   assert.deepEqual(editorialPaths([...chicago, catalogEvent({ is_festival: true })], now), ['/events?when=weekend&city=Chicago', '/events?festival=1']);
+  // Sunday evening: Friday-night shows are over and no longer count.
+  assert.deepEqual(editorialPaths(chicago, new Date('2026-10-19T02:00:00Z')), []);
 
   const city = renderCityPage(readFileSync(new URL('../city.html', import.meta.url), 'utf8'), 'Chicago', [withGenres(['techno'], { city: 'Chicago' })]);
   assert.match(city, /<a href="\/events\?when=weekend&amp;city=Chicago">This weekend in Chicago<\/a>/);

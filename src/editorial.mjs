@@ -42,9 +42,12 @@ export function weekendRange(timeZone, now = new Date()) {
   };
 }
 
-export function inWeekend(event, range) {
+// In this weekend and not already over (6 h grace for shows still running):
+// on Sunday the page should not lead with Friday's shows.
+const STILL_ON_MS = 6 * 3600 * 1000;
+export function inWeekend(event, range, now = new Date()) {
   const t = Date.parse(event.date);
-  return t >= Date.parse(range.from) && t <= Date.parse(range.to);
+  return t >= Date.parse(range.from) && t <= Date.parse(range.to) && t >= now.getTime() - STILL_ON_MS;
 }
 
 // null = catalog unreachable (callers keep the static page).
@@ -55,7 +58,7 @@ export async function weekendEvents(city, now = new Date()) {
       select: SELECT, status: 'eq.published', city: 'ilike.' + city,
       and: '(date.gte.' + range.from + ',date.lte.' + range.to + ')', order: 'date.asc,id.asc', limit: 300,
     });
-    return rows.filter(isIndexableEvent);
+    return rows.filter((event) => isIndexableEvent(event) && inWeekend(event, range, now));
   } catch {
     return null;
   }
@@ -162,7 +165,7 @@ export function renderFestivalsPage(template, events) {
     ? events.length + ' upcoming festival' + (events.length === 1 ? '' : 's') + ' on Drop: ' + preview(events) + '.'
     : 'Upcoming festivals on Drop.';
   return render(template, {
-    title: 'Upcoming EDM Festivals | Drop', description, canonical: 'https://trydropapp.com' + FESTIVALS_PATH,
+    title: 'Upcoming Festivals | Drop', description, canonical: 'https://trydropapp.com' + FESTIVALS_PATH,
     heading, events, ld: itemList(heading, events, 'Festival'), indexable: events.length > 0,
   });
 }
@@ -170,7 +173,8 @@ export function renderFestivalsPage(template, events) {
 // Which editorial view (if any) a request is: exact parameter sets only.
 export function editorialView(url) {
   const params = new URL(url).searchParams;
-  const keys = [...params.keys()].sort().join(',');
+  // Campaign tags don't change the view (canonical drops them).
+  const keys = [...params.keys()].filter((key) => !key.startsWith('utm_')).sort().join(',');
   if (keys === 'festival' && params.get('festival') === '1') return { kind: 'festivals' };
   const city = knownCity(params.get('city'));
   if (keys === 'city,when' && params.get('when') === 'weekend' && city) return { kind: 'weekend', city };
@@ -181,7 +185,7 @@ export function editorialView(url) {
 export function editorialPaths(events, now = new Date()) {
   const weekend = CITIES.filter((city) => {
     const range = weekendRange(CITY_TIME_ZONES[city], now);
-    return events.filter((event) => String(event.city || '').toLowerCase() === city.toLowerCase() && inWeekend(event, range)).length >= MIN_GENRE_SHOWS;
+    return events.filter((event) => String(event.city || '').toLowerCase() === city.toLowerCase() && inWeekend(event, range, now)).length >= MIN_GENRE_SHOWS;
   }).map(weekendPath);
   return events.some((event) => event.is_festival) ? [...weekend, FESTIVALS_PATH] : weekend;
 }
