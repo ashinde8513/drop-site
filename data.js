@@ -83,7 +83,8 @@
   Drop.venuePath = function (venue) {
     var id = venue.venue_id || venue.id;
     return id ? '/venue/' + encodeURIComponent(id) + '/' + Drop.slugify([venue.name || venue.venue_name, venue.city].filter(Boolean).join(' '))
-      : '/venue.html?name=' + encodeURIComponent(venue.name || venue.venue_name || '') + '&city=' + encodeURIComponent(venue.city || '');
+      // No venue id → no venue page exists; search its shows instead of a 404.
+      : '/events?q=' + encodeURIComponent(venue.name || venue.venue_name || '');
   };
   Drop.artistPath = function (artist) {
     return '/artist/' + encodeURIComponent(artist.id) + '/' + Drop.slugify(artist.name);

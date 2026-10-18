@@ -5,11 +5,12 @@
 # App share/deep-link paths (deepLinks.ts contract). When the app is installed
 # the OS intercepts these via Universal/App Links; on the web they land here.
 /event/*  /event  200
-/plan/*     /share-plan.html  200
+# Pretty target: a .html target 308s to /share-plan and drops the plan id.
+/plan/*     /share-plan  200
 # Crew boards have no standalone website capability yet. Keep the canonical
 # URL for installed-app handoff; reuse the existing install fallback on web.
 /crew-picks/:id /download  200
-/onboarding /download.html  302
+/onboarding /download  302
 
 # /app* redirect removed — the standalone post-login web app (ported Prism
 # design SPA) is served natively by Pages from /app/.
