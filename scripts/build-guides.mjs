@@ -2,6 +2,7 @@
 // (+ guides/index.html), in the existing legal/doc layout. Output is committed;
 // tests/guides.test.mjs fails if it is stale. Run: node scripts/build-guides.mjs
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -22,7 +23,7 @@ export function parseGuide(md) {
 // Inline: escape, then links, bare URLs, bold/italic, citation markers.
 function inline(text) {
   let s = esc(text);
-  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g, (_m, t, u) => '<a href="' + u + '"' + (u.startsWith('http') ? ' rel="noopener"' : '') + '>' + t + '</a>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/(?!\/)[^)\s]*)\)/g, (_m, t, u) => '<a href="' + u + '"' + (u.startsWith('http') ? ' rel="noopener"' : '') + '>' + t + '</a>');
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;:])/g, (_m, pre, u) => pre + '<a href="' + u + '" rel="noopener">' + u + '</a>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:]|$)/g, '$1<em>$2</em>');
   return s.replace(/\[(\d{1,2})\]/g, '<sup><a href="#source-$1" aria-label="Source $1">[$1]</a></sup>');
@@ -36,6 +37,7 @@ export function renderMarkdown(body) {
   const para = [];
   const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para.length = 0; } };
   let inSources = false;
+  let sourceN = 0;
   while (i < lines.length) {
     const line = lines[i];
     let m;
@@ -46,6 +48,7 @@ export function renderMarkdown(body) {
       if (level === 1) { i++; continue; } // page H1 comes from the title
       const id = slugId(text);
       inSources = level === 2 && /^sources$/i.test(text);
+      if (inSources) sourceN = 0;
       if (level === 2) headings.push({ id, text });
       out.push(`<h${level} id="${id}">${inline(text)}</h${level}>`);
       i++; continue;
@@ -79,7 +82,7 @@ export function renderMarkdown(body) {
         while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !/^\s*([-*]|\d+\.)\s/.test(lines[i])) items[items.length - 1] += ' ' + lines[i++].trim();
       }
       const tag = ordered ? 'ol' : 'ul';
-      out.push(`<${tag}>` + items.map((t, n) => `<li${inSources && ordered ? ` id="source-${n + 1}"` : ''}>` + inline(t) + '</li>').join('') + `</${tag}>`);
+      out.push(`<${tag}>` + items.map((t) => `<li${inSources && ordered ? ` id="source-${++sourceN}"` : ''}>` + inline(t) + '</li>').join('') + `</${tag}>`);
       continue;
     }
     para.push(line.trim());
@@ -92,13 +95,13 @@ export function renderMarkdown(body) {
 // FAQ schema mirrors the visible Q&A: question H2s and the first paragraph after.
 export function faqFrom(body) {
   const items = [];
-  const re = /^##\s+(.+\?)\s*\n+([^\n#>|][^\n]*(?:\n(?![\n#>|]|\s*[-*]\s|\s*\d+\.\s)[^\n]+)*)/gm;
+  const re = /^##\s+(.+\?)\s*\n+(?!\s*[-*]\s|\s*\d+\.\s)([^\n#>|][^\n]*(?:\n(?![\n#>|]|\s*[-*]\s|\s*\d+\.\s)[^\n]+)*)/gm;
   let m;
   while ((m = re.exec(body))) items.push({ q: m[1].trim(), a: m[2].replace(/\s+/g, ' ').replace(/\[(\d{1,2})\]/g, '').replace(/\*\*/g, '').replace(/\s+([.,;:])/g, '$1').trim() });
   return items;
 }
 
-function page(template, { title, description, canonical, h1, navLinks, content, ld, lastVerified }) {
+function page(template, { title, description, canonical, h1, navLinks, content, ld, lastVerified, ogType = 'article' }) {
   let html = template;
   const set = (re, value) => { html = html.replace(re, (_m, a, b) => a + esc(value) + b); };
   html = html.replace(/<title>[^<]*<\/title>/, () => '<title>' + esc(title) + '</title>');
@@ -107,7 +110,7 @@ function page(template, { title, description, canonical, h1, navLinks, content, 
   set(/(<meta property="og:title" content=")[^"]*(")/, title);
   set(/(<meta property="og:description" content=")[^"]*(")/, description);
   set(/(<meta property="og:url" content=")[^"]*(")/, canonical);
-  html = html.replace(/<meta property="og:type" content="website" \/>/, '<meta property="og:type" content="article" />');
+  html = html.replace(/<meta property="og:type" content="website" \/>/, () => '<meta property="og:type" content="' + ogType + '" />');
   html = html.replace('</head>', () => '  <script type="application/ld+json">' + scriptJson(ld) + '</script>\n</head>');
   const main = `<main class="wsh" id="main">
     <div class="legal-grid">
@@ -150,7 +153,7 @@ export function buildGuides() {
     title: 'EDM Guides: Festivals, Venues and Your First Rave | Drop', description: 'Practical, source-checked guides for going out: festivals, Red Rocks, Denver venues, budgeting, safety and getting home.',
     canonical: SITE + '/guides', h1: 'Guides', navLinks: '', content: '<ul class="guide-list">\n          ' + list + '\n        </ul>',
     ld: { '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Drop guides', url: SITE + '/guides', hasPart: guides.map(({ meta }) => ({ '@type': 'Article', headline: meta.title, url: SITE + '/guides/' + meta.slug })) },
-    lastVerified: '',
+    lastVerified: '', ogType: 'website',
   });
   const block = (text, start, end, inner) => {
     const re = new RegExp(start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?' + end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
@@ -164,7 +167,7 @@ export function buildGuides() {
   return { guides, index, sitemap, llms };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { guides, index, sitemap, llms } = buildGuides();
   for (const { meta, html } of guides) writeFileSync(new URL('guides/' + meta.slug + '.html', root), html);
   writeFileSync(new URL('guides.html', root), index); // served at /guides
