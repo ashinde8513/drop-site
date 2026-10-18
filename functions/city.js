@@ -10,5 +10,5 @@ export async function onRequest({ request }) {
   if (!city) return htmlResponse(notFound, 404);
   const canonical = '/city?city=' + encodeURIComponent(city);
   if (url.pathname + url.search !== canonical) return new Response(null, { status: 301, headers: { Location: canonical } });
-  return htmlResponse(renderCityPage(template, city, await upcomingCityEvents(city)));
+  return htmlResponse(renderCityPage(template, city, request.method === 'HEAD' ? [] : await upcomingCityEvents(city)));
 }

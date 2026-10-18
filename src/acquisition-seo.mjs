@@ -54,7 +54,7 @@ export async function upcomingCityEvents(city, limit = 24) {
 
 // Plain links inside the rail host: non-JS crawlers (AI answer engines) see the
 // shows; site.js clears the host synchronously (skeletonGrid) before painting.
-function eventLinks(events) {
+function eventLinks(city, events) {
   if (!events.length) return '';
   const items = events.map((event) => {
     const options = { month: 'short', day: 'numeric', timeZone: event.time_tbd ? 'UTC' : (event.timezone || 'UTC') };
@@ -63,7 +63,8 @@ function eventLinks(events) {
     catch { when = new Date(event.date).toLocaleDateString('en-US', { ...options, timeZone: 'UTC' }); }
     return '<li><a href="' + escapeHtml(eventPath(event)) + '">' + escapeHtml(event.title) + '</a> — ' + escapeHtml(event.venue_name) + ', ' + escapeHtml(when) + '</li>';
   }).join('');
-  return '<ul data-server-entity>' + items + '</ul>';
+  // Own heading: the host sits under "This weekend", these run further out.
+  return '<div data-server-entity><h3>Upcoming shows in ' + escapeHtml(city) + '</h3><ul>' + items + '</ul></div>';
 }
 
 export function renderCityPage(template, city, events = []) {
@@ -73,7 +74,7 @@ export function renderCityPage(template, city, events = []) {
     title: 'EDM Shows in ' + city + ' | Drop', description, canonical, prefix: 'city',
     heading: 'EDM shows in ' + city, subheading: description,
   });
-  return html.replace(/(<div class="rail" id="rail-city-weekend"[^>]*>)/, (match) => match + eventLinks(events));
+  return html.replace(/(<div class="rail" id="rail-city-weekend"[^>]*>)/, (match) => match + eventLinks(city, events));
 }
 
 export function renderGenrePage(template, genre, city, hasCity, indexable = true) {
