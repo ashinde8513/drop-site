@@ -230,7 +230,8 @@ function decodeEntities(text) {
 // Catalog descriptions arrive from providers as HTML fragments (sometimes
 // entity-encoded twice). Reduce them to one line of plain text.
 export function plainText(value) {
-  const stripTags = (text) => text.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<[^>]*>/g, ' ');
+  // Only real tags/comments: a bare '<' ("<3", "under <21") is text.
+  const stripTags = (text) => text.replace(/<!--[\s\S]*?-->|<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\/?[a-z][^>]*>|<![^>]*>/gi, ' ');
   return stripTags(decodeEntities(stripTags(String(value || '')))).replace(/\s+/g, ' ').trim();
 }
 
@@ -303,7 +304,8 @@ function shortEventDate(value, timezone) {
 
 // Recurring shows share a title and venue; the date keeps each page distinct.
 export function eventTitle(event) {
-  const when = shortEventDate(event.date, event.timezone);
+  // TBA times are stored as a midnight-UTC placeholder; the venue zone would show the day before.
+  const when = shortEventDate(event.date, event.time_tbd ? 'UTC' : event.timezone);
   return event.title + (event.venue_name ? ' at ' + event.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
 }
 

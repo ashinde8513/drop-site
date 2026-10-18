@@ -193,7 +193,7 @@
       function setMeta(ev) {
         // Same shape as the server render (src/entity-seo.mjs eventTitle).
         var when = '';
-        try { when = new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: ev.timezone || 'UTC' }); } catch (e) {}
+        try { when = new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: ev.time_tbd ? 'UTC' : (ev.timezone || 'UTC') }); } catch (e) {}
         if (when === 'Invalid Date') when = '';
         var title = ev.title + (ev.venue_name ? ' at ' + ev.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
         var about = D.plainText(ev.description);

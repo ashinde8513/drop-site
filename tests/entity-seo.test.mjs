@@ -192,6 +192,8 @@ test('catalog HTML descriptions become clean plain text everywhere', () => {
   assert.equal(plainText('&lt;p&gt;Double &amp;amp; encoded&lt;/p&gt;'), 'Double &amp; encoded');
   assert.equal(plainText('Caf&#233; &#x1F3B6;'), 'Caf\u00e9 \u{1F3B6}');
   assert.equal(plainText(null), '');
+  assert.equal(plainText('Love <3 this crew. Doors > 9pm<!-- a > b -->'), 'Love <3 this crew. Doors > 9pm');
+  assert.equal(plainText('&lt;3 &lt;b&gt;bold&lt;/b&gt;'), '<3 bold');
   const view = eventView(catalogEvent({ description: '<p style="margin:0;">' + 'Bass night '.repeat(30) + '</p>' }));
   assert.doesNotMatch(view.description + view.body + view.jsonLd.description, /&lt;p|margin:0|&quot;/);
   assert.ok(view.description.length <= 155);
@@ -210,6 +212,7 @@ test('event titles carry the local date and JSON-LD skips a zero-length endDate'
   assert.equal(eventView(event).jsonLd.endDate, undefined);
   assert.equal(eventView(catalogEvent({ end_date: '2026-09-02T06:00:00Z' })).jsonLd.endDate, '2026-09-02T06:00:00Z');
   assert.equal(eventTitle(catalogEvent({ date: 'bad', timezone: 'Not/AZone' })), 'Main Event at Red Rocks | Drop');
+  assert.equal(eventTitle(catalogEvent({ date: '2026-10-18T00:00:00Z', time_tbd: true, timezone: 'America/Denver' })), 'Main Event at Red Rocks · Oct 18 | Drop');
 });
 
 test('og:image size tags are dropped for non-default event art', () => {

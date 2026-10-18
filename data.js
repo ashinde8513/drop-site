@@ -547,7 +547,7 @@
   // Mirrors src/entity-seo.mjs plainText so client and server agree.
   var NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
   function stripTags(text) {
-    return text.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<[^>]*>/g, ' ');
+    return text.replace(/<!--[\s\S]*?-->|<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\/?[a-z][^>]*>|<![^>]*>/gi, ' ');
   }
   Drop.plainText = function (value) {
     var decoded = stripTags(String(value || '')).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, function (match, code) {
