@@ -55,7 +55,8 @@
     var a = el('a', 'wsc-card');
     a.href = Drop.eventPath(event);
     a.dataset.eventId = event.id;
-    a.setAttribute('aria-label', esc(event.title) + ' at ' + esc(event.venue_name || 'venue'));
+    // Name the card with what a sighted scan gets: title, when, where, price.
+    a.setAttribute('aria-label', [event.title, Drop.fmtDate(event.date, event.time_tbd), event.venue_name ? 'at ' + event.venue_name : '', Drop.fmtPrice(event.price_min, event.price_max)].filter(Boolean).join(', '));
 
     // Art chain: real event image → lineup-artist photo → prism block.
     var artCandidates = Drop.eventArtCandidates(event);
@@ -230,8 +231,19 @@
     var drawer = doc.getElementById('nav-drawer');
     if (burger && drawer) {
       var closeEls = drawer.querySelectorAll('[data-nav-close]');
-      function openDrawer() { drawer.style.display = 'block'; burger.setAttribute('aria-expanded', 'true'); }
-      function closeDrawer() { drawer.style.display = 'none'; burger.setAttribute('aria-expanded', 'false'); }
+      function onDrawerKey(e) { if (e.key === 'Escape') closeDrawer(); }
+      function openDrawer() {
+        drawer.style.display = 'block'; burger.setAttribute('aria-expanded', 'true');
+        doc.addEventListener('keydown', onDrawerKey);
+        var first = drawer.querySelector('a[href], button');
+        if (first) first.focus();
+      }
+      function closeDrawer() {
+        if (drawer.style.display === 'none') return;
+        drawer.style.display = 'none'; burger.setAttribute('aria-expanded', 'false');
+        doc.removeEventListener('keydown', onDrawerKey);
+        burger.focus();
+      }
       burger.addEventListener('click', openDrawer);
       for (var d = 0; d < closeEls.length; d++) closeEls[d].addEventListener('click', closeDrawer);
     }
