@@ -3250,6 +3250,7 @@ class Component extends DCLogic {
       },
       bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
       onSearchFocus:()=>this.go('search'),
+      onSearchKey:(e)=>{ if (e.key==='Enter') { e.preventDefault(); const q=e.target.value.trim(); if (q) this.setState({query:q}); this.go('search'); } },
       toggleCity:(e)=>{
         this.prevent(e);
         const opening = !this.state.cityOpen;
