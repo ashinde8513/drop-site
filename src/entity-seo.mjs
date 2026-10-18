@@ -333,52 +333,93 @@ export function eventView(event) {
   const statusText = eventAvailabilityText(event);
   const ticket = ticketUrl ? '<p><a href="' + escapeHtml(ticketUrl) + '" rel="nofollow sponsored">' + escapeHtml(ticketActionText(event)) + '</a></p>' : '';
   const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(event.title) + '</h1><p>' + escapeHtml(dateText + ' · ' + location) + '</p>' + lineup + '<p>' + escapeHtml(about) + '</p><p><strong>Status:</strong> ' + escapeHtml(statusText) + '</p>' + ticket + '</article>';
-  const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'MusicEvent', name: event.title,
+  const jsonLd = { '@context': 'https://schema.org', ...eventLd(event, { canonical, image, description }) };
+  return { title: eventTitle(event), description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
+}
+
+// One MusicEvent shape for event pages and the shows listed on venue/artist pages.
+function eventLd(event, { canonical = 'https://trydropapp.com' + eventPath(event), image, description } = {}) {
+  const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
+  const art = image ?? (safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url));
+  const ticketUrl = safeHttpUrl(event.ticket_url);
+  return {
+    '@type': 'MusicEvent', name: event.title,
     startDate: event.date, endDate: event.end_date && event.end_date !== event.date ? event.end_date : undefined,
     eventStatus: schemaEventStatus(event.lifecycle_status), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    url: canonical, image: image ? [image] : undefined, description,
+    url: canonical, image: art ? [art] : undefined, description,
     location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state } },
     performer: performers.map((artist) => ({ '@type': 'MusicGroup', name: artist.name, url: 'https://trydropapp.com' + artistPath(artist) })),
     offers: ticketUrl ? { '@type': 'Offer', url: ticketUrl, price: event.price_min ?? undefined, priceCurrency: event.currency || 'USD', availability: schemaOfferAvailability(event.ticket_status) } : undefined,
   };
-  return { title: eventTitle(event), description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
+}
+
+function breadcrumbLd(trail) {
+  return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: trail.map(([name, url], i) => ({ '@type': 'ListItem', position: i + 1, name, item: url })) };
+}
+
+// Shared venue/artist body: breadcrumb, follow (signed-in action, same login gate
+// the page's Follow button uses), dated show list. Clients replace it on render.
+// ponytail: first 50 shows in body + schema keeps big rooms' pages light.
+const LISTED_SHOWS = 50;
+function showItem(event, withVenue) {
+  const when = formatEventDate(event.date, event.time_tbd, event.time_tbd ? 'UTC' : event.timezone);
+  const where = withVenue && event.venue_id
+    ? ' — <a href="' + venuePath({ id: event.venue_id, name: event.venue_name, city: event.city }) + '">' + escapeHtml(event.venue_name || 'Venue') + '</a>' + (event.city ? ', ' + escapeHtml(event.city) : '')
+    : '';
+  return '<li><a href="' + eventPath(event) + '">' + escapeHtml(event.title) + '</a>' + where + ' · ' + escapeHtml(when) + '</li>';
+}
+function entityBody({ section, sectionHref, name, path, lead, events, withVenue }) {
+  const shown = events.slice(0, LISTED_SHOWS);
+  const more = events.length > shown.length ? '<p>And ' + (events.length - shown.length) + ' more upcoming shows.</p>' : '';
+  const follow = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent(path);
+  return '<article class="wrap" style="padding:32px 0"><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="' + sectionHref + '">' + section + '</a> / ' + escapeHtml(name) + '</nav>' +
+    '<h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(lead) + '</p>' +
+    '<p><a href="' + escapeHtml(follow) + '">Follow ' + escapeHtml(name) + ' on Drop</a> · <a href="/download">Get the Drop app</a></p>' +
+    '<h2>Upcoming shows</h2>' + (shown.length ? '<ul>' + shown.map((event) => showItem(event, withVenue)).join('') + '</ul>' + more : '<p>No upcoming shows listed right now.</p>') + '</article>';
+}
+function nextShowText(events, withVenue) {
+  const next = events[0];
+  if (!next) return '';
+  const when = shortEventDate(next.date, next.time_tbd ? 'UTC' : next.timezone);
+  return ' Next: ' + next.title + (withVenue && next.venue_name ? ' at ' + next.venue_name : '') + (when ? ' on ' + when : '') + '.';
 }
 
 export function venueView(data) {
   const { venue, events } = data;
-  const canonical = 'https://trydropapp.com' + venuePath(venue);
-  const description = ('See ' + events.length + ' upcoming events at ' + venue.name + ' in ' + [venue.city, venue.state].filter(Boolean).join(', ') + ' on Drop.').slice(0, 155);
-  const items = events.map((event) => '<li><a href="' + eventPath(event) + '">' + escapeHtml(event.title) + '</a> — ' + escapeHtml(new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'medium' })) + '</li>').join('');
-  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(venue.name) + '</h1><p>' + escapeHtml(description) + '</p><h2>Upcoming events</h2><ul>' + items + '</ul></article>';
-  const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'MusicVenue', name: venue.name, url: canonical,
-    address: { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state },
-    event: events.map((event) => ({
-      '@type': 'MusicEvent', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event),
-      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-      location: { '@type': 'Place', name: venue.name, address: { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state } },
-    })),
-  };
-  return { title: venue.name + ' Events | Drop', description, canonical, image: 'https://trydropapp.com/og-image.png', body, jsonLd, indexable: isIndexableVenue(data) };
+  const path = venuePath(venue);
+  const canonical = 'https://trydropapp.com' + path;
+  const place = [venue.city, venue.state].filter(Boolean).join(', ');
+  const count = events.length + ' upcoming show' + (events.length === 1 ? '' : 's');
+  const description = clipText(count + ' at ' + venue.name + (place ? ' in ' + place : '') + '.' + nextShowText(events, false) + ' Lineups and ticket links on Drop.', 155);
+  const address = { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state };
+  const lead = [venue.address, place].filter(Boolean).join(' · ') + ' — ' + count + '.';
+  const body = entityBody({ section: 'Venues', sectionHref: '/venues', name: venue.name, path, lead, events, withVenue: false });
+  const jsonLd = [
+    { '@context': 'https://schema.org', '@type': 'MusicVenue', name: venue.name, url: canonical, address,
+      event: events.slice(0, LISTED_SHOWS).map((event) => eventLd(event)) },
+    breadcrumbLd([['Home', 'https://trydropapp.com/'], ['Venues', 'https://trydropapp.com/venues'], [venue.name, canonical]]),
+  ];
+  return { title: venue.name + (venue.city ? ', ' + venue.city : '') + ': Upcoming Shows | Drop', description, canonical, image: DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableVenue(data) };
 }
 
 export function artistView(data) {
   const { artist, events } = data;
-  const canonical = 'https://trydropapp.com' + artistPath(artist);
-  const description = ('See upcoming ' + artist.name + ' events, venues, and ticket details on Drop.').slice(0, 155);
-  const items = events.map((event) => '<li><a href="' + eventPath(event) + '">' + escapeHtml(event.title) + '</a> at ' + escapeHtml(event.venue_name || '') + '</li>').join('');
-  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(artist.name) + '</h1><p>' + escapeHtml(description) + '</p><h2>Upcoming events</h2><ul>' + items + '</ul></article>';
-  const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'MusicGroup', name: artist.name, url: canonical,
-    genre: artist.genres || [], image: artist.image_url || undefined,
-    event: events.map((event) => ({
-      '@type': 'MusicEvent', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event),
-      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-      location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', addressLocality: event.city, addressRegion: event.state } },
-    })),
-  };
-  return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
+  const path = artistPath(artist);
+  const canonical = 'https://trydropapp.com' + path;
+  const image = safeHttpUrl(artist.image_url);
+  const genres = (artist.genres || []).filter(hasText);
+  const count = events.length + ' upcoming show' + (events.length === 1 ? '' : 's');
+  const description = clipText(artist.name + ': ' + count + '.' + nextShowText(events, true) + ' Dates, venues and ticket links on Drop.', 155);
+  const lead = (genres.length ? genres.slice(0, 3).join(', ') + ' · ' : '') + count + '.';
+  const body = entityBody({ section: 'Artists', sectionHref: '/artists', name: artist.name, path, lead, events, withVenue: true });
+  const website = safeHttpUrl(artist.website_url);
+  const jsonLd = [
+    { '@context': 'https://schema.org', '@type': 'MusicGroup', name: artist.name, url: canonical,
+      genre: genres, image: image || undefined, sameAs: website ? [website] : undefined,
+      event: events.slice(0, LISTED_SHOWS).map((event) => eventLd(event)) },
+    breadcrumbLd([['Home', 'https://trydropapp.com/'], ['Artists', 'https://trydropapp.com/artists'], [artist.name, canonical]]),
+  ];
+  return { title: artist.name + ': Upcoming Shows & Tour Dates | Drop', description, canonical, image: image || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
 }
 
 // Function HTML is public and already declares s-maxage=3600, but Pages does
