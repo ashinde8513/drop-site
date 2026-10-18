@@ -101,7 +101,7 @@
       var source = clean(params.get('utm_source'));
       if (!source) return;
       var play = document.getElementById('getGooglePlay');
-      play.href = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=' + encodeURIComponent(
+      play.href = play.href.split('&referrer=')[0] + '&referrer=' + encodeURIComponent(
         'utm_source=' + source + '&utm_medium=link_hub&utm_campaign=' + (clean(params.get('utm_campaign')) || 'web_download'));
     })();
   </script>
