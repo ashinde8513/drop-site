@@ -10,9 +10,12 @@
   var REST = SUPA_URL + '/rest/v1/';
   var FUNCTIONS = SUPA_URL + '/functions/v1/';
 
-  // Location — client-side choice, persisted. Denver is densest (~140 upcoming).
+  // Location — client-side choice, persisted. Denver is the home market.
+  // Markets = US catalog cities with >=20 upcoming published shows (event_cities, 2026-10-18).
   var CITIES = ['Denver', 'Los Angeles', 'Seattle', 'Portland', 'San Diego',
-    'Brooklyn', 'New York', 'Chicago', 'Dallas', 'Austin', 'Boston'];
+    'Brooklyn', 'New York', 'Chicago', 'Dallas', 'Austin', 'Boston',
+    'Las Vegas', 'San Francisco', 'Houston', 'Phoenix', 'Atlanta', 'Cambridge',
+    'Washington', 'Miami', 'Detroit', 'Philadelphia', 'Columbus', 'Charlotte'];
   Drop.CITIES = CITIES;
   Drop.ALL_CITIES = 'All cities';
 

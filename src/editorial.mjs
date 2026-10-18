@@ -11,6 +11,10 @@ export const CITY_TIME_ZONES = {
   Portland: 'America/Los_Angeles', 'San Diego': 'America/Los_Angeles', Brooklyn: 'America/New_York',
   'New York': 'America/New_York', Chicago: 'America/Chicago', Dallas: 'America/Chicago',
   Austin: 'America/Chicago', Boston: 'America/New_York',
+  'Las Vegas': 'America/Los_Angeles', 'San Francisco': 'America/Los_Angeles', Houston: 'America/Chicago',
+  Phoenix: 'America/Phoenix', Atlanta: 'America/New_York', Cambridge: 'America/New_York',
+  Washington: 'America/New_York', Miami: 'America/New_York', Detroit: 'America/Detroit',
+  Philadelphia: 'America/New_York', Columbus: 'America/New_York', Charlotte: 'America/New_York',
 };
 const SELECT = 'id,title,date,end_date,timezone,time_tbd,is_festival,lifecycle_status,venue_id,venue_name,venue_address,city,state,image_url';
 

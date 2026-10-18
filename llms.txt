@@ -6,7 +6,7 @@ Drop is built in Colorado by Resonance Ventures LLC. Primary site: https://trydr
 
 ## Key facts
 
-- Coverage starts in Denver, Colorado, and includes city guides for Denver, Los Angeles, Seattle, Portland, San Diego, Brooklyn, New York, Chicago, Dallas, Austin, and Boston.
+- Coverage starts in Denver, Colorado, and includes city guides for Denver, Los Angeles, Seattle, Portland, San Diego, Brooklyn, New York, Chicago, Dallas, Austin, Boston, Las Vegas, San Francisco, Houston, Phoenix, Atlanta, Cambridge, Washington, Miami, Detroit, Philadelphia, Columbus, and Charlotte.
 - Drop is not a ticket seller, box office, promoter, or event organizer. Ticket purchases happen on the official seller's site (see the [Terms](https://trydropapp.com/terms)).
 - Event, venue, and artist pages are listed in the entity sitemap: https://trydropapp.com/sitemap-entities.xml
 - City × genre pages (e.g. https://trydropapp.com/genre?genre=House&city=Chicago) list real upcoming shows and are indexed only when a city has at least three in that genre.

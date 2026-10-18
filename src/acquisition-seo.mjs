@@ -2,7 +2,9 @@ import { escapeHtml, eventPath, isIndexableEvent, rest, schemaEventStatus, venue
 import { matchesGenre } from './genres.mjs';
 
 export const GENRES = ['House', 'Techno', 'Bass', 'Drum & Bass', 'Hip-Hop', 'Indie'];
-export const CITIES = ['Denver', 'Los Angeles', 'Seattle', 'Portland', 'San Diego', 'Brooklyn', 'New York', 'Chicago', 'Dallas', 'Austin', 'Boston'];
+// US markets with >=20 upcoming published shows in event_cities (2026-10-18; mirrors data.js).
+// Thin pages inside a market stay noindex and out of the sitemap via the show gates below.
+export const CITIES = ['Denver', 'Los Angeles', 'Seattle', 'Portland', 'San Diego', 'Brooklyn', 'New York', 'Chicago', 'Dallas', 'Austin', 'Boston', 'Las Vegas', 'San Francisco', 'Houston', 'Phoenix', 'Atlanta', 'Cambridge', 'Washington', 'Miami', 'Detroit', 'Philadelphia', 'Columbus', 'Charlotte'];
 
 export function cleanCity(value) {
   const city = typeof value === 'string' ? value.trim() : '';
@@ -136,14 +138,23 @@ export function renderCityPage(template, city, events = []) {
   const html = render(template, {
     title: 'EDM Shows in ' + city + ' | Drop', description, canonical, prefix: 'city',
     heading: 'EDM shows in ' + city, subheading: description,
+    // events === null: catalog unreachable, keep the page indexable.
+    indexable: events === null || events.length >= MIN_GENRE_SHOWS,
   });
   const shows = (events || []).slice(0, 24);
   const genres = liveGenres(events || []).map((genre) => '<li><a href="' + escapeHtml(genrePath(genre, city)) + '">' + escapeHtml(genre) + ' in ' + escapeHtml(city) + '</a></li>');
   // Own heading: the host sits under "This weekend", these run further out.
   const guides = ['<li><a href="/events?when=weekend&amp;city=' + escapeHtml(encodeURIComponent(city)) + '">This weekend in ' + escapeHtml(city) + '</a></li>',
     '<li><a href="/events?festival=1">Upcoming festivals</a></li>', '<li><a href="/guides">Guides: festivals, venues and your first rave</a></li>'];
-  const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides);
+  const others = CITIES.filter((other) => other !== city).map((other) => '<li><a href="/city?city=' + escapeHtml(encodeURIComponent(other)) + '">EDM shows in ' + escapeHtml(other) + '</a></li>');
+  const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides) + linkBlock('Other cities', others);
   return inject(withCityFaq(html, city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
+}
+
+// City pages for the entity sitemap: only markets with enough real upcoming shows.
+export function cityPaths(events) {
+  return CITIES.filter((city) => events.filter((event) => String(event.city || '').toLowerCase() === city.toLowerCase()).length >= MIN_GENRE_SHOWS)
+    .map((city) => '/city?city=' + encodeURIComponent(city));
 }
 
 // Indexable city×genre pages for the entity sitemap. Denver's genre pages are

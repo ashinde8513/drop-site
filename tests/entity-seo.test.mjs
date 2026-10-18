@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CITIES, cleanCity, genreCityPaths, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
+import { CITIES, cityPaths, cleanCity, genreCityPaths, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
 import { GENERIC_KEYS, GENRE_MAP, genreOf, matchesGenre } from '../src/genres.mjs';
 import vm from 'node:vm';
 import {
@@ -497,4 +497,18 @@ test('homepage renders exactly one leading card in the HTML by default', async (
   assert.equal(homeCardsHtml([{ ...rows[0], image_url: null }]), '');
   const html = withHomeCards(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), { city: 'Denver', total: 2, rows });
   assert.match(html, /<div class="grid-events" id="home-grid" aria-label="Upcoming shows"><a class="wsc-card"/);
+});
+
+test('markets: city pages are gated on real shows and cross-link every market', async () => {
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  const three = [0, 1, 2].map((n) => catalogEvent({ id: `00000000-0000-4000-8000-00000000000${n}`, city: 'Las Vegas' }));
+  assert.deepEqual(cityPaths([...three, catalogEvent({ city: 'Miami' })]), ['/city?city=Las%20Vegas']);
+  assert.doesNotMatch(renderCityPage(template, 'Las Vegas', three), /name="robots"/);
+  assert.match(renderCityPage(template, 'Miami', [catalogEvent({ city: 'Miami' })]), /name="robots" content="noindex, follow"/);
+  assert.doesNotMatch(renderCityPage(template, 'Miami', null), /name="robots"/, 'catalog outage keeps the page indexable');
+  const others = renderCityPage(template, 'Denver', three).match(/<h3>Other cities<\/h3>([\s\S]*?)<\/ul>/)[1];
+  assert.equal([...others.matchAll(/href="\/city\?city=/g)].length, CITIES.length - 1);
+  assert.match(others, /href="\/city\?city=San%20Francisco">EDM shows in San Francisco</);
+  const { CITY_TIME_ZONES } = await import('../src/editorial.mjs');
+  for (const zone of Object.values(CITY_TIME_ZONES)) assert.doesNotThrow(() => new Intl.DateTimeFormat('en-US', { timeZone: zone }), zone);
 });
