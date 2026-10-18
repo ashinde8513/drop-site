@@ -362,8 +362,17 @@ export function artistView(data) {
   return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
 }
 
+// Mirrors the `/*` block in _headers, which Function responses bypass.
+export const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'DENY',
+  'Permissions-Policy': 'camera=(), microphone=(), payment=(), usb=(), geolocation=(self)',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+};
+
 export function htmlResponse(html, status = 200) {
-  return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400', 'X-Content-Type-Options': 'nosniff' } });
+  return new Response(html, { status, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400' } });
 }
 
 export function redirectResponse(path, requestUrl) {

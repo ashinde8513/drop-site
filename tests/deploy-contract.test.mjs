@@ -42,3 +42,24 @@ test('CI browser image matches the locked Playwright version and pins its digest
   assert.ok(image, 'Use the official Playwright image with an immutable digest');
   assert.equal(image[1], lock.packages['node_modules/@playwright/test'].version);
 });
+
+const readRepo = (path) => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+
+test('static and Function responses share one security header baseline', async () => {
+  const { SECURITY_HEADERS, htmlResponse } = await import('../src/entity-seo.mjs');
+  const block = readRepo('_headers').match(/^\/\*\n((?:[ \t]+[^\n]+\n)+)/m)?.[1] || '';
+  const response = htmlResponse('<p>x</p>');
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    assert.equal(response.headers.get(name), value, name);
+    // Pages already sends nosniff + strict-origin-when-cross-origin on static files.
+    if (name === 'X-Content-Type-Options' || name === 'Referrer-Policy') continue;
+    assert.ok(block.includes(`${name}: ${value}`), name);
+  }
+});
+
+test('legacy routes land on pages that exist', () => {
+  const redirects = readRepo('_redirects');
+  assert.match(redirects, /^\/plan\/\*\s+\/share-plan\s+200$/m);
+  assert.match(redirects, /^\/onboarding\s+\/download\s+302$/m);
+  assert.doesNotMatch(readRepo('data.js'), /\/venue\.html\?name=/);
+});

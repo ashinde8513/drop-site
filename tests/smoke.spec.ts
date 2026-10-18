@@ -457,7 +457,7 @@ test.describe('website smoke', () => {
   test('plan links retain UUID attribution without rendering personal query data', () => {
     const redirects = readFileSync('_redirects', 'utf8');
     const plan = readFileSync('share-plan.html', 'utf8');
-    expect(redirects).toContain('/plan/*     /share-plan.html  200');
+    expect(redirects).toContain('/plan/*     /share-plan  200');
     expect(plan).toContain("signup.searchParams.set('target', planId)");
     expect(plan).not.toMatch(/p\.get\('(friend|u|count|event|venue|city|genre|date)'\)/);
     expect(plan).not.toContain('friends are going');
