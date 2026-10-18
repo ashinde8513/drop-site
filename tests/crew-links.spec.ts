@@ -36,7 +36,7 @@ test('canonical Crew URL renders the existing install page without board request
   await expect(page.getByRole('link', { name: 'Download Drop on the App Store', exact: true })).toHaveAttribute('href',
     'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
   await expect(page.getByRole('link', { name: 'Get Drop on Google Play', exact: true })).toHaveAttribute('href',
-    'https://play.google.com/store/apps/details?id=app.resonanceventures.drop');
+    'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Ddownload_page%26utm_campaign%3Dweb_download');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();

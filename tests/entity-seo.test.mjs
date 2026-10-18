@@ -300,3 +300,14 @@ test('venue pages describe their shows as MusicEvent at a Place', async () => {
   assert.equal(view.jsonLd.event[0].location['@type'], 'Place');
   assert.equal(view.jsonLd.event[0].location.address.streetAddress, '1 Main St');
 });
+
+test('event pages hand the Smart App Banner their canonical URL', () => {
+  const template = readFileSync(new URL('../event.html', import.meta.url), 'utf8');
+  assert.match(template, /<meta name="apple-itunes-app" content="app-id=6790662825" \/>/);
+  const view = eventView(catalogEvent());
+  const html = renderTemplate(template, { ...view, rootId: 'event-root' });
+  assert.match(html, new RegExp(`<meta name="apple-itunes-app" content="app-id=6790662825, app-argument=https://trydropapp.com/event/${id}/main-event" />`));
+  const attributed = renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + safeAttributionQuery(`https://trydropapp.com/x?ref=${id}&src=event_share&u=leak`) });
+  assert.match(attributed, new RegExp(`app-argument=https://trydropapp.com/event/${id}/main-event\\?ref=${id}&amp;src=event_share" />`));
+  assert.doesNotMatch(attributed, /leak/);
+});

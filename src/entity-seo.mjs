@@ -254,7 +254,7 @@ function replaceContentAttribute(html, marker, value) {
   return html.replace(pattern, (_match, before, after) => before + escapeHtml(value) + after);
 }
 
-export function renderTemplate(template, { title, description, canonical, image, rootId, body, jsonLd, indexable = true }) {
+export function renderTemplate(template, { title, description, canonical, image, rootId, body, jsonLd, indexable = true, appArgument = canonical }) {
   let html = template.replace(/<title([^>]*)>[^<]*<\/title>/i, (_match, attributes) => '<title' + attributes + '>' + escapeHtml(title) + '</title>');
   html = html.replace(/(<link[^>]+rel="canonical"[^>]+href=")[^"]*(")/i, (_match, before, after) => before + escapeHtml(canonical) + after);
   html = replaceContentAttribute(html, 'name="description"', description);
@@ -265,6 +265,8 @@ export function renderTemplate(template, { title, description, canonical, image,
   html = replaceContentAttribute(html, 'name="twitter:title"', title);
   html = replaceContentAttribute(html, 'name="twitter:description"', description);
   html = replaceContentAttribute(html, 'name="twitter:image"', image);
+  // Smart App Banner "Open" hands the app this page's canonical URL.
+  html = replaceContentAttribute(html, 'name="apple-itunes-app"', 'app-id=6790662825, app-argument=' + appArgument);
   if (image !== DEFAULT_IMAGE) {
     html = html.replace(/\s*<meta[^>]+property="og:image:(?:type|width|height)"[^>]*>/gi, '');
     html = replaceContentAttribute(html, 'property="og:image:alt"', title);
