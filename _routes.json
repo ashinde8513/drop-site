@@ -8,7 +8,8 @@
     "/city",
     "/genre",
     "/sitemap-entities.xml",
-    "/go"
+    "/go",
+    "/t"
   ],
   "exclude": []
 }
