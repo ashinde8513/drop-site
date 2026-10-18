@@ -123,11 +123,19 @@ function query(params) {
 }
 
 export async function rest(table, params) {
-  const response = await fetch(REST + table + '?' + query(params), {
-    headers: { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + PUBLIC_KEY },
-  });
+  return (await restWithCount(table, params, false)).rows;
+}
+
+// Same request plus PostgREST's exact total (Content-Range "0-23/1234"), like
+// data.js get(path, { count: true }).
+export async function restWithCount(table, params, count = true) {
+  const headers = { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + PUBLIC_KEY };
+  if (count) headers.Prefer = 'count=exact';
+  const response = await fetch(REST + table + '?' + query(params), { headers });
   if (!response.ok) throw new Error('Supabase HTTP ' + response.status);
-  return response.json();
+  const rows = await response.json();
+  const total = parseInt((response.headers.get('content-range') || '').split('/')[1], 10);
+  return { rows, total: Number.isNaN(total) ? null : total };
 }
 
 function upcomingFilter() {

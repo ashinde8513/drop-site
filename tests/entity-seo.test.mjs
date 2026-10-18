@@ -459,3 +459,42 @@ test('catalog text with $-substitution patterns is inserted literally everywhere
   const hint = withLcpHint(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), "https://x.test/$'.jpg");
   assert.match(hint, /content="https:\/\/x\.test\/\$&#39;\.jpg"/);
 });
+
+test('homepage seed mirrors the grid query, drops descriptions, and is script-safe', async () => {
+  const { fetchHomeSeed, withHomeSeed } = await import('../src/home-lcp.mjs');
+  const realFetch = globalThis.fetch;
+  let requested;
+  globalThis.fetch = async (url, init) => {
+    requested = { url: new URL(url), init };
+    return new Response(JSON.stringify([{ id: 'a', title: '</script><b>x', description: 'long html', image_url: 'https://cdn.test/a.jpg' }]), { headers: { 'content-range': '0-0/1234' } });
+  };
+  try {
+    const seed = await fetchHomeSeed(new Date('2026-10-18T04:00:00Z'));
+    const p = requested.url.searchParams;
+    assert.equal(p.get('order'), 'date.asc');
+    assert.equal(p.get('limit'), '24');
+    assert.equal(p.get('city'), 'ilike.Denver');
+    assert.equal(p.get('date'), 'gte.2026-10-17T06:00:00.000Z');
+    assert.equal(requested.init.headers.Prefer, 'count=exact');
+    assert.deepEqual(seed, { city: 'Denver', total: 1234, rows: [{ id: 'a', title: '</script><b>x', image_url: 'https://cdn.test/a.jpg' }] });
+    const html = withHomeSeed(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), seed);
+    const body = html.match(/<script type="application\/json" id="home-seed">([\s\S]*?)<\/script>/)[1];
+    assert.doesNotMatch(body, /<\/script|<b>/);
+    assert.deepEqual(JSON.parse(body), seed);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('homepage renders exactly one leading card in the HTML by default', async () => {
+  const { homeCardsHtml, withHomeCards } = await import('../src/home-lcp.mjs');
+  const rows = [
+    { id: '00000000-0000-4000-8000-000000000051', title: 'A', date: '2026-10-20T03:00:00Z', venue_name: 'V', city: 'Denver', image_url: 'https://cdn.test/a.jpg', event_artists: [] },
+    { id: '00000000-0000-4000-8000-000000000052', title: 'B', date: '2026-10-20T03:00:00Z', venue_name: 'V', city: 'Denver', image_url: 'https://cdn.test/b.jpg', event_artists: [] },
+  ];
+  assert.equal((homeCardsHtml(rows).match(/class="wsc-card"/g) || []).length, 1);
+  assert.match(homeCardsHtml(rows), /loading="eager" fetchpriority="high" referrerpolicy="no-referrer"/);
+  assert.equal(homeCardsHtml([{ ...rows[0], image_url: null }]), '');
+  const html = withHomeCards(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), { city: 'Denver', total: 2, rows });
+  assert.match(html, /<div class="grid-events" id="home-grid" aria-label="Upcoming shows"><a class="wsc-card"/);
+});

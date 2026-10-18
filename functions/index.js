@@ -1,6 +1,6 @@
 import template from '../index.html';
 import { edgeCached, htmlResponse } from '../src/entity-seo.mjs';
-import { fetchHomeLcpImage, withLcpHint } from '../src/home-lcp.mjs';
+import { fetchHomeSeed, homeLcpImage, withHomeCards, withHomeSeed, withLcpHint } from '../src/home-lcp.mjs';
 
 export async function onRequest(context) {
   try {
@@ -16,7 +16,7 @@ export async function onRequest(context) {
 // the page unchanged.
 async function render({ request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
-  const image = request.method === 'GET' ? await fetchHomeLcpImage().catch(() => null) : null;
+  const seed = request.method === 'GET' ? await fetchHomeSeed().catch(() => null) : null;
   // Keep the static homepage's revalidate-every-view policy (no HTML/CSS skew).
-  return htmlResponse(withLcpHint(template, image), 200, 'no-cache');
+  return htmlResponse(withHomeCards(withHomeSeed(withLcpHint(template, seed && homeLcpImage(seed.rows)), seed), seed), 200, 'no-cache');
 }
