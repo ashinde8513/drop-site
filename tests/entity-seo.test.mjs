@@ -343,10 +343,40 @@ test('Function HTML is edge-cached per URL and deploy, 200s only', async () => {
     await edgeCached(ctx('https://trydropapp.com/city?city=Denver', 'abc', 'HEAD'), page);
     assert.equal(renders, 4, 'HEAD bypasses the cache');
     assert.ok([...store.values()].every((r) => r.headers.get('Cache-Control') === 'public, max-age=600'), 'edge copy capped at 10 min');
+    const pageWithPolicy = () => new Response('home', { status: 200, headers: { 'Cache-Control': 'no-cache' } });
+    await edgeCached(ctx('https://trydropapp.com/'), pageWithPolicy);
+    await Promise.all(pending);
+    const hit = await edgeCached(ctx('https://trydropapp.com/'), pageWithPolicy);
+    assert.equal(hit.headers.get('Cache-Control'), 'no-cache', 'hits restore the page policy');
+    assert.equal(hit.headers.get('X-Drop-Cache-Control'), null);
     await edgeCached(ctx('https://trydropapp.com/event/x'), () => new Response('gone', { status: 404 }));
     await Promise.all(pending);
     assert.ok(![...store.keys()].some((k) => k.includes('/event/x')), '404s are not cached');
   } finally {
     delete globalThis.caches;
   }
+});
+
+test('homepage LCP hint names the exact first card a Denver visitor sees', async () => {
+  const { homeLcpImage, isRealArtUrl, startOfDayIn, withLcpHint } = await import('../src/home-lcp.mjs');
+  const window = {};
+  vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
+  for (const url of [null, '', 'http://x.test/a.jpg', 'https://u:p@x.test/a.jpg', 'https://s1.ticketm.net/dam/c/abc.jpg', 'https://s1.ticketm.net/dam/a/abc.jpg', 'https://cdn.example/a.jpg', 'not a url']) {
+    assert.equal(isRealArtUrl(url), window.Drop.isRealArtUrl(url), String(url));
+  }
+  const rows = [
+    { id: 'a', image_url: null, event_artists: [{ artists: { image_url: 'https://artist.test/a.jpg' } }] },
+    { id: 'b', image_url: 'https://s1.ticketm.net/dam/c/cat.jpg', event_artists: [] },
+    { id: 'c', image_url: 'https://cdn.test/c.jpg', event_artists: [] },
+  ];
+  assert.equal(homeLcpImage(rows), 'https://cdn.test/c.jpg');
+  assert.equal(homeLcpImage([rows[0]]), 'https://artist.test/a.jpg');
+  assert.equal(homeLcpImage([]), null);
+  assert.equal(startOfDayIn('America/Denver', new Date('2026-10-18T04:00:00Z')), '2026-10-17T06:00:00.000Z');
+  assert.equal(startOfDayIn('America/Denver', new Date('2026-01-10T12:00:00Z')), '2026-01-10T07:00:00.000Z');
+  const template = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const html = withLcpHint(template, 'https://cdn.test/c.jpg?a=1&b="2"');
+  assert.match(html, /<meta name="drop-lcp" data-city="Denver" content="https:\/\/cdn\.test\/c\.jpg\?a=1&amp;b=&quot;2&quot;" \/>\n  <script data-lcp-hint>/);
+  assert.equal(withLcpHint(template, null), template);
+  assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/'));
 });

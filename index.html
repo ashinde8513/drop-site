@@ -52,6 +52,23 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
 
+  <script data-lcp-hint>
+    // Mobile LCP is the first grid card's art, which JS only requests after the
+    // catalog fetch. The / Function names that image in <meta name="drop-lcp">;
+    // preload it only when this visitor's grid is that city (default Denver).
+    (function () {
+      var m = document.querySelector('meta[name="drop-lcp"]');
+      if (!m) return;
+      var city;
+      try { city = new URLSearchParams(location.search).get('city') || localStorage.getItem('drop.city') || 'Denver'; }
+      catch (e) { city = 'Denver'; }
+      if (city !== m.getAttribute('data-city')) return;
+      var l = document.createElement('link');
+      l.rel = 'preload'; l.as = 'image'; l.href = m.getAttribute('content');
+      l.fetchPriority = 'high'; l.referrerPolicy = 'no-referrer'; // match the card <img>
+      document.head.appendChild(l);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://ebccwnkmsnhbljxxxdej.supabase.co" crossorigin />

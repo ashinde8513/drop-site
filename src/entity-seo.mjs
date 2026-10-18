@@ -383,12 +383,19 @@ export async function edgeCached(context, render) {
   const key = new URL(request.url);
   key.searchParams.set('__deploy', context.env?.CF_PAGES_COMMIT_SHA || 'local');
   const hit = await cache.match(key.href);
-  if (hit) return hit;
+  if (hit) {
+    // Browsers get the page's own policy back, not the edge TTL below.
+    const served = new Response(hit.body, hit);
+    served.headers.set('Cache-Control', hit.headers.get('X-Drop-Cache-Control') || 'no-cache');
+    served.headers.delete('X-Drop-Cache-Control');
+    return served;
+  }
   const response = await render();
   if (response.status === 200) {
     // ponytail: edge copy capped at 10 min, so a deploy is live within that
     // window even if CF_PAGES_COMMIT_SHA is absent at runtime.
     const copy = new Response(response.clone().body, response);
+    copy.headers.set('X-Drop-Cache-Control', response.headers.get('Cache-Control') || 'no-cache');
     copy.headers.set('Cache-Control', 'public, max-age=600');
     context.waitUntil(cache.put(key.href, copy));
   }
@@ -404,8 +411,8 @@ export const SECURITY_HEADERS = {
   'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
 };
 
-export function htmlResponse(html, status = 200) {
-  return new Response(html, { status, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400' } });
+export function htmlResponse(html, status = 200, cacheControl = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400') {
+  return new Response(html, { status, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cacheControl } });
 }
 
 export function redirectResponse(path, requestUrl) {
