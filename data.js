@@ -543,6 +543,21 @@
     return out;
   };
 
+  // Provider descriptions are HTML fragments (sometimes double-encoded).
+  // Mirrors src/entity-seo.mjs plainText so client and server agree.
+  var NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+  function stripTags(text) {
+    return text.replace(/<!--[\s\S]*?-->|<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\/?[a-z][^>]*>|<![^>]*>/gi, ' ');
+  }
+  Drop.plainText = function (value) {
+    var decoded = stripTags(String(value || '')).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, function (match, code) {
+      if (code[0] !== '#') return NAMED_ENTITIES[code.toLowerCase()] || match;
+      var point = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+      return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : match;
+    });
+    return stripTags(decoded).replace(/\s+/g, ' ').trim();
+  };
+
   Drop.eventArt = function (event) {
     return Drop.eventArtCandidates(event)[0] || null;
   };

@@ -6,7 +6,7 @@ import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
   safeAttributionQuery, schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify,
-  ticketActionText, venuePath, redirectResponse,
+  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle,
 } from '../src/entity-seo.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -147,7 +147,7 @@ test('event view emits useful Event data without trusting catalog HTML', () => {
   });
   assert.match(view.body, /&lt;Main Event&gt;/);
   assert.doesNotMatch(view.body, /<b>official<\/b>/);
-  assert.equal(view.jsonLd['@type'], 'Event');
+  assert.equal(view.jsonLd['@type'], 'MusicEvent');
   assert.equal(view.jsonLd.url, `https://trydropapp.com/event/${id}/main-event`);
   assert.equal(view.jsonLd.eventStatus, 'https://schema.org/EventScheduled');
   assert.equal(view.jsonLd.offers, undefined);
@@ -185,4 +185,42 @@ test('entity sitemap excludes malformed events and thin venue/artist pages', () 
   assert.match(xml, /<lastmod>2026-08-02<\/lastmod>/);
   assert.doesNotMatch(xml, /malformed-event|one-off-hall|one-off<\/loc>/);
   assert.equal(escapeHtml('A&B'), 'A&amp;B');
+});
+
+test('catalog HTML descriptions become clean plain text everywhere', () => {
+  assert.equal(plainText('<p style="margin:0;">Doors 8pm&nbsp;&amp; <b>18+</b></p><script>x()</script>'), 'Doors 8pm & 18+');
+  assert.equal(plainText('&lt;p&gt;Double &amp;amp; encoded&lt;/p&gt;'), 'Double &amp; encoded');
+  assert.equal(plainText('Caf&#233; &#x1F3B6;'), 'Caf\u00e9 \u{1F3B6}');
+  assert.equal(plainText(null), '');
+  assert.equal(plainText('Love <3 this crew. Doors > 9pm<!-- a > b -->'), 'Love <3 this crew. Doors > 9pm');
+  assert.equal(plainText('&lt;3 &lt;b&gt;bold&lt;/b&gt;'), '<3 bold');
+  const view = eventView(catalogEvent({ description: '<p style="margin:0;">' + 'Bass night '.repeat(30) + '</p>' }));
+  assert.doesNotMatch(view.description + view.body + view.jsonLd.description, /&lt;p|margin:0|&quot;/);
+  assert.ok(view.description.length <= 155);
+  assert.match(view.description, /night…$/);
+});
+
+test('clipText cuts on a word boundary', () => {
+  assert.equal(clipText('short', 155), 'short');
+  assert.equal(clipText('alpha beta gamma delta', 15), 'alpha beta…');
+});
+
+test('event titles carry the local date and JSON-LD skips a zero-length endDate', () => {
+  const event = catalogEvent({ date: '2026-09-01T02:00:00Z', end_date: '2026-09-01T02:00:00Z', timezone: 'America/Denver' });
+  assert.equal(eventTitle(event), 'Main Event at Red Rocks · Aug 31 | Drop');
+  assert.equal(eventView(event).title, eventTitle(event));
+  assert.equal(eventView(event).jsonLd.endDate, undefined);
+  assert.equal(eventView(catalogEvent({ end_date: '2026-09-02T06:00:00Z' })).jsonLd.endDate, '2026-09-02T06:00:00Z');
+  assert.equal(eventTitle(catalogEvent({ date: 'bad', timezone: 'Not/AZone' })), 'Main Event at Red Rocks | Drop');
+  assert.equal(eventTitle(catalogEvent({ date: '2026-10-18T00:00:00Z', time_tbd: true, timezone: 'America/Denver' })), 'Main Event at Red Rocks · Oct 18 | Drop');
+});
+
+test('og:image size tags are dropped for non-default event art', () => {
+  const template = '<html><head><title>Old</title><meta property="og:image" content="old"><meta property="og:image:type" content="image/png" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="Drop" /></head><body><div id="r"></div></body></html>';
+  const base = { title: 'Show | Drop', description: 'd', canonical: 'https://trydropapp.com/x', rootId: 'r', body: '', jsonLd: {} };
+  const art = renderTemplate(template, { ...base, image: 'https://cdn.example/a.jpg' });
+  assert.doesNotMatch(art, /og:image:(type|width|height)/);
+  assert.match(art, /og:image:alt" content="Show \| Drop"/);
+  const fallback = renderTemplate(template, { ...base, image: 'https://trydropapp.com/og-image.png' });
+  assert.match(fallback, /og:image:width/);
 });
