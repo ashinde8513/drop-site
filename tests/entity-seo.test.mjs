@@ -310,6 +310,7 @@ test('event pages hand the Smart App Banner their canonical URL', () => {
   const attributed = renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + safeAttributionQuery(`https://trydropapp.com/x?ref=${id}&src=event_share&u=leak`) });
   assert.match(attributed, new RegExp(`app-argument=https://trydropapp.com/event/${id}/main-event\\?ref=${id}&amp;src=event_share" />`));
   assert.doesNotMatch(attributed, /leak/);
+});
 
 test('city FAQ ships server-rendered with matching FAQPage schema and client copy', async () => {
   const { cityFaq } = await import('../src/acquisition-seo.mjs');
