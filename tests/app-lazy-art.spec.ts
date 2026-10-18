@@ -65,4 +65,9 @@ test('discover defers offscreen card art until it nears the viewport', async ({ 
   await last.scrollIntoViewIfNeeded();
   await expect(last).not.toHaveAttribute('data-lazy-art', /./);
   await expect(last).toHaveCSS('background-image', /art\.test/);
+
+  // A later full re-render paints revealed art straight away (no re-deferral).
+  await page.getByRole('button', { name:/Denver, CO/ }).first().click();
+  await expect(cards.last()).not.toHaveAttribute('data-lazy-art', /./);
+  await expect(cards.last()).toHaveCSS('background-image', /art\.test/);
 });
