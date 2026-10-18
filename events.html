@@ -57,10 +57,10 @@
       </a>
       <div class="wn__links">
         <div class="loc-wrap">
-          <button type="button" class="locchip" aria-haspopup="listbox" aria-expanded="false" aria-label="Change location">
+          <button type="button" class="locchip" aria-expanded="false" aria-label="Change location">
             <span class="dot"></span><span class="loc-city">Denver</span><span style="color:var(--text-muted);font-size:10px;">▾</span>
           </button>
-          <div class="loc-pop" role="listbox" aria-label="Choose a city" hidden><ul></ul></div>
+          <div class="loc-pop" aria-label="Choose a city" hidden><ul></ul></div>
         </div>
         <form class="wn__search-inline" role="search" aria-label="Search events" style="position:relative;flex:1;max-width:360px;">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">⌕</span>
@@ -166,14 +166,14 @@
             <div>
               <div class="filt-label" id="fb-city-label">City</div>
               <div class="loc-wrap" style="position:relative;display:block;margin-top:8px;">
-                <button type="button" class="fb-select" id="fb-city-btn" style="width:100%;text-align:left;" aria-haspopup="listbox" aria-labelledby="fb-city-label">City</button>
+                <button type="button" class="fb-select" id="fb-city-btn" style="width:100%;text-align:left;" aria-labelledby="fb-city-label">City</button>
                 <div class="loc-pop" id="fb-city-pop" hidden style="left:0;right:0;"><ul></ul></div>
               </div>
             </div>
             <div>
               <div class="filt-label" id="fb-venue-label">Venue</div>
               <div class="loc-wrap" style="position:relative;display:block;margin-top:8px;">
-                <button type="button" class="fb-select" id="fb-venue-btn" style="width:100%;text-align:left;" aria-haspopup="listbox" aria-labelledby="fb-venue-label">All venues</button>
+                <button type="button" class="fb-select" id="fb-venue-btn" style="width:100%;text-align:left;" aria-labelledby="fb-venue-label">All venues</button>
                 <div class="loc-pop" id="fb-venue-pop" hidden style="left:0;right:0;"><ul></ul></div>
               </div>
             </div>
@@ -677,8 +677,10 @@
       }
       function renderEmpty() {
         gridEl.classList.remove('is-loading');
+        gridEl.removeAttribute('aria-busy');
         gridEl.innerHTML = '';
         var box = D.el('div', 'state-empty');
+        box.setAttribute('role', 'status');
         box.appendChild(D.el('span', 'state-icon', 'Drop'));
         if (!hasRefinements() && state.city && state.city !== D.ALL_CITIES) {
           // Bare city with nothing on the calendar — honest coming-soon + scout CTA.
@@ -740,6 +742,7 @@
         if (loadedRequest !== latestLoad) return;
         var vis = visibleEvents();
         gridEl.classList.remove('is-loading');
+        gridEl.removeAttribute('aria-busy');
         gridEl.innerHTML = '';
         if (!vis.length) { renderEmpty(); }
         else vis.forEach(function (ev) { gridEl.appendChild(D.ecard(ev)); });

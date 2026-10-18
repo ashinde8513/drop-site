@@ -3205,9 +3205,9 @@
 <!-- ============ LOGIN GATE MODAL ============ -->
 <sc-if value="{{ gate }}">
   <div class="overlay overlay--center" onClick="{{ closeGate }}">
-    <div class="modal" onClick="{{ stop }}">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gate-title" onClick="{{ stop }}">
       <div style="width:48px;height:48px;border-radius:50%;background:var(--grad-glow-fill);margin:0 auto var(--sp-lg);box-shadow:var(--shadow-glow);"></div>
-      <div class="modal__title" style="text-align:center;">{{ gateTitle }}</div>
+      <div class="modal__title" id="gate-title" style="text-align:center;">{{ gateTitle }}</div>
       <div class="modal__body" style="text-align:center;">Log in or create a free account to RSVP, save shows, comment and build your crew. You'll come right back here.</div>
       <button type="button" class="btn btn--primary btn--block" onClick="{{ goLoginFromGate }}">Log in</button>
       <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ goSignupFromGate }}">Create account</button>
@@ -3218,7 +3218,7 @@
 <!-- ============ TOAST ============ -->
 <sc-if value="{{ toast }}">
   <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;">
-    <div class="toast toast--success"><span class="toast__ico">✓</span><span class="toast__msg">{{ toast }}</span></div>
+    <div class="toast toast--success" role="status"><span class="toast__ico" aria-hidden="true">✓</span><span class="toast__msg">{{ toast }}</span></div>
   </div>
 </sc-if>
 

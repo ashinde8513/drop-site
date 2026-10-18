@@ -1073,7 +1073,15 @@ class Component extends DCLogic {
 
   flash(msg){ this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(()=>this.setState({toast:null}), 2200); }
 
-  openGate(title){ this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false }); }
+  openGate(title){
+    this.setState({ gate:true, gateTitle: title||'Join the crew', menuOpen:false });
+    // Dialog: move focus inside; Escape closes (WCAG 2.4.3 / 2.1.2).
+    requestAnimationFrame(() => { const first = document.querySelector('.modal[role="dialog"] button'); if (first) first.focus(); });
+    if (!this._gateKeys) {
+      this._gateKeys = (e) => { if (e.key === 'Escape' && this.state.gate) this.setState({ gate:false }); };
+      document.addEventListener('keydown', this._gateKeys);
+    }
+  }
 
   toggleRsvp(id, status){
     if(!this.state.authed){ this.openGate(status==='going'?'Log in to RSVP':'Log in to save'); return Promise.resolve(false); }
