@@ -47,8 +47,18 @@ test('focusing the nav search does not change screen; Enter opens search', async
   const launcher = page.getByRole('textbox', { name:'Search artists, venues, shows', exact:true });
   await launcher.focus();
   await expect(page.getByPlaceholder('Search artists, venues, shows, cities, genres')).toHaveCount(0);
+  await launcher.pressSequentially('deadmau5');
   await launcher.press('Enter');
-  await expect(page.getByPlaceholder('Search artists, venues, shows, cities, genres')).toBeVisible();
+  await expect(page.getByPlaceholder('Search artists, venues, shows, cities, genres')).toHaveValue('deadmau5');
+});
+
+test('icon-only app controls carry accessible names', async ({ page }) => {
+  await page.goto('/app/index.html');
+  await expect(page.getByRole('navigation', { name:'Primary' })).toBeAttached();
+  const template = await page.locator('#dc-template').evaluate((t: HTMLTemplateElement) => t.innerHTML);
+  for (const label of ['Close menu', 'Account menu', 'Save event', 'Share event', 'Remove {{ a.name }}']) {
+    expect(template).toContain(`aria-label="${label}"`);
+  }
 });
 
 test('mobile drawer moves focus in and Escape returns it to the menu button', async ({ page }) => {
