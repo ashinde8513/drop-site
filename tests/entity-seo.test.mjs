@@ -300,3 +300,11 @@ test('venue pages describe their shows as MusicEvent at a Place', async () => {
   assert.equal(view.jsonLd.event[0].location['@type'], 'Place');
   assert.equal(view.jsonLd.event[0].location.address.streetAddress, '1 Main St');
 });
+
+test('event pages hand the Smart App Banner their canonical URL', () => {
+  const template = readFileSync(new URL('../event.html', import.meta.url), 'utf8');
+  assert.match(template, /<meta name="apple-itunes-app" content="app-id=6790662825" \/>/);
+  const view = eventView(catalogEvent());
+  const html = renderTemplate(template, { ...view, rootId: 'event-root' });
+  assert.match(html, new RegExp(`<meta name="apple-itunes-app" content="app-id=6790662825, app-argument=https://trydropapp.com/event/${id}/main-event" />`));
+});

@@ -265,6 +265,8 @@ export function renderTemplate(template, { title, description, canonical, image,
   html = replaceContentAttribute(html, 'name="twitter:title"', title);
   html = replaceContentAttribute(html, 'name="twitter:description"', description);
   html = replaceContentAttribute(html, 'name="twitter:image"', image);
+  // Smart App Banner "Open" hands the app this page's canonical URL.
+  html = replaceContentAttribute(html, 'name="apple-itunes-app"', 'app-id=6790662825, app-argument=' + canonical);
   if (image !== DEFAULT_IMAGE) {
     html = html.replace(/\s*<meta[^>]+property="og:image:(?:type|width|height)"[^>]*>/gi, '');
     html = replaceContentAttribute(html, 'property="og:image:alt"', title);

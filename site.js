@@ -507,9 +507,14 @@
   var APP_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825', PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
   function initDownloadBtns() {
     var ua = navigator.userAgent || '';
-    var store = /iPhone|iPad|iPod/i.test(ua) ? APP_STORE_URL : (/Android/i.test(ua) ? PLAY_STORE_URL : '');
-    if (!store) return;
-    doc.querySelectorAll('[data-app-download]').forEach(function (a) { a.href = store; });
+    var ios = /iPhone|iPad|iPod/i.test(ua);
+    if (!ios && !/Android/i.test(ua)) return;
+    doc.querySelectorAll('[data-app-download]').forEach(function (a) {
+      // Play install referrer → Play Console acquisition by surface. (App Store
+      // campaign links need a provider token, so iOS stays the plain listing.)
+      a.href = ios ? APP_STORE_URL : PLAY_STORE_URL + '&referrer=' + encodeURIComponent(
+        'utm_source=trydropapp.com&utm_medium=' + (a.getAttribute('data-app-download') || 'website') + '&utm_campaign=web_download');
+    });
   }
 
   // Carry only bounded attribution across the public -> account host boundary.
