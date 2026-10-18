@@ -155,12 +155,6 @@
             <button type="button" class="btn btn--ghost" onClick="{{ goLogin }}">Log in</button>
             <button type="button" class="btn btn--secondary" onClick="{{ downloadApp }}">⤓ Download the app</button>
           </div>
-          <div style="display:flex;align-items:center;gap:var(--sp-md);margin-top:var(--sp-xl);color:var(--text-muted);font-size:var(--fs-sm);">
-            <div class="avstack">
-              <span class="av"></span><span class="av"></span><span class="av"></span><span class="av"></span>
-            </div>
-            <span>Join <b style="color:var(--text);">40,000+</b> ravers already on Drop</span>
-          </div>
         </div>
       </div>
     </section>
@@ -499,12 +493,14 @@
             </div>
           </div>
 
-          <!-- description -->
+          <!-- description: the provider's own copy only; hidden when there is none -->
+          <sc-if value="{{ ae.description }}">
           <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
             <div class="sec__title" style="margin-bottom:var(--sp-md);">About this show</div>
             <p class="readmore__body {{ descCls }}">{{ ae.description }}</p>
             <button type="button" class="readmore__toggle" onClick="{{ toggleDesc }}">{{ descToggle }}</button>
           </div>
+          </sc-if>
 
           <!-- price comparison -->
           <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
