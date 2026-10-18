@@ -324,12 +324,21 @@
       var nextBtn = document.getElementById('home-next');
       var pageLabel = document.getElementById('home-page-label');
 
+      // The / Function inlines page 1 of the default city's grid (same query),
+      // so first paint skips the catalog round trip. Used once, then fetch.
+      var seed = null;
+      try { seed = JSON.parse(document.getElementById('home-seed').textContent); } catch (e) {}
+
       function loadGrid(nav) {
         var host = document.getElementById('home-grid');
         D.skeletonGrid(host, 8);
         prevBtn.disabled = nextBtn.disabled = true;
         if (nav) host.scrollIntoView(true);
-        D.fetchEvents({ city: city, limit: PAGE, offset: page * PAGE, count: true })
+        var request = seed && page === 0 && seed.city === city && Array.isArray(seed.rows)
+          ? Promise.resolve({ rows: seed.rows, total: seed.total })
+          : D.fetchEvents({ city: city, limit: PAGE, offset: page * PAGE, count: true });
+        seed = null;
+        request
           .then(function (res) {
             var evs = res.rows;
             // Prefer cards with real artwork up front, within the page.
