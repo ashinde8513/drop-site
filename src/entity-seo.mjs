@@ -1,3 +1,4 @@
+const DEFAULT_IMAGE = 'https://trydropapp.com/og-image.png';
 const REST = 'https://ebccwnkmsnhbljxxxdej.supabase.co/rest/v1/';
 const PUBLIC_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
 const EVENT_SELECT = 'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,price_min,price_max,currency,time_tbd,timezone,lifecycle_status,ticket_status,created_at,event_artists(artists(id,name,genres,image_url))';
@@ -216,6 +217,31 @@ export async function getEntityUrls() {
   return indexableEntities(rows);
 }
 
+const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+function decodeEntities(text) {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, code) => {
+    if (code[0] !== '#') return NAMED_ENTITIES[code.toLowerCase()] ?? match;
+    const point = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+    return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : match;
+  });
+}
+
+// Catalog descriptions arrive from providers as HTML fragments (sometimes
+// entity-encoded twice). Reduce them to one line of plain text.
+export function plainText(value) {
+  const stripTags = (text) => text.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<[^>]*>/g, ' ');
+  return stripTags(decodeEntities(stripTags(String(value || '')))).replace(/\s+/g, ' ').trim();
+}
+
+// Cut at a word boundary so meta descriptions never end mid-word.
+export function clipText(text, max) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const space = cut.lastIndexOf(' ');
+  return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:\-–—]+$/, '') + '…';
+}
+
 export function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -238,6 +264,10 @@ export function renderTemplate(template, { title, description, canonical, image,
   html = replaceContentAttribute(html, 'name="twitter:title"', title);
   html = replaceContentAttribute(html, 'name="twitter:description"', description);
   html = replaceContentAttribute(html, 'name="twitter:image"', image);
+  if (image !== DEFAULT_IMAGE) {
+    html = html.replace(/\s*<meta[^>]+property="og:image:(?:type|width|height)"[^>]*>/gi, '');
+    html = replaceContentAttribute(html, 'property="og:image:alt"', title);
+  }
   if (!indexable) {
     if (/<meta[^>]+name="robots"/i.test(html)) html = replaceContentAttribute(html, 'name="robots"', 'noindex, follow');
     else html = html.replace('</head>', '<meta name="robots" content="noindex, follow">\n</head>');
@@ -263,28 +293,43 @@ function formatEventDate(value, timeTbd, timezone) {
   catch { options.timeZone = 'UTC'; return date.toLocaleString('en-US', options); }
 }
 
+function shortEventDate(value, timezone) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const options = { month: 'short', day: 'numeric', timeZone: timezone || 'UTC' };
+  try { return date.toLocaleDateString('en-US', options); }
+  catch { options.timeZone = 'UTC'; return date.toLocaleDateString('en-US', options); }
+}
+
+// Recurring shows share a title and venue; the date keeps each page distinct.
+export function eventTitle(event) {
+  const when = shortEventDate(event.date, event.timezone);
+  return event.title + (event.venue_name ? ' at ' + event.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+}
+
 export function eventView(event) {
   const canonical = 'https://trydropapp.com' + eventPath(event);
   const location = [event.venue_name, event.city, event.state].filter(Boolean).join(', ');
-  const description = String(event.description || (event.title + ' at ' + location + '. See event details and tickets on Drop.')).slice(0, 155);
+  const about = plainText(event.description);
+  const description = clipText(about || (event.title + ' at ' + location + '. See event details and tickets on Drop.'), 155);
   const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
-  const image = safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url) || 'https://trydropapp.com/og-image.png';
+  const image = safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url) || DEFAULT_IMAGE;
   const ticketUrl = safeHttpUrl(event.ticket_url);
   const dateText = formatEventDate(event.date, event.time_tbd, event.timezone);
   const lineup = performers.length ? '<p><strong>Lineup:</strong> ' + performers.map((artist) => '<a href="' + artistPath(artist) + '">' + escapeHtml(artist.name) + '</a>').join(', ') + '</p>' : '';
   const statusText = eventAvailabilityText(event);
   const ticket = ticketUrl ? '<p><a href="' + escapeHtml(ticketUrl) + '" rel="nofollow sponsored">' + escapeHtml(ticketActionText(event)) + '</a></p>' : '';
-  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(event.title) + '</h1><p>' + escapeHtml(dateText + ' · ' + location) + '</p>' + lineup + '<p>' + escapeHtml(event.description || '') + '</p><p><strong>Status:</strong> ' + escapeHtml(statusText) + '</p>' + ticket + '</article>';
+  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(event.title) + '</h1><p>' + escapeHtml(dateText + ' · ' + location) + '</p>' + lineup + '<p>' + escapeHtml(about) + '</p><p><strong>Status:</strong> ' + escapeHtml(statusText) + '</p>' + ticket + '</article>';
   const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'Event', name: event.title,
-    startDate: event.date, endDate: event.end_date || undefined,
+    '@context': 'https://schema.org', '@type': 'MusicEvent', name: event.title,
+    startDate: event.date, endDate: event.end_date && event.end_date !== event.date ? event.end_date : undefined,
     eventStatus: schemaEventStatus(event.lifecycle_status), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     url: canonical, image: image ? [image] : undefined, description,
     location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state } },
     performer: performers.map((artist) => ({ '@type': 'MusicGroup', name: artist.name, url: 'https://trydropapp.com' + artistPath(artist) })),
     offers: ticketUrl ? { '@type': 'Offer', url: ticketUrl, price: event.price_min ?? undefined, priceCurrency: event.currency || 'USD', availability: schemaOfferAvailability(event.ticket_status) } : undefined,
   };
-  return { title: event.title + ' at ' + event.venue_name + ' | Drop', description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
+  return { title: eventTitle(event), description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
 }
 
 export function venueView(data) {
@@ -312,7 +357,7 @@ export function artistView(data) {
     genre: artist.genres || [], image: artist.image_url || undefined,
     event: events.map((event) => ({ '@type': 'Event', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event) })),
   };
-  return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || 'https://trydropapp.com/og-image.png', body, jsonLd, indexable: isIndexableArtist(data) };
+  return { title: artist.name + ' Events | Drop', description, canonical, image: artist.image_url || DEFAULT_IMAGE, body, jsonLd, indexable: isIndexableArtist(data) };
 }
 
 export function htmlResponse(html, status = 200) {

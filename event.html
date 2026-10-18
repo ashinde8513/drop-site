@@ -191,8 +191,14 @@
       if (!id) { showError('This event link is missing an ID.'); return; }
 
       function setMeta(ev) {
-        var title = ev.title + ' · Drop';
-        var desc = (ev.description || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.')).slice(0, 155);
+        // Same shape as the server render (src/entity-seo.mjs eventTitle).
+        var when = '';
+        try { when = new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: ev.timezone || 'UTC' }); } catch (e) {}
+        if (when === 'Invalid Date') when = '';
+        var title = ev.title + (ev.venue_name ? ' at ' + ev.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+        var about = D.plainText(ev.description);
+        var desc = about || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.');
+        if (desc.length > 155) desc = desc.slice(0, 154).replace(/\s+\S*$/, '') + '…';
         var canonical = 'https://trydropapp.com' + D.eventPath(ev);
         var image = D.eventArt(ev) || 'https://trydropapp.com/og-image.png';
         document.title = title;
@@ -213,7 +219,7 @@
         var ticketUrl = D.safeUrl(ev.ticket_url);
         var ld = {
           '@context': 'https://schema.org',
-          '@type': 'Event',
+          '@type': 'MusicEvent',
           name: ev.title,
           url: 'https://trydropapp.com' + D.eventPath(ev),
           startDate: ev.date,
@@ -224,7 +230,7 @@
             address: { '@type': 'PostalAddress', addressLocality: ev.city, addressRegion: ev.state }
           },
           image: D.eventArt(ev) ? [D.eventArt(ev)] : undefined,
-          description: ev.description || undefined,
+          description: D.plainText(ev.description) || undefined,
           offers: ticketUrl ? {
             '@type': 'Offer', url: ticketUrl,
             price: ev.price_min != null ? ev.price_min : undefined,
@@ -276,7 +282,7 @@
           'DTEND:' + stamp(end),
           'SUMMARY:' + escText(ev.title),
           'LOCATION:' + escText([ev.venue_name, ev.city, ev.state].filter(Boolean).join(', ')),
-          'DESCRIPTION:' + escText((ev.description || '').slice(0, 400)),
+          'DESCRIPTION:' + escText(D.plainText(ev.description).slice(0, 400)),
           'URL:' + location.href,
           'END:VEVENT', 'END:VCALENDAR'
         ];
@@ -411,10 +417,11 @@
       }
 
       function renderDescription(ev) {
-        if (!ev.description) return null;
+        var about = D.plainText(ev.description);
+        if (!about) return null;
         var section = el('div', 'ed-section');
         section.appendChild(el('div', 'sec-h2', 'About this show'));
-        var desc = el('p', 'event-desc clamped', ev.description);
+        var desc = el('p', 'event-desc clamped', about);
         desc.style.marginTop = 'var(--sp-md)';
         section.appendChild(desc);
         var added = false;
