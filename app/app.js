@@ -247,6 +247,51 @@
     'forgot-email', 'reset-password', 'reset-password-confirm'
   ]);
 
+  // Card art is inline CSS background layers (event art + artist fallbacks over
+  // a prism gradient). Every render rebuilds the whole tree, so left alone every
+  // poster on every rail downloads at once (~40 MB on Discover). While the new
+  // tree is still detached (detached nodes fetch nothing), swap each url()
+  // stack for its gradient layer and restore it as the node nears the viewport.
+  // Revealed stacks are remembered so later renders paint them straight away.
+  const revealedArt = new Set();
+  const artObserver = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      revealedArt.add(el.dataset.lazyArt);
+      el.style.backgroundImage = el.dataset.lazyArt;
+      delete el.dataset.lazyArt;
+      artObserver.unobserve(el);
+    }), { rootMargin: '600px', scrollMargin: '600px' })
+    : null;
+
+  // Last top-level layer of a background-image list (url() bodies are
+  // %-encoded by cssUrl, so parentheses only come from real CSS functions).
+  function baseLayer(bg) {
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < bg.length; i++) {
+      if (bg[i] === '(') depth++;
+      else if (bg[i] === ')') depth--;
+      else if (bg[i] === ',' && depth === 0) start = i + 1;
+    }
+    const last = bg.slice(start).trim();
+    return /^url\(/i.test(last) ? 'none' : last;
+  }
+
+  function deferArt(frag) {
+    if (!artObserver) return [];
+    const deferred = [];
+    frag.querySelectorAll('[style*="url("]').forEach((el) => {
+      const bg = el.style.backgroundImage;
+      if (!bg || !/url\(/i.test(bg) || revealedArt.has(bg)) return;
+      el.dataset.lazyArt = bg;
+      el.style.backgroundImage = baseLayer(bg);
+      deferred.push(el);
+    });
+    return deferred;
+  }
+
   // Full-tree render into `container`, preserving focus + caret/selection on
   // whatever input the user was typing into. Uncontrolled auth values survive
   // unrelated renders only; boot() disables restoration across screen/session
@@ -272,7 +317,11 @@
         if (el && container.contains(el)) authValues.set(id, el.type === 'checkbox' ? el.checked : el.value);
       });
     }
-    container.replaceChildren(render(vals));
+    const frag = render(vals);
+    const deferred = deferArt(frag);
+    if (artObserver) artObserver.disconnect();
+    container.replaceChildren(frag);
+    deferred.forEach((el) => artObserver.observe(el));
     authValues.forEach((value, id) => {
       const el = document.getElementById(id);
       if (!el || !container.contains(el)) return;
