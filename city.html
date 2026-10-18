@@ -270,7 +270,8 @@
         { q: 'Is Drop free to use in ' + city + '?', a: 'Yes, browsing and account features are free. Drop is a discovery layer, not a ticket seller.' }
       ];
       var faqHost = document.getElementById('city-faq');
-      faq.forEach(function (item) {
+      // The city Function already rendered it (with FAQPage schema); static fallback only.
+      if (!faqHost.children.length) faq.forEach(function (item) {
         var details = D.el('details', 'faq-item');
         var summary = D.el('summary', null, item.q);
         var p = D.el('p', null, item.a);

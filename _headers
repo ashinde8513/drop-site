@@ -13,6 +13,10 @@
   Referrer-Policy: no-referrer
   X-Robots-Tag: noindex, nofollow
 
+# Open Knowledge Format bundle (agent-readable markdown).
+/okf/*
+  Content-Type: text/markdown; charset=utf-8
+
 # Signed-in app shell (also served on app.trydropapp.com via the Worker).
 /app/*
   X-Robots-Tag: noindex, nofollow

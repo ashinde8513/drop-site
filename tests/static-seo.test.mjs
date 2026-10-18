@@ -34,3 +34,19 @@ test('crawler guide states what Drop is not and where entity pages live', () => 
   assert.match(guide, /sitemap-entities\.xml/);
   assert.doesNotMatch(guide, /trydropapp\.com\/link\)/);
 });
+
+test('OKF bundle files carry frontmatter and only link to files that exist', async () => {
+  const { readdirSync } = await import('node:fs');
+  const files = readdirSync(new URL('../okf/', import.meta.url)).filter((f) => f.endsWith('.md'));
+  assert.ok(files.includes('index.md'));
+  for (const file of files) {
+    const text = read('okf/' + file);
+    const front = text.match(/^---\n([\s\S]*?)\n---\n/);
+    assert.ok(front, file + ' frontmatter');
+    assert.match(front[1], /^type: \S+/m, file + ' type');
+    assert.match(front[1], /^resource: https:\/\/trydropapp\.com\//m, file + ' resource');
+    for (const [, target] of text.matchAll(/\]\(([^)#]+\.md)\)/g)) assert.ok(files.includes(target), `${file} → ${target}`);
+  }
+  assert.match(read('scripts/build-dist.sh'), /cp -R [^\n]*\bokf\b[^\n]* dist\//);
+  assert.match(read('llms.txt'), /trydropapp\.com\/okf\/index\.md/);
+});

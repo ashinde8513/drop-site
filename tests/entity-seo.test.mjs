@@ -310,4 +310,17 @@ test('event pages hand the Smart App Banner their canonical URL', () => {
   const attributed = renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + safeAttributionQuery(`https://trydropapp.com/x?ref=${id}&src=event_share&u=leak`) });
   assert.match(attributed, new RegExp(`app-argument=https://trydropapp.com/event/${id}/main-event\\?ref=${id}&amp;src=event_share" />`));
   assert.doesNotMatch(attributed, /leak/);
+
+test('city FAQ ships server-rendered with matching FAQPage schema and client copy', async () => {
+  const { cityFaq } = await import('../src/acquisition-seo.mjs');
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  const html = renderCityPage(template, 'Chicago');
+  const faq = cityFaq('Chicago');
+  const list = html.match(/<div class="faq-list" id="city-faq"[^>]*>([\s\S]*?)<\/div>/)[1];
+  assert.equal((list.match(/<details class="faq-item">/g) || []).length, faq.length);
+  const ld = JSON.parse(html.match(/<script type="application\/ld\+json" data-server-faq>([\s\S]*?)<\/script>/)[1]);
+  assert.deepEqual(ld.mainEntity.map((q) => [q.name, q.acceptedAnswer.text]), faq.map(({ q, a }) => [q, a]));
+  const clientArray = template.match(/var faq = (\[[\s\S]*?\]);/)[1];
+  const client = JSON.parse(vm.runInNewContext('JSON.stringify(' + clientArray + ')', { city: 'Chicago' }));
+  assert.deepEqual(client, faq, 'server and client FAQ copy must match');
 });

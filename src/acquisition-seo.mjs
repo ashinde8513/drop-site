@@ -110,6 +110,25 @@ function inject(html, railId, block, ld) {
   return html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + json + '</script>\n</head>');
 }
 
+// Same Q&A as city.html's client fallback (tests keep them equal). Rendered
+// server-side so the visible FAQ and its FAQPage schema ship in the HTML.
+export function cityFaq(city) {
+  return [
+    { q: 'How often is the ' + city + ' show list updated?', a: 'Every day. New listings, price changes, and lineup updates land as soon as promoters and venues confirm them.' },
+    { q: 'Are ticket prices on Drop all-in?', a: 'Yes — where we can pull it, the price shown includes fees, so what you see is close to what you’ll pay at checkout.' },
+    { q: 'Can I see which friends are going to a show in ' + city + '?', a: 'Yes, once you create a free account. Drop shows you who in your crew already has a show on their radar.' },
+    { q: 'Is Drop free to use in ' + city + '?', a: 'Yes, browsing and account features are free. Drop is a discovery layer, not a ticket seller.' },
+  ];
+}
+
+function withCityFaq(html, city) {
+  const faq = cityFaq(city);
+  const items = faq.map(({ q, a }) => '<details class="faq-item"><summary>' + escapeHtml(q) + '</summary><p>' + escapeHtml(a) + '</p></details>').join('');
+  const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
+  html = html.replace(/(<div class="faq-list" id="city-faq"[^>]*>)/, (match) => match + items);
+  return html.replace('</head>', '<script type="application/ld+json" data-server-faq>' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>\n</head>');
+}
+
 export function renderCityPage(template, city, events = []) {
   const canonical = 'https://trydropapp.com/city?city=' + encodeURIComponent(city);
   const description = 'Every rave, festival, and club night in ' + city + ' — with all-in prices and who’s going. Updated daily.';
@@ -121,7 +140,7 @@ export function renderCityPage(template, city, events = []) {
   const genres = liveGenres(events || []).map((genre) => '<li><a href="' + escapeHtml(genrePath(genre, city)) + '">' + escapeHtml(genre) + ' in ' + escapeHtml(city) + '</a></li>');
   // Own heading: the host sits under "This weekend", these run further out.
   const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres);
-  return inject(html, 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
+  return inject(withCityFaq(html, city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
 }
 
 // Indexable city×genre pages for the entity sitemap. Denver's genre pages are
