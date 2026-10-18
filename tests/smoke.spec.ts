@@ -17,10 +17,13 @@ function trackPageErrors(page: Page): string[] {
     const url = msg.location().url;
     // Match requestfailed below: third-party image/font failures are noisy,
     // but external scripts' own console errors must still fail the suite.
-    const externalResourceNoise = url
+    const externalResourceNoise = (url
       && !url.includes('localhost')
       && !url.includes('127.0.0.1')
-      && msg.text().startsWith('Failed to load resource:');
+      && msg.text().startsWith('Failed to load resource:'))
+      // WebKit words third-party image blocks (e.g. a venue CDN's CORP/WAF
+      // response to CI runner IPs) differently and attributes them to the page.
+      || /^(Cannot load image|Cancelled load to) https:\/\/(?!localhost|127\.0\.0\.1)/.test(msg.text());
     if (!externalResourceNoise) errors.push(`console.error: ${msg.text()}`);
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
