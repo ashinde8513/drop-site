@@ -57,5 +57,5 @@ export function withLcpHint(template, image) {
   if (!image) return template;
   const meta = '<meta name="drop-lcp" data-city="' + HOME_CITY + '" content="' +
     String(image).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) + '" />\n  ';
-  return template.replace('<script data-lcp-hint>', meta + '<script data-lcp-hint>');
+  return template.replace('<script data-lcp-hint>', () => meta + '<script data-lcp-hint>');
 }

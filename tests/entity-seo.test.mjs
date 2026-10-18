@@ -440,3 +440,19 @@ test('editorial weekend and festival views: windows, routing, schema, gates, sit
   assert.match(city, /<a href="\/events\?festival=1">Upcoming festivals<\/a>/);
   assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/events'));
 });
+
+test('catalog text with $-substitution patterns is inserted literally everywhere', async () => {
+  const { renderWeekendPage } = await import('../src/editorial.mjs');
+  const { withLcpHint } = await import('../src/home-lcp.mjs');
+  const nasty = "A $' B $` C $& D";
+  const event = catalogEvent({ title: nasty, description: nasty });
+  const view = eventView(event);
+  const page = renderTemplate(readFileSync(new URL('../event.html', import.meta.url), 'utf8'), { ...view, rootId: 'event-root' });
+  assert.ok(page.includes(JSON.stringify(nasty).slice(1, -1)), 'event JSON-LD keeps the literal text');
+  const weekend = renderWeekendPage(readFileSync(new URL('../events.html', import.meta.url), 'utf8'), 'Chicago', [event, { ...event, id: id2 }, { ...event, id: venueId }]);
+  const ld = weekend.match(/data-server-ldjson>([\s\S]*?)<\/script>/)[1];
+  assert.equal(JSON.parse(ld).itemListElement[0].item.name, nasty);
+  assert.equal((weekend.match(/<\/head>/g) || []).length, 1);
+  const hint = withLcpHint(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), "https://x.test/$'.jpg");
+  assert.match(hint, /content="https:\/\/x\.test\/\$&#39;\.jpg"/);
+});

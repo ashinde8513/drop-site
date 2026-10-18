@@ -108,7 +108,7 @@ function inject(html, railId, block, ld) {
   html = html.replace(new RegExp('(<div class="rail" id="' + railId + '"[^>]*>)'), (match) => match + '<div data-server-entity>' + block + '</div>');
   if (!ld.itemListElement.length) return html;
   const json = JSON.stringify(ld).replace(/</g, '\\u003c');
-  return html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + json + '</script>\n</head>');
+  return html.replace('</head>', () => '<script type="application/ld+json" data-server-ldjson>' + json + '</script>\n</head>');
 }
 
 // Same Q&A as city.html's client fallback (tests keep them equal). Rendered
@@ -127,7 +127,7 @@ function withCityFaq(html, city) {
   const items = faq.map(({ q, a }) => '<details class="faq-item"><summary>' + escapeHtml(q) + '</summary><p>' + escapeHtml(a) + '</p></details>').join('');
   const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
   html = html.replace(/(<div class="faq-list" id="city-faq"[^>]*>)/, (match) => match + items);
-  return html.replace('</head>', '<script type="application/ld+json" data-server-faq>' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>\n</head>');
+  return html.replace('</head>', () => '<script type="application/ld+json" data-server-faq>' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>\n</head>');
 }
 
 export function renderCityPage(template, city, events = []) {

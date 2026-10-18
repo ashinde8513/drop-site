@@ -135,7 +135,7 @@ function render(template, { title, description, canonical, heading, events, ld, 
   html = html.replace(/("@type": "CollectionPage",\s*"name": )"[^"]*"(,\s*"description": )"[^"]*"(,\s*"url": )"[^"]*"/,
     (_m, a, b, c) => a + scriptJson(heading) + b + scriptJson(description) + c + scriptJson(canonical));
   html = html.replace(/(<div class="grid-events" id="grid"[^>]*>)/, (match) => match + listHtml(heading, events));
-  if (events.length) html = html.replace('</head>', '<script type="application/ld+json" data-server-ldjson>' + scriptJson(ld) + '</script>\n</head>');
+  if (events.length) html = html.replace('</head>', () => '<script type="application/ld+json" data-server-ldjson>' + scriptJson(ld) + '</script>\n</head>');
   if (!indexable) html = html.replace('</head>', '<meta name="robots" content="noindex, follow" />\n</head>');
   return html;
 }
