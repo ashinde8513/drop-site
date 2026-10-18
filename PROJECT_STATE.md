@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-08-18
+Last updated: 2026-08-20
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -21,6 +21,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 ## Current status
 ### What works
 - **GOOGLE PLAY LAUNCH SUBMITTED + ANDROID DAL LIVE (2026-08-18):** website PR #95 merged as `a66eb6d814bbac36af796da9655198aa9d94c130`. The apex Digital Asset Links response is HTTP 200 `application/json`, does not redirect, is byte-identical to the reviewed source (SHA-256 `0dd572814e9206e412bc0910e4752e87286ed058f28cbae878606d4ee1be7525`), and names package `app.resonanceventures.drop` with the current Play App Signing fingerprint. Google Play submission `1` was sent at 5:33 PM on August 18 with Production build 1.0.2 (2), United States availability, and the completed store/app-content declarations. Its authoritative status is **In review**. Managed publishing is off, so Google will publish the approved changes automatically; no replacement AAB was uploaded.
+- **PHASE 2 SHARE ATTRIBUTION PR #93 REFRESHED (2026-08-20; DELIVERY HELD):** canonical event redirects retain only validated UUID referrer and fixed-catalog source fields; public event, plan, and signup handoffs carry bounded route kind/target into the browser app. Browser first-touch state expires after 24 hours, stays out of Auth metadata, rejects accounts created before link-open, and records only after compliance through the authenticated referral RPC. Fresh-browser email confirmation deliberately fails closed without credit. The private plan fallback retains only its UUID and renders no personal query data. Local verification passes 18/18 Node contracts and 186/186 desktop/mobile browser checks; exact-head independent review and hosted CI remain branch-closeout gates. No backend, database, secret, merge, deploy, production write, or public release occurred.
 - **GOOGLE PLAY ACCOUNT-DELETION RESOURCE REVIEWED (2026-08-17):** `/delete-account` gives users both the existing in-app deletion path and a prefilled external email-request path, explains deletion/retention behavior, and is linked from the privacy policy and sitemap. Seven Node checks plus 168 desktop/mobile Playwright checks pass; the built page is byte-identical to source and browser QA found no warnings or errors. Delivery through the standard PR/`main` auto-deploy path is in progress.
 - **ANDROID DIGITAL ASSET LINKS HOTFIX DELIVERED (2026-08-17/18):** the canonical `.well-known/assetlinks.json` names package `app.resonanceventures.drop` and the exact current Google Play App Signing SHA-256 `E3:15:2D:04:79:CB:20:91:35:16:7C:88:DA:77:07:AE:3D:71:E5:87:C5:97:94:7C:EA:BC:E2:2D:77:5F:A1:F2`. The deploy workflow fails closed unless the built association is present, byte-identical to source, and contains that exact statement; a regression proves omission fails. Focused deploy-contract 1/1 and Android Playwright 2/2, full Node 8/8 and Playwright 172/172, build verification, diff check, and gitleaks pass. PR #95 merged and the production apex readback matches reviewed source. `www` remains a redirect and is intentionally excluded from Android intent filters. Physical App Links acceptance remains untested because no Android test device is available.
 - **CANONICAL PUBLIC CATALOG STATS LIVE (2026-08-16, PR #90):** the homepage requests the live `get_public_catalog_stats` RPC and renders exact comma-formatted event/city counts only after validating nonnegative safe integers plus a server timestamp. Missing, failed, or malformed responses show nonnumeric live-catalog copy—never the stale `4,500+ / 320+` snapshot or a false zero. Main workflow `31937512102` passed 164/164 and deployed merge `9f0d1a2f`; production desktop 1745x1228 and mobile 390x844 rendered 4,110 events / 295 cities with no overflow or console errors. Live `data.js` and `site.js` are byte-identical to reviewed `main`.
@@ -160,6 +161,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   apply the reviewed v1 manifest when a primary source becomes available.
 - Android physical App Links acceptance remains untested because no Android test device is available. Play-signed 1.0.2 (2) is active in Internal Testing; do not claim device readiness from the public certificate or track state alone.
 ### Exact next step
+- **Keep PR #93 open and undeployed after its source refresh. Before eventual delivery, reconcile the coordinated mobile attribution lane and current backend RPC contract, require current-head CI, and run a disposable same-browser referral canary; do not claim fresh-browser email credit because that flow intentionally fails closed.**
 - **Website delivery is complete; perform one disposable-account live SMS send/check through `app.trydropapp.com`, recording only pass/fail and artifact provenance; never record the raw phone number or OTP.**
 - **After exact approval and application of backend migration
   `20260806055852_tiktok_sandbox_publishing_scopes.sql`, merge and deploy the
@@ -678,6 +680,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-08-20 — Phase 2 share attribution PR #93 refreshed on current main
+- **Reconciled:** replayed only the bounded referral/share feature and callback-boundary test onto current `origin/main` `30a7cda1f529dfd350590bf8372f797c48cf19a6`; already-delivered Android DAL commits and stale status-only history were dropped.
+- **Privacy and trust boundary:** redirect/query handling accepts only UUID identities and the fixed source catalog; the plan fallback renders no friend, roster, event, venue, city, genre, or date query values. Referral state is 24-hour first-touch, stays outside Auth metadata, requires a newly created compliant account, and records through the authenticated RPC only.
+- **Verified:** syntax checks, 18/18 Node contracts, and 186/186 desktop/mobile Playwright checks pass. Exact-head generated-build validation, diff/secret scan, independent review, and hosted CI remain branch-closeout gates.
+- **Delivery boundary:** PR #93 remains open and undeployed. No backend/database, secret, cron, provider, mobile, production-data, public-site, or release mutation occurred.
+
 ### 2026-07-18 — Codex — Google favicon correction
 - **Why:** Google mobile search still showed the retired Expo placeholder even though the standalone site already used the Prism spectrum SVG. Live checks found `/favicon.ico` and `/favicon.png` returned 404, leaving Google with its stale cached icon.
 - **Changed:** added 96×96 Prism spectrum `favicon.png`, a matching root `favicon.ico` fallback, made the PNG the homepage's primary declared favicon, and added both files to the deploy whitelist.
