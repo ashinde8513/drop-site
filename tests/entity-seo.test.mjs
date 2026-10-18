@@ -325,3 +325,27 @@ test('city FAQ ships server-rendered with matching FAQPage schema and client cop
   const client = JSON.parse(vm.runInNewContext('JSON.stringify(' + clientArray + ')', { city: 'Chicago' }));
   assert.deepEqual(client, faq, 'server and client FAQ copy must match');
 });
+
+test('Function HTML is edge-cached per URL and deploy, 200s only', async () => {
+  const { edgeCached } = await import('../src/entity-seo.mjs');
+  const store = new Map();
+  globalThis.caches = { default: { match: async (k) => store.get(k)?.clone(), put: async (k, r) => { store.set(k, r); } } };
+  const pending = [];
+  const ctx = (url, sha = 'abc', method = 'GET') => ({ request: new Request(url, { method }), env: { CF_PAGES_COMMIT_SHA: sha }, waitUntil: (p) => pending.push(p) });
+  let renders = 0;
+  const page = () => { renders++; return new Response('<p>' + renders + '</p>', { status: 200 }); };
+  try {
+    assert.equal(await (await edgeCached(ctx('https://trydropapp.com/city?city=Denver'), page)).text(), '<p>1</p>');
+    await Promise.all(pending);
+    assert.equal(await (await edgeCached(ctx('https://trydropapp.com/city?city=Denver'), page)).text(), '<p>1</p>');
+    assert.equal(await (await edgeCached(ctx('https://trydropapp.com/city?city=Denver', 'def'), page)).text(), '<p>2</p>', 'new deploy misses');
+    assert.equal(await (await edgeCached(ctx('https://trydropapp.com/city?city=Chicago'), page)).text(), '<p>3</p>');
+    await edgeCached(ctx('https://trydropapp.com/city?city=Denver', 'abc', 'HEAD'), page);
+    assert.equal(renders, 4, 'HEAD bypasses the cache');
+    await edgeCached(ctx('https://trydropapp.com/event/x'), () => new Response('gone', { status: 404 }));
+    await Promise.all(pending);
+    assert.ok(![...store.keys()].some((k) => k.includes('/event/x')), '404s are not cached');
+  } finally {
+    delete globalThis.caches;
+  }
+});

@@ -1,7 +1,11 @@
-import { getEntityUrls, sitemapXml } from '../src/entity-seo.mjs';
+import { getEntityUrls, sitemapXml, edgeCached } from '../src/entity-seo.mjs';
 import { genreCityPaths } from '../src/acquisition-seo.mjs';
 
-export async function onRequest({ request }) {
+export function onRequest(context) {
+  return edgeCached(context, () => render(context));
+}
+
+async function render({ request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
   try {
     const entities = await getEntityUrls();

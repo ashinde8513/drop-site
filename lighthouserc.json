@@ -1,0 +1,19 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": ["http://localhost/index.html", "http://localhost/events.html", "http://localhost/city.html?city=Denver", "http://localhost/download.html"],
+      "numberOfRuns": 3,
+      "settings": { "onlyCategories": ["performance"], "formFactor": "mobile" }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.8 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 4000 }],
+        "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 300 }]
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": "./lhci-report" }
+  }
+}

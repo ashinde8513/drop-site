@@ -1,0 +1,27 @@
+# Lab Core Web Vitals proxy on every PR (warn-only, never blocks a merge or
+# deploy). Reports stay in the run's artifacts; nothing is uploaded elsewhere.
+name: Lighthouse
+
+on:
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build dist
+        run: bash scripts/build-dist.sh
+      - name: Lighthouse CI (mobile, 3 runs, warn-only)
+        run: npx --yes @lhci/cli@0.15.1 autorun
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: lhci-report
+          retention-days: 14
