@@ -55,17 +55,24 @@ export function ageLabels(events) {
   return [...tally].sort((a, b) => b[1] - a[1]);
 }
 
+// Known rows first; Unknown / stale rows sit behind a native disclosure (same
+// shape as the native VenueIntelSection "show unknown" toggle). venue.html
+// keeps this server-rendered node when it draws the page ([data-kbyg]).
 export function knowBeforeYouGo(items, events) {
   const row = (label, value, source) => '<li><strong>' + escapeHtml(label) + ':</strong> ' + value +
-    (source?.url && source?.label ? ' (<a href="' + escapeHtml(source.url) + '" rel="noopener">' + escapeHtml(source.label) + '</a>)' : '') + '</li>';
+    (source?.url && source?.label ? ' <a class="kbyg-src" href="' + escapeHtml(source.url) + '" rel="noopener" target="_blank">' + escapeHtml(source.label) + ' ↗</a>' : '') + '</li>';
   const ages = ageLabels(events);
   const listed = (events || []).filter((event) => text(event.age_restriction, 40)).length;
-  const age = ages.length
-    ? escapeHtml(ages.map(([label, n]) => label + ' (' + n + ' show' + (n === 1 ? '' : 's') + ')').join(', ')) + ' — from ' + listed + ' of ' + (events || []).length + ' upcoming listings; ages are set per show.'
-    : 'Unknown — set per show; check each listing.';
-  const facts = items.map((item) => row(item.label,
-    item.status === 'fact' ? escapeHtml(item.summary) + ' <small>Verified ' + escapeHtml(item.verifiedAt) + '.</small>'
-      : item.status === 'stale' ? 'Needs rechecking — previous guidance is withheld.' : 'Unknown', item.source));
-  return '<section><h2>Know before you go</h2><p>Reviewed venue information. Policies can change for individual shows; confirm with the official source.</p><ul>' +
-    row('Age policy', age) + row('Capacity', 'Unknown') + facts.join('') + '</ul></section>';
+  const known = [], unknown = [];
+  if (ages.length) known.push(row('Age policy', escapeHtml(ages.map(([label, n]) => label + ' (' + n + ' show' + (n === 1 ? '' : 's') + ')').join(', ')) + ' <small>From ' + listed + ' of ' + (events || []).length + ' upcoming listings; ages are set per show.</small>'));
+  else unknown.push(row('Age policy', 'Unknown — set per show; check each listing.'));
+  unknown.push(row('Capacity', 'Unknown'));
+  for (const item of items) {
+    if (item.status === 'fact') known.push(row(item.label, escapeHtml(item.summary) + ' <small>Verified ' + escapeHtml(item.verifiedAt) + '.</small>', item.source));
+    else unknown.push(row(item.label, item.status === 'stale' ? 'Needs rechecking — previous guidance is withheld.' : 'Unknown', item.source));
+  }
+  return '<section class="ven-section kbyg" data-kbyg aria-labelledby="kbyg-h"><h2 class="sec-h2" id="kbyg-h">Know before you go</h2>' +
+    '<p class="kbyg-intro">Reviewed venue information. Policies can change for individual shows; confirm with the official source.</p>' +
+    (known.length ? '<ul class="kbyg-list">' + known.join('') + '</ul>' : '') +
+    '<details class="kbyg-unknown"' + (known.length ? '' : ' open') + '><summary>Not verified yet (' + unknown.length + ')</summary><ul class="kbyg-list">' + unknown.join('') + '</ul></details></section>';
 }
