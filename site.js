@@ -573,8 +573,43 @@
     });
   }
 
+  // ---- Conversion counts (first-party, consent-gated) ----------------------
+  // Ticket CTA (rel~=sponsored) and app-store clicks → a body-less beacon to
+  // /e/<name>/<detail>/<surface> (allowlist: src/track.mjs). No cookies or
+  // ids. Off until /privacy describes it (APPROVALS W21): flip TRACKING then.
+  Drop.TRACKING = false;
+  var VENDORS = [['ticketmaster', 'ticketmaster'], ['livenation', 'ticketmaster'], ['axs.com', 'axs'], ['etix', 'etix'], ['prf.hn', 'etix'],
+    ['seetickets', 'seetickets'], ['eventbrite', 'eventbrite'], ['dice.fm', 'dice'], ['tixr', 'tixr'], ['seatgeek', 'seatgeek'],
+    ['stubhub', 'stubhub'], ['ticketweb', 'ticketweb'], ['showclix', 'showclix'], ['ticketsauce', 'ticketsauce']];
+  var SURFACES = ['events', 'event', 'venues', 'venue', 'artists', 'artist', 'city', 'genre', 'search', 'download', 'link', 'guides', 'about', 'promoters', 'creators'];
+  function surface() {
+    var first = (location.pathname.split('/')[1] || '').replace(/\.html$/, '');
+    return first === '' || first === 'index' ? 'home' : SURFACES.indexOf(first) !== -1 ? first : 'other';
+  }
+  Drop.track = function (name, detail) {
+    try {
+      if (!Drop.TRACKING || !window.DropConsent || !window.DropConsent.allowsAnalytics() || !navigator.sendBeacon) return false;
+      return navigator.sendBeacon('/e/' + name + '/' + detail + '/' + surface());
+    } catch (e) { return false; }
+  };
+  function initConversionCounts() {
+    doc.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var href = a.href || '';
+      if (/(^|\s)sponsored(\s|$)/.test(a.rel || '')) {
+        var host = ''; try { host = new URL(href).hostname; } catch (err) {}
+        var vendor = 'other';
+        for (var i = 0; i < VENDORS.length; i++) if (host.indexOf(VENDORS[i][0]) !== -1) { vendor = VENDORS[i][1]; break; }
+        Drop.track('ticket_click', vendor);
+      } else if (a.hasAttribute('data-app-download') || /apps\.apple\.com|play\.google\.com/.test(href)) {
+        Drop.track('app_store_click', /play\.google\.com/.test(href) ? 'android' : /apps\.apple\.com/.test(href) ? 'ios' : 'web');
+      }
+    }, true);
+  }
+
   // ---- boot ---------------------------------------------------------------
-  function boot() { initNav(); initRails(); initDownloadBtns(); initSignupAttributionLinks(); }
+  function boot() { initNav(); initRails(); initDownloadBtns(); initSignupAttributionLinks(); initConversionCounts(); }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
   Drop.initRails = initRails; // pages that inject rails later can re-bind
