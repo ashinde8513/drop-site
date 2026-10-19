@@ -294,6 +294,7 @@
 .cb__input:checked ~ .cb__box::after { opacity: 1; }
 .cb__input:focus-visible ~ .cb__box { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cb__label { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-base); padding-top: 2px; }
+.cb__label a, .u-link { text-decoration: underline; }
 
 /* ===== Web app shell (canonical web UI — mirrors app.trydropapp.com) =====
    Source: DropApp WebNav.tsx + WebShowCard.tsx + (tabs)/index.tsx web branch.

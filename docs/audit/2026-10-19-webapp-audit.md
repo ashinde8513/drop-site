@@ -186,3 +186,11 @@ Three highest-value missing tests:
 
 ## Tools that ran
 `npm ci` (worktree); Playwright Chromium + axe-core (local cache) on a local `http.server`; `curl` anonymous GETs/HEADs of app.trydropapp.com, trydropapp.com/consent.js; python scans for dead code; code reading of app.js sections. Repo test fixtures define no test account (fake Supabase clients only; user id `11111111-1111-4111-8111-111111111111` is a stub, not a real account). No live sign-in.
+
+## Shipped (branch claude/webapp-audit-20261019, code-only batch; tests/app-audit-fixes.spec.ts)
+- Sign-out safety: transient `signup_compliance_status` error keeps the session (error + flash); every `signOut` uses `{ scope:'local' }`. Shipped, unverified live.
+- Consent versions: one `SIGNUP_TERMS_VERSION`/`SIGNUP_PRIVACY_VERSION` pair (2026-07-18 / 2026-08-11) for OAuth and password signup. Shipped, unverified live.
+- Honest buttons: .ics export implemented client-side (event page, My Shows row, add-all); SoundCloud import, Suggest event, invite copy, promoter code, Become a promoter now disabled with "Not available on the web yet — use the iPhone app". Shipped, unverified live.
+- A11y: Suggest/Promoter/Log-show date inputs and Suggest City named; consent and "Log in" links underlined. axe critical/serious = 0 on signup and Suggest (local). Drop+ card contrast left to design.
+- Hygiene: SIGNED_OUT clears following/saved/myShowsRows/loggedShows/counts; follow and venue-follow write errors flash and roll back (attendance already did).
+- `event_set_times`: explicit columns + `.eq('status','published')` in the query (client filter kept as backstop).

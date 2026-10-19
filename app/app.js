@@ -480,7 +480,7 @@
   var SIGNUP_COMPLETE_MODE = 'signup-complete';
   var PENDING_OAUTH_COMPLIANCE_KEY = 'drop.signup.oauth-compliance';
   var SIGNUP_TERMS_VERSION = '2026-07-18';
-  var SIGNUP_PRIVACY_VERSION = '2026-07-18';
+  var SIGNUP_PRIVACY_VERSION = '2026-08-11';
   var AUTH_CALLBACK_KEYS = [
     'code', 'token_hash', 'state', 'error', 'error_code', 'error_description',
     'access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at',
@@ -1067,6 +1067,25 @@ class Component extends DCLogic {
     } else { this.flash(url); }
   }
 
+  // All-day .ics built client-side from event rows (id,title,date,end_date,venue_name,city).
+  downloadIcs(list){
+    const evs = (list||[]).filter(e=>e && /^\d{4}-\d{2}-\d{2}/.test(e.date||''));
+    if (!evs.length) { this.flash('No dated shows to add'); return; }
+    const ymd = (d,add)=>{ const t=new Date(d.slice(0,10)+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+add); return t.toISOString().slice(0,10).replace(/-/g,''); };
+    const esc = t=>String(t||'').replace(/[\\;,]/g,'\\$&').replace(/\r?\n/g,'\\n');
+    const stamp = new Date().toISOString().replace(/[-:]|\.\d+/g,'');
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Drop//Web//EN'];
+    evs.forEach(e=>lines.push('BEGIN:VEVENT','UID:'+e.id+'@trydropapp.com','DTSTAMP:'+stamp,
+      'DTSTART;VALUE=DATE:'+ymd(e.date,0),'DTEND;VALUE=DATE:'+ymd(e.end_date||e.date,1),
+      'SUMMARY:'+esc(e.title),'LOCATION:'+esc([e.venue_name,e.city].filter(Boolean).join(', ')),'END:VEVENT'));
+    lines.push('END:VCALENDAR');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type:'text/calendar' }));
+    a.download = evs.length===1 ? 'drop-event.ics' : 'drop-shows.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    this.flash('Calendar file downloaded');
+  }
+
   go(s){
     // Authed users never land on the marketing hero — Discover is the
     // logged-in main (design contract; hero is a signed-out surface).
@@ -1340,13 +1359,13 @@ class Component extends DCLogic {
         ? supa.from('my_set_times').select('set_time_id').eq('user_id', this.state.userId)
         : Promise.resolve({ data:[], error:null });
       return Promise.all([
-        supa.from('event_set_times').select('*').eq('event_id', festival.id).order('start_time', { ascending:true }),
+        supa.from('event_set_times').select('id,stage,artist_name,start_time,end_time,timezone,status').eq('event_id', festival.id).eq('status', 'published').order('start_time', { ascending:true }),
         picksP,
       ]).then(([setsResult, picksResult]) => {
         if (requestId !== this._festivalRequest) return;
         if (setsResult.error) throw setsResult.error;
         if (picksResult.error) throw picksResult.error;
-        const setTimes = (setsResult.data || []).filter(r => r.status === 'published');
+        const setTimes = (setsResult.data || []).filter(r => r.status === 'published'); // belt and braces with the query filter
         const validIds = new Set(setTimes.map(r => r.id));
         const stars = {};
         (picksResult.data || []).forEach(r => { if (validIds.has(r.set_time_id)) stars[r.set_time_id] = true; });
@@ -1718,7 +1737,7 @@ class Component extends DCLogic {
     } catch (error) {
       clearPendingOAuthCompliance();
       scrubSignupCompletionUrl();
-      await supa.auth.signOut().catch(() => undefined);
+      await supa.auth.signOut({ scope:'local' }).catch(() => undefined);
       this.clearPhoneVerificationState({
         authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
         authBusy:false, authError:error && error.message || 'Could not finish account setup. Please try signing up again.'
@@ -1760,14 +1779,18 @@ class Component extends DCLogic {
           this.startActivation(true);
           return;
         }
+        if (compliance === 'unavailable') {
+          // Transient RPC failure: keep the session, never sign the user out.
+          this.setState({ authBusy:false, authError:'Could not confirm the account requirements. Try again.' });
+          this.flash('Could not confirm the account requirements. Try again.');
+          return;
+        }
         if (compliance !== 'complete') {
-          await supa.auth.signOut().catch(() => undefined);
+          await supa.auth.signOut({ scope:'local' }).catch(() => undefined);
           this.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
             authBusy:false,
-            authError:status.error
-              ? 'Could not confirm the account requirements. Try again.'
-              : 'Finish account setup through Get started before logging in.'
+            authError:'Finish account setup through Get started before logging in.'
           });
           return;
         }
@@ -1912,12 +1935,12 @@ class Component extends DCLogic {
     this._eventIntentRequest = null;
     this._eventIntentConfirm = null;
     clearPendingOAuthCompliance();
-    if (supa) supa.auth.signOut().catch(()=>{});
+    if (supa) supa.auth.signOut({ scope:'local' }).catch(()=>{});
     this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
   }
   async switchPhoneAccount(){
     clearPendingOAuthCompliance();
-    if (supa) await supa.auth.signOut().catch(()=>{});
+    if (supa) await supa.auth.signOut({ scope:'local' }).catch(()=>{});
     this.clearPhoneVerificationState({
       authed:false, userId:null, userEmail:'', profile:null, screen:'login',
       rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null,
@@ -2423,7 +2446,7 @@ class Component extends DCLogic {
       .map(x=>{
         const ev = x.ev;
         return {
-          id: ev.id, title: ev.title || 'Untitled show',
+          id: ev.id, raw: ev, title: ev.title || 'Untitled show',
           venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
           dateShort: ((Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD').toUpperCase(),
           genre: Drop ? Drop.genreOf(ev) : '',
@@ -2431,7 +2454,7 @@ class Component extends DCLogic {
           statusLabel: x.row.status==='going' ? '✓ Going' : '☆ Interested',
           statusStyle: x.row.status==='going' ? 'background:var(--going);color:var(--white);' : 'background:var(--interested);color:var(--ink);',
           open: (evn)=>{ this.prevent(evn); this.setState({screen:'event', activeId: ev.id}); if(typeof window!=='undefined') window.scrollTo(0,0); },
-          ics: (evn)=>{ this.prevent(evn); this.flash('Added to calendar (.ics)'); },
+          ics: (evn)=>{ this.prevent(evn); this.downloadIcs([ev]); },
           share: (evn)=>{ this.prevent(evn); this.shareEvent(ev.id); },
         };
       });
@@ -3079,18 +3102,15 @@ class Component extends DCLogic {
       errorRetry:()=>{ this.go('discover'); this.flash('Reloaded'); },
       // promoter
       goPromoter:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to access promoter tools'); return; } this.go('promoter'); },
-      becomePromoter:()=>{ this.setState({isPromoter:true}); this.flash('You\u2019re a promoter — welcome!'); },
       promoNewEvent:()=>this.flash('New event — draft created'),
       promoSaveDetails:()=>this.flash('Event details saved'),
       setPromoDel:(e)=>this.setState({promoDelConfirm:e.target.value}),
       promoDelete:()=>{ if(this.state.promoDelConfirm.trim().toUpperCase()!=='DELETE') return; this.setState({promoDelConfirm:''}); this.go('promoter'); this.flash('Event deleted'); },
       promoAddGuest:()=>this.flash('Guest added to list'),
-      promoAddCode:()=>this.flash('Presale code created'),
       // admin
       goAdmin:(e)=>{ this.prevent&&this.prevent(e); this.go('admin'); },
       // taste
       scAction:()=>{ if(this.state.scConnected){ this.setState({scConnected:false, tasteImport:false}); this.flash('SoundCloud disconnected'); } else { this.setState({tasteConsent:true}); } },
-      scConfirm:()=>{ this.setState({scConnected:true, tasteConsent:false, tasteImport:true}); this.flash('Imported 12 artists from SoundCloud'); },
       scCancel:()=>this.setState({tasteConsent:false}),
       tasteUndo:()=>{ this.setState({tasteImport:false, scConnected:false}); this.flash('Import undone'); },
       setTasteQuery:(e)=>this.setState({tasteQuery:e.target.value}),
@@ -3099,7 +3119,6 @@ class Component extends DCLogic {
       setSugVenue:(e)=>this.setState({sugVenue:e.target.value}),
       setSugCity:(e)=>this.setState({sugCity:e.target.value}),
       setSugLink:(e)=>this.setState({sugLink:e.target.value}),
-      submitSuggestion:()=>{ if(this.state.sugArtist.trim()===''){ this.flash('Add an artist first'); return; } this.setState({sugArtist:'', sugVenue:'', sugLink:''}); this.flash('Submitted for review — thanks, scout!'); },
       goReferral:(e)=>{ this.prevent(e); this.go('referral'); },
       goForgot:(e)=>{ this.prevent(e); this.setState({authError:''}); this.go('forgot'); },
       goVerify:(e)=>{ this.prevent(e); this.go('verify'); },
@@ -3172,7 +3191,6 @@ class Component extends DCLogic {
       // plan, so this is honest ("coming soon") instead of faking one.
       cbStart:()=>{ this.go('event'); this.flash('Plans — coming soon'); },
       cbSkip:()=>{ this.go('event'); },
-      inviteCopy:()=>this.flash('Invite link copied'),
       // ponytail: no image-perfect html-to-image lib — native share sheet
       // (text+URL) for "post to story", canvas render (below) for the actual
       // image download. Covers both asks without a screenshot dependency.
@@ -3212,7 +3230,7 @@ class Component extends DCLogic {
           const p = artFollowing
             ? supa.from('artist_follows').delete().eq('user_id', uid).eq('artist_id', aid)
             : supa.from('artist_follows').insert({ user_id: uid, artist_id: aid });
-          p.then(r=>{ if (r && r.error) console.error('[app] artist_follows write failed:', r.error.message); });
+          p.then(r=>{ if (r && r.error) { console.error('[app] artist_follows write failed:', r.error.message); this.setState(x=>({ following:{...x.following, [artName]: artFollowing} })); this.flash('Could not update your follow — try again'); } });
         }
       },
       // claim artist profile → artist_claims insert (RLS: user_id = own uid)
@@ -3280,10 +3298,10 @@ class Component extends DCLogic {
           const p = venFollowing
             ? supa.from('venue_follows').delete().eq('user_id', uid).eq('venue_name', venName).eq('city', city)
             : supa.from('venue_follows').insert({ user_id: uid, venue_name: venName, city });
-          p.then(r=>{ if (r && r.error) console.error('[app] venue_follows write failed:', r.error.message); });
+          p.then(r=>{ if (r && r.error) { console.error('[app] venue_follows write failed:', r.error.message); this.setState(x=>({ followingVenue:{...x.followingVenue, [venName]: venFollowing} })); this.flash('Could not update your follow — try again'); } });
         }
       },
-      bulkIcs:()=>this.flash(myUpcoming.length+' shows added to calendar (.ics)'),
+      bulkIcs:()=>this.downloadIcs(myUpcoming.map(x=>x.raw)),
       onSearchFocus:()=>this.go('search'),
       onSearchKey:(e)=>{ if (e.key==='Enter') { e.preventDefault(); const q=e.target.value.trim(); if (q) this.setState({query:q}); this.go('search'); } },
       toggleCity:(e)=>{
@@ -3380,8 +3398,8 @@ class Component extends DCLogic {
           username,
           birthdate:dobValue,
           legal_accepted:true,
-          terms_version:'2026-07-18',
-          privacy_version:'2026-08-11'
+          terms_version:SIGNUP_TERMS_VERSION,
+          privacy_version:SIGNUP_PRIVACY_VERSION
         };
         const redirectTo = signupCompletionUrl();
         (async ()=>{
@@ -3414,8 +3432,8 @@ class Component extends DCLogic {
       aeTickets:()=>{ if (ae.ticketUrl) window.open(ae.ticketUrl, '_blank', 'noopener'); else this.flash('Tickets not on sale yet'); },
       aeShare:()=>this.shareEvent(ae.id),
       aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue, venueCity:ae.city||''}); if(typeof window!=='undefined') window.scrollTo(0,0); },
-      aeCopyCode:()=>this.flash('Presale code copied'),
-      aeIcs:()=>this.flash('Calendar file (.ics) downloaded'),
+      aeCopyCode:()=>{ if (ae.presaleCode && navigator.clipboard) navigator.clipboard.writeText(ae.presaleCode).then(()=>this.flash('Presale code copied'), ()=>{}); },
+      aeIcs:()=>this.downloadIcs([{ id:ae.id, title:ae.title, date:ae.date, end_date:ae.endDate, venue_name:ae.venue, city:ae.city }]),
       toggleDesc:()=>this.setState(st=>({descClamped:!st.descClamped})),
       requirePlan:()=>{ if(!this.state.authed){ this.openGate('Log in to make plans'); return; } this.setState({screen:'crewbuilder'}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       requireComment:()=>{ if(!this.state.authed) this.openGate('Log in to comment'); },
@@ -3597,7 +3615,8 @@ class Component extends DCLogic {
           clearPendingOAuthCompliance();
           instance.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login',
-            rsvp:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false
+            rsvp:{}, following:{}, followingVenue:{}, saved:{}, eventIntentReady:false, eventIntentBusy:false,
+            realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[]
           });
         } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {
           // Supabase warns against starting another auth call while its auth

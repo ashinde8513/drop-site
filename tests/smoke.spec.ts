@@ -537,8 +537,8 @@ test.describe('website smoke', () => {
     expect(signupImplementation).toContain('years < 13');
     expect(signupImplementation).not.toContain('years < 16');
     expect(signupImplementation).toContain('legal_accepted:true');
-    expect(signupImplementation).toContain("terms_version:'2026-07-18'");
-    expect(signupImplementation).toContain("privacy_version:'2026-08-11'");
+    expect(signupImplementation).toContain('terms_version:SIGNUP_TERMS_VERSION');
+    expect(signupImplementation).toContain('privacy_version:SIGNUP_PRIVACY_VERSION');
     expect(signupImplementation).not.toContain('consented_at');
     expect(signupImplementation).toContain('signupCompletionUrl()');
     expect(appScript).toContain("url.searchParams.set('mode', SIGNUP_COMPLETE_MODE)");

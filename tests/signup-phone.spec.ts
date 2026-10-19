@@ -447,7 +447,7 @@ test.describe('phone signup behavior', () => {
 
     await page.evaluate(() => {
       sessionStorage.setItem('drop.signup.oauth-compliance', JSON.stringify({
-        birthdate:'1995-04-12', termsVersion:'2026-07-18', privacyVersion:'2026-07-18'
+        birthdate:'1995-04-12', termsVersion:'2026-07-18', privacyVersion:'2026-08-11'
       }));
       (window as any).__dropFake.setSession(true);
       history.pushState({}, '', '?mode=signup-complete');
@@ -483,7 +483,7 @@ test.describe('phone signup behavior', () => {
     expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('drop.signup.oauth-compliance') || 'null'))).toEqual({
       birthdate:'1995-04-12',
       termsVersion:'2026-07-18',
-      privacyVersion:'2026-07-18',
+      privacyVersion:'2026-08-11',
     });
 
     await page.evaluate(() => (window as any).__dropFake.setSession(true));
@@ -493,7 +493,7 @@ test.describe('phone signup behavior', () => {
     expect(complianceCall.args).toEqual({
       p_birthdate:'1995-04-12',
       p_terms_version:'2026-07-18',
-      p_privacy_version:'2026-07-18',
+      p_privacy_version:'2026-08-11',
     });
     expect(await page.evaluate(() => sessionStorage.getItem('drop.signup.oauth-compliance'))).toBeNull();
   });
@@ -503,7 +503,7 @@ test.describe('phone signup behavior', () => {
     await page.addInitScript(() => sessionStorage.setItem('drop.signup.oauth-compliance', JSON.stringify({
       birthdate:'1995-04-12',
       termsVersion:'2026-07-18',
-      privacyVersion:'2026-07-18',
+      privacyVersion:'2026-08-11',
     })));
     await page.goto('/app/index.html?mode=signup-complete');
 
