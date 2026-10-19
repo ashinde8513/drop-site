@@ -17,21 +17,24 @@
       }
     },
     "assert": {
-      "assertions": {
-        "categories:performance": [
-          "warn",
-          {
-            "minScore": 0.8
-          }
-        ],
-        "total-blocking-time": [
-          "warn",
-          {
-            "maxNumericValue": 300
-          }
-        ]
-      },
       "assertMatrix": [
+        {
+          "matchingUrlPattern": ".*",
+          "assertions": {
+            "categories:performance": [
+              "warn",
+              {
+                "minScore": 0.8
+              }
+            ],
+            "total-blocking-time": [
+              "warn",
+              {
+                "maxNumericValue": 300
+              }
+            ]
+          }
+        },
         {
           "matchingUrlPattern": ".*/download\\.html",
           "assertions": {
