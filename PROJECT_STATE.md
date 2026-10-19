@@ -21,6 +21,12 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **WAVE 8 SHIPPED (2026-10-19, Claude):**
+  - **Orphans (#161).** Market city pages list nearby small-town shows (own state plus bordering non-market states/provinces via `NEARBY_STATES`), covering the last 45 orphans; nothing noindexed.
+  - **Budgets (#162).** `tests/perf-budget.test.mjs` caps each page at 50 KB brotli HTML+CSS+JS (app 95 KB) and images at 150 KB, inside the required test job. Per-URL LHCI LCP/CLS budgets are now errors.
+  - **Freshness (#163).** `/freshness.json` returns 503 when the catalog is stale (no new show for 72 h, <100 shows next 7 days, <5 Denver). `scripts/check-freshness.mjs` is the alert script.
+  - **IndexNow (#164).** `scripts/indexnow.mjs`, dry run by default.
+  - All merged and deployed; endpoints and city blocks live-verified.
 - **WAVE 7 SHIPPED (2026-10-19, Claude):**
   - **Schema validation (#154).** 50 live pages checked against schema.org and Google's Event, Breadcrumb, FAQ and ItemList rules with `scripts/validate-schema.py`: 0 required errors. City, genre and editorial ItemLists now reuse `eventLd`; missing image 179→41, offers 172→4, performer 185→67. The SearchAction now targets `/search`.
   - **CWV monitor (#157).** `scripts/cwv-monitor.mjs` writes `cwv/trend.jsonl` and `cwv/latest.md` for the top 20 pages. It's manual; a schedule is APPROVALS W20.
@@ -205,6 +211,8 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
+- **IndexNow on (waiting-founder, APPROVALS W23):** generate the key, commit `/<key>.txt`, then run `INDEXNOW_KEY=… node scripts/indexnow.mjs --submit` (first run sends ~3,866 URLs).
+- **Freshness alert schedule (waiting-founder, APPROVALS W25):** uptime monitor on `/freshness.json` (recommended), Actions cron, or Mac mini launchd.
 - **Conversion counts on (waiting-founder, APPROVALS W21):** after Arya approves the drafted `/privacy` sentence, change it and set `Drop.TRACKING = true` in `site.js` in one PR, then verify a consented click sends `/e/...` live. API read of counts also needs `Zone Analytics: Read` on the Drop Cloudflare token.
 - **CWV schedule (waiting-founder, APPROVALS W20):** weekly Actions cron or Mac mini launchd for `node scripts/cwv-monitor.mjs`.
 - **Newsletter issue publish (waiting-founder, APPROVALS W17):** nothing is live until Arya names an issue slug. Then re-pull and verify that issue's shows, add the slug to `newsletter/published.json`, run `node scripts/build-newsletter.mjs`, merge on green, and verify `/newsletter/` and the issue live.
