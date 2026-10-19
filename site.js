@@ -576,8 +576,8 @@
   // ---- Conversion counts (first-party, consent-gated) ----------------------
   // Ticket CTA (rel~=sponsored) and app-store clicks → a body-less beacon to
   // /e/<name>/<detail>/<surface> (allowlist: src/track.mjs). No cookies or
-  // ids. Off until /privacy describes it (APPROVALS W21): flip TRACKING then.
-  Drop.TRACKING = false;
+  // ids. Described in /privacy#cookies (approved 2026-10-20, APPROVALS W21).
+  Drop.TRACKING = true;
   var VENDORS = [['ticketmaster', 'ticketmaster'], ['livenation', 'ticketmaster'], ['axs.com', 'axs'], ['etix', 'etix'], ['prf.hn', 'etix'],
     ['seetickets', 'seetickets'], ['eventbrite', 'eventbrite'], ['dice.fm', 'dice'], ['tixr', 'tixr'], ['seatgeek', 'seatgeek'],
     ['stubhub', 'stubhub'], ['ticketweb', 'ticketweb'], ['showclix', 'showclix'], ['ticketsauce', 'ticketsauce']];

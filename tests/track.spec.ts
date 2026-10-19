@@ -38,9 +38,10 @@ async function clickLinks(page) {
   return page.evaluate(() => (window as any).__beacons);
 }
 
-test('conversion counts stay off by default, even with consent', async ({ page }) => {
+test('the switch turns counting off entirely, even with consent', async ({ page }) => {
   await setup(page, 'accepted');
   await open(page, '/about.html');
+  await page.evaluate(() => { (window as any).Drop.TRACKING = false; });
   expect(await clickLinks(page)).toEqual([]);
 });
 

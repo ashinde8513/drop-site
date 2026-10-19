@@ -23,7 +23,9 @@ test('client vendor and surface names are all allowlisted at the edge', () => {
   for (const vendor of vendors) assert.ok(EVENTS.ticket_click.includes(vendor), vendor);
   const surfaces = [...site.match(/var SURFACES = \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
   for (const surface of [...surfaces, 'home', 'other']) assert.ok(SURFACES.includes(surface), surface);
-  assert.match(site, /Drop\.TRACKING = false;/, 'stays off until /privacy describes it (APPROVALS W21)');
+  assert.match(site, /Drop\.TRACKING = true;/);
+  const privacy = readFileSync(new URL('../privacy.html', import.meta.url), 'utf8');
+  assert.match(privacy, /counts clicks on ticket links and app-store links/, '/privacy must describe the counts while they run');
   assert.match(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8'), /"\/e\/\*"/);
   assert.match(readFileSync(new URL('../functions/event/[[path]].js', import.meta.url), 'utf8'), /\|\| '\?src=smart_banner'/);
 });
