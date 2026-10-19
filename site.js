@@ -588,8 +588,9 @@
   }
   Drop.track = function (name, detail) {
     try {
-      if (!Drop.TRACKING || !window.DropConsent || !window.DropConsent.allowsAnalytics() || !navigator.sendBeacon) return false;
-      return navigator.sendBeacon('/e/' + name + '/' + detail + '/' + surface());
+      if (!Drop.TRACKING || !window.DropConsent || !window.DropConsent.allowsAnalytics() || !window.fetch) return false;
+      fetch('/e/' + name + '/' + detail + '/' + surface(), { method: 'POST', body: '', keepalive: true, referrerPolicy: 'no-referrer', credentials: 'omit' }).catch(function () {});
+      return true;
     } catch (e) { return false; }
   };
   function initConversionCounts() {

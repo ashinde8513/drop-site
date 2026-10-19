@@ -388,6 +388,13 @@ test('Function HTML is edge-cached per URL and deploy, 200s only', async () => {
     const hit = await edgeCached(ctx('https://trydropapp.com/'), pageWithPolicy);
     assert.equal(hit.headers.get('Cache-Control'), 'no-cache', 'hits restore the page policy');
     assert.equal(hit.headers.get('X-Drop-Cache-Control'), null);
+    const before = renders;
+    await edgeCached(ctx('https://trydropapp.com/events?junk=1'), page);
+    await Promise.all(pending);
+    await edgeCached(ctx('https://trydropapp.com/events?junk=2&x=y'), page);
+    assert.equal(renders, before + 1, 'junk params share one cache key');
+    await edgeCached(ctx('https://trydropapp.com/events?ref=abc'), page);
+    assert.equal(renders, before + 2, 'ref differs');
     await edgeCached(ctx('https://trydropapp.com/event/x'), () => new Response('gone', { status: 404 }));
     await Promise.all(pending);
     assert.ok(![...store.keys()].some((k) => k.includes('/event/x')), '404s are not cached');

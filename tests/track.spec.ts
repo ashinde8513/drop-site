@@ -5,7 +5,7 @@ async function setup(page, consent: string | null) {
   await page.addInitScript((value) => {
     try { if (value) localStorage.setItem('drop.cookie-consent', value); } catch {}
     (window as any).__beacons = [];
-    Navigator.prototype.sendBeacon = function (url: string) { (window as any).__beacons.push(String(url)); return true; };
+    window.fetch = function (url: any) { (window as any).__beacons.push(String(url)); return Promise.resolve(new Response('')); };
     document.addEventListener('click', (e) => e.preventDefault());
   }, consent);
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));

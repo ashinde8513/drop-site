@@ -458,12 +458,16 @@ export function artistView(data) {
 // Function HTML is public and already declares s-maxage=3600, but Pages does
 // not edge-cache Function responses by itself: keep 200s in the colo cache so
 // repeat hits skip the Supabase round trip (Lighthouse: ~750 ms server time).
+const CACHE_PARAMS = ['city', 'genre', 'q', 'ref', 'src'];
 export async function edgeCached(context, render) {
   const cache = globalThis.caches?.default;
   const { request } = context;
   if (!cache || request.method !== 'GET') return render();
-  // Key on the deploy so a release never serves the previous build's HTML.
-  const key = new URL(request.url);
+  // Key on path + the params the handlers read (junk params must not mint new
+  // keys), plus the deploy so a release never serves the previous build's HTML.
+  const url = new URL(request.url);
+  const key = new URL(url.pathname, url);
+  for (const name of CACHE_PARAMS) if (url.searchParams.has(name)) key.searchParams.set(name, url.searchParams.get(name).slice(0, 128));
   key.searchParams.set('__deploy', context.env?.CF_PAGES_COMMIT_SHA || 'local');
   const hit = await cache.match(key.href);
   if (hit) {

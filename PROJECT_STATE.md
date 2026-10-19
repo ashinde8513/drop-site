@@ -275,6 +275,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
+## 2026-10-19 — Claude (Fable security lane) — post-merge review fixes
+
+- Review of `c33aa13..f2a1d5f` (51 PRs): no HIGH. Fixed here: edge-cache key now `pathname` + allowlisted params (`city, genre, q, ref, src`, ≤128 chars) so `?junk=N` no longer busts the cache into Supabase/Functions load, and `/` no longer bypasses the cache on any query; requester avatars in the app shell accept only Supabase-hosted `profile_image` (tracking-pixel path closed); `_socialKey`/`SUBMISSIONS` cleared on every sign-out/account-switch path; the conversion beacon (still off) uses `fetch` with `referrerPolicy: 'no-referrer'`; `deploy.yml` gets `permissions: contents: read`; stale tracked `dist/_headers` + `dist/_redirects` removed (build regenerates them).
+- Refuted by live readback (security lane): `events` INSERT policy already forces `pending_review` unless admin; `friendships.status` has a column UPDATE grant + accept policy, so web Accept works.
+- Open (needs Arya/dashboard): Cloudflare plan tier vs Functions quota for `/` and `/events` (`_routes.json` now routes them through Functions); a Cloudflare rate-limit rule on `/search`, `/og/*`; HSTS (APPROVALS S15).
+- Tested: node suites 75/75; Playwright runs in CI.
+
 ## 2026-10-19 — Claude (Fable security lane) — CSP baseline + Report-Only candidate
 
 - Web-surface security review (read-only live probe of trydropapp.com / app.trydropapp.com + code review): no HIGH; no open redirect; no XSS sink reachable from API data; PostgREST anon fully blocked; headers lacked HSTS and CSP.

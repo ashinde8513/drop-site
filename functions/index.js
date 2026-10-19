@@ -4,9 +4,8 @@ import { fetchHomeSeed, homeLcpImage, withHomeCards, withHomeSeed, withLcpHint }
 
 export async function onRequest(context) {
   try {
-    // Query-string hits (auth callbacks carry one-time codes, UTM links) are
-    // rendered but never become edge-cache keys.
-    return new URL(context.request.url).search ? await render(context) : await edgeCached(context, () => render(context));
+    // Query strings never reach the cache key (edgeCached keeps allowlisted params only).
+    return await edgeCached(context, () => render(context));
   } catch {
     return context.next(); // the plain static homepage, never a 500
   }
