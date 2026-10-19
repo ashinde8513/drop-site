@@ -12,7 +12,8 @@
     "/go",
     "/search",
     "/e/*",
-    "/freshness.json"
+    "/freshness.json",
+    "/og/*"
   ],
   "exclude": []
 }
