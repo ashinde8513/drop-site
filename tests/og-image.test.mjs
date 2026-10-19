@@ -18,6 +18,11 @@ test('share images are byte-checked, size-capped and fall back in order', async 
   const art = await fetchArt(Object.keys(served), fetcher);
   assert.equal(art.type, 'image/jpeg', 'skips 404, non-image and oversized art');
   assert.equal(await fetchArt(['https://a.test/404.png'], fetcher), null);
+  // No Content-Length (chunked): the stream is cut off at the cap instead of buffered.
+  let cancelled = false;
+  const endless = new ReadableStream({ pull(controller) { controller.enqueue(new Uint8Array(1024 * 1024)); }, cancel() { cancelled = true; } });
+  assert.equal(await fetchArt(['https://a.test/stream'], async () => new Response(endless)), null);
+  assert.ok(cancelled, 'oversized stream cancelled');
 });
 
 test('endpoint re-serves real art with the right type, else redirects to the brand card', async () => {
@@ -37,5 +42,8 @@ test('endpoint re-serves real art with the right type, else redirects to the bra
     assert.equal(gone.status, 302);
     assert.equal(gone.headers.get('location'), BRAND_IMAGE);
     assert.equal((await call('not-a-uuid')).status, 302);
+    const busted = await onRequest({ params: { path: [id] }, request: new Request('https://trydropapp.com/og/event/' + id + '?x=1'), env: {}, waitUntil() {} });
+    assert.equal(busted.status, 301, 'query strings never reach the upstream fetch');
+    assert.equal(busted.headers.get('location'), '/og/event/' + id);
   } finally { globalThis.fetch = real; }
 });

@@ -7,6 +7,10 @@ export function onRequest(context) {
 
 async function render({ params, request }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
+  // One cache entry per event: a query string would bypass the edge cache and
+  // force an upstream fetch per request.
+  const url = new URL(request.url);
+  if (url.search) return new Response(null, { status: 301, headers: { Location: url.pathname } });
   const id = routeId(params.path);
   const event = id ? await getEvent(id).catch(() => null) : null;
   const art = event ? await fetchArt(artCandidates(event)) : null;

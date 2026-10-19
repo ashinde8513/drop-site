@@ -21,6 +21,26 @@ export function artCandidates(event) {
   }).slice(0, 3);
 }
 
+// Reads at most MAX_BYTES, cancelling the stream past the cap, so a missing or
+// false Content-Length can't make the edge buffer an unbounded body.
+export async function readCapped(response) {
+  if (!response.body) return null;
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BYTES) { await reader.cancel(); return null; }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return bytes;
+}
+
 // First candidate that is a real image under the size cap, or null.
 export async function fetchArt(candidates, fetcher = fetch) {
   for (const url of candidates) {
@@ -29,8 +49,8 @@ export async function fetchArt(candidates, fetcher = fetch) {
       if (!response.ok) continue;
       const declared = Number(response.headers.get('content-length') || 0);
       if (declared > MAX_BYTES) continue;
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      const type = bytes.length <= MAX_BYTES ? imageType(bytes) : null;
+      const bytes = await readCapped(response);
+      const type = bytes ? imageType(bytes) : null;
       if (type) return { bytes, type };
     } catch { /* next candidate */ }
   }
