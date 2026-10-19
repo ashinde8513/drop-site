@@ -604,3 +604,8 @@ test('city pages link small-town shows in their state and bordering non-market s
   assert.match(urls[0], /or=\(date\.gte\.[^,]+,end_date\.gte\.[^)]+\)/, 'ongoing runs count, like the sitemap');
   assert.deepEqual(await smallTownShows(null), []);
 });
+
+test('share images: event art through /og/event, art-less events get the branded card', () => {
+  assert.equal(eventView(catalogEvent({ image_url: 'https://img.test/a.jpg' })).image, `https://trydropapp.com/og/event/${id}`);
+  assert.equal(eventView(catalogEvent({ image_url: null, event_artists: [] })).image, `https://trydropapp.com/og/card/${id}`);
+});
