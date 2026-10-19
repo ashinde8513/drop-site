@@ -5,7 +5,8 @@ async function setup(page, consent: string | null) {
   await page.addInitScript((value) => {
     try { if (value) localStorage.setItem('drop.cookie-consent', value); } catch {}
     (window as any).__beacons = [];
-    window.fetch = function (url: any) { (window as any).__beacons.push(String(url)); return Promise.resolve(new Response('')); };
+    // #181 moved beacons from sendBeacon to fetch; only record the beacon endpoint, not the page's own data fetches.
+    window.fetch = function (url: any) { const u = String(url); if (u.startsWith('/e/')) (window as any).__beacons.push(u); return Promise.resolve(new Response('')); };
     document.addEventListener('click', (e) => e.preventDefault());
   }, consent);
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
