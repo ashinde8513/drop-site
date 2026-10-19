@@ -53,3 +53,14 @@ test('OKF bundle files carry frontmatter and only link to files that exist', asy
   const listed = [...read('okf/city-guides.md').matchAll(/^- \[([^\]]+)\]\(https:\/\/trydropapp\.com\/city\?city=/gm)].map((m) => m[1]);
   assert.deepEqual(listed, CITIES, 'OKF city guides must list exactly CITIES');
 });
+
+test('every page opts out of Cloudflare email obfuscation (its /cdn-cgi link 404s for crawlers)', async () => {
+  const { readdirSync } = await import('node:fs');
+  const pages = readdirSync(new URL('../', import.meta.url)).filter((f) => f.endsWith('.html') && !f.startsWith('google'))
+    .concat(['app/index.html'], readdirSync(new URL('../guides/', import.meta.url)).filter((f) => f.endsWith('.html')).map((f) => 'guides/' + f));
+  for (const page of pages) {
+    const html = readFileSync(new URL('../' + page, import.meta.url), 'utf8');
+    assert.match(html, /<body[^>]*>\n<!--email_off-->/, page);
+    assert.match(html, /<!--\/email_off-->\n<\/body>/, page);
+  }
+});

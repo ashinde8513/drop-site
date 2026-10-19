@@ -1,6 +1,7 @@
 import template from '../../event.html';
 import notFound from '../../404.html';
-import { eventPath, eventView, getEvent, htmlResponse, redirectResponse, renderTemplate, routeId, safeAttributionQuery, edgeCached } from '../../src/entity-seo.mjs';
+import { eventPath, eventView, getEvent, getNextShows, htmlResponse, redirectResponse, renderTemplate, routeId, safeAttributionQuery, edgeCached } from '../../src/entity-seo.mjs';
+import { knownCity } from '../../src/acquisition-seo.mjs';
 
 export function onRequest(context) {
   return edgeCached(context, () => render(context));
@@ -15,7 +16,8 @@ async function render({ params, request }) {
     if (!event) return htmlResponse(notFound, 404);
     const path = eventPath(event);
     if (new URL(request.url).pathname !== path) return redirectResponse(path, request.url);
-    const view = eventView(event);
+    const city = knownCity(event.city);
+    const view = eventView(event, { nearby: await getNextShows(event), cityPath: city ? '/city?city=' + encodeURIComponent(city) : null });
     // Keep validated referral attribution when the Smart App Banner opens the app;
     // otherwise name the banner itself so the app can attribute the open.
     return htmlResponse(renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + (safeAttributionQuery(request.url) || '?src=smart_banner') }));

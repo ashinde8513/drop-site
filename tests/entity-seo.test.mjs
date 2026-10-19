@@ -113,7 +113,8 @@ test('index gate fails closed and requires useful aggregate content', () => {
   const artist = { id: artistId, name: 'Artist' };
   assert.equal(isIndexableArtist({ artist, events: [valid] }), false);
   assert.equal(isIndexableArtist({ artist, events: [valid, valid] }), false);
-  assert.equal(isIndexableArtist({ artist: { ...artist, genres: ['House'] }, events: [valid] }), true);
+  assert.equal(isIndexableArtist({ artist: { ...artist, genres: ['House'] }, events: [valid] }), false, 'auto-filled genres alone are thin');
+  assert.equal(isIndexableArtist({ artist: { ...artist, image_url: 'https://img.test/a.jpg' }, events: [valid] }), true);
   assert.equal(isIndexableArtist({ artist, events: [valid, second] }), true);
   assert.equal(isIndexableArtist({ artist: { ...artist, id: 'bad' }, events: [valid, second] }), false);
 });
@@ -564,4 +565,16 @@ test('ItemList entries carry the same MusicEvent as the event page', async () =>
     assert.ok(item.location.address.addressLocality);
   }
   assert.match(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /"urlTemplate": "https:\/\/trydropapp\.com\/search\?q=\{query\}"/);
+});
+
+test('link graph: junk listings are out, every show links its venue, city and next shows', async () => {
+  const { eventView, isIndexableEvent } = await import('../src/entity-seo.mjs');
+  assert.equal(isIndexableEvent(catalogEvent({ title: 'Deadmau5 Bus To Show Pickup Spot (FREE EVENT)' })), false);
+  assert.equal(isIndexableEvent(catalogEvent({ title: 'Pretty Lights - Soundship Space Bus Tour' })), true, 'a tour named "bus" is still a show');
+  const next = catalogEvent({ id: id2, title: 'Next <Night>', date: '2026-09-02T03:00:00Z', timezone: 'America/Denver', venue_name: 'Ogden' });
+  const view = eventView(catalogEvent({ city: 'Denver' }), { nearby: [next], cityPath: '/city?city=Denver' });
+  assert.match(view.body, new RegExp(`<a href="/venue/${venueId}/red-rocks-denver">Red Rocks</a>, Denver, CO`));
+  assert.match(view.body, new RegExp(`<h2>More shows in Denver</h2><ul><li><a href="/event/${id2}/next-night">Next &lt;Night&gt;</a> · Sep 1 · Ogden</li></ul>`));
+  assert.match(view.body, /<a href="\/city\?city=Denver">All EDM shows in Denver<\/a>/);
+  assert.doesNotMatch(eventView(catalogEvent()).body, /More shows in|All EDM shows/, 'nothing to link stays empty');
 });
