@@ -189,7 +189,7 @@ test.describe('E suggest an event', () => {
     await page.getByLabel('Event date').fill(day(30));
     await page.locator('[data-bind-key="sugLink"]').fill('https://tickets.example.test/x');
     await page.getByRole('button', { name:'Submit event' }).click();
-    await expect(page.getByText('Submitted for review — we’ll email you when it’s live')).toBeVisible();
+    await expect(page.getByText('Submitted for review. Approved events appear in Discover.')).toBeVisible();
     expect(await ops(page, 'events', 'insert')).toEqual([[['insert', [{
       title:'Some DJ at The Church', venue_name:'The Church', city:'Denver', state:'CO', ticket_url:'https://tickets.example.test/x',
       date:day(30) + 'T12:00:00Z', time_tbd:true, submitted_by:USER_ID, status:'pending_review',

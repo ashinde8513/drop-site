@@ -1242,7 +1242,7 @@ class Component extends DCLogic {
       return;
     }
     this.SUBMISSIONS = [...this.SUBMISSIONS, { title:artist, venue:venue || city, date:s.sugDate, status:'review' }];
-    this.setState({ sugBusy:false, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugDone:'Submitted for review \u2014 we\u2019ll email you when it\u2019s live' });
+    this.setState({ sugBusy:false, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugDone:'Submitted for review. Approved events appear in Discover.' });
   }
   acceptedFriendIds(){
     const uid = this.state.userId;
