@@ -347,7 +347,8 @@ export function eventView(event, { nearby = [], cityPath = null } = {}) {
   const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
   const art = safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url);
   // Share cards use our own image endpoint (byte-checked, correct type, brand fallback).
-  const image = art ? 'https://trydropapp.com/og/event/' + encodeURIComponent(event.id) : DEFAULT_IMAGE;
+  // No usable art: the branded per-event card (/og/card, D20) instead of the generic brand image.
+  const image = 'https://trydropapp.com/og/' + (art ? 'event/' : 'card/') + encodeURIComponent(event.id);
   const ticketUrl = safeHttpUrl(event.ticket_url);
   const dateText = formatEventDate(event.date, event.time_tbd, event.timezone);
   const lineup = performers.length ? '<p><strong>Lineup:</strong> ' + performers.map((artist) => '<a href="' + artistPath(artist) + '">' + escapeHtml(artist.name) + '</a>').join(', ') + '</p>' : '';
