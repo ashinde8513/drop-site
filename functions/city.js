@@ -1,6 +1,6 @@
 import template from '../city.html';
 import notFound from '../404.html';
-import { knownCity, renderCityPage, upcomingEvents } from '../src/acquisition-seo.mjs';
+import { knownCity, renderCityPage, smallTownShows, stateOf, upcomingEvents } from '../src/acquisition-seo.mjs';
 import { htmlResponse, edgeCached } from '../src/entity-seo.mjs';
 
 export function onRequest(context) {
@@ -14,5 +14,7 @@ async function render({ request }) {
   if (!city) return htmlResponse(notFound, 404);
   const canonical = '/city?city=' + encodeURIComponent(city);
   if (url.pathname + url.search !== canonical) return new Response(null, { status: 301, headers: { Location: canonical } });
-  return htmlResponse(renderCityPage(template, city, request.method === 'HEAD' ? [] : await upcomingEvents({ city, limit: 500 })));
+  if (request.method === 'HEAD') return htmlResponse(renderCityPage(template, city, []));
+  const events = await upcomingEvents({ city, limit: 500 });
+  return htmlResponse(renderCityPage(template, city, events, await smallTownShows(stateOf(events))));
 }

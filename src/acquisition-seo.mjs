@@ -80,6 +80,39 @@ function eventItems(events) {
     ', ' + escapeHtml(shortDate(event)) + '</li>');
 }
 
+// Shows in the same state outside every market city: the only crawl path to
+// single-show towns (2026-10-19 crawl: the last 45 orphans were all these).
+// ponytail: 200 links per city page; split by region if one state outgrows it.
+export const STATE_SHOW_LINKS = 200;
+// Bordering states/provinces with no market of their own ride along with a
+// market state, so every upcoming show has a crawl path (none are noindexed).
+export const NEARBY_STATES = {
+  CO: ['NM', 'UT', 'WY', 'KS', 'NE'], WA: ['ID', 'MT', 'AK', 'BC'], OR: [], CA: ['HI'], NV: [], AZ: [],
+  TX: ['OK', 'LA', 'AR'], IL: ['IN', 'WI', 'MO', 'IA', 'MN'], GA: ['TN', 'AL', 'SC', 'MS'], FL: [],
+  NY: ['NJ', 'CT', 'VT'], MA: ['NH', 'RI', 'ME'], PA: ['DE', 'MD', 'WV'], DC: ['VA'], MI: ['ON'], OH: ['KY'], NC: [],
+};
+export async function smallTownShows(state) {
+  if (!state) return [];
+  const states = [state, ...(NEARBY_STATES[state] || [])];
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  try {
+    const rows = await rest('events', {
+      select: 'id,title,date,timezone,time_tbd,lifecycle_status,venue_id,venue_name,venue_address,city,state',
+      status: 'eq.published', state: 'in.(' + states.join(',') + ')', date: 'gte.' + today.toISOString(), order: 'date.asc,id.asc', limit: 1000,
+    });
+    const markets = new Set(CITIES.map((city) => city.toLowerCase()));
+    return rows.filter((event) => isIndexableEvent(event) && !markets.has(String(event.city || '').trim().toLowerCase())).slice(0, STATE_SHOW_LINKS);
+  } catch { return []; }
+}
+
+// Most common state among a city's shows (CITIES carries names only).
+export function stateOf(events) {
+  const tally = {};
+  for (const event of events || []) if (event.state) tally[event.state] = (tally[event.state] || 0) + 1;
+  return Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0] || null;
+}
+
 // Denver is the server default, so its canonical genre URL has no city param
 // (that is the form listed in the static sitemap).
 export function genrePath(genre, city) {
@@ -129,7 +162,7 @@ function withCityFaq(html, city) {
   return html.replace('</head>', () => '<script type="application/ld+json" data-server-faq>' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>\n</head>');
 }
 
-export function renderCityPage(template, city, events = []) {
+export function renderCityPage(template, city, events = [], elsewhere = []) {
   const canonical = 'https://trydropapp.com/city?city=' + encodeURIComponent(city);
   const description = 'Every rave, festival, and club night in ' + city + ' — with all-in prices and who’s going. Updated daily.';
   const html = render(template, {
@@ -144,7 +177,9 @@ export function renderCityPage(template, city, events = []) {
   const guides = ['<li><a href="/events?when=weekend&amp;city=' + escapeHtml(encodeURIComponent(city)) + '">This weekend in ' + escapeHtml(city) + '</a></li>',
     '<li><a href="/events?festival=1">Upcoming festivals</a></li>', '<li><a href="/guides">Guides: festivals, venues and your first rave</a></li>'];
   const others = CITIES.filter((other) => other !== city).map((other) => '<li><a href="/city?city=' + escapeHtml(encodeURIComponent(other)) + '">EDM shows in ' + escapeHtml(other) + '</a></li>');
-  const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides) + linkBlock('Other cities', others);
+  const towns = (elsewhere || []).map((event) => '<li><a href="' + escapeHtml(eventPath(event)) + '">' + escapeHtml(event.title) + '</a> — ' + escapeHtml([event.venue_name, event.city].filter(Boolean).join(', ')) + ', ' + escapeHtml(shortDate(event)) + '</li>');
+  const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides) +
+    linkBlock('More shows nearby, outside the big cities', towns) + linkBlock('Other cities', others);
   return inject(withCityFaq(html, city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
 }
 
