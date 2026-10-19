@@ -5,7 +5,16 @@ async function setup(page, consent: string | null) {
   await page.addInitScript((value) => {
     try { if (value) localStorage.setItem('drop.cookie-consent', value); } catch {}
     (window as any).__beacons = [];
-    window.fetch = function (url: any) { (window as any).__beacons.push(String(url)); return Promise.resolve(new Response('')); };
+    // Record only conversion beacons (/e/...) and their privacy options; every
+    // other request (catalog, cities) goes to the real fetch untouched.
+    const real = window.fetch.bind(window);
+    window.fetch = function (url: any, init?: RequestInit) {
+      const path = String(url);
+      if (!/^\/e\//.test(path)) return real(url, init);
+      (window as any).__beacons.push(path);
+      (window as any).__beaconInit = { method: init?.method, keepalive: init?.keepalive, referrerPolicy: init?.referrerPolicy, credentials: init?.credentials };
+      return Promise.resolve(new Response(null, { status: 204 }));
+    };
     document.addEventListener('click', (e) => e.preventDefault());
   }, consent);
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
@@ -14,8 +23,11 @@ async function setup(page, consent: string | null) {
 // load (page renders, site.js never runs); one reload covers that.
 async function open(page, path: string) {
   await page.goto(path);
-  if (!(await page.evaluate(() => Boolean((window as any).Drop?.track)))) await page.reload();
-  await page.waitForFunction(() => (window as any).Drop?.track);
+  const ready = () => page.evaluate(() => Boolean((window as any).Drop?.track && (window as any).DropConsent));
+  await page.waitForLoadState('load');
+  if (!(await ready())) await page.reload();
+  // consent.js is deferred: without it Drop.track (correctly) sends nothing.
+  await page.waitForFunction(() => (window as any).Drop?.track && (window as any).DropConsent);
 }
 async function clickLinks(page) {
   await page.evaluate(() => {
@@ -37,6 +49,7 @@ test('when enabled, only "Accept all" visitors send path-only counts', async ({ 
   await open(page, '/about.html');
   await page.evaluate(() => { (window as any).Drop.TRACKING = true; });
   expect(await clickLinks(page)).toEqual(['/e/ticket_click/etix/about', '/e/app_store_click/android/about']);
+  expect(await page.evaluate(() => (window as any).__beaconInit)).toEqual({ method: 'POST', keepalive: true, referrerPolicy: 'no-referrer', credentials: 'omit' });
 });
 
 test('essential-only visitors send nothing when enabled', async ({ page }) => {
