@@ -6,7 +6,7 @@
 // INDEXNOW_KEY and the key file live at https://trydropapp.com/<key>.txt
 // (APPROVALS W23), then records what was sent in indexnow/submitted.json.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export const HOST = 'trydropapp.com';
@@ -60,5 +60,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log('IndexNow', res.status, body.urlList.length, 'URLs');
     if (res.status !== 200 && res.status !== 202) throw new Error('IndexNow rejected the batch: ' + res.status);
   }
+  mkdirSync(new URL('.', SNAPSHOT), { recursive: true });
   writeFileSync(SNAPSHOT, JSON.stringify({ updatedAt: new Date().toISOString(), urls: [...new Set([...submitted, ...urls])].sort() }, null, 1) + '\n');
 }
