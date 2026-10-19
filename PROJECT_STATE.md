@@ -21,6 +21,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 
 ## Current status
 ### What works
+- **CONSENTED CLICK COUNTS LIVE + CLOUDFLARE RUM OFF (2026-10-20, Claude; Arya approved in session):** Cloudflare Web Analytics for trydropapp.com set to Disabled in the dashboard (was Automatic setup, beacon fired regardless of consent). Live check: zero `cloudflareinsights` / `/cdn-cgi/rum` requests across 6 consent scenarios × 4 pages. `/privacy#cookies` now describes the first-party click counts (#176); `Drop.TRACKING = true`. Live iPhone check: Accept all sends `POST /e/ticket_click/<vendor>/event` (no referrer, 204); Essential only / no choice sends nothing. Counts are visible in Cloudflare zone analytics by path `/e/` (API read needs Zone Analytics: Read on the token).
 - **APPROVALS BATCH SHIPPED (2026-10-20, Claude; Arya approved D19, D20, W20, W23, W25 in session):**
   - **D19 (#177).** The visible venue "Know before you go" card.
   - **D20 (#182, #187).** `/og/card/<id>` branded share cards (resvg-wasm 2.6.2) for art-less events.
@@ -28,7 +29,7 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
   - **W25.** `.github/workflows/freshness.yml` runs every 6 h and manages the "Catalog data is stale" issue.
   - **W20.** `.github/workflows/cwv.yml` runs weekly into the `cwv-data` branch.
   - **Main unbroken (#183).** The tracking spec was red after #181.
-  - **W21 HELD (#176 draft).** The Cloudflare Web Analytics beacon still loads regardless of consent.
+  - **W21:** shipped later the same day (#176, after Cloudflare RUM was disabled; see above).
 - **WAVE 10 SHIPPED (2026-10-20, Claude):**
   - **Venue "Know before you go" (#169).** Server body only, from approved `venue_intel` facts using the native 90-day rule (0 approved today, so all categories read Unknown), per-show age labels from listings, and capacity Unknown (no source). The visible client block is design spec D19.
   - **Per-event share images (#171).** `/og/event/<id>`: the event's own art byte-checked, a 5 MB stream cap, correct Content-Type, query strings 301 away, brand-card fallback. Fixes SeeTickets PNGs served as form-urlencoded and dead art. A branded composite for art-less events (~50%) is design spec D20.
@@ -223,7 +224,6 @@ How to use: advisory + durable record only. Concurrent sessions auto-isolate in 
 Live cross-session claims (who is working on what right now) are in the vault: `AI Agents/Operations/SESSION_CLAIMS.md` — run `python3 ~/Developer/agent-stack/scripts/session_claim.py list`. List durable in-progress items here.
 - Codex session `01a06e42-e0b1-7d12-96c6-f18ddb52c31f`: deliver store availability and safe public event-action continuation through PR, main CI, and live verification.
 ### Blocked / waiting on
-- **Cloudflare Web Analytics beacon vs. privacy policy (waiting-founder, APPROVALS W21 status update):** the beacon (`static.cloudflareinsights.com` plus `POST /cdn-cgi/rum`) loads on every page with no choice, after Essential only and after Accept all (live browser check 2026-10-20). The live policy already says no optional analytics load. Turn off Web Analytics automatic setup (dashboard, or a token with Web Analytics edit), verify zero `/cdn-cgi/rum` requests, then merge #176.
 - **Venue facts load (waiting-founder, APPROVALS W27b):** 11 sourced pending rows staged in `~/Claude/weekly-goal-2026-10-17/venue-intel-proposal-20261020.sql`.
 - **IndexNow on (waiting-founder, APPROVALS W23):** generate the key, commit `/<key>.txt`, then run `INDEXNOW_KEY=… node scripts/indexnow.mjs --submit` (first run sends ~3,866 URLs).
 - **Freshness alert schedule (waiting-founder, APPROVALS W25):** uptime monitor on `/freshness.json` (recommended), Actions cron, or Mac mini launchd.
