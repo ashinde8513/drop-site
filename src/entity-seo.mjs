@@ -490,6 +490,8 @@ export const SECURITY_HEADERS = {
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), payment=(), usb=(), geolocation=(self)',
   'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Content-Security-Policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  'Content-Security-Policy-Report-Only': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data:; connect-src 'self' https://ebccwnkmsnhbljxxxdej.supabase.co wss://ebccwnkmsnhbljxxxdej.supabase.co https://app.trydropapp.com https://trydropapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
 };
 
 export function htmlResponse(html, status = 200, cacheControl = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400') {
