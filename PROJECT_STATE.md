@@ -858,6 +858,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 ## Recent Sessions
 <!-- SESSIONS:newest-first -->
+### 2026-10-19 — Claude (Fable audit lane) — ponytail over-engineering audit + dead-file cleanup
+- `docs/audit/2026-10-19-ponytail-audit.md` ranks what is dead, duplicated or bloated (182 files, 83 ship / 2.8 MB; ~-1,000 LOC findable; 1 dependency, nothing removable). PR #155 shipped the lowest-risk batch: tracked `dist/_headers`+`dist/_redirects`, two unreferenced OG SVGs, design-drop test artefacts, `design-qa.md`, `Drop.dateBlock`, two unused npm scripts; five Playwright specs share `tests/helpers/fakeSupabase.ts`. 18 files, +133/−420.
+- Merged `e417ca3` on green CI (test + lighthouse); deploy run 39187241492 succeeded; live: `/` 200, `/og-image*.svg` 404, AASA unchanged, security headers present, `dateBlock` absent from live `data.js`.
+- Not done (audit batches 2, 3, 5): archive older waves out of this file (~-700 lines, coordinate with its owners), route factory for the `functions/*/[[path]].js` pairs (touches live routing), small export/sitemap trims. Local Playwright is flaky on the Mac (baseline fails too); the pinned-image CI run is the gate.
 ### 2026-10-15 — Codex — Read-only website beacon audit
 - **Publication correction:** legacy root/main GitHub Pages also publishes Markdown. The newly added internal audit/receipt use underscore-prefixed filenames to exclude them from its current default Jekyll build; old/new public paths require 404 readback after corrective publication. Cloudflare deploy assets remain unchanged.
 - **Completed:** unclaimed backlog audit after fresh Claude/claim/PR checks. Seven live Chromium/mobile-WebKit cases, recorded payloads and inspected desktop/mobile screenshots establish consent bypass and Crew path capture; query/fragment markers absent. No real board/account data used; beacon POSTs intercepted locally.
