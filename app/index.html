@@ -512,11 +512,11 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid {{ p.border }};border-radius:var(--r-md);">
                   <div style="display:flex;align-items:center;gap:var(--sp-md);">
                     <span style="font-weight:600;">{{ p.seller }}</span>
-                    <sc-if value="{{ p.best }}"><span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--attended);padding:3px 8px;border-radius:var(--r-pill);">BEST PRICE</span></sc-if>
+                    <sc-if value="{{ p.best }}"><span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--attended);padding:3px 8px;border-radius:var(--r-pill);">LOWEST LISTED</span></sc-if>
                   </div>
                   <div style="display:flex;align-items:center;gap:var(--sp-md);">
                     <span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ p.price }}</span>
-                    <button type="button" class="btn btn--secondary btn--sm" onClick="{{ aeTickets }}">Get tickets</button>
+                    <button type="button" class="btn btn--secondary btn--sm" onClick="{{ p.open }}">Get tickets</button>
                   </div>
                 </div>
               </sc-for>
@@ -1766,8 +1766,8 @@
   <main class="wsh">
     <div style="max-width:600px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goCrew }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to crew</a>
-      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends, earn Drop+</h1>
-      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Every friend who joins gets you closer to a free month of Drop+.</p>
+      <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xs);">Invite friends</h1>
+      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Invite friends so you can see the same shows together.</p>
 
       <!-- reward meter -->
       <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:var(--sp-lg);margin-bottom:var(--sp-xl);">
@@ -2201,9 +2201,8 @@
                   </sc-for>
                 </div>
                 <div>
-                  <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">ODESZA</div>
-                  <div style="font-size:11px;color:var(--text-secondary);">Red Rocks · Jun 20, 2026</div>
-                  <div style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--gold);"><span style="color:var(--gold);">★★★★★</span></div>
+                  <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">{{ recapCardTitle }}</div>
+                  <div style="font-size:11px;color:var(--text-secondary);">{{ recapCardMeta }}</div>
                 </div>
               </div>
             </div>
@@ -2313,9 +2312,8 @@
       <div style="text-align:center;margin-bottom:var(--sp-xl);">
         <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--grad-glow);padding:5px 12px;border-radius:var(--r-pill);margin-bottom:var(--sp-md);">✦ DROP+</div>
         <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,40px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop</h1>
-        <p style="color:var(--text-secondary);margin:0 0 var(--sp-sm);">Presale alerts, early RSVPs, and cashback — earn free months back by referring friends.</p>
-        <p style="font-size:var(--fs-sm);color:var(--accent);margin:0;font-weight:600;">Members keep earning free Drop+ time every month.</p>
-      </div>
+        <p style="color:var(--text-secondary);margin:0 0 var(--sp-sm);">Drop+ isn't available yet.</p>
+              </div>
 
       <div style="display:flex;flex-direction:column;gap:var(--sp-sm);margin-bottom:var(--sp-xl);">
         <sc-for list="{{ plusPlans }}" as="p" hint-placeholder-count="2">
@@ -2333,8 +2331,8 @@
         </sc-for>
       </div>
 
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ plusContinue }}">{{ plusCtaLabel }}</button>
-      <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin-top:var(--sp-md);">Cancel anytime. Earn free time back with referrals. Payments coming soon.</p>
+      <button type="button" class="btn btn--primary btn--block" disabled>{{ plusCtaLabel }}</button>
+      <p style="text-align:center;color:var(--text-muted);font-size:var(--fs-xs);margin-top:var(--sp-md);">Payments aren't available yet.</p>
     </div>
   </main>
 </sc-if>
@@ -2392,12 +2390,12 @@
     <div style="position:relative;width:100%;max-width:420px;">
       <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-xl);padding:var(--sp-xl);box-shadow:var(--shadow-card);margin-bottom:var(--sp-lg);display:flex;align-items:center;gap:var(--sp-md);">
         <span style="width:56px;height:56px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 2px var(--accent);flex:0 0 auto;"></span>
-        <div style="flex:1;"><div style="font-size:var(--fs-sm);color:var(--text-secondary);"><b style="color:var(--text);">Maya Chen</b> invited you to Drop</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">@ravewithmaya · joins you both to a free week of Drop+</div></div>
+        <div style="flex:1;"><div style="font-size:var(--fs-sm);color:var(--text-secondary);"><b style="color:var(--text);">A friend</b> invited you to Drop</div><div style="font-size:var(--fs-xs);color:var(--text-muted);">See the shows your friends are going to</div></div>
       </div>
       <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4.5vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-xs);">Never miss a drop.</h1>
-      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Create your free account and you'll land right in Maya's crew.</p>
+      <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Create your free account and you can find your friends on Drop.</p>
       <input type="email" placeholder="you@example.com" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
-      <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Claim my free week</button>
+      <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Create my account</button>
       <p style="text-align:center;color:var(--text-secondary);font-size:var(--fs-sm);margin-top:var(--sp-lg);">Already on Drop? <a class="u-link" href="#" onClick="{{ goLogin }}">Log in</a></p>
     </div>
   </main>
@@ -2692,18 +2690,17 @@
             <span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.08);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.05);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.06);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.04);"></span>
           </div>
           <div>
-            <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">ODESZA</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Red Rocks · Jun 20, 2026</div>
-            <div style="margin-top:8px;color:var(--gold);font-size:10px;letter-spacing:1px;">★★★★★</div>
+            <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">A night out</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Shared on Drop</div>
           </div>
         </div>
       </div>
       <div>
         <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-lg);"><span style="width:14px;height:14px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
-        <div class="wsc__date">RECAP · RED ROCKS AMPHITHEATRE</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,40px);letter-spacing:var(--tr-tight);line-height:1.05;margin:6px 0 var(--sp-sm);">Maya's night at ODESZA</h1>
+        <div class="wsc__date">SHOW RECAP</div>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,40px);letter-spacing:var(--tr-tight);line-height:1.05;margin:6px 0 var(--sp-sm);">A night out on Drop</h1>
         <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0 0 var(--sp-xl);">See the shows your friends are hitting and build recaps of your own.</p>
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Join Maya on Drop</button>
+        <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Join Drop</button>
         <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ appToast }}">Get the app</button>
       </div>
     </div>
@@ -2718,17 +2715,8 @@
     <div style="position:relative;width:100%;max-width:460px;text-align:center;">
       <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-lg);"><span style="width:14px;height:14px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
       <div style="border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border-strong);box-shadow:var(--shadow-card);background:linear-gradient(160deg,#4d1c4a,#1c274d 55%,#0d3b52);padding:var(--sp-xxl) var(--sp-xl);margin-bottom:var(--sp-lg);">
-        <div class="wsc__date">MAYA'S 2026 WRAPPED</div>
-        <div style="font-family:var(--font-display);font-weight:700;font-size:clamp(56px,11vw,88px);line-height:1;background:var(--grad-glow);-webkit-background-clip:text;background-clip:text;color:transparent;margin:var(--sp-sm) 0;">52</div>
-        <div style="font-size:var(--fs-md);color:var(--text-secondary);margin-bottom:var(--sp-lg);">shows this year · 141 artists</div>
-        <div style="display:flex;justify-content:space-around;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
-          <div><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);">ODESZA</div><div class="metric__label" style="color:var(--text-secondary);">Top artist</div></div>
-          <div><div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xl);color:var(--attended);">Melodic</div><div class="metric__label" style="color:var(--text-secondary);">Top genre</div></div>
-        </div>
-        <div style="text-align:left;">
-          <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--text-secondary);margin-bottom:6px;"><span>Top 2% of Denver ravers</span><span style="color:var(--accent);">98th</span></div>
-          <div style="height:12px;border-radius:var(--r-pill);background:rgba(255,255,255,0.12);overflow:hidden;"><div style="height:100%;width:98%;background:var(--grad-glow-fill);border-radius:var(--r-pill);"></div></div>
-        </div>
+        <div class="wsc__date">DROP WRAPPED</div>
+        <div style="font-size:var(--fs-md);color:var(--text-secondary);margin:var(--sp-md) 0;">Your year in shows — top artists, genres and venues.</div>
       </div>
       <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-lg);margin-bottom:var(--sp-md);">How does your year compare?</div>
       <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Get your Drop Wrapped</button>
