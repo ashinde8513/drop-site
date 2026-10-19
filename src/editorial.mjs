@@ -4,7 +4,7 @@
 // /events; the server adds real listings, schema and its own canonical. Copy is
 // templated from catalog data only.
 import { CITIES, knownCity, MIN_GENRE_SHOWS } from './acquisition-seo.mjs';
-import { escapeHtml, eventPath, isIndexableEvent, rest, schemaEventStatus, venuePath } from './entity-seo.mjs';
+import { escapeHtml, eventLd, eventPath, isIndexableEvent, rest, venuePath } from './entity-seo.mjs';
 
 export const CITY_TIME_ZONES = {
   Denver: 'America/Denver', 'Los Angeles': 'America/Los_Angeles', Seattle: 'America/Los_Angeles',
@@ -16,7 +16,7 @@ export const CITY_TIME_ZONES = {
   Washington: 'America/New_York', Miami: 'America/New_York', Detroit: 'America/Detroit',
   Philadelphia: 'America/New_York', Columbus: 'America/New_York', Charlotte: 'America/New_York',
 };
-const SELECT = 'id,title,date,end_date,timezone,time_tbd,is_festival,lifecycle_status,venue_id,venue_name,venue_address,city,state,image_url';
+const SELECT = 'id,title,date,end_date,timezone,time_tbd,is_festival,lifecycle_status,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,price_min,currency,ticket_status,event_artists(artists(id,name,image_url))';
 
 function zonedParts(date, timeZone) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
@@ -108,12 +108,7 @@ function itemList(name, events, type) {
     '@context': 'https://schema.org', '@type': 'ItemList', name, numberOfItems: events.length,
     itemListElement: events.map((event, index) => ({
       '@type': 'ListItem', position: index + 1,
-      item: {
-        '@type': type, name: event.title, startDate: event.date, endDate: event.end_date && event.end_date !== event.date ? event.end_date : undefined,
-        url: 'https://trydropapp.com' + eventPath(event), eventStatus: schemaEventStatus(event.lifecycle_status),
-        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode', image: event.image_url || undefined,
-        location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state } },
-      },
+      item: { ...eventLd(event), '@type': type },
     })),
   };
 }

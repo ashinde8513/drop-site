@@ -338,7 +338,7 @@ export function eventView(event) {
 }
 
 // One MusicEvent shape for event pages and the shows listed on venue/artist pages.
-function eventLd(event, { canonical = 'https://trydropapp.com' + eventPath(event), image, description } = {}) {
+export function eventLd(event, { canonical = 'https://trydropapp.com' + eventPath(event), image, description } = {}) {
   const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
   const art = image ?? (safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url));
   const ticketUrl = safeHttpUrl(event.ticket_url);
