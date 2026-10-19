@@ -11,7 +11,8 @@
     "/sitemap-entities.xml",
     "/go",
     "/search",
-    "/e/*"
+    "/e/*",
+    "/freshness.json"
   ],
   "exclude": []
 }
