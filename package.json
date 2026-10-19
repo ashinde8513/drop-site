@@ -5,9 +5,7 @@
   "description": "Playwright E2E/smoke tests for the Drop website",
   "scripts": {
     "test": "node --test tests/entity-seo.test.mjs tests/static-seo.test.mjs tests/guides.test.mjs tests/deploy-contract.test.mjs tests/go-route.test.mjs tests/crew-links.test.mjs tests/search.test.mjs tests/newsletter.test.mjs && playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed",
-    "report": "playwright show-report"
+    "test:ui": "playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1"
