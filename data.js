@@ -591,13 +591,6 @@
     return base + ' · ' + h12 + ':' + mm + ' ' + ap;
   };
 
-  // Short date pieces for the artist-row date block.
-  Drop.dateBlock = function (iso) {
-    var d = new Date(iso);
-    if (isNaN(d)) return { mon: '', day: '', dow: '' };
-    return { mon: MON[d.getMonth()].toUpperCase(), day: '' + d.getDate(), dow: DOW[d.getDay()] };
-  };
-
   Drop.fmtPrice = function (min, max) {
     var cur = '$';
     function n(v) { return cur + Math.round(v); }

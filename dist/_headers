@@ -1,9 +1,24 @@
+# Security baseline for every static response. Pages Functions set the same
+# set in src/entity-seo.mjs SECURITY_HEADERS (they bypass this file).
+/*
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=(self)
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
 /.well-known/apple-app-site-association
   Content-Type: application/json
 
 # Crew share fallback contains no board data; keep identifiers out of referrers.
 /crew-picks/*
   Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
+
+# Open Knowledge Format bundle (agent-readable markdown).
+/okf/*
+  Content-Type: text/markdown; charset=utf-8
+
+# Signed-in app shell (also served on app.trydropapp.com via the Worker).
+/app/*
   X-Robots-Tag: noindex, nofollow
 
 # Revalidate all static assets so a new deploy never serves stale CSS/JS
