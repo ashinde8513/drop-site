@@ -1,7 +1,7 @@
 const DEFAULT_IMAGE = 'https://trydropapp.com/og-image.png';
 const REST = 'https://ebccwnkmsnhbljxxxdej.supabase.co/rest/v1/';
 const PUBLIC_KEY = 'sb_publishable_ZMsNcfhfqsGgyvsdBDTKHg__h8SDZyd';
-const EVENT_SELECT = 'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,price_min,price_max,currency,time_tbd,timezone,lifecycle_status,ticket_status,created_at,event_artists(artists(id,name,genres,image_url))';
+const EVENT_SELECT = 'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,price_min,price_max,currency,time_tbd,timezone,lifecycle_status,ticket_status,age_restriction,created_at,event_artists(artists(id,name,genres,image_url))';
 
 export function slugify(value) {
   return String(value || '')
@@ -399,13 +399,13 @@ function showItem(event, withVenue) {
     : '';
   return '<li><a href="' + eventPath(event) + '">' + escapeHtml(event.title) + '</a>' + where + ' · ' + escapeHtml(when) + '</li>';
 }
-function entityBody({ section, sectionHref, name, path, lead, events, withVenue }) {
+function entityBody({ section, sectionHref, name, path, lead, events, withVenue, extra = '' }) {
   const shown = events.slice(0, LISTED_SHOWS);
   const more = events.length > shown.length ? '<p>And ' + (events.length - shown.length) + ' more upcoming shows.</p>' : '';
   const follow = 'https://app.trydropapp.com/?mode=login&next=' + encodeURIComponent(path);
   return '<article class="wrap" style="padding:32px 0"><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="' + sectionHref + '">' + section + '</a> / ' + escapeHtml(name) + '</nav>' +
     '<h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(lead) + '</p>' +
-    '<p><a href="' + escapeHtml(follow) + '">Follow ' + escapeHtml(name) + ' on Drop</a> · <a href="/download">Get the Drop app</a></p>' +
+    '<p><a href="' + escapeHtml(follow) + '">Follow ' + escapeHtml(name) + ' on Drop</a> · <a href="/download">Get the Drop app</a></p>' + extra +
     '<h2>Upcoming shows</h2>' + (shown.length ? '<ul>' + shown.map((event) => showItem(event, withVenue)).join('') + '</ul>' + more : '<p>No upcoming shows listed right now.</p>') + '</article>';
 }
 function nextShowText(events, withVenue) {
@@ -415,7 +415,7 @@ function nextShowText(events, withVenue) {
   return ' Next: ' + next.title + (withVenue && next.venue_name ? ' at ' + next.venue_name : '') + (when ? ' on ' + when : '') + '.';
 }
 
-export function venueView(data) {
+export function venueView(data, { knowBeforeYouGo = '' } = {}) {
   const { venue, events } = data;
   const path = venuePath(venue);
   const canonical = 'https://trydropapp.com' + path;
@@ -424,7 +424,7 @@ export function venueView(data) {
   const description = clipText(count + ' at ' + venue.name + (place ? ' in ' + place : '') + '.' + nextShowText(events, false) + ' Lineups and ticket links on Drop.', 155);
   const address = { '@type': 'PostalAddress', streetAddress: venue.address || undefined, addressLocality: venue.city, addressRegion: venue.state };
   const lead = [venue.address, place].filter(Boolean).join(' · ') + ' — ' + count + '.';
-  const body = entityBody({ section: 'Venues', sectionHref: '/venues', name: venue.name, path, lead, events, withVenue: false });
+  const body = entityBody({ section: 'Venues', sectionHref: '/venues', name: venue.name, path, lead, events, withVenue: false, extra: knowBeforeYouGo });
   const jsonLd = [
     { '@context': 'https://schema.org', '@type': 'MusicVenue', name: venue.name, url: canonical, address,
       event: events.slice(0, LISTED_SHOWS).map((event) => eventLd(event)) },
