@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import { changedUrls, fileToUrl, locs, newUrls, payloads } from '../scripts/indexnow.mjs';
 
 test('IndexNow picks new sitemap URLs and pages whose sources changed', () => {
@@ -14,4 +15,11 @@ test('IndexNow picks new sitemap URLs and pages whose sources changed', () => {
   assert.equal(batches.length, 2);
   assert.deepEqual(Object.keys(batches[0]), ['host', 'key', 'keyLocation', 'urlList']);
   assert.equal(batches[0].keyLocation, 'https://trydropapp.com/abc123def.txt');
+});
+
+test('the IndexNow key file is published and matches its name', () => {
+  const keys = readdirSync(new URL('../', import.meta.url)).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
+  assert.equal(keys.length, 1, 'exactly one key file');
+  assert.equal(readFileSync(new URL('../' + keys[0], import.meta.url), 'utf8'), keys[0].slice(0, -4));
+  assert.match(readFileSync(new URL('../scripts/build-dist.sh', import.meta.url), 'utf8'), /IndexNow key file/);
 });

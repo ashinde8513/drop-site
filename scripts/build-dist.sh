@@ -15,6 +15,8 @@ cp ./*.html dist/
 cp ./*.css ./*.js dist/
 cp favicon.ico favicon.png favicon.svg social-icons.svg og-image.png og-image-link.png dist/
 cp sitemap.xml robots.txt llms.txt tiktok3KrSWG3sUOucxtykK5XlHMXDu5JZXf7J.txt tiktok3vSsOjcdAwZqkeershAZQumPuThIJ0JS.txt dist/
+# IndexNow key file (public by design; key in Keychain INDEXNOW_KEY_DROP).
+for f in ./*.txt; do case "$(basename "$f")" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f]*[0-9a-f].txt) cp "$f" dist/ ;; esac; done
 cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
