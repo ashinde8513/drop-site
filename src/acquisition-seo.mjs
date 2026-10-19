@@ -1,4 +1,4 @@
-import { escapeHtml, eventPath, isIndexableEvent, rest, schemaEventStatus, venuePath } from './entity-seo.mjs';
+import { escapeHtml, eventLd, eventPath, isIndexableEvent, rest, venuePath } from './entity-seo.mjs';
 import { matchesGenre } from './genres.mjs';
 
 export const GENRES = ['House', 'Techno', 'Bass', 'Drum & Bass', 'Hip-Hop', 'Indie'];
@@ -52,7 +52,7 @@ export async function upcomingEvents({ city, genre = null, limit = 24 }) {
   today.setUTCHours(0, 0, 0, 0);
   try {
     const rows = await rest('events', {
-      select: 'id,title,date,timezone,time_tbd,is_festival,lifecycle_status,venue_id,venue_name,venue_address,city,state,event_artists(artists(genres))',
+      select: 'id,title,date,end_date,timezone,time_tbd,is_festival,lifecycle_status,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,price_min,currency,ticket_status,event_artists(artists(id,name,genres,image_url))',
       status: 'eq.published', city: 'ilike.' + city, date: 'gte.' + today.toISOString(),
       order: 'date.asc,id.asc', limit: 500,
     });
@@ -96,11 +96,8 @@ function itemListLd(name, events) {
     '@context': 'https://schema.org', '@type': 'ItemList', name,
     itemListElement: events.map((event, index) => ({
       '@type': 'ListItem', position: index + 1,
-      item: {
-        '@type': 'MusicEvent', name: event.title, startDate: event.date, url: 'https://trydropapp.com' + eventPath(event),
-        eventStatus: schemaEventStatus(event.lifecycle_status), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state } },
-      },
+      // Same MusicEvent as the event page (image, offers, performers when known).
+      item: eventLd(event),
     })),
   };
 }

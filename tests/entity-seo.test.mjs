@@ -548,3 +548,20 @@ test('markets: city pages are gated on real shows and cross-link every market', 
   const { CITY_TIME_ZONES } = await import('../src/editorial.mjs');
   for (const zone of Object.values(CITY_TIME_ZONES)) assert.doesNotThrow(() => new Intl.DateTimeFormat('en-US', { timeZone: zone }), zone);
 });
+
+test('ItemList entries carry the same MusicEvent as the event page', async () => {
+  const { renderFestivalsPage } = await import('../src/editorial.mjs');
+  const rich = catalogEvent({ ticket_url: 'https://tix.test/1', price_min: 30, ticket_status: 'on_sale', image_url: 'https://img.test/e.jpg', end_date: '2026-09-01T08:00:00Z',
+    event_artists: [{ artists: { id: artistId, name: 'Subtronics', genres: ['dubstep'] } }] });
+  const ld = (html) => [...html.matchAll(/<script type="application\/ld\+json" data-server-ldjson>([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).flat().find((d) => d['@type'] === 'ItemList');
+  const city = ld(renderCityPage(readFileSync(new URL('../city.html', import.meta.url), 'utf8'), 'Denver', [rich, { ...rich, id: id2 }, { ...rich, id: '00000000-0000-4000-8000-000000000009' }]));
+  const fest = ld(renderFestivalsPage(readFileSync(new URL('../events.html', import.meta.url), 'utf8'), [{ ...rich, is_festival: true }]));
+  for (const [list, type] of [[city, 'MusicEvent'], [fest, 'Festival']]) {
+    const item = list.itemListElement[0].item;
+    assert.equal(item['@type'], type);
+    for (const key of ['name', 'startDate', 'location', 'image', 'offers', 'performer', 'eventStatus', 'endDate']) assert.ok(item[key], `${type} ${key}`);
+    assert.equal(item.offers.price, 30);
+    assert.ok(item.location.address.addressLocality);
+  }
+  assert.match(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /"urlTemplate": "https:\/\/trydropapp\.com\/search\?q=\{query\}"/);
+});
