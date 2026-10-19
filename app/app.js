@@ -2114,7 +2114,8 @@ class Component extends DCLogic {
   renderVals(){
     const s = this.state;
     const fl = n => n===1 ? '1 friend' : n+' friends';
-    const avStyle = img => { const u = cssUrl(img); return u ? 'background-image:'+u+';background-size:cover;background-position:center;' : ''; };
+    // Avatars: same https-only guard as artist art (Drop.isRealArtUrl + safeUrl) before the CSS url() escape.
+    const avStyle = img => { const ok = img && Drop && Drop.isRealArtUrl(img) && Drop.safeUrl(img); const u = ok ? cssUrl(ok) : ''; return u ? 'background-image:'+u+';background-size:cover;background-position:center;' : ''; };
 
     // PHASE 1: real events — Discover/Home/Search/Event-detail all read from
     // s.realEvents (Drop.fetchEvents, PostgREST against the `events` table).
