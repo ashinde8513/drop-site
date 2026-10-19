@@ -1,9 +1,16 @@
 # Security baseline for every static response. Pages Functions set the same
 # set in src/entity-seo.mjs SECURITY_HEADERS (they bypass this file).
+# CSP: the enforced policy only blocks framing, <base> hijack and plugins (nothing the
+# site uses). The Report-Only policy is the candidate full policy sized from the 2026-10-19
+# security review (17 inline <script> blocks → script-src keeps 'unsafe-inline' until they
+# are hashed or externalised); watch devtools/CSP reports before promoting it. HSTS is set
+# at the Cloudflare zone, not here (APPROVALS S15).
 /*
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=(self)
   Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data:; connect-src 'self' https://ebccwnkmsnhbljxxxdej.supabase.co wss://ebccwnkmsnhbljxxxdej.supabase.co https://app.trydropapp.com https://trydropapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 /.well-known/apple-app-site-association
   Content-Type: application/json

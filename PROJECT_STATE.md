@@ -270,6 +270,13 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
+## 2026-10-19 — Claude (Fable security lane) — CSP baseline + Report-Only candidate
+
+- Web-surface security review (read-only live probe of trydropapp.com / app.trydropapp.com + code review): no HIGH; no open redirect; no XSS sink reachable from API data; PostgREST anon fully blocked; headers lacked HSTS and CSP.
+- Changed: `_headers` + `src/entity-seo.mjs` SECURITY_HEADERS now send an enforced minimal `Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'` (nothing the site uses) and a `Content-Security-Policy-Report-Only` candidate full policy (script-src keeps 'unsafe-inline' — 17 inline `<script>` blocks; style 'unsafe-inline' + fonts.googleapis.com; connect = Supabase + both Drop hosts; img https: data:). Watch devtools CSP reports, then promote (APPROVALS S16). HSTS stays a Cloudflare zone setting (APPROVALS S15).
+- Tested: node header-contract tests 44/44 (deploy-contract, crew-links, static-seo, entity-seo). Playwright not run locally; CI runs it on push.
+- Live after merge → deploy.yml → verify `curl -sI https://trydropapp.com/ | grep -i content-security`.
+
 ## 2026-10-17 — Claude — weekly website audit → 7 merged fixes
 - **Changed:** #125 false claims removed (app hero user count, invented event description); #126 event SEO cleanup; #127 lazy card art; #128 static SEO hygiene; #129 non-visual a11y; #130 security headers + plan/venue/onboarding links; #131 smoke WebKit image-noise filter.
 - **Tested:** new specs per PR (lazy-art and honest-copy fail on prior main, pass after); `/code-review` high on each PR, findings fixed or recorded; required CI per PR; main Test & Deploy; live byte/header readback + Chrome re-measure (app Discover 241→36 requests).
