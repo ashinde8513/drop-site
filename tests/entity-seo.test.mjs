@@ -594,5 +594,6 @@ test('city pages link small-town shows in their state and bordering non-market s
     assert.deepEqual((await smallTownShows('TX')).map((e) => e.city), ['Tulsa'], 'market cities are excluded');
   } finally { globalThis.fetch = real; }
   assert.match(urls[0], /state=in\.\(TX,OK,LA,AR\)/);
+  assert.match(urls[0], /or=\(date\.gte\.[^,]+,end_date\.gte\.[^)]+\)/, 'ongoing runs count, like the sitemap');
   assert.deepEqual(await smallTownShows(null), []);
 });

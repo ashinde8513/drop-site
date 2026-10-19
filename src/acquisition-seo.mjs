@@ -99,7 +99,8 @@ export async function smallTownShows(state) {
   try {
     const rows = await rest('events', {
       select: 'id,title,date,timezone,time_tbd,lifecycle_status,venue_id,venue_name,venue_address,city,state',
-      status: 'eq.published', state: 'in.(' + states.join(',') + ')', date: 'gte.' + today.toISOString(), order: 'date.asc,id.asc', limit: 1000,
+      // Same "upcoming" as the sitemap: ongoing runs (season passes, residencies) count.
+      status: 'eq.published', state: 'in.(' + states.join(',') + ')', or: '(date.gte.' + today.toISOString() + ',end_date.gte.' + today.toISOString() + ')', order: 'date.asc,id.asc', limit: 1000,
     });
     const markets = new Set(CITIES.map((city) => city.toLowerCase()));
     return rows.filter((event) => isIndexableEvent(event) && !markets.has(String(event.city || '').trim().toLowerCase())).slice(0, STATE_SHOW_LINKS);
