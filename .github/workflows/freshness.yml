@@ -1,0 +1,44 @@
+# Stale-catalog alert (APPROVALS W25, approved 2026-10-20). Every 6 hours,
+# scripts/check-freshness.mjs reads https://trydropapp.com/freshness.json.
+# Stale opens (or comments on) one "Catalog data is stale" issue; recovery
+# closes it. No secrets beyond the job's own GITHUB_TOKEN.
+name: Catalog freshness
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: Catalog data is stale
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: check
+        run: |
+          set +e
+          node scripts/check-freshness.mjs > report.txt 2>&1
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat report.txt
+      - name: Open or update the stale issue
+        if: steps.check.outputs.status != '0'
+        run: |
+          open=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number -q '.[0].number')
+          body="$(cat report.txt)"$'\n\n'"Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$open" ]; then gh issue comment "$open" --body "$body"; else gh issue create --title "$TITLE" --body "$body"; fi
+      - name: Close the stale issue on recovery
+        if: steps.check.outputs.status == '0'
+        run: |
+          open=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number -q '.[0].number')
+          if [ -n "$open" ]; then gh issue close "$open" --comment "Fresh again: $(cat report.txt)"; fi
