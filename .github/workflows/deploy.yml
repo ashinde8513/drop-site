@@ -17,6 +17,9 @@ on:
       - 'docs/**'
       - 'history/**'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

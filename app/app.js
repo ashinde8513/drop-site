@@ -1787,6 +1787,8 @@ class Component extends DCLogic {
   clearPhoneVerificationState(nextState){
     this._wizPhoneRequest = (this._wizPhoneRequest || 0) + 1;
     this.clearPhoneCooldown();
+    // Every sign-out / account-switch path passes userId:null; drop instance-held user data too.
+    if (nextState && nextState.userId === null) { this._socialKey = null; this.SUBMISSIONS = []; }
     this.setState(Object.assign({
       wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneBusy:false,
       wizPhoneVerified:false, wizPhoneStatus:'', wizPhoneResendBlocked:false
@@ -1867,7 +1869,7 @@ class Component extends DCLogic {
       await supa.auth.signOut({ scope:'local' }).catch(() => undefined);
       this.clearPhoneVerificationState({
         authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
-        authBusy:false, authError:error && error.message || 'Could not finish account setup. Please try signing up again.'
+        ...USER_DATA_RESET, authBusy:false, authError:error && error.message || 'Could not finish account setup. Please try signing up again.'
       });
       return false;
     } finally {
@@ -1916,7 +1918,7 @@ class Component extends DCLogic {
           await supa.auth.signOut({ scope:'local' }).catch(() => undefined);
           this.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, screen:'signup',
-            authBusy:false,
+            ...USER_DATA_RESET, authBusy:false,
             authError:'Finish account setup through Get started before logging in.'
           });
           return;
@@ -2116,7 +2118,7 @@ class Component extends DCLogic {
     const s = this.state;
     const fl = n => n===1 ? '1 friend' : n+' friends';
     // Avatars: same https-only guard as artist art (Drop.isRealArtUrl + safeUrl) before the CSS url() escape.
-    const avStyle = img => { const ok = img && Drop && Drop.isRealArtUrl(img) && Drop.safeUrl(img); const u = ok ? cssUrl(ok) : ''; return u ? 'background-image:'+u+';background-size:cover;background-position:center;' : ''; };
+    const avStyle = img => { const ok = img && Drop && String(img).startsWith(SUPA_URL + '/') && Drop.isRealArtUrl(img) && Drop.safeUrl(img); const u = ok ? cssUrl(ok) : ''; return u ? 'background-image:'+u+';background-size:cover;background-position:center;' : ''; };
 
     // PHASE 1: real events — Discover/Home/Search/Event-detail all read from
     // s.realEvents (Drop.fetchEvents, PostgREST against the `events` table).
