@@ -46,7 +46,8 @@ async function chromePath() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const only = process.argv.includes('--only') ? Number(process.argv[process.argv.indexOf('--only') + 1]) : PAGES.length;
-  const env = { ...process.env, CHROME_PATH: await chromePath() };
+  // CI passes the runner's Chrome; locally use Playwright's Chromium.
+  const env = { ...process.env, CHROME_PATH: process.env.CHROME_PATH || await chromePath() };
   const when = new Date().toISOString();
   const rows = [];
   for (const page of PAGES.slice(0, only)) {

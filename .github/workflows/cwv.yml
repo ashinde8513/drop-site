@@ -1,0 +1,46 @@
+# Weekly Core Web Vitals trend (APPROVALS W20, approved 2026-10-20).
+# Runs scripts/cwv-monitor.mjs against the live site and appends the results
+# to the cwv-data branch (cwv/trend.jsonl + cwv/latest.md). Nothing deploys;
+# no secrets. GitHub-hosted runner, like the repo's other workflows.
+name: CWV trend
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cwv-trend
+  cancel-in-progress: false
+
+jobs:
+  cwv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Continue the existing trend
+        # First run keeps main's committed baseline (redirecting directly would truncate it).
+        run: if git show origin/cwv-data:cwv/trend.jsonl > "$RUNNER_TEMP/trend.jsonl" 2>/dev/null; then cp "$RUNNER_TEMP/trend.jsonl" cwv/trend.jsonl; fi
+      - name: Measure (mobile Lighthouse, simulated + applied)
+        run: CHROME_PATH="$(command -v google-chrome)" node scripts/cwv-monitor.mjs
+      - name: Save to the cwv-data branch
+        run: |
+          cp cwv/trend.jsonl cwv/latest.md "$RUNNER_TEMP/"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git rev-parse --verify -q origin/cwv-data >/dev/null; then git switch -c cwv-data origin/cwv-data; else git switch --orphan cwv-data; fi
+          mkdir -p cwv && cp "$RUNNER_TEMP/trend.jsonl" "$RUNNER_TEMP/latest.md" cwv/
+          git add cwv/trend.jsonl cwv/latest.md
+          git commit -m "cwv: trend $(date -u +%F)"
+          git push origin cwv-data
