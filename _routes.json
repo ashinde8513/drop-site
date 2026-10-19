@@ -10,7 +10,8 @@
     "/genre",
     "/sitemap-entities.xml",
     "/go",
-    "/search"
+    "/search",
+    "/e/*"
   ],
   "exclude": []
 }

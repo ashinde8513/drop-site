@@ -1,0 +1,47 @@
+import { expect, test } from '@playwright/test';
+
+// Records beacons instead of sending them, and keeps clicks on the page.
+async function setup(page, consent: string | null) {
+  await page.addInitScript((value) => {
+    try { if (value) localStorage.setItem('drop.cookie-consent', value); } catch {}
+    (window as any).__beacons = [];
+    Navigator.prototype.sendBeacon = function (url: string) { (window as any).__beacons.push(String(url)); return true; };
+    document.addEventListener('click', (e) => e.preventDefault());
+  }, consent);
+  await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+}
+// The local python server occasionally drops a script request under parallel
+// load (page renders, site.js never runs); one reload covers that.
+async function open(page, path: string) {
+  await page.goto(path);
+  if (!(await page.evaluate(() => Boolean((window as any).Drop?.track)))) await page.reload();
+  await page.waitForFunction(() => (window as any).Drop?.track);
+}
+async function clickLinks(page) {
+  await page.evaluate(() => {
+    for (const [href, rel] of [['https://www.etix.com/ticket/p/1', 'noopener nofollow sponsored'], ['https://play.google.com/store/apps/details?id=x', 'noopener']]) {
+      const a = document.createElement('a'); a.href = href; a.rel = rel; a.textContent = 'x'; document.body.appendChild(a); a.click();
+    }
+  });
+  return page.evaluate(() => (window as any).__beacons);
+}
+
+test('conversion counts stay off by default, even with consent', async ({ page }) => {
+  await setup(page, 'accepted');
+  await open(page, '/about.html');
+  expect(await clickLinks(page)).toEqual([]);
+});
+
+test('when enabled, only "Accept all" visitors send path-only counts', async ({ page }) => {
+  await setup(page, 'accepted');
+  await open(page, '/about.html');
+  await page.evaluate(() => { (window as any).Drop.TRACKING = true; });
+  expect(await clickLinks(page)).toEqual(['/e/ticket_click/etix/about', '/e/app_store_click/android/about']);
+});
+
+test('essential-only visitors send nothing when enabled', async ({ page }) => {
+  await setup(page, 'essential');
+  await open(page, '/about.html');
+  await page.evaluate(() => { (window as any).Drop.TRACKING = true; });
+  expect(await clickLinks(page)).toEqual([]);
+});

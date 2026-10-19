@@ -16,8 +16,9 @@ async function render({ params, request }) {
     const path = eventPath(event);
     if (new URL(request.url).pathname !== path) return redirectResponse(path, request.url);
     const view = eventView(event);
-    // Keep validated referral attribution when the Smart App Banner opens the app.
-    return htmlResponse(renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + safeAttributionQuery(request.url) }));
+    // Keep validated referral attribution when the Smart App Banner opens the app;
+    // otherwise name the banner itself so the app can attribute the open.
+    return htmlResponse(renderTemplate(template, { ...view, rootId: 'event-root', appArgument: view.canonical + (safeAttributionQuery(request.url) || '?src=smart_banner') }));
   } catch {
     return new Response('Event page temporarily unavailable', { status: 503, headers: { 'Retry-After': '60' } });
   }
