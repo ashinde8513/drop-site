@@ -181,6 +181,23 @@ test.describe('E suggest an event', () => {
     expect(await ops(page, 'events', 'insert')).toHaveLength(0);
   });
 
+  test('signed-out submit shows the login gate, no insert', async ({ page }) => {
+    await bootSignedIn(page, { signedOut:true }, [EVENT]);
+    await page.goto('/app/index.html?suggest=1');
+    await page.getByRole('button', { name:'Submit event' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    expect(await ops(page, 'events', 'insert')).toHaveLength(0);
+  });
+
+  test('signed-in empty submit shows inline errors, no insert', async ({ page }) => {
+    await bootSignedIn(page, {}, [EVENT]);
+    await page.goto('/app/index.html?suggest=1');
+    await page.getByRole('button', { name:'Submit event' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Enter the artist or headliner.');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(await ops(page, 'events', 'insert')).toHaveLength(0);
+  });
+
   test('inserts a pending_review row and clears the form', async ({ page }) => {
     await bootSignedIn(page, {}, [EVENT]);
     await form(page);

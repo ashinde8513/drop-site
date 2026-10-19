@@ -1219,6 +1219,7 @@ class Component extends DCLogic {
   }
   async submitSuggestion(){
     const s = this.state, uid = s.userId;
+    if (!s.authed) { this.openGate('Log in to suggest an event'); return; }
     if (!supa || !uid || s.sugBusy) return;
     const artist = s.sugArtist.trim(), venue = s.sugVenue.trim(), link = s.sugLink.trim();
     const [city, st] = s.sugCity.split(',').map(x=>x.trim());
