@@ -569,6 +569,11 @@
     'invite_screen','plan_share','qr','recap_share','seen_history',
     'show_memories','wrapped'
   ]);
+  // Settings toggle key -> notification_prefs column (labels stay in settingsToggles).
+  var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
+  var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
+  // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
+  var USER_DATA_RESET = { saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var EVENT_INTENT_KEY = 'drop.eventIntent';
   var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
@@ -802,8 +807,8 @@
   }
 
   // Real Supabase event row -> the view-model shape the ported markup expects.
-  // `friends`/goingCount stay at 0/'—' — there is no real friend-attendance
-  // signal wired yet (out of Phase 1 scope), so no fake social proof is shown.
+  // `friends`/goingCount stay 0/'—': friends-going comes from eventSocial in
+  // renderVals, and a total going count isn't readable (attendance RLS is by relationship).
   function mapRealEvent(ev) {
     var artists = (ev.event_artists || []).map(function (x) { return x.artists; }).filter(Boolean);
     return {
@@ -920,7 +925,7 @@ class Component extends DCLogic {
     wizPhoneRequired: false,
     wizPhoneVerified: false, wizPhoneStatus: '', wizPhoneResendBlocked: false,
     // settings
-    setToggles: { reminders: true, sales: true, comments: false, plans: true },
+    setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
     notifRead: {},
@@ -945,7 +950,7 @@ class Component extends DCLogic {
     scConnected: false, tasteConsent: false, tasteGenres: {House:true, Melodic:true, Techno:true},
     tasteArtists: [], tasteQuery: '', tasteImport: false,
     // suggest an event
-    sugArtist: '', sugVenue: '', sugCity: 'Denver, CO', sugLink: '',
+    sugArtist: '', sugVenue: '', sugCity: 'Denver, CO', sugLink: '', sugDate: '', sugError: '', sugDone: '', sugBusy: false,
     // states
     loading: false,
     notifCleared: false,
@@ -1166,10 +1171,115 @@ class Component extends DCLogic {
   }
   toggleSave(id){
     if(!this.state.authed){ this.openGate('Log in to save'); return; }
-    // ponytail: "Saved" has no backing table (attendance only has going/
-    // interested/attended) — stays a local-only bookmark, not persisted.
-    this.setState(s=>({ saved:{...s.saved, [id]: !s.saved[id]} }));
-    this.flash(this.state.saved[id] ? 'Removed from saved' : 'Saved to My Shows');
+    const uid = this.state.userId;
+    if (!supa || !uid || !ATTRIBUTION_UUID.test(String(id || ''))) return;
+    this._saveWrites = this._saveWrites || new Set();
+    if (this._saveWrites.has(id)) return;
+    this._saveWrites.add(id);
+    const was = !!this.state.saved[id];
+    this.setState(s=>({ saved:{...s.saved, [id]: !was} }));
+    this.flash(was ? 'Removed from saved' : 'Saved to My Shows');
+    const write = was
+      ? supa.from('saved_events').delete().eq('user_id', uid).eq('event_id', id)
+      : supa.from('saved_events').upsert({ user_id: uid, event_id: id }, { onConflict:'user_id,event_id', ignoreDuplicates:true });
+    write.then(({ error })=>{
+      this._saveWrites.delete(id);
+      if (!error || this.state.userId !== uid) return;
+      console.error('[app] saved_events write failed:', error.message);
+      this.setState(s=>({ saved:{...s.saved, [id]: was} }));
+      this.flash('Could not update saved — try again');
+    });
+  }
+  // notification_prefs: one row per user; each toggle upserts just its own column.
+  togglePref(key){
+    const uid = this.state.userId;
+    if (!supa || !uid || !PREF_COLS[key]) return;
+    const was = !!this.state.setToggles[key];
+    this.setState(s=>({ setToggles:{...s.setToggles, [key]: !was} }));
+    supa.from('notification_prefs').upsert({ user_id: uid, [PREF_COLS[key]]: !was }, { onConflict:'user_id' }).then(({ error })=>{
+      if (!error || this.state.userId !== uid) return;
+      console.error('[app] notification_prefs write failed:', error.message);
+      this.setState(s=>({ setToggles:{...s.setToggles, [key]: was} }));
+      this.flash('Could not save that setting — try again');
+    });
+  }
+  // friendships: accept (recipient, pending row) / decline (delete). Optimistic with rollback.
+  answerFriend(row, accept){
+    const uid = this.state.userId;
+    if (!supa || !uid) return;
+    const before = this.state.friendRows;
+    this.setState(s=>({ friendRows: accept ? s.friendRows.map(r=>r.id===row.id ? {...r, status:'accepted'} : r) : s.friendRows.filter(r=>r.id!==row.id) }));
+    const q = supa.from('friendships');
+    (accept ? q.update({ status:'accepted' }).eq('id', row.id) : q.delete().eq('id', row.id)).then(({ error })=>{
+      if (!error || this.state.userId !== uid) return;
+      console.error('[app] friendships write failed:', error.message);
+      this.setState({ friendRows: before });
+      this.flash('Could not update that request — try again');
+    });
+  }
+  async submitSuggestion(){
+    const s = this.state, uid = s.userId;
+    if (!supa || !uid || s.sugBusy) return;
+    const artist = s.sugArtist.trim(), venue = s.sugVenue.trim(), link = s.sugLink.trim();
+    const [city, st] = s.sugCity.split(',').map(x=>x.trim());
+    let err = '';
+    if (!artist) err = 'Enter the artist or headliner.';
+    else if (!city) err = 'Enter the city.';
+    else if (!s.sugDate) err = 'Pick the event date.';
+    else if (link && !(Drop && Drop.safeUrl(link))) err = 'Enter a ticket link starting with https://';
+    if (err) { this.setState({ sugError:err, sugDone:'' }); return; }
+    this.setState({ sugBusy:true, sugError:'', sugDone:'' });
+    // ponytail: date-only input -> noon UTC so no US timezone shows the previous day; time_tbd always (no time field).
+    const { error } = await supa.from('events').insert({
+      title: artist + (venue ? ' at ' + venue : ''), venue_name: venue || null, city, state: st || null,
+      ticket_url: link || null, date: s.sugDate + 'T12:00:00Z', time_tbd: true, submitted_by: uid, status: 'pending_review',
+    });
+    if (this.state.userId !== uid) return;
+    if (error) {
+      console.error('[app] event suggestion failed:', error.message);
+      this.setState({ sugBusy:false });
+      this.flash('Could not submit — try again');
+      return;
+    }
+    this.SUBMISSIONS = [...this.SUBMISSIONS, { title:artist, venue:venue || city, date:s.sugDate, status:'review' }];
+    this.setState({ sugBusy:false, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugDone:'Submitted for review \u2014 we\u2019ll email you when it\u2019s live' });
+  }
+  acceptedFriendIds(){
+    const uid = this.state.userId;
+    return (this.state.friendRows||[]).filter(r=>r.status==='accepted').map(r=>r.requester_id===uid ? r.recipient_id : r.requester_id);
+  }
+  // Event detail social proof: which of my accepted friends are going. Re-runs when the open event or friend set changes.
+  syncEventSocial(){
+    const st = this.state, id = st.activeId;
+    if (st.screen !== 'event' || !st.authed || !st.userId || !supa || !ATTRIBUTION_UUID.test(String(id || ''))) return;
+    const ids = this.acceptedFriendIds();
+    const key = st.userId + id + ids.join();
+    if (this._socialKey === key) return;
+    this._socialKey = key;
+    if (!ids.length) { this.setState(s=>({ eventSocial:{...s.eventSocial, [id]: []} })); return; }
+    supa.from('attendance').select('user_id').eq('event_id', id).eq('status', 'going').in('user_id', ids).then(({ data, error })=>{
+      if (this._socialKey !== key) return;
+      if (error) { console.error('[app] friends-going load failed:', error.message); return; }
+      const going = (data||[]).map(r=>r.user_id).filter(u=>ids.includes(u));
+      this.setState(s=>({ eventSocial:{...s.eventSocial, [id]: going} }));
+    });
+  }
+  setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); }
+  loadFriends(uid){
+    if (!supa) return;
+    supa.from('friendships').select('id,requester_id,recipient_id,status').or('requester_id.eq.'+uid+',recipient_id.eq.'+uid).then(({ data, error })=>{
+      if (error) { console.error('[app] friendships load failed:', error.message); return; }
+      if (this.state.userId !== uid) return;
+      const friendRows = (data||[]).filter(r=>r.status==='accepted' || r.status==='pending');
+      const ids = [...new Set(friendRows.map(r=>r.requester_id===uid ? r.recipient_id : r.requester_id))];
+      if (!ids.length) { this.setState({ friendRows, friendProfiles:{} }); return; }
+      supa.from('profiles').select('id,username,display_name,profile_image').in('id', ids).then(({ data: people, error: pe })=>{
+        if (pe) console.error('[app] friend profiles load failed:', pe.message);
+        if (this.state.userId !== uid) return;
+        const friendProfiles = {}; (people||[]).forEach(p=>{ friendProfiles[p.id] = p; });
+        this.setState({ friendRows, friendProfiles });
+      });
+    });
   }
 
   primeEventIntent(intent){
@@ -1459,6 +1569,20 @@ class Component extends DCLogic {
       const followingVenue = {}; (data||[]).forEach(r=>{ if (r.venue_name) followingVenue[r.venue_name] = true; });
       this.setState({ followingVenue });
     });
+    supa.from('saved_events').select('event_id, events(id,title,date,venue_name,city,state,ticket_url,time_tbd,is_festival,status,image_url,event_artists(artists(id,name,genres,image_url)))').eq('user_id', uid).then(({ data, error })=>{
+      if (error) { console.error('[app] saved_events load failed:', error.message); return; }
+      if (this.state.userId !== uid) return;
+      const saved = {}; (data||[]).forEach(r=>{ saved[r.event_id] = true; });
+      this.setState({ saved, savedRows: data || [] });
+    });
+    supa.from('notification_prefs').select('show_reminders,sale_alerts,comment_alerts,plan_messages').eq('user_id', uid).maybeSingle().then(({ data, error })=>{
+      if (error) { console.error('[app] notification_prefs load failed:', error.message); return; }
+      if (!data || this.state.userId !== uid) return;
+      const setToggles = { ...DEFAULT_TOGGLES };
+      Object.keys(PREF_COLS).forEach(k=>{ if (typeof data[PREF_COLS[k]] === 'boolean') setToggles[k] = data[PREF_COLS[k]]; });
+      this.setState({ setToggles });
+    });
+    this.loadFriends(uid);
     Promise.all([
       supa.from('attendance').select('id', { count:'exact', head:true }).eq('user_id', uid).in('status', ['going','attended']),
       supa.from('artist_follows').select('artist_id', { count:'exact', head:true }).eq('user_id', uid),
@@ -1938,7 +2062,7 @@ class Component extends DCLogic {
     this._eventIntentConfirm = null;
     clearPendingOAuthCompliance();
     if (supa) supa.auth.signOut({ scope:'local' }).catch(()=>{});
-    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[] });
+    this.clearPhoneVerificationState({ authed:false, userId:null, userEmail:'', profile:null, rsvp:{}, following:{}, followingVenue:{}, eventIntentReady:false, eventIntentBusy:false, realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[], ...USER_DATA_RESET });
   }
   async switchPhoneAccount(){
     clearPendingOAuthCompliance();
@@ -1946,7 +2070,7 @@ class Component extends DCLogic {
     this.clearPhoneVerificationState({
       authed:false, userId:null, userEmail:'', profile:null, screen:'login',
       rsvp:{}, following:{}, followingVenue:{}, realShowsCount:null,
-      realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[]
+      realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[], ...USER_DATA_RESET
     });
   }
   oauth(provider){
@@ -1990,6 +2114,7 @@ class Component extends DCLogic {
   renderVals(){
     const s = this.state;
     const fl = n => n===1 ? '1 friend' : n+' friends';
+    const avStyle = img => { const u = cssUrl(img); return u ? 'background-image:'+u+';background-size:cover;background-position:center;' : ''; };
 
     // PHASE 1: real events — Discover/Home/Search/Event-detail all read from
     // s.realEvents (Drop.fetchEvents, PostgREST against the `events` table).
@@ -2018,6 +2143,8 @@ class Component extends DCLogic {
 
     const aeSt = s.rsvp[ae.id];
     const aeSaved = !!s.saved[ae.id];
+    const aeFriendIds = (s.eventSocial||{})[ae.id] || [];
+    const aeFriendAvatars = aeFriendIds.slice(0,3).map(pid=>({ style: avStyle((s.friendProfiles[pid]||{}).profile_image) }));
 
     // Real artist/venue catalogs — derived from the currently-loaded real
     // events (event_artists join, already fetched — no new query/table)
@@ -2400,7 +2527,7 @@ class Component extends DCLogic {
       { key:'sales', label:'Presale codes & price drops' },
       { key:'comments', label:'Comment replies & mentions' },
       { key:'plans', label:'Crew plans & messages' },
-    ].map(t=>({ label:t.label, on: !!s.setToggles[t.key], toggle:()=>this.setState(x=>({ setToggles:{...x.setToggles, [t.key]: !x.setToggles[t.key]} })) }));
+    ].map(t=>({ label:t.label, on: !!s.setToggles[t.key], toggle:()=>this.togglePref(t.key) }));
     const blocked = this.BLOCKED.filter(b=>!this._unblocked || !this._unblocked[b.id]).map(b=>({ ...b, unblock:()=>{ this._unblocked=this._unblocked||{}; this._unblocked[b.id]=true; this.flash('Unblocked '+b.name); this.forceUpdate(); } }));
     const deleteOk = s.deleteConfirm.trim().toUpperCase()==='DELETE';
 
@@ -2460,9 +2587,9 @@ class Component extends DCLogic {
           share: (evn)=>{ this.prevent(evn); this.shareEvent(ev.id); },
         };
       });
-    // ponytail: "Saved" has no backing table — local-only bookmark, so it
-    // can only surface events from the currently-loaded Discover batch.
-    const mySaved = events.filter(e=>s.saved[e.id]).map(e=>({
+    // Saved = saved_events (hydrated with its event join), plus the loaded batch for fresh saves.
+    const savedExtra = (s.savedRows||[]).map(r=>r.events).filter(r=>r && !events.some(e=>e.id===r.id)).map(mapRealEvent).map(decorate);
+    const mySaved = events.concat(savedExtra).filter(e=>s.saved[e.id]).map(e=>({
       ...e,
       unsave: (evn)=>{ this.prevent(evn); this.toggleSave(e.id); },
       share: (evn)=>{ this.prevent(evn); this.shareEvent(e.id); },
@@ -2527,10 +2654,18 @@ class Component extends DCLogic {
     const crewTabs = ['Friends','Requests','Find','Plans'].map(t=>({ label:t, cls: s.crewTab===t?'is-active':'', pick:()=>this.setState({crewTab:t}) }));
     const overlapChip = arr => arr.slice(0,3).map(n=>({ label:n }));
     const overlapText = arr => arr.length+' shared artist'+(arr.length===1?'':'s');
-    const friendsList = this.FRIENDS.map(f=>({ name:f.name, handle:f.handle, ring:f.ring, chips:overlapChip(f.overlap), overlapLabel:overlapText(f.overlap), overlapColor: f.overlap.length>=4?'var(--attended)':'var(--accent)' }));
-    const requestsList = this.REQUESTS.filter(r=>!s.reqActioned[r.id]).map(r=>({ name:r.name, handle:r.handle, overlapLabel:overlapText(r.overlap),
-      accept:()=>{ this.setState(x=>({ reqActioned:{...x.reqActioned, [r.id]:'a'} })); this.flash(r.name+' added to your crew'); },
-      decline:()=>{ this.setState(x=>({ reqActioned:{...x.reqActioned, [r.id]:'d'} })); this.flash('Request declined'); } }));
+    // Real friendships (friendRows) + counterpart profiles; mine = I am either side.
+    const meId = s.userId;
+    const person = r => {
+      const pid = r.requester_id===meId ? r.recipient_id : r.requester_id, p = s.friendProfiles[pid] || {};
+      return { row:r, name:p.display_name || p.username || 'Drop user', handle:p.username ? '@'+p.username : '', avStyle:avStyle(p.profile_image) };
+    };
+    const friendsList = (s.friendRows||[]).filter(r=>r.status==='accepted').map(person)
+      .map(f=>({ name:f.name, handle:f.handle, avStyle:f.avStyle, ring:'var(--border)', chips:[], overlapLabel:'', overlapColor:'var(--accent)' }));
+    const requestsList = (s.friendRows||[]).filter(r=>r.status==='pending' && r.recipient_id===meId).map(person)
+      .map(r=>({ name:r.name, handle:r.handle, avStyle:r.avStyle,
+        accept:()=>{ this.answerFriend(r.row, true); this.flash(r.name+' added to your crew'); },
+        decline:()=>{ this.answerFriend(r.row, false); this.flash('Request declined'); } }));
     const findList = this.FIND_PEOPLE.map(p=>{ const on=!!s.addedPeople[p.id]; return { name:p.name, handle:p.handle, mutuals:p.mutuals, chips:overlapChip(p.overlap),
       label: on?'Requested':'＋ Add', cls: on?'wsc__act is-going':'wsc__act', add:()=>{ this.setState(x=>({ addedPeople:{...x.addedPeople, [p.id]:true} })); this.flash('Request sent to '+p.name); } }; });
     // No plans table this phase — PLANS is always empty, so this stays [].
@@ -2765,8 +2900,8 @@ class Component extends DCLogic {
     const cityFaq = [
       { q:'What EDM shows are in '+seoCity+' this weekend?', a:'Drop lists every electronic show in '+seoCity+' with all-in prices. Top picks this weekend include ODESZA at Red Rocks and Subtronics at Mission Ballroom.' },
       { q:'Where are the best rave venues in '+seoCity+'?', a:'Red Rocks Amphitheatre, Mission Ballroom, and The Church are the most-followed electronic venues in '+seoCity+' on Drop.' },
-      { q:'How do I find friends going to the same show?', a:'Create a free Drop account, sync your contacts, and you\u2019ll see which friends are going to every show near you.' },
-      { q:'Are tickets cheaper on Drop?', a:'Drop links you straight to the official seller for every show — no markup from us. Some links are affiliate links, at no extra cost to you.' },
+      { q:'How do I find friends going to the same show?', a:'Create a free Drop account and add friends who are on Drop \u2014 on each show you\u2019ll see which of them are going.' },
+      { q:'Are tickets cheaper on Drop?', a:'Drop links you straight to the official seller for every show — no markup from us. Some links may be affiliate links — when you buy through them, Drop may earn a commission at no extra cost to you.' },
     ];
 
     const seoGenre = s.activeGenre || 'Techno';
@@ -2900,8 +3035,8 @@ class Component extends DCLogic {
       tasteGenreChips, tasteCapLabel, tasteCapColor, tasteArtistChips, tasteMatches, tasteQuery: s.tasteQuery, tasteQueryOpen,
       scSubLabel, scBtnLabel, scBtnCls,
       scoutLabel, scoutFillStyle, scoutHint, capUsed, capMax: CAP_MAX, capReached,
-      sugArtist: s.sugArtist, sugArtistMatches, sugArtistOpen, sugVenue: s.sugVenue, sugVenueMatches, sugVenueOpen, sugCity: s.sugCity, sugLink: s.sugLink,
-      submitLabel: capReached ? 'Monthly cap reached' : 'Submit event', submissions, submissionsEmpty: submissions.length===0,
+      sugArtist: s.sugArtist, sugArtistMatches, sugArtistOpen, sugVenue: s.sugVenue, sugVenueMatches, sugVenueOpen, sugCity: s.sugCity, sugLink: s.sugLink, sugDate: s.sugDate, sugError: s.sugError, sugDone: s.sugDone, sugDisabled: capReached || s.sugBusy,
+      submitLabel: capReached ? 'Monthly cap reached' : s.sugBusy ? 'Submitting\u2026' : 'Submit event', submissions, submissionsEmpty: submissions.length===0,
       aboutStats, team, appFeatures, promoterFeatures, promoterStats,
       seoCity, cityShows, cityVenues, cityGenres, cityFaq,
       seoGenre, seoGenreLower, seoGenreGrad, genreShows, genreArtists, relatedGenres,
@@ -3053,7 +3188,7 @@ class Component extends DCLogic {
       gate: s.gate, gateTitle: s.gateTitle, toast: s.toast,
 
       // event detail
-      ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:ae.friends>0, friendsLabel:fl(ae.friends), lineup, priceRows,
+      ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:aeFriendIds.length>0, friendsLabel:fl(aeFriendIds.length), friendAvatars:aeFriendAvatars, lineup, priceRows,
         description: Drop ? Drop.plainText(ae.descriptionHtml) : '' },
       aeSingleSeller,
       descCls: s.descClamped?'is-clamped':'', descToggle: s.descClamped?'Read more':'Show less',
@@ -3121,6 +3256,8 @@ class Component extends DCLogic {
       setSugVenue:(e)=>this.setState({sugVenue:e.target.value}),
       setSugCity:(e)=>this.setState({sugCity:e.target.value}),
       setSugLink:(e)=>this.setState({sugLink:e.target.value}),
+      setSugDate:(e)=>this.setState({sugDate:e.target.value}),
+      submitSuggestion:()=>this.submitSuggestion(),
       goReferral:(e)=>{ this.prevent(e); this.go('referral'); },
       goForgot:(e)=>{ this.prevent(e); this.setState({authError:''}); this.go('forgot'); },
       goVerify:(e)=>{ this.prevent(e); this.go('verify'); },
@@ -3617,7 +3754,7 @@ class Component extends DCLogic {
           clearPendingOAuthCompliance();
           instance.clearPhoneVerificationState({
             authed:false, userId:null, userEmail:'', profile:null, stars:{}, festTab:'All', screen:'login',
-            rsvp:{}, following:{}, followingVenue:{}, saved:{}, eventIntentReady:false, eventIntentBusy:false,
+            rsvp:{}, following:{}, followingVenue:{}, ...USER_DATA_RESET, eventIntentReady:false, eventIntentBusy:false,
             realShowsCount:null, realArtistsCount:null, myShowsRows:[], loggedShows:[], logSelected:{}, logResults:[]
           });
         } else if (event === 'SIGNED_IN' && signupCompletionRequested() && !instance._confirmingSignupEmail) {

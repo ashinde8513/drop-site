@@ -14,7 +14,13 @@ const FAKE = String.raw`
     function run() {
       calls.push({ kind:'from', table:table, ops:ops });
       var err = (cfg.errors || {})[table + '.' + (ops[0] && ops[0][0])];
-      return Promise.resolve(err ? res(null, { message:err }) : res((cfg.rows || {})[table] || []));
+      // Honour eq/in on columns the row actually has; single/maybeSingle return one row.
+      var rows = ((cfg.rows || {})[table] || []).filter(function (r) { return ops.every(function (o) {
+        var c = o[1][0];
+        return !(c in r) || (o[0] === 'eq' ? r[c] === o[1][1] : o[0] === 'in' ? o[1][1].indexOf(r[c]) > -1 : true);
+      }); });
+      var one = ops.some(function (o) { return o[0] === 'single' || o[0] === 'maybeSingle'; });
+      return Promise.resolve(err ? res(null, { message:err }) : res(one ? rows[0] || null : rows));
     }
     chain = new Proxy({}, { get:function (_, k) {
       if (k === 'then' || k === 'catch' || k === 'finally') return function () { var p = run(); return p[k].apply(p, arguments); };

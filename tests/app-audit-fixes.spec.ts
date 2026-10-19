@@ -92,16 +92,6 @@ test.describe('honest buttons', () => {
     expect(text).toContain('DTSTART;VALUE=DATE:' + date.replace(/-/g, ''));
   });
 
-  test('Suggest event is disabled, honest, and keeps input', async ({ page }) => {
-    await bootSignedIn(page, {}, [EVENT]);
-    await footer(page, 'Suggest an event');
-    await page.locator('[data-bind-key="sugArtist"]').fill('Keep Me');
-    await expect(page.getByRole('button', { name:/Submit event|cap reached/i })).toBeDisabled();
-    await expect(page.getByText(NOT_ON_WEB).first()).toBeVisible();
-    await expect(page.locator('[data-bind-key="sugArtist"]')).toHaveValue('Keep Me');
-    await expect(page.locator('body')).not.toContainText('Submitted for review');
-  });
-
   for (const [label, button] of [['Music taste', 'Agree & connect'], ['Promoter tools', 'Become a promoter']] as const) {
     test(`${button} never claims success`, async ({ page, isMobile }) => {
       test.skip(isMobile && label === 'Music taste', 'uses the desktop Account menu');

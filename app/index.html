@@ -472,7 +472,7 @@
           <!-- friends going wedge -->
           <sc-if value="{{ ae.hasFriends }}">
             <div style="display:flex;align-items:center;gap:var(--sp-md);margin:var(--sp-xl) 0;padding:var(--sp-md) var(--sp-lg);background:var(--social-glass);border:1px solid var(--social-glass-border);border-radius:var(--r-md);">
-              <div class="avstack"><span class="av"></span><span class="av"></span><span class="av"></span></div>
+              <div class="avstack"><sc-for list="{{ ae.friendAvatars }}" as="a" hint-placeholder-count="3"><span class="av" style="{{ a.style }}"></span></sc-for></div>
               <span style="color:var(--accent);font-weight:700;font-size:var(--fs-sm);">{{ ae.friendsLabel }} going</span>
             </div>
           </sc-if>
@@ -1578,7 +1578,7 @@
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ friendsList }}" as="f" hint-placeholder-count="4">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
-              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;box-shadow:0 0 0 2px {{ f.ring }};"></span>
+              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;box-shadow:0 0 0 2px {{ f.ring }};{{ f.avStyle }}"></span>
               <div style="flex:1;min-width:160px;">
                 <div style="font-weight:600;font-size:var(--fs-sm);">{{ f.name }}</div>
                 <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ f.handle }}</div>
@@ -1586,7 +1586,7 @@
                   <sc-for list="{{ f.chips }}" as="c" hint-placeholder-count="3"><span style="font-size:10px;padding:2px 8px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text-secondary);">{{ c.label }}</span></sc-for>
                 </div>
               </div>
-              <span style="font-size:var(--fs-xs);font-weight:700;color:{{ f.overlapColor }};">{{ f.overlapLabel }}</span>
+              <sc-if value="{{ f.overlapLabel }}"><span style="font-size:var(--fs-xs);font-weight:700;color:{{ f.overlapColor }};">{{ f.overlapLabel }}</span></sc-if>
             </div>
           </sc-for>
         </div>
@@ -1598,10 +1598,10 @@
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ requestsList }}" as="r" hint-placeholder-count="2">
             <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
-              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;"></span>
+              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;{{ r.avStyle }}"></span>
               <div style="flex:1;min-width:140px;">
                 <div style="font-weight:600;font-size:var(--fs-sm);">{{ r.name }}</div>
-                <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ r.handle }} · {{ r.overlapLabel }}</div>
+                <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ r.handle }}</div>
               </div>
               <div style="display:flex;gap:var(--sp-sm);">
                 <button type="button" class="btn btn--primary btn--sm" onClick="{{ r.accept }}">Accept</button>
@@ -2867,12 +2867,13 @@
           </sc-if>
         </div>
         <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;">
-          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" aria-label="Event date" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
+          <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Date</label><input type="date" aria-label="Event date" value="{{ sugDate }}" onInput="{{ setSugDate }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);color-scheme:dark;" /></div>
           <div style="flex:1;min-width:150px;"><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City</label><input type="text" aria-label="City" value="{{ sugCity }}" onInput="{{ setSugCity }}" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
         </div>
         <div><label style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Ticket link</label><input type="url" value="{{ sugLink }}" onInput="{{ setSugLink }}" placeholder="https://" style="width:100%;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" /></div>
-        <button type="button" class="btn btn--primary btn--block" disabled>{{ submitLabel }}</button>
-        <div class="honest-note" style="font-size:var(--fs-sm);color:var(--text-secondary);margin-top:6px;">Not available on the web yet — use the iPhone app</div>
+        <sc-if value="{{ sugError }}"><div role="alert" style="color:var(--danger);font-size:var(--fs-sm);">{{ sugError }}</div></sc-if>
+        <sc-if value="{{ sugDone }}"><div role="status" style="color:var(--attended);font-size:var(--fs-sm);">{{ sugDone }}</div></sc-if>
+        <button type="button" class="btn btn--primary btn--block" onClick="{{ submitSuggestion }}" disabled="{{ sugDisabled }}">{{ submitLabel }}</button>
       </div>
 
       <div class="sec__title" style="margin-bottom:var(--sp-md);">My submissions</div>
