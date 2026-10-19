@@ -1072,10 +1072,12 @@ class Component extends DCLogic {
     const evs = (list||[]).filter(e=>e && /^\d{4}-\d{2}-\d{2}/.test(e.date||''));
     if (!evs.length) { this.flash('No dated shows to add'); return; }
     const ymd = (d,add)=>{ const t=new Date(d.slice(0,10)+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+add); return t.toISOString().slice(0,10).replace(/-/g,''); };
-    const esc = t=>String(t||'').replace(/[\\;,]/g,'\\$&').replace(/\r?\n/g,'\\n');
+    // RFC 5545 TEXT escaping: backslash/semicolon/comma, every line-break form → \n, other control chars dropped.
+    const esc = t=>String(t||'').replace(/[\\;,]/g,'\\$&').replace(/\r\n|\r|\n/g,'\\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,'');
+    const uid = id=>String(id||'').replace(/[^A-Za-z0-9-]/g,'');
     const stamp = new Date().toISOString().replace(/[-:]|\.\d+/g,'');
     const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Drop//Web//EN'];
-    evs.forEach(e=>lines.push('BEGIN:VEVENT','UID:'+e.id+'@trydropapp.com','DTSTAMP:'+stamp,
+    evs.forEach(e=>lines.push('BEGIN:VEVENT','UID:'+uid(e.id)+'@trydropapp.com','DTSTAMP:'+stamp,
       'DTSTART;VALUE=DATE:'+ymd(e.date,0),'DTEND;VALUE=DATE:'+ymd(e.end_date||e.date,1),
       'SUMMARY:'+esc(e.title),'LOCATION:'+esc([e.venue_name,e.city].filter(Boolean).join(', ')),'END:VEVENT'));
     lines.push('END:VCALENDAR');
