@@ -1,5 +1,7 @@
-# Lab Core Web Vitals proxy on every PR (warn-only, never blocks a merge or
-# deploy). Reports stay in the run's artifacts; nothing is uploaded elsewhere.
+# Lab Core Web Vitals on every PR: per-page LCP/CLS budgets in lighthouserc.json
+# fail this check on a regression (score and TBT stay warn-only). Not a deploy
+# gate; the page-weight budget in tests/perf-budget.test.mjs is. Reports stay
+# in the run's artifacts; nothing is uploaded elsewhere.
 name: Lighthouse
 
 on:
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build dist
         run: bash scripts/build-dist.sh
-      - name: Lighthouse CI (mobile, 3 runs, warn-only)
+      - name: Lighthouse CI (mobile, 3 runs, LCP/CLS budgets)
         run: npx --yes @lhci/cli@0.15.1 autorun
       - uses: actions/upload-artifact@v4
         if: always()
