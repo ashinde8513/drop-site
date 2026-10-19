@@ -39,6 +39,7 @@ jobs:
           cp cwv/trend.jsonl cwv/latest.md "$RUNNER_TEMP/"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -- cwv  # results are safe in $RUNNER_TEMP; free the tree to switch
           if git rev-parse --verify -q origin/cwv-data >/dev/null; then git switch -c cwv-data origin/cwv-data; else git switch --orphan cwv-data; fi
           mkdir -p cwv && cp "$RUNNER_TEMP/trend.jsonl" "$RUNNER_TEMP/latest.md" cwv/
           git add cwv/trend.jsonl cwv/latest.md
