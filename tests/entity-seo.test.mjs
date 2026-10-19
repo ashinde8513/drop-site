@@ -578,3 +578,21 @@ test('link graph: junk listings are out, every show links its venue, city and ne
   assert.match(view.body, /<a href="\/city\?city=Denver">All EDM shows in Denver<\/a>/);
   assert.doesNotMatch(eventView(catalogEvent()).body, /More shows in|All EDM shows/, 'nothing to link stays empty');
 });
+
+test('city pages link small-town shows in their state and bordering non-market states', async () => {
+  const { NEARBY_STATES, smallTownShows, stateOf } = await import('../src/acquisition-seo.mjs');
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  assert.equal(stateOf([catalogEvent({ state: 'WA' }), catalogEvent({ state: 'WA' }), catalogEvent({ state: 'OR' })]), 'WA');
+  const town = catalogEvent({ id: id2, title: 'Tulsa <Night>', city: 'Tulsa', state: 'OK' });
+  const html = renderCityPage(template, 'Dallas', [catalogEvent({ city: 'Dallas', state: 'TX' })], [town]);
+  assert.match(html, new RegExp(`<h3>More shows nearby, outside the big cities</h3><ul><li><a href="/event/${id2}/tulsa-night">Tulsa &lt;Night&gt;</a> — Red Rocks, Tulsa, `));
+  assert.ok(NEARBY_STATES.TX.includes('OK') && NEARBY_STATES.WA.includes('BC') && NEARBY_STATES.MI.includes('ON'));
+  const urls = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url) => { urls.push(decodeURIComponent(String(url))); return new Response(JSON.stringify([town, catalogEvent({ city: 'Dallas', state: 'TX' })]), { headers: { 'Content-Range': '0-1/2' } }); };
+  try {
+    assert.deepEqual((await smallTownShows('TX')).map((e) => e.city), ['Tulsa'], 'market cities are excluded');
+  } finally { globalThis.fetch = real; }
+  assert.match(urls[0], /state=in\.\(TX,OK,LA,AR\)/);
+  assert.deepEqual(await smallTownShows(null), []);
+});
