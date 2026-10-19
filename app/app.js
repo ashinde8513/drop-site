@@ -573,7 +573,7 @@
   var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
   var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
   // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
-  var USER_DATA_RESET = { saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
+  var USER_DATA_RESET = { alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var EVENT_INTENT_KEY = 'drop.eventIntent';
   var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
@@ -902,7 +902,7 @@
 class Component extends DCLogic {
   state = {
     screen: 'home', authed: false, activeId: 'odesza',
-    activeArtist: 'ODESZA', activeVenue: 'Red Rocks Amphitheatre',
+    activeArtist: '', activeVenue: '',
     following: {}, followingVenue: {},
     myTab: 'Upcoming', ratings: {},
     gate: false, gateReturn: null, gateTitle: 'Join the crew',
@@ -928,7 +928,7 @@ class Component extends DCLogic {
     setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
-    notifRead: {},
+    alertRows: [], offers: {},
     // pick artists / venues / crew / plans / wrapped
     artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
@@ -1047,12 +1047,6 @@ class Component extends DCLogic {
   ADMIN_SIGNUPS = [];
   ADMIN_TOP_EVENTS = [];
   ADMIN_ACTIONS = [];
-
-  // ponytail: no "shows you've seen" history table this phase — stays empty.
-  SEEN_HISTORY = [];
-
-  // ponytail: no notifications table this phase — stays empty.
-  NOTIFS = [];
 
   // ponytail: no blocked-accounts table this phase — stays empty.
   BLOCKED = [];
@@ -1265,7 +1259,7 @@ class Component extends DCLogic {
       this.setState(s=>({ eventSocial:{...s.eventSocial, [id]: going} }));
     });
   }
-  setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); }
+  setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); this.syncOffers(); }
   loadFriends(uid){
     if (!supa) return;
     supa.from('friendships').select('id,requester_id,recipient_id,status').or('requester_id.eq.'+uid+',recipient_id.eq.'+uid).then(({ data, error })=>{
@@ -1592,6 +1586,7 @@ class Component extends DCLogic {
     }).catch(()=>{});
     this.loadMyShows(uid);
     this.loadLoggedShows(uid);
+    this.loadAlerts(uid);
   }
   // Dedicated My Shows read — a join, not derived from Discover's fetch, so
   // it's not limited by Discover's city/date-window pagination. Mirrors
@@ -1620,6 +1615,39 @@ class Component extends DCLogic {
       .then(({ data, error })=>{
         if (error) { console.error('[app] logged_shows load failed:', error.message); return; }
         this.setState({ loggedShows: data || [] });
+      });
+  }
+  // Own alerts (RLS: own SELECT + UPDATE only, no DELETE → "Clear all" hides client-side).
+  loadAlerts(uid){
+    if (!supa) return;
+    supa.from('alerts').select('id,kind,title,body,event_id,artist_id,plan_id,read,created_at')
+      .eq('user_id', uid).order('created_at', { ascending:false }).limit(50)
+      .then(({ data, error })=>{
+        if (error) { console.error('[app] alerts load failed:', error.message); return; }
+        this.setState({ alertRows: data || [], notifCleared:false });
+      });
+  }
+  // Optimistic read-mark; ids = alert ids. Rolls back + flashes on error.
+  markAlertsRead(ids){
+    if (!supa || !ids.length) return;
+    const flip = v=>this.setState(x=>({ alertRows: x.alertRows.map(a=>ids.includes(a.id) ? { ...a, read:v } : a) }));
+    flip(true);
+    const q = supa.from('alerts').update({ read:true });
+    (ids.length === 1 ? q.eq('id', ids[0]) : q.in('id', ids)).then(({ error })=>{
+      if (error) { console.error('[app] alerts update failed:', error.message); flip(false); this.flash('Could not update notifications — try again'); }
+    });
+  }
+  // Every seller listed for the open event (ticket_offers is public for published events).
+  syncOffers(){
+    const st = this.state, id = st.activeId;
+    if (st.screen !== 'event' || !supa || !ATTRIBUTION_UUID.test(String(id || '')) || this._offersKey === id) return;
+    this._offersKey = id;
+    supa.from('ticket_offers')
+      .select('vendor,url,price_min,price_max,currency,all_in_price,price_text,price_includes_fees,url_domain,kind,last_refreshed')
+      .eq('event_id', id)
+      .then(({ data, error })=>{
+        if (error) { console.error('[app] ticket_offers load failed:', error.message); this._offersKey = null; return; }
+        this.setState(s=>({ offers:{ ...s.offers, [id]: data || [] } }));
       });
   }
   // ===== Log a past show — archive picker query + bulk/manual writes =====
@@ -2245,13 +2273,19 @@ class Component extends DCLogic {
     const lineup = lineupArtists.length
       ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(a.name, a.id) }))
       : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(name, null) }));
-    // One honest row: the event's real ticket link, labeled with the real
-    // seller from its hostname. The old mock synthesized Ticketmaster/StubHub
-    // rows off the one real price, so every "Get tickets" button opened the
-    // same link under different vendor names — removed until the real
-    // seller-comparison feed (separate project) is wired in.
-    const priceRows = ae.ticketUrl ? [
-      { seller:(Drop && Drop.sellerName(ae.ticketUrl)) || 'Tickets', price:ae.price, best:false, border:'var(--attended)' },
+    // Real sellers from ticket_offers (cheapest known first, unknown price last);
+    // falls back to the one events.ticket_url row when there are none. Never invents a price.
+    const money = (v, cur)=>{ try { return new Intl.NumberFormat('en-US', { style:'currency', currency:cur||'USD', maximumFractionDigits:0 }).format(v); } catch(e) { return '$'+Math.round(v); } };
+    const offerRows = ((s.offers||{})[ae.id]||[]).map(o=>{
+      const url = Drop && Drop.safeUrl(o.url); if (!url) return null;
+      const num = o.all_in_price != null ? Number(o.all_in_price) : (o.price_min != null ? Number(o.price_min) : null);
+      const known = num != null && isFinite(num);
+      return { seller:o.vendor || (Drop && Drop.sellerName(url)) || 'Tickets', price:o.price_text || (known ? money(num, o.currency) : 'See price'),
+        num:known ? num : Infinity, best:false, border:'var(--border)', open:()=>window.open(url, '_blank', 'noopener') };
+    }).filter(Boolean).sort((a,b)=>a.num-b.num);
+    if (offerRows.filter(r=>r.num !== Infinity).length > 1) { offerRows[0].best = true; offerRows[0].border = 'var(--attended)'; }
+    const priceRows = offerRows.length ? offerRows : ae.ticketUrl ? [
+      { seller:(Drop && Drop.sellerName(ae.ticketUrl)) || 'Tickets', price:ae.price, best:false, border:'var(--attended)', open:()=>window.open(ae.ticketUrl, '_blank', 'noopener') },
     ] : [];
     const aeSingleSeller = priceRows.length === 1;
 
@@ -2523,7 +2557,9 @@ class Component extends DCLogic {
     ];
 
     // ===== Notifications =====
-    const notifications = s.notifCleared ? [] : this.NOTIFS.map(n=>{ const unread=!s.notifRead[n.id]; return { ...n, unread, bg: unread?'var(--surface-hi)':'var(--surface)', act:()=>{ this.setState(x=>({ notifRead:{...x.notifRead, [n.id]:true} })); } }; });
+    const NOTIF_ICON = { recap_ready:'🎞', reminder:'⏰', friend:'👋', artist:'🎤', sale:'🎟', comment:'💬', plan_message:'💬', reaction:'❤️' };
+    const ago = iso=>{ const m = Math.max(0, Math.round((Date.now()-new Date(iso).getTime())/60000)); return isNaN(m) ? '' : m<60 ? (m||1)+'m ago' : m<1440 ? Math.round(m/60)+'h ago' : Math.round(m/1440)+'d ago'; };
+    const notifications = s.notifCleared ? [] : s.alertRows.map(n=>{ const unread=!n.read; return { id:n.id, icon:NOTIF_ICON[n.kind]||'🔔', title:n.title||'', body:n.body||'', time:ago(n.created_at), unread, bg: unread?'var(--surface-hi)':'var(--surface)', act:()=>{ if (unread) this.markAlertsRead([n.id]); } }; });
 
     // ===== Settings =====
     const settingsToggles = [
@@ -2828,12 +2864,20 @@ class Component extends DCLogic {
     const recapChosen = Object.keys(s.recapPhotos).filter(k=>s.recapPhotos[k]).length;
     const recapSlots = [1,2,3,4].map(n=>({ id:'recap-'+n, n }));
     const recapPreviewCells = [1,2,3,4].map(n=>({ id:'recap-'+n, bg:'background:rgba(255,255,255,0.06);' }));
+    const recapLast = wrappedPastRows.slice().sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    const recapCardTitle = recapLast ? (recapLast.title || 'Your show') : 'Your recap';
+    const recapCardMeta = recapLast ? [recapLast.venue_name, (Drop && Drop.fmtDate(recapLast.date, true)) || ''].filter(Boolean).join(' · ') : 'Log a show to fill this card';
     const recapCountLabel = 'Drag photos into the four slots — they fill the recap card on the right.';
 
     // ===== Seen history =====
-    const seenYears = this.SEEN_HISTORY.map(y=>({ year:y.year, shows:y.shows.map(sh=>({ title:sh.title, venue:sh.venue, date:sh.date, gradStyle:'background-image:'+sh.grad,
-      hasBadge: !!sh.badge, badge:sh.badge,
-      badgeStyle: sh.badge==='Superfan'?'background:var(--grad-glow);color:var(--ink);':'background:var(--surface-hi);color:var(--accent);' })) }));
+    const seenByYear = new Map();
+    (s.loggedShows||[]).filter(ls=>ls.show_date).forEach((ls,i)=>{
+      const y = String(ls.show_date).slice(0,4);
+      if (!seenByYear.has(y)) seenByYear.set(y, []);
+      seenByYear.get(y).push({ title:ls.artist_name||'Show', venue:[ls.venue_name, ls.city].filter(Boolean).join(', '), date:(Drop && Drop.fmtDate(ls.show_date, true)) || ls.show_date,
+        gradStyle:'background-image:'+EVENT_GRADS[i%EVENT_GRADS.length], hasBadge:false, badge:'', badgeStyle:'' });
+    });
+    const seenYears = [...seenByYear.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([year, shows])=>({ year, shows }));
 
     // ===== Tagged =====
     const taggedList = this.TAGGED.filter(t=>!s.tagActioned[t.id]).map(t=>({ who:t.who, show:t.show, date:t.date, gradStyle:'background-image:'+t.grad,
@@ -2847,8 +2891,8 @@ class Component extends DCLogic {
 
     // ===== Paywall =====
     const plusPlans = [
-      { key:'annual', title:'Annual', sub:'$59.99 / yr · $5.00 per month', badge:'Save 33%', hasBadge:true },
-      { key:'monthly', title:'Monthly', sub:'$7.49 / mo · cancel anytime', badge:'', hasBadge:false },
+      { key:'annual', title:'Annual', sub:'Drop+ isn\'t available yet', badge:'', hasBadge:false },
+      { key:'monthly', title:'Monthly', sub:'Drop+ isn\'t available yet', badge:'', hasBadge:false },
     ].map(p=>{ const on=s.plusPlan===p.key; return { title:p.title, sub:p.sub, badge:p.badge, hasBadge:p.hasBadge,
       bg: on?'rgba(77,226,255,0.08)':'var(--surface)', border: on?'var(--accent)':'var(--border)', dot: on?'var(--accent)':'var(--border-strong)', dotBg: on?'var(--accent)':'transparent', check: on?'✓':'',
       pick:()=>this.setState({plusPlan:p.key}) }; });
@@ -2940,7 +2984,7 @@ class Component extends DCLogic {
     const SCOUT_GOAL = 5, scoutApproved = this.SUBMISSIONS.filter(sb=>sb.status==='live').length;
     const scoutLabel = scoutApproved+' of '+SCOUT_GOAL+' live';
     const scoutFillStyle = 'width:'+(scoutApproved/SCOUT_GOAL*100)+'%;';
-    const scoutHint = scoutApproved>=SCOUT_GOAL ? 'Reward unlocked — a free month of Drop+ 🎉' : (SCOUT_GOAL-scoutApproved)+' more approved shows for a free month of Drop+';
+    const scoutHint = 'Approved shows count toward your scout badge';
     const CAP_MAX = 5, capUsed = this.SUBMISSIONS.length;
     const capReached = capUsed>=CAP_MAX;
     const saq = s.sugArtist.trim().toLowerCase();
@@ -3157,7 +3201,7 @@ class Component extends DCLogic {
       // crew builder
       cbTitle: cbEv.title.split(' — ')[0], cbFriends, cbFriendsEmpty: cbFriends.length===0,
       // invite
-      inviteCount, inviteRemainLabel: inviteRemain===0?'Reward unlocked 🎉':inviteRemain+' more for a free month', inviteFillStyle:'width:'+(inviteCount/5*100)+'%;', inviteMilestones, inviteList, inviteListEmpty: inviteList.length===0,
+      inviteCount, inviteRemainLabel: inviteRemain===0?'5 friends joined':inviteRemain+' more to go', inviteFillStyle:'width:'+(inviteCount/5*100)+'%;', inviteMilestones, inviteList, inviteListEmpty: inviteList.length===0,
       inviteHandle: (s.profile && s.profile.username) || 'you',
       // wrapped
       wrappedTabs, wr, wrappedStats, wrappedYear, wrappedAllTime: !wrappedYear, wrappedEmpty, wrappedHasData: !wrappedEmpty,
@@ -3168,12 +3212,12 @@ class Component extends DCLogic {
       logArtist: s.logArtist, logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
       // memories / recap / seen / tagged
       memorySlots,
-      recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel,
+      recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel, recapCardTitle, recapCardMeta,
       seenYears, seenEmpty: seenYears.length===0,
       taggedList, taggedEmpty: taggedList.length===0,
       // drop+
       ledger, ledgerEmpty: ledger.length===0,
-      plusPlans, plusFeatures, plusCtaLabel: s.plusPlan==='annual'?'Start annual — $59.99/yr':'Start monthly — $7.49/mo',
+      plusPlans, plusFeatures, plusCtaLabel: 'Coming soon',
       // link hub
       linkButtons,
 
@@ -3293,7 +3337,6 @@ class Component extends DCLogic {
       recapYes:()=>this.setState({recapWasThere:true}),
       recapShare:()=>this.flash('Recap card copied to share'),
       recapDownload:()=>this.flash('Recap image (9:16) downloaded'),
-      plusContinue:()=>this.flash('Drop+ checkout — coming soon'),
       doReset:()=>{
         if (!supa) return;
         const pw = fieldVal('reset-password'), pw2 = fieldVal('reset-password-confirm');
@@ -3572,7 +3615,7 @@ class Component extends DCLogic {
       aeGoing:()=>this.toggleRsvp(ae.id,'going'),
       aeInterested:()=>this.toggleRsvp(ae.id,'interested'),
       aeSave:()=>this.toggleSave(ae.id),
-      aeTickets:()=>{ if (ae.ticketUrl) window.open(ae.ticketUrl, '_blank', 'noopener'); else this.flash('Tickets not on sale yet'); },
+      aeTickets:()=>{ const r = priceRows[0]; if (r) r.open(); else this.flash('Tickets not on sale yet'); },
       aeShare:()=>this.shareEvent(ae.id),
       aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue, venueCity:ae.city||''}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       aeCopyCode:()=>{ if (ae.presaleCode && navigator.clipboard) navigator.clipboard.writeText(ae.presaleCode).then(()=>this.flash('Presale code copied'), ()=>{}); },
@@ -3655,8 +3698,8 @@ class Component extends DCLogic {
         this.go('profile'); this.flash('Profile saved');
       },
       toastWrapped:(e)=>{ this.prevent&&this.prevent(e); this.go('wrapped'); },
-      markAllRead:()=>{ const all={}; this.NOTIFS.forEach(n=>all[n.id]=true); this.setState({notifRead:all}); this.flash('All caught up'); },
-      clearNotifs:()=>{ this.setState({notifCleared:true}); this.flash('Notifications cleared'); },
+      markAllRead:()=>{ this.markAlertsRead(this.state.alertRows.filter(a=>!a.read).map(a=>a.id)); this.flash('All caught up'); },
+      clearNotifs:()=>{ this.setState({notifCleared:true}); this.flash('Notifications hidden'); },
       toggleRecap:()=>this.setState(x=>({recapPrivacy:!x.recapPrivacy})),
       doLogout:()=>{ this.logout(); this.go('home'); },
       setDeleteConfirm:(e)=>this.setState({deleteConfirm:e.target.value}),
