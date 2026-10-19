@@ -50,8 +50,12 @@ function hasText(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+// Logistics listings (party-bus pickup spots) are not shows: keep them out of
+// the index, sitemaps and crawlable lists.
+const NOT_A_SHOW = /\bpick-?up spot\b/i;
+
 export function isIndexableEvent(event) {
-  return Boolean(event && routeId([event.id]) && hasText(event.title) && hasText(event.date) && Number.isFinite(Date.parse(event.date)) &&
+  return Boolean(event && routeId([event.id]) && hasText(event.title) && !NOT_A_SHOW.test(event.title) && hasText(event.date) && Number.isFinite(Date.parse(event.date)) &&
     routeId([event.venue_id]) && hasText(event.venue_name) &&
     (hasText(event.venue_address) || (hasText(event.city) && hasText(event.state))));
 }
@@ -74,8 +78,9 @@ export function isIndexableArtist(data) {
   const artist = data?.artist || data;
   const events = data?.events || artist?.events || [];
   const eventCount = indexableEventCount(events);
-  const hasProfile = (Array.isArray(artist?.genres) && artist.genres.some(hasText)) ||
-    Boolean(safeHttpUrl(artist?.image_url) || safeHttpUrl(artist?.website_url));
+  // Catalog genres are auto-filled, so a one-show artist needs a real image or
+  // website to be more than a thin page (2026-10-19 audit: 89 genre-only pages).
+  const hasProfile = Boolean(safeHttpUrl(artist?.image_url) || safeHttpUrl(artist?.website_url));
   return Boolean(artist && routeId([artist.id]) && hasText(artist.name) &&
     (eventCount >= 2 || (eventCount >= 1 && hasProfile)));
 }
@@ -147,6 +152,20 @@ function upcomingFilter() {
 export async function getEvent(id) {
   const rows = await rest('events', { select: EVENT_SELECT, id: 'eq.' + id, status: 'eq.published', limit: 1 });
   return rows[0] || null;
+}
+
+// The next indexable shows in the same city after this one (for crawl links).
+// Never throws: the page still renders without the block.
+export async function getNextShows(event, limit = 6) {
+  if (!hasText(event?.city) || !hasText(event?.date)) return [];
+  try {
+    const rows = await rest('events', {
+      select: 'id,title,date,timezone,time_tbd,venue_id,venue_name,venue_address,city,state',
+      status: 'eq.published', city: 'ilike.' + event.city, date: 'gte.' + event.date, id: 'neq.' + event.id,
+      order: 'date.asc,id.asc', limit: limit * 2,
+    });
+    return rows.filter(isIndexableEvent).slice(0, limit);
+  } catch { return []; }
 }
 
 export async function getVenue(id) {
@@ -320,7 +339,7 @@ export function eventTitle(event) {
   return event.title + (event.venue_name ? ' at ' + event.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
 }
 
-export function eventView(event) {
+export function eventView(event, { nearby = [], cityPath = null } = {}) {
   const canonical = 'https://trydropapp.com' + eventPath(event);
   const location = [event.venue_name, event.city, event.state].filter(Boolean).join(', ');
   const about = plainText(event.description);
@@ -332,7 +351,19 @@ export function eventView(event) {
   const lineup = performers.length ? '<p><strong>Lineup:</strong> ' + performers.map((artist) => '<a href="' + artistPath(artist) + '">' + escapeHtml(artist.name) + '</a>').join(', ') + '</p>' : '';
   const statusText = eventAvailabilityText(event);
   const ticket = ticketUrl ? '<p><a href="' + escapeHtml(ticketUrl) + '" rel="nofollow sponsored">' + escapeHtml(ticketActionText(event)) + '</a></p>' : '';
-  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(event.title) + '</h1><p>' + escapeHtml(dateText + ' · ' + location) + '</p>' + lineup + '<p>' + escapeHtml(about) + '</p><p><strong>Status:</strong> ' + escapeHtml(statusText) + '</p>' + ticket + '</article>';
+  // Crawlable links out: the venue, the city page, and the next shows in the
+  // same city. The chronological "next shows" chain gives every show an
+  // inbound link (2026-10-19 audit: 308 orphaned event pages, 43 venues).
+  const venueLink = event.venue_id && event.venue_name
+    ? '<a href="' + venuePath({ id: event.venue_id, name: event.venue_name, city: event.city }) + '">' + escapeHtml(event.venue_name) + '</a>'
+    : escapeHtml(event.venue_name || '');
+  const where = [venueLink, escapeHtml([event.city, event.state].filter(Boolean).join(', '))].filter(Boolean).join(', ');
+  const more = nearby.length
+    ? '<h2>More shows in ' + escapeHtml(event.city) + '</h2><ul>' + nearby.map((next) => '<li><a href="' + eventPath(next) + '">' + escapeHtml(next.title) + '</a> · ' +
+      escapeHtml(shortEventDate(next.date, next.time_tbd ? 'UTC' : next.timezone)) + (next.venue_name ? ' · ' + escapeHtml(next.venue_name) : '') + '</li>').join('') + '</ul>'
+    : '';
+  const cityLink = cityPath ? '<p><a href="' + escapeHtml(cityPath) + '">All EDM shows in ' + escapeHtml(event.city) + '</a></p>' : '';
+  const body = '<article class="wrap" style="padding:32px 0"><h1>' + escapeHtml(event.title) + '</h1><p>' + escapeHtml(dateText) + ' · ' + where + '</p>' + lineup + '<p>' + escapeHtml(about) + '</p><p><strong>Status:</strong> ' + escapeHtml(statusText) + '</p>' + ticket + more + cityLink + '</article>';
   const jsonLd = { '@context': 'https://schema.org', ...eventLd(event, { canonical, image, description }) };
   return { title: eventTitle(event), description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
 }
