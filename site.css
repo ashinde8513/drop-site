@@ -95,7 +95,23 @@
   --selected-border: rgba(77,226,255,0.72);
   --selected-text: var(--brand-cyan);
   /* --grad-glow-fill moved into the synced Prism token block above (from prism-tokens). */
+  /* Same Prism faces, plus a metric-matched local fallback (below) so text
+     doesn't reflow when the web fonts swap in (was CLS 0.2 on /privacy). */
+  --font-display: 'Space Grotesk', 'Space Grotesk Fallback', system-ui, sans-serif;
+  --font-body:    'Sora', 'Sora Fallback', system-ui, sans-serif;
 }
+
+/* Arial scaled to each web font's width and line box, computed from the
+   Google Fonts files against Arial / Arial Bold (hhea metrics, English
+   text width). Helvetica/Roboto stand in where Arial is missing. */
+@font-face { font-family: 'Sora Fallback'; font-weight: 100 500; src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Roboto');
+  size-adjust: 112.57%; ascent-override: 86.17%; descent-override: 25.76%; line-gap-override: 0%; }
+@font-face { font-family: 'Sora Fallback'; font-weight: 600 900; src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Roboto Bold');
+  size-adjust: 105.88%; ascent-override: 91.62%; descent-override: 27.39%; line-gap-override: 0%; }
+@font-face { font-family: 'Space Grotesk Fallback'; font-weight: 100 500; src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Roboto');
+  size-adjust: 109.55%; ascent-override: 89.82%; descent-override: 26.65%; line-gap-override: 0%; }
+@font-face { font-family: 'Space Grotesk Fallback'; font-weight: 600 900; src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Roboto Bold');
+  size-adjust: 101.62%; ascent-override: 96.83%; descent-override: 28.73%; line-gap-override: 0%; }
 
 /* ========================================================================
    Base / reset

@@ -197,7 +197,8 @@
         var when = '';
         try { when = new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: ev.time_tbd ? 'UTC' : (ev.timezone || 'UTC') }); } catch (e) {}
         if (when === 'Invalid Date') when = '';
-        var title = ev.title + (ev.venue_name ? ' at ' + ev.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+        var suffix = (ev.venue_name ? ' at ' + ev.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+        var title = D.clipText(ev.title, Math.max(30, 65 - suffix.length)) + suffix;
         var about = D.plainText(ev.description);
         var desc = about || (ev.title + ' at ' + ev.venue_name + ', ' + ev.city + '.');
         if (desc.length > 155) desc = desc.slice(0, 154).replace(/\s+\S*$/, '') + '…';

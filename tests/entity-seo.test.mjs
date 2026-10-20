@@ -8,7 +8,7 @@ import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
   safeAttributionQuery, schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify,
-  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle,
+  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle, countryOf,
 } from '../src/entity-seo.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -218,6 +218,29 @@ test('event titles carry the local date and JSON-LD skips a zero-length endDate'
   assert.equal(eventTitle(catalogEvent({ date: '2026-10-18T00:00:00Z', time_tbd: true, timezone: 'America/Denver' })), 'Main Event at Red Rocks · Oct 18 | Drop');
 });
 
+test('long lineup titles are clipped so venue and date survive the SERP cut-off', () => {
+  const long = catalogEvent({ title: 'Bttrfly Ft. Eric Benny Bloom, Dominic Lalli, Adam Deitch, Borahm Lee, Hunter Roberts', venue_name: 'Cervantes Masterpiece Ballroom', date: '2026-12-11T02:00:00Z', timezone: 'America/Denver' });
+  const title = eventTitle(long);
+  assert.equal(title, 'Bttrfly Ft. Eric Benny… at Cervantes Masterpiece Ballroom · Dec 10 | Drop');
+  assert.ok(title.endsWith(' at Cervantes Masterpiece Ballroom · Dec 10 | Drop'));
+  // The client (event.html via data.js) builds the same title.
+  const window = {};
+  vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
+  for (const [t, n] of [[long.title, 30], ['alpha beta gamma delta', 15], ['short', 155], ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 30]]) assert.equal(window.Drop.clipText(t, n), clipText(t, n), t);
+  assert.match(readFileSync(new URL('../event.html', import.meta.url), 'utf8'), /var title = D\.clipText\(ev\.title, Math\.max\(30, 65 - suffix\.length\)\) \+ suffix;/);
+});
+
+test('event JSON-LD names the country and omits an empty performer list', () => {
+  assert.equal(countryOf('CO'), 'US');
+  assert.equal(countryOf('on'), 'CA');
+  assert.equal(countryOf('BC'), 'CA');
+  assert.equal(countryOf('California'), undefined);
+  assert.equal(countryOf(null), undefined);
+  const ld = eventView(catalogEvent({ state: 'ON', event_artists: [] })).jsonLd;
+  assert.equal(ld.location.address.addressCountry, 'CA');
+  assert.equal(ld.performer, undefined);
+});
+
 test('og:image size tags are dropped for non-default event art', () => {
   const template = '<html><head><title>Old</title><meta property="og:image" content="old"><meta property="og:image:type" content="image/png" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="Drop" /></head><body><div id="r"></div></body></html>';
   const base = { title: 'Show | Drop', description: 'd', canonical: 'https://trydropapp.com/x', rootId: 'r', body: '', jsonLd: {} };
@@ -404,17 +427,39 @@ test('Function HTML is edge-cached per URL and deploy, 200s only', async () => {
 });
 
 test('homepage LCP hint names the exact first card a Denver visitor sees', async () => {
-  const { homeLcpImage, isRealArtUrl, startOfDayIn, withLcpHint } = await import('../src/home-lcp.mjs');
+  const { homeLcpImage, isRealArtUrl, sizedArtUrl, startOfDayIn, withLcpHint } = await import('../src/home-lcp.mjs');
   const window = {};
   vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
   for (const url of [null, '', 'http://x.test/a.jpg', 'https://u:p@x.test/a.jpg', 'https://s1.ticketm.net/dam/c/abc.jpg', 'https://s1.ticketm.net/dam/a/abc.jpg', 'https://cdn.example/a.jpg', 'not a url']) {
     assert.equal(isRealArtUrl(url), window.Drop.isRealArtUrl(url), String(url));
   }
+  // Full-size uploads swap to a ~1200px rendition, identically on both sides,
+  // so the preload is the URL the grid then requests.
+  const sized = {
+    'https://s1.ticketm.net/dam/a/1eb/c274_SOURCE': 'https://s1.ticketm.net/dam/a/1eb/c274_RETINA_LANDSCAPE_16_9.jpg',
+    'https://s1.ticketm.net/dam/a/464/d432_TABLET_LANDSCAPE_LARGE_16_9.jpg': 'https://s1.ticketm.net/dam/a/464/d432_RETINA_LANDSCAPE_16_9.jpg',
+    'https://s1.ticketm.net/dam/a/464/d432_EVENT_DETAIL_PAGE_16_9.jpg': 'https://s1.ticketm.net/dam/a/464/d432_EVENT_DETAIL_PAGE_16_9.jpg',
+    'https://res.cloudinary.com/x/image/upload/q_auto,f_auto/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/q_auto,f_auto/v1/a.webp',
+    'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/v1/a.webp',
+    'https://cdn.test/c.jpg': 'https://cdn.test/c.jpg',
+  };
+  for (const [from, to] of Object.entries(sized)) {
+    assert.equal(sizedArtUrl(from), to, from);
+    assert.equal(window.Drop.sizedArtUrl(from), to, 'client ' + from);
+  }
+  assert.equal(sizedArtUrl(null), null);
+  assert.deepEqual([...window.Drop.eventArtCandidates({ image_url: 'https://s1.ticketm.net/dam/a/1eb/c274_SOURCE', event_artists: [{ artists: { image_url: 'https://artist.test/a.jpg' } }] })],
+    ['https://s1.ticketm.net/dam/a/1eb/c274_RETINA_LANDSCAPE_16_9.jpg', 'https://s1.ticketm.net/dam/a/1eb/c274_SOURCE', 'https://artist.test/a.jpg']);
+  assert.equal(homeLcpImage([{ id: 'd', image_url: 'https://s1.ticketm.net/dam/a/1eb/c274_SOURCE', event_artists: [] }]), 'https://s1.ticketm.net/dam/a/1eb/c274_RETINA_LANDSCAPE_16_9.jpg');
   const rows = [
     { id: 'a', image_url: null, event_artists: [{ artists: { image_url: 'https://artist.test/a.jpg' } }] },
     { id: 'b', image_url: 'https://s1.ticketm.net/dam/c/cat.jpg', event_artists: [] },
     { id: 'c', image_url: 'https://cdn.test/c.jpg', event_artists: [] },
   ];
+  // Pickup-spot listings are filtered in the query on both sides.
+  const pickup = "'not.ilike.*pick*up spot*'";
+  assert.ok(readFileSync(new URL('../data.js', import.meta.url), 'utf8').includes('var NOT_A_SHOW = ' + pickup));
+  assert.match(readFileSync(new URL('../src/home-lcp.mjs', import.meta.url), 'utf8'), /status: 'eq\.published', title: 'not\.ilike\.\*pick\*up spot\*'/);
   assert.equal(homeLcpImage(rows), 'https://cdn.test/c.jpg');
   assert.equal(homeLcpImage([rows[0]]), 'https://artist.test/a.jpg');
   assert.equal(homeLcpImage([]), null);
