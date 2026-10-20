@@ -573,7 +573,7 @@
   var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
   var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
   // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
-  var USER_DATA_RESET = { alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
+  var USER_DATA_RESET = { ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var EVENT_INTENT_KEY = 'drop.eventIntent';
   var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
@@ -904,7 +904,7 @@ class Component extends DCLogic {
     screen: 'home', authed: false, activeId: 'odesza',
     activeArtist: '', activeVenue: '',
     following: {}, followingVenue: {},
-    myTab: 'Upcoming', ratings: {},
+    myTab: 'Upcoming', ratingRows: {}, blockedRows: null, blockedError: false,
     gate: false, gateReturn: null, gateTitle: 'Join the crew',
     rsvp: {}, saved: {},
     dtab: 'Happening', dchip: 'all', discPage: 0,
@@ -1049,7 +1049,6 @@ class Component extends DCLogic {
   ADMIN_ACTIONS = [];
 
   // ponytail: no blocked-accounts table this phase — stays empty.
-  BLOCKED = [];
 
   // ARTIST_GRADS: deterministic gradient palette (not user data) — kept.
   ARTIST_GRADS = ['linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22)','linear-gradient(120deg,#4d1c37,#52270d 55%,#22143a)','linear-gradient(120deg,#1c384d,#3b0d52 55%,#3a2b14)','linear-gradient(120deg,#3a1c4d,#0d5250 55%,#3a1414)'];
@@ -1594,6 +1593,8 @@ class Component extends DCLogic {
     this.loadMyShows(uid);
     this.loadLoggedShows(uid);
     this.loadAlerts(uid);
+    this.loadRatings(uid);
+    this.loadBlocked();
   }
   // Dedicated My Shows read — a join, not derived from Discover's fetch, so
   // it's not limited by Discover's city/date-window pagination. Mirrors
@@ -1633,6 +1634,59 @@ class Component extends DCLogic {
         if (error) { console.error('[app] alerts load failed:', error.message); return; }
         this.setState({ alertRows: data || [], notifCleared:false });
       });
+  }
+  // Own show_ratings (RLS: read own; write own + has_attended_event). rating is 1–10 half-star units; web stars are whole (n*2).
+  loadRatings(uid){
+    if (!supa) return;
+    supa.from('show_ratings').select('event_id,rating,notes,is_public,is_anonymous').eq('user_id', uid).then(({ data, error })=>{
+      if (this.state.userId !== uid) return;
+      if (error) { console.error('[app] show_ratings load failed:', error.message); return; }
+      const ratingRows = {}; (data || []).forEach(r=>{ ratingRows[r.event_id] = r; });
+      this.setState({ ratingRows });
+    });
+  }
+  // Score only — mirrors native setShowRatingValue: keeps notes; a row without notes must stay private (DB check).
+  rateShow(eventId, stars){
+    const uid = this.state.userId, prev = this.state.ratingRows[eventId];
+    if (!supa || !uid) return;
+    const hasNotes = !!(prev && prev.notes && prev.notes.trim());
+    const row = { user_id:uid, event_id:eventId, rating:stars*2, is_public: hasNotes ? prev.is_public : false, is_anonymous: hasNotes ? prev.is_anonymous : false, updated_at:new Date().toISOString() };
+    const put = v=>this.setState(x=>({ ratingRows:{ ...x.ratingRows, [eventId]: v } }));
+    put({ ...(prev || {}), event_id:eventId, rating:row.rating, is_public:row.is_public, is_anonymous:row.is_anonymous });
+    supa.from('show_ratings').upsert(row, { onConflict:'user_id,event_id' }).then(({ error })=>{
+      // Roll back only if no later rating replaced this one.
+      if (error) { console.error('[app] show_ratings upsert failed:', error.message); if ((this.state.ratingRows[eventId] || {}).rating === row.rating) put(prev); this.flash('Could not save your rating — try again'); return; }
+      this.flash('Rated '+stars+'★');
+    });
+  }
+  // Past "going" → "attended" (ratings require attended per RLS).
+  markAttended(eventId){
+    const uid = this.state.userId;
+    if (!supa || !uid) return;
+    supa.from('attendance').update({ status:'attended' }).eq('user_id', uid).eq('event_id', eventId).eq('status', 'going').select('event_id').then(({ data, error })=>{
+      if (error || !(data && data.length)) { if (error) console.error('[app] mark attended failed:', error.message); this.flash('Could not update — try again'); return; }
+      this.loadMyShows(uid);
+    });
+  }
+  // Blocked accounts (blocks are made in the app; web lists + unblocks). null = loading.
+  loadBlocked(){
+    if (!supa) return;
+    const uid = this.state.userId;
+    this.setState({ blockedRows:null, blockedError:false });
+    supa.rpc('list_my_blocked_profiles').then(({ data, error })=>{
+      if (this.state.userId !== uid) return;
+      if (error) { console.error('[app] blocked load failed:', error.message); this.setState({ blockedError:true }); return; }
+      this.setState({ blockedRows: data || [] });
+    });
+  }
+  unblock(row){
+    const uid = this.state.userId;
+    if (!supa || !uid) return;
+    this.setState(x=>({ blockedRows: x.blockedRows.filter(b=>b.id !== row.id) }));
+    supa.from('user_blocks').delete().eq('blocker_id', uid).eq('blocked_id', row.id).then(({ error })=>{
+      if (error) { console.error('[app] unblock failed:', error.message); this.setState(x=>({ blockedRows: [...x.blockedRows, row] })); this.flash('Could not unblock — try again'); return; }
+      this.flash('Unblocked ' + (row.display_name || row.username || 'account'));
+    });
   }
   // Optimistic read-mark; ids = alert ids. Rolls back + flashes on error.
   markAlertsRead(ids){
@@ -2575,7 +2629,7 @@ class Component extends DCLogic {
       { key:'comments', label:'Comment replies & mentions' },
       { key:'plans', label:'Crew plans & messages' },
     ].map(t=>({ label:t.label, on: !!s.setToggles[t.key], toggle:()=>this.togglePref(t.key) }));
-    const blocked = this.BLOCKED.filter(b=>!this._unblocked || !this._unblocked[b.id]).map(b=>({ ...b, unblock:()=>{ this._unblocked=this._unblocked||{}; this._unblocked[b.id]=true; this.flash('Unblocked '+b.name); this.forceUpdate(); } }));
+    const blocked = (s.blockedRows || []).map(b=>({ name: b.display_name || b.username || 'Drop user', handle: b.username ? '@'+b.username : '', unblock:()=>this.unblock(b) }));
     const deleteOk = s.deleteConfirm.trim().toUpperCase()==='DELETE';
 
     // ===== Artist page =====
@@ -2645,16 +2699,16 @@ class Component extends DCLogic {
       .filter(x=>x.row.status==='attended' || (x.ev.date && new Date(x.ev.date).getTime()<myNow))
       .map(x=>{
         const ev = x.ev;
-        const r = s.ratings[ev.id] || 0;
+        const rr = s.ratingRows[ev.id], r = rr ? rr.rating/2 : 0, attended = x.row.status==='attended';
         return {
           id: ev.id, title: ev.title || 'Untitled show',
           venueCity: [ev.venue_name, ev.city].filter(Boolean).join(' · '),
           dateShort: ((Drop && Drop.fmtDate(ev.date, ev.time_tbd)) || 'Date TBD').toUpperCase(),
           gradStyle: 'background-image:'+gradFor(ev.id||'past'),
-          // ponytail: no show_ratings table wired this phase — ratings stay
-          // local/session-only (matches the original mock behavior).
+          attended, notAttended: !attended,
+          markAttended:()=>this.markAttended(ev.id),
           rateLabel: r>0 ? 'You rated '+r+'★' : 'Rate this show',
-          stars: [1,2,3,4,5].map(n=>({ glyph: n<=r?'★':'☆', color: n<=r?'var(--gold)':'var(--text-muted)', set:()=>{ if(!this.state.authed){ this.openGate('Log in to rate shows'); return; } this.setState(x2=>({ ratings:{...x2.ratings, [ev.id]: x2.ratings[ev.id]===n?0:n} })); this.flash('Rated '+n+'★'); } })),
+          stars: [1,2,3,4,5].map(n=>({ glyph: n<=r?'★':'☆', color: n<=r+0.5?'var(--gold)':'var(--text-secondary)', label:'Rate '+n+' star'+(n===1?'':'s'), set:()=>{ if(!this.state.authed){ this.openGate('Log in to rate shows'); return; } this.rateShow(ev.id, n); } })),
         };
       });
     const myTabs = ['Upcoming','Saved','Past'].map(t=>({ label:t, cls: s.myTab===t?'is-active':'', pick:()=>this.setState({myTab:t}) }));
@@ -2739,9 +2793,8 @@ class Component extends DCLogic {
     } : { title:'', dateShort:'', venueCity:'', gradStyle:'background-image:'+EVENT_GRADS[0], roster:[], spotOptions:[], chat:[] };
 
     // ===== Crew builder interstitial — reuses the real active event (ae),
-    // not the deleted EVENTS mock. cbFriends has no backend this phase. =====
+    // not the deleted EVENTS mock. Plans live in the app (spec 02). =====
     const cbEv = ae;
-    const cbFriends = [];
 
     // ===== Invite =====
     // ponytail: no referral backend — start from 0, not a fake "2 already
@@ -2901,7 +2954,7 @@ class Component extends DCLogic {
       { key:'annual', title:'Annual', sub:'Drop+ isn\'t available yet', badge:'', hasBadge:false },
       { key:'monthly', title:'Monthly', sub:'Drop+ isn\'t available yet', badge:'', hasBadge:false },
     ].map(p=>{ const on=s.plusPlan===p.key; return { title:p.title, sub:p.sub, badge:p.badge, hasBadge:p.hasBadge,
-      bg: on?'rgba(77,226,255,0.08)':'var(--surface)', border: on?'var(--accent)':'var(--border)', dot: on?'var(--accent)':'var(--border-strong)', dotBg: on?'var(--accent)':'transparent', check: on?'✓':'',
+      bg: on?'#101E25':'var(--surface)', checked: on?'true':'false', tab: on?'0':'-1', key:(e)=>{ if(!/^Arrow(Up|Down|Left|Right)$/.test(e.key)) return; e.preventDefault(); const k = p.key==='annual'?'monthly':'annual'; this.setState({plusPlan:k}, ()=>requestAnimationFrame(()=>{ const t=document.querySelector('[role=radiogroup] [aria-checked="true"]'); if(t) t.focus(); })); }, border: on?'var(--accent)':'var(--border)', dot: on?'var(--accent)':'var(--border-strong)', dotBg: on?'var(--accent)':'transparent', check: on?'✓':'',
       pick:()=>this.setState({plusPlan:p.key}) }; });
     const plusFeatures = [
       { label:'Presale codes & alerts before anyone else' },
@@ -3207,7 +3260,7 @@ class Component extends DCLogic {
       // plan detail
       pd,
       // crew builder
-      cbTitle: cbEv.title.split(' — ')[0], cbFriends, cbFriendsEmpty: cbFriends.length===0,
+      cbTitle: cbEv.title.split(' — ')[0],
       // invite
       inviteCount, inviteRemainLabel: inviteRemain===0?'5 friends joined':inviteRemain+' more to go', inviteFillStyle:'width:'+(inviteCount/5*100)+'%;', inviteMilestones, inviteList, inviteListEmpty: inviteList.length===0,
       inviteHandle: (s.profile && s.profile.username) || 'you',
@@ -3235,7 +3288,7 @@ class Component extends DCLogic {
       settingsToggles, recapPrivacy: s.recapPrivacy,
       tiktokConnecting: s.tiktokConnecting,
       tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
-      blocked, blockedEmpty: blocked.length===0,
+      blocked, blockedLoading: s.blockedRows===null && !s.blockedError, blockedFailed: s.blockedError, blockedEmpty: s.blockedRows!==null && blocked.length===0, retryBlocked:()=>this.loadBlocked(), skel3:[1,2,3],
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk || s.deleteBusy,
       deleteBusy:s.deleteBusy, deleteStatus:s.deleteStatus, deleteHasStatus:!!s.deleteStatus,
       deleteButtonLabel:s.deleteBusy?'Deleting\u2026':'Permanently delete my account',
@@ -3272,8 +3325,6 @@ class Component extends DCLogic {
       genreNext:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: Math.round(r.clientWidth*0.9), behavior: scrollMotion() }); },
       goRecap:(e)=>{ this.prevent(e); this.setState({recapWasThere:null}); this.go('recap'); },
       goSeen:(e)=>{ this.prevent(e); this.go('seen'); },
-      goTagged:(e)=>{ this.prevent(e); this.go('tagged'); },
-      goWallet:(e)=>{ this.prevent(e); this.go('wallet'); },
       goPaywall:(e)=>{ this.prevent(e); this.go('paywall'); },
       go404:(e)=>{ this.prevent(e); this.go('e404'); },
       goLink:(e)=>{ this.prevent(e); this.go('link'); },
@@ -3381,10 +3432,6 @@ class Component extends DCLogic {
       setVenueQuery:(e)=>this.setState({venueQuery:e.target.value}),
       artBulkFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>{ const f={...x.followArt}; artFiltered.forEach(a=>{ f[a.name]=!artAllFollowed; }); return {followArt:f}; }); this.flash(artAllFollowed?('Unfollowed all '+s.artGenre):('Following all '+s.artGenre)); },
       planSend:()=>this.flash('Message sent to your crew'),
-      // ponytail: no plans backend this phase — can't actually start a real
-      // plan, so this is honest ("coming soon") instead of faking one.
-      cbStart:()=>{ this.go('event'); this.flash('Plans — coming soon'); },
-      cbSkip:()=>{ this.go('event'); },
       // ponytail: no image-perfect html-to-image lib — native share sheet
       // (text+URL) for "post to story", canvas render (below) for the actual
       // image download. Covers both asks without a screenshot dependency.
