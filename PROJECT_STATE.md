@@ -285,6 +285,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
+## 2026-10-19 — Claude (Fable) — promoters CTA → in-app submit form; My submissions wired
+- **Shipped (PR open):** `/promoters` "Submit an event →" now opens `app.trydropapp.com/?suggest=1` (the existing Suggest an event screen; a signed-out visitor sees the form and is gated at submit) instead of a mailto. The signed-in "My submissions" list now reads the user's own `events` rows (published → Live, pending_review → In review, rejected → Not added) through the existing RLS read policy; the 5-per-month cap counts rows created in the last 30 days.
+- **Not changed:** no new screen or design edit (the suggest screen and submissions list already exist in the "Website design prompt" design); admin approval stays in the mobile app review queue (`review_event_submission`). A richer promoter form (lineup, time, flyer) exists only in the mobile app; add it to web only if promoters ask.
+- **Verified:** node tests 80/80 locally; `?suggest=1` live deep link renders the form on app.trydropapp.com. Playwright could not load locally (pre-existing ESM `functions/*.js` import error under local node 26; main CI is green on `3fc6ace`), so the browser suite is CI-only for this PR.
+- **Goal served:** Goal 2 (activation) via catalog completeness — promoters self-list, the long tail reaches Discover after review.
+
 ## 2026-10-19 — Claude (Fable security lane) — post-merge review fixes
 
 - Review of `c33aa13..f2a1d5f` (51 PRs): no HIGH. Fixed here: edge-cache key now `pathname` + allowlisted params (`city, genre, q, ref, src`, ≤128 chars) so `?junk=N` no longer busts the cache into Supabase/Functions load, and `/` no longer bypasses the cache on any query; requester avatars in the app shell accept only Supabase-hosted `profile_image` (tracking-pixel path closed); `_socialKey`/`SUBMISSIONS` cleared on every sign-out/account-switch path; the conversion beacon (still off) uses `fetch` with `referrerPolicy: 'no-referrer'`; `deploy.yml` gets `permissions: contents: read`; stale tracked `dist/_headers` + `dist/_redirects` removed (build regenerates them).
