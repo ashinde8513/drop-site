@@ -25,8 +25,22 @@ export function isRealArtUrl(value) {
   return !isTicketmasterCategoryArt(url);
 }
 
+// Some providers hand us the full-size upload (Ticketmaster _SOURCE up to
+// 3 MB, Cloudinary originals over 2 MB). Ask for a ~1200px rendition instead;
+// pages fall back to the original if it fails. Mirrors data.js sizedArtUrl.
+export function sizedArtUrl(value) {
+  if (!isRealArtUrl(value)) return value;
+  const url = new URL(value);
+  if (url.hostname === 's1.ticketm.net' && /^\/dam\/a\//.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/_(SOURCE|TABLET_LANDSCAPE_LARGE_16_9\.jpg)$/, '_RETINA_LANDSCAPE_16_9.jpg');
+  } else if (url.hostname === 'res.cloudinary.com' && !/\/image\/upload\/c_limit,w_\d+\//.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_1200/');
+  }
+  return url.toString();
+}
+
 function firstArt(event) {
-  return [event.image_url, ...(event.event_artists || []).map((entry) => entry.artists?.image_url)].find(isRealArtUrl) || null;
+  return sizedArtUrl([event.image_url, ...(event.event_artists || []).map((entry) => entry.artists?.image_url)].find(isRealArtUrl) || null);
 }
 
 // Local midnight in the home city, matching the browser's todayISO() there.
@@ -48,7 +62,7 @@ export function homeLcpImage(rows) {
 // Page 1 of the default city's grid, exactly as index.html requests it.
 export async function fetchHomeSeed(now = new Date()) {
   const { rows, total } = await restWithCount('events', {
-    select: EVENT_SELECT, status: 'eq.published', order: 'date.asc', limit: 24,
+    select: EVENT_SELECT, status: 'eq.published', title: 'not.ilike.*pick*up spot*', order: 'date.asc', limit: 24,
     date: 'gte.' + startOfDayIn(HOME_TZ, now), city: 'ilike.' + HOME_CITY,
   });
   // Cards never show descriptions; dropping them keeps the inline seed small.

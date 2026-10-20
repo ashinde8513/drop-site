@@ -135,11 +135,14 @@
 
   // ---- Public fetchers ----------------------------------------------------
   // opts: {city, genre, q, venue, from, to, festival, limit, offset, sort}
+  var NOT_A_SHOW = 'not.ilike.*pick*up spot*';
   Drop.fetchEvents = function (opts) {
     opts = opts || {};
     var params = {
       select: EVENT_SELECT,
       status: 'eq.published',
+      // Party-bus pickup listings aren't shows (src/entity-seo.mjs NOT_A_SHOW).
+      title: NOT_A_SHOW,
       order: opts.sort === 'new' ? 'created_at.desc' : 'date.asc',
       limit: opts.limit || 24
     };
@@ -534,10 +537,25 @@
     return !!(event && Drop.isRealArtUrl(event.image_url));
   };
 
+  // Full-size provider uploads (Ticketmaster _SOURCE up to 3 MB, Cloudinary
+  // originals over 2 MB) → a ~1200px rendition. Mirrors src/home-lcp.mjs.
+  Drop.sizedArtUrl = function (imageUrl) {
+    if (!Drop.isRealArtUrl(imageUrl)) return imageUrl;
+    var url = new URL(imageUrl);
+    if (url.hostname === 's1.ticketm.net' && /^\/dam\/a\//.test(url.pathname)) {
+      url.pathname = url.pathname.replace(/_(SOURCE|TABLET_LANDSCAPE_LARGE_16_9\.jpg)$/, '_RETINA_LANDSCAPE_16_9.jpg');
+    } else if (url.hostname === 'res.cloudinary.com' && !/\/image\/upload\/c_limit,w_\d+\//.test(url.pathname)) {
+      url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_1200/');
+    }
+    return url.toString();
+  };
+
+  // Sized rendition first, original as its fallback, then the next image.
   Drop.eventArtCandidates = function (event) {
     var out = [];
     function add(url) {
-      if (Drop.isRealArtUrl(url) && out.indexOf(url) < 0) out.push(url);
+      if (!Drop.isRealArtUrl(url)) return;
+      [Drop.sizedArtUrl(url), url].forEach(function (u) { if (out.indexOf(u) < 0) out.push(u); });
     }
     if (!event) return out;
     add(event.image_url);
@@ -553,6 +571,13 @@
   function stripTags(text) {
     return text.replace(/<!--[\s\S]*?-->|<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\/?[a-z][^>]*>|<![^>]*>/gi, ' ');
   }
+  // Mirrors src/entity-seo.mjs clipText.
+  Drop.clipText = function (text, max) {
+    if (text.length <= max) return text;
+    var cut = text.slice(0, max - 1);
+    var space = cut.lastIndexOf(' ');
+    return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:\-–—]+$/, '') + '…';
+  };
   Drop.plainText = function (value) {
     var decoded = stripTags(String(value || '')).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, function (match, code) {
       if (code[0] !== '#') return NAMED_ENTITIES[code.toLowerCase()] || match;

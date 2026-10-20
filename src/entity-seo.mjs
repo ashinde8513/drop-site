@@ -336,8 +336,12 @@ function shortEventDate(value, timezone) {
 export function eventTitle(event) {
   // TBA times are stored as a midnight-UTC placeholder; the venue zone would show the day before.
   const when = shortEventDate(event.date, event.time_tbd ? 'UTC' : event.timezone);
-  return event.title + (event.venue_name ? ' at ' + event.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+  const suffix = (event.venue_name ? ' at ' + event.venue_name : '') + (when ? ' · ' + when : '') + ' | Drop';
+  // Long lineup titles pushed venue and date past Google's ~65-char cut-off
+  // (40% of shows, 2026-10-20). Clip the lineup, keep where and when.
+  return clipText(event.title, Math.max(30, TITLE_MAX - suffix.length)) + suffix;
 }
+const TITLE_MAX = 65;
 
 export function eventView(event, { nearby = [], cityPath = null } = {}) {
   const canonical = 'https://trydropapp.com' + eventPath(event);
@@ -371,6 +375,13 @@ export function eventView(event, { nearby = [], cityPath = null } = {}) {
   return { title: eventTitle(event), description, canonical, image, body, jsonLd, indexable: isIndexableEvent(event) };
 }
 
+// Catalog is US + Canada; Google's event results recommend addressCountry.
+const CA_PROVINCES = new Set(['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']);
+export function countryOf(state) {
+  const code = String(state || '').trim().toUpperCase();
+  return CA_PROVINCES.has(code) ? 'CA' : /^[A-Z]{2}$/.test(code) ? 'US' : undefined;
+}
+
 // One MusicEvent shape for event pages and the shows listed on venue/artist pages.
 export function eventLd(event, { canonical = 'https://trydropapp.com' + eventPath(event), image, description } = {}) {
   const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
@@ -381,8 +392,8 @@ export function eventLd(event, { canonical = 'https://trydropapp.com' + eventPat
     startDate: event.date, endDate: event.end_date && event.end_date !== event.date ? event.end_date : undefined,
     eventStatus: schemaEventStatus(event.lifecycle_status), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     url: canonical, image: art ? [art] : undefined, description,
-    location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state } },
-    performer: performers.map((artist) => ({ '@type': 'MusicGroup', name: artist.name, url: 'https://trydropapp.com' + artistPath(artist) })),
+    location: { '@type': 'Place', name: event.venue_name, address: { '@type': 'PostalAddress', streetAddress: event.venue_address || undefined, addressLocality: event.city, addressRegion: event.state, addressCountry: countryOf(event.state) } },
+    performer: performers.length ? performers.map((artist) => ({ '@type': 'MusicGroup', name: artist.name, url: 'https://trydropapp.com' + artistPath(artist) })) : undefined,
     offers: ticketUrl ? { '@type': 'Offer', url: ticketUrl, price: event.price_min ?? undefined, priceCurrency: event.currency || 'USD', availability: schemaOfferAvailability(event.ticket_status) } : undefined,
   };
 }
