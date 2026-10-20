@@ -1025,10 +1025,10 @@ class Component extends DCLogic {
     reversed:  { label:'Reversed', color:'var(--danger)', bg:'rgba(255,92,114,0.12)' },
   };
 
-  // ponytail: no tagged-in-shows / event-submission tables wired this phase —
-  // both stay empty (honest empty states in the templates).
+  // ponytail: no tagged-in-shows table wired this phase — stays empty (honest empty state).
   TAGGED = [];
 
+  // My submissions: the user's own `events` rows (RLS lets a user read rows they submitted).
   SUBMISSIONS = [];
   SUB_STATUS = {
     live:     { label:'Live', color:'var(--attended)', bg:'rgba(182,255,106,0.12)' },
@@ -1236,7 +1236,7 @@ class Component extends DCLogic {
       this.flash('Could not submit — try again');
       return;
     }
-    this.SUBMISSIONS = [...this.SUBMISSIONS, { title:artist, venue:venue || city, date:s.sugDate, status:'review' }];
+    this.SUBMISSIONS = [{ title:artist, venue:venue || city, date:s.sugDate, status:'review', createdAt:new Date().toISOString() }, ...this.SUBMISSIONS];
     this.setState({ sugBusy:false, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugDone:'Submitted for review. Approved events appear in Discover.' });
   }
   acceptedFriendIds(){
@@ -1569,6 +1569,13 @@ class Component extends DCLogic {
       if (this.state.userId !== uid) return;
       const saved = {}; (data||[]).forEach(r=>{ saved[r.event_id] = true; });
       this.setState({ saved, savedRows: data || [] });
+    });
+    supa.from('events').select('id,title,venue_name,city,date,status,created_at').eq('submitted_by', uid).order('created_at', { ascending:false }).limit(50).then(({ data, error })=>{
+      if (error) { console.error('[app] submissions load failed:', error.message); return; }
+      if (this.state.userId !== uid) return;
+      const SUB_MAP = { published:'live', pending_review:'review', rejected:'rejected' };
+      this.SUBMISSIONS = (data||[]).filter(r=>SUB_MAP[r.status]).map(r=>({ title:r.title, venue:r.venue_name || r.city, date:String(r.date||'').slice(0,10), status:SUB_MAP[r.status], createdAt:r.created_at }));
+      this.setState({ submissionsLoadedAt: Date.now() });
     });
     supa.from('notification_prefs').select('show_reminders,sale_alerts,comment_alerts,plan_messages').eq('user_id', uid).maybeSingle().then(({ data, error })=>{
       if (error) { console.error('[app] notification_prefs load failed:', error.message); return; }
@@ -2985,7 +2992,8 @@ class Component extends DCLogic {
     const scoutLabel = scoutApproved+' of '+SCOUT_GOAL+' live';
     const scoutFillStyle = 'width:'+(scoutApproved/SCOUT_GOAL*100)+'%;';
     const scoutHint = 'Approved shows count toward your scout badge';
-    const CAP_MAX = 5, capUsed = this.SUBMISSIONS.length;
+    // Cap is per rolling 30 days (label says "Monthly"); real rows carry created_at.
+    const CAP_MAX = 5, capUsed = this.SUBMISSIONS.filter(sb=>sb.createdAt && Date.now()-Date.parse(sb.createdAt) < 30*864e5).length;
     const capReached = capUsed>=CAP_MAX;
     const saq = s.sugArtist.trim().toLowerCase();
     const sugArtistMatches = saq.length>0 ? realArtists.filter(a=>a.name.toLowerCase().includes(saq)).slice(0,4).map(a=>({ name:a.name, pick:()=>this.setState({sugArtist:a.name}) })) : [];
