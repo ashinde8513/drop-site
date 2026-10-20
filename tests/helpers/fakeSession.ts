@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 export const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 // Signed-in fake Supabase client. Config (window.__cfg): signedOut, failComplianceTimes,
-// rows {table: [...]}, errors {'table.op': 'message'}. Records window.__fake.calls.
+// rows {table: [...]}, rpc {name: data}, errors {'table.op' | 'rpc.name': 'message'}. Records window.__fake.calls.
 const FAKE = String.raw`
 (function () {
   var cfg = window.__cfg || {}, calls = [], listeners = [], failLeft = cfg.failComplianceTimes || 0;
@@ -48,6 +48,9 @@ const FAKE = String.raw`
         if (failLeft > 0) { failLeft--; return res(null, { message:'rpc unavailable' }); }
         return res({ user_id:'${USER_ID}', complete:true, profile_complete:true, phone_verified:true, phone_enforcement_enabled:false });
       }
+      var rpcErr = (cfg.errors || {})['rpc.' + name];
+      if (rpcErr) return res(null, { message:rpcErr });
+      if (cfg.rpc && name in cfg.rpc) return res(cfg.rpc[name]);
       return res(name === 'complete_signup_profile' ? true : null);
     },
     from:query

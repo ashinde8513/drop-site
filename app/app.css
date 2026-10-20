@@ -206,6 +206,15 @@
 .empty__ico { font-size: 48px; line-height: 1; }
 .empty__title { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: var(--fs-lg); letter-spacing: var(--tr-snug); color: var(--text); }
 .empty__body  { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-base); max-width: 260px; }
+/* Spec 02 honest empty / get-the-app pattern */
+.empty--wide .empty__title, .empty--wide .empty__body { margin: 0; }
+.empty--wide .empty__body { max-width: 420px; }
+.empty__svg { width: 48px; height: 48px; fill: none; stroke: var(--text-secondary); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.empty__cta { min-width: 220px; }
+.empty__link { font-size: var(--fs-sm); color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }
+@media (max-width: 430px) { .empty__cta { width: 100%; } }
+/* Spec 06: visible focus ring on Drop+ plan cards */
+.plancard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ===== Switch / Toggle ===== */
 /* Uses real <input type=checkbox role=switch> hidden + CSS track/thumb */
