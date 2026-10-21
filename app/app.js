@@ -474,6 +474,9 @@
     if (!value || typeof value !== 'object' || value.user_id !== expectedUserId || typeof value.complete !== 'boolean') {
       return 'unavailable';
     }
+    // Same order as native signupCompliance.ts: a server-side exemption (store reviewer,
+    // internal QA) satisfies the requirement without phone proof.
+    if (value.profile_complete === true && value.phone_requirement_satisfied === true) return value.complete ? 'complete' : 'required';
     if (value.profile_complete === true && value.phone_verified === false) return 'phone-required';
     return value.complete ? 'complete' : 'required';
   }

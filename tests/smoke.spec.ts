@@ -568,6 +568,7 @@ test.describe('website smoke', () => {
     expect(appScript).toContain("functions.invoke('verify-phone'");
     expect(appScript).toContain("functions.invoke('delete-account'");
     expect(appScript).toContain("if (value.profile_complete === true && value.phone_verified === false) return 'phone-required'");
+    expect(appScript).toContain("if (value.profile_complete === true && value.phone_requirement_satisfied === true) return value.complete ? 'complete' : 'required'");
     expect(appScript).toContain("body:{ action:'send', phone }");
     expect(appScript).toContain("body:{ action:'check', phone:this.state.wizPhonePending, code }");
     expect(appScript).toContain("wizPhone:'', wizPhonePending:'', wizPhoneCode:'', wizPhoneVerified:true");
