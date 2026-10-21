@@ -88,6 +88,7 @@ const FAKE_SUPABASE = String.raw`
         var status = { user_id:'${USER_ID}', complete:config.complianceComplete };
         if (typeof config.profileComplete === 'boolean') status.profile_complete = config.profileComplete;
         if (typeof config.phoneVerified === 'boolean') status.phone_verified = config.phoneVerified;
+        if (typeof config.phoneRequirementSatisfied === 'boolean') status.phone_requirement_satisfied = config.phoneRequirementSatisfied;
         if (typeof config.phoneEnforcementEnabled === 'boolean') status.phone_enforcement_enabled = config.phoneEnforcementEnabled;
         return result(status);
       }
@@ -522,6 +523,16 @@ test.describe('phone signup behavior', () => {
     await expect(page.getByRole('button', { name:'Use a different account' })).toBeVisible();
     await expect(page.getByRole('button', { name:'Delete this account' })).toBeVisible();
     await expect(page.getByText('Pick your night')).toHaveCount(0);
+  });
+
+  test('server phone exemption (reviewer / internal QA) opens Discover without phone proof', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true, phoneVerified:false, phoneRequirementSatisfied:true,
+    });
+    await page.goto('/app/index.html');
+
+    await expect(page.getByText('Pick your night')).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Verify your phone' })).toHaveCount(0);
   });
 
   test('password recovery remains reachable before required phone proof', async ({ page }) => {
