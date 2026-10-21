@@ -1,0 +1,50 @@
+# Weekly web -> app conversion readout (APPROVALS W31). Runs
+# scripts/conversion-counts.mjs against Cloudflare analytics and appends the
+# markdown to the cwv-data branch (conversion/YYYY-MM-DD.md + conversion/latest.md).
+# Nothing deploys. Needs repo secret CLOUDFLARE_API_TOKEN (Zone Analytics: Read);
+# skips with a notice while it is unset.
+name: Conversion readout
+
+on:
+  schedule:
+    - cron: '15 14 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cwv-trend
+  cancel-in-progress: false
+
+jobs:
+  readout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Skip when the secret is not set
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::CLOUDFLARE_API_TOKEN is not set; conversion readout skipped."
+      - uses: actions/checkout@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          node-version: 22
+      - name: Measure (last 7 days)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: node scripts/conversion-counts.mjs 7 --md > "$RUNNER_TEMP/latest.md"
+      - name: Save to the cwv-data branch
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git rev-parse --verify -q origin/cwv-data >/dev/null; then git switch -c cwv-data origin/cwv-data; else git switch --orphan cwv-data; fi
+          mkdir -p conversion && cp "$RUNNER_TEMP/latest.md" conversion/latest.md && cp "$RUNNER_TEMP/latest.md" "conversion/$(date -u +%F).md"
+          git add conversion
+          git commit -m "conversion: readout $(date -u +%F)"
+          git push origin cwv-data

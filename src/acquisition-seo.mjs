@@ -149,7 +149,7 @@ function inject(html, railId, block, ld) {
 export function cityFaq(city) {
   return [
     { q: 'How often is the ' + city + ' show list updated?', a: 'Every day. New listings, price changes, and lineup updates land as soon as promoters and venues confirm them.' },
-    { q: 'Are ticket prices on Drop all-in?', a: 'Yes — where we can pull it, the price shown includes fees, so what you see is close to what you’ll pay at checkout.' },
+    { q: 'Are ticket prices on Drop all-in?', a: 'Where the seller publishes an all-in price, Drop shows it. Otherwise Drop shows the listed price plus an estimate of typical fees.' },
     { q: 'Can I see which friends are going to a show in ' + city + '?', a: 'Yes, once you create a free account. Drop shows you who in your crew already has a show on their radar.' },
     { q: 'Is Drop free to use in ' + city + '?', a: 'Yes, browsing and account features are free. Drop is a discovery layer, not a ticket seller.' },
   ];
