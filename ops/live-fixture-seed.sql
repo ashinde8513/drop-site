@@ -1,21 +1,23 @@
 -- Signed-in live-check fixture seed (APPROVALS W28, approved by Arya 2026-10-20).
--- Touches ONLY the profile with username 'drop_web_fixture' (an internal, phone-verified
--- test account Arya creates). Idempotent: fixed ids + on conflict do nothing. Aborts if the
+-- Touches ONLY the profile with username 'ravewithmaya' (internal, non-admin QA fixture;
+-- phone requirement met by the expiring 'internal_qa' exemption, migration
+-- 20261021051009_internal_qa_phone_exemption, live 2026-10-21). Idempotent: fixed ids + on conflict do nothing. Aborts if the
 -- fixture is missing, is an admin, or is not classified internal.
--- Block target: internal account 'ravewithmaya' (never a real user).
+-- Block target: internal account 'e2ewebqa' (never a real user).
 do $$
 declare fx uuid; tgt uuid;
 begin
-  select id into fx from public.profiles where username = 'drop_web_fixture' and not is_admin;
-  select id into tgt from public.profiles where username = 'ravewithmaya';
+  select id into fx from public.profiles where username = 'ravewithmaya' and not is_admin;
+  select id into tgt from public.profiles where username = 'e2ewebqa';
   if fx is null or tgt is null then raise exception 'fixture or block target missing'; end if;
   if not exists (select 1 from private.internal_accounts where user_id = fx) then
     raise exception 'fixture is not classified internal';
   end if;
 
-  insert into public.alerts (id, user_id, kind, title, body, read, created_at) values
-    ('f1c7a001-0000-4000-8000-00000000a001', fx, 'reminder', 'Fixture alert A', 'Live check unread alert', false, now()),
-    ('f1c7a001-0000-4000-8000-00000000a002', fx, 'reminder', 'Fixture alert B', 'Live check read alert', true, now() - interval '1 day')
+  -- push_sent_at set so no push job ever sends these to a device.
+  insert into public.alerts (id, user_id, kind, title, body, read, created_at, push_sent_at) values
+    ('f1c7a001-0000-4000-8000-00000000a001', fx, 'reminder', 'Fixture alert A', 'Live check unread alert', false, now(), now()),
+    ('f1c7a001-0000-4000-8000-00000000a002', fx, 'reminder', 'Fixture alert B', 'Live check read alert', true, now() - interval '1 day', now())
   on conflict (id) do update set read = excluded.read;  -- restores A to unread
 
   insert into public.logged_shows (id, user_id, artist_name, venue_name, city, state, show_date) values
@@ -36,6 +38,6 @@ begin
 end $$;
 
 -- Rollback (run by hand):
--- with fx as (select id from public.profiles where username = 'drop_web_fixture')
+-- with fx as (select id from public.profiles where username = 'ravewithmaya')
 --   delete from public.alerts where user_id = (select id from fx) and id::text like 'f1c7a001-%';
 -- (repeat for logged_shows by id, show_ratings/attendance by (user_id, event_id), user_blocks by blocker_id)

@@ -37,7 +37,7 @@ test('fixture account: inbox, seen history, rating, blocked accounts', async ({ 
 
   await menu(page, 'Settings');
   await page.getByRole('button', { name:/Blocked accounts/ }).click();
-  await expect(page.getByText('Maya R.')).toBeVisible();
+  await expect(page.getByText('Alex R.')).toBeVisible();
 
   expect(errors).toEqual([]);
 });
