@@ -1,0 +1,37 @@
+# Signed-in live check of app.trydropapp.com (APPROVALS W28, approved 2026-10-20).
+# Read-only Playwright run as the internal fixture account. Credentials live only in the
+# main-only `live-fixture` environment; PRs and forks never get them. GitHub-hosted runner.
+name: Live signed-in check
+
+on:
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["Test & Deploy"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-signed-in
+  cancel-in-progress: false
+
+jobs:
+  live:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: live-fixture
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.live.config.ts
+        env:
+          DROP_FIXTURE_EMAIL: ${{ secrets.DROP_FIXTURE_EMAIL }}
+          DROP_FIXTURE_PASSWORD: ${{ secrets.DROP_FIXTURE_PASSWORD }}
