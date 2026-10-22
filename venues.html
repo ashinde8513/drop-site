@@ -236,7 +236,8 @@
       searchInput.addEventListener('input', applySearch);
 
       function load() {
-        D.skeletonGrid(host, 6);
+        // Server-rendered rows (functions/venues.js) stay until the live list replaces them.
+        if (!host.querySelector('[data-ssr]')) D.skeletonGrid(host, 6);
         D.fetchAllEvents().then(function (evs) {
           var map = {};
           evs.forEach(function (ev) {

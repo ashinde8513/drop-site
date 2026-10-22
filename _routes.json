@@ -7,6 +7,7 @@
     "/artist/*",
     "/city",
     "/events",
+    "/venues",
     "/genre",
     "/sitemap-entities.xml",
     "/go",

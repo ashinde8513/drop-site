@@ -221,9 +221,47 @@ export function indexableEntities(rows) {
   });
   return {
     events,
-    venues: [...venues.values()].filter(isIndexableVenue).map((data) => data.venue),
-    artists: [...artists.values()].filter(isIndexableArtist).map((data) => data.artist),
+    venues: [...venues.values()].filter(isIndexableVenue).map((data) => ({ ...data.venue, count: data.events.length })),
+    artists: [...artists.values()].filter(isIndexableArtist).map((data) => ({ ...data.artist, count: data.events.length })),
   };
+}
+
+// Google had crawled 4 of ~5.5k sitemap URLs (Search Console, 2026-10-21:
+// 4,605 "Discovered – currently not indexed"). List the pages worth a crawl:
+// shows in the next 30 days and artists with 3+ shows. Every page stays live
+// and linked; this only steers crawl budget.
+export const SITEMAP_EVENT_DAYS = 30;
+export const SITEMAP_ARTIST_MIN_SHOWS = 3;
+export function sitemapEntities(entities, now = new Date()) {
+  const until = now.getTime() + SITEMAP_EVENT_DAYS * 864e5;
+  return {
+    events: entities.events.filter((event) => Date.parse(event.date) <= until),
+    venues: entities.venues,
+    artists: entities.artists.filter((artist) => artist.count >= SITEMAP_ARTIST_MIN_SHOWS),
+  };
+}
+
+// Crawlable /venues directory: the same rows venues.html builds, server-side,
+// so every indexable venue page has an inbound link. The page script replaces
+// them on load. ponytail: neutral prism tint; the client repaints by genre.
+export function venueDirectoryHtml(venues) {
+  const byState = new Map();
+  for (const venue of venues) {
+    const state = venue.state || 'Other';
+    if (!byState.has(state)) byState.set(state, []);
+    byState.get(state).push(venue);
+  }
+  return [...byState].sort((a, b) => b[1].length - a[1].length).map(([state, list]) =>
+    '<div class="v-group" data-ssr><div class="v-group__head"><span class="v-group__state">' + escapeHtml(state) + '</span><span class="v-group__count">' + list.length + '</span></div>' +
+    list.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).map((venue) => {
+      const shows = venue.count + ' upcoming show' + (venue.count === 1 ? '' : 's');
+      return '<a class="v-row" href="' + venuePath(venue) + '" aria-label="' + escapeHtml(venue.name + ' — ' + shows) + '"><div class="v-row__art art-prism g-other"></div>' +
+        '<div class="v-row__body"><div class="v-row__name">' + escapeHtml(venue.name) + '</div><div class="v-row__meta">' + escapeHtml([venue.city, shows].filter(Boolean).join(' · ')) + '</div></div><span class="v-row__caret">›</span></a>';
+    }).join('') + '</div>').join('');
+}
+
+export function withVenueDirectory(html, venues) {
+  return html.replace('<div id="grid-venues"></div>', () => '<div id="grid-venues">' + venueDirectoryHtml(venues) + '</div>');
 }
 
 export async function getEntityUrls() {

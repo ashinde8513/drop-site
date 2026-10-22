@@ -8,7 +8,7 @@ import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
   safeAttributionQuery, schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify,
-  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle, countryOf,
+  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle, countryOf, sitemapEntities, venueDirectoryHtml, withVenueDirectory,
 } from '../src/entity-seo.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -188,6 +188,42 @@ test('entity sitemap excludes malformed events and thin venue/artist pages', () 
   assert.match(xml, /<lastmod>2026-08-02<\/lastmod>/);
   assert.doesNotMatch(xml, /malformed-event|one-off-hall|one-off<\/loc>/);
   assert.equal(escapeHtml('A&B'), 'A&amp;B');
+});
+
+test('sitemap lists shows in the next 30 days and artists with 3+ shows; pages stay indexable', () => {
+  const now = new Date('2026-10-21T12:00:00Z');
+  const big = { id: artistId, name: 'Headliner' }, small = { id: artistId2, name: 'Opener', image_url: 'https://x.test/a.jpg' };
+  const ev = (n, date, artists) => catalogEvent({ id: `1111111${n}-1111-4111-8111-111111111111`, title: 'Show ' + n, date, event_artists: artists.map((a) => ({ artists: a })) });
+  const rows = [ev(1, '2026-10-25T02:00:00Z', [big, small]), ev(2, '2026-11-15T02:00:00Z', [big, small]), ev(3, '2027-01-10T02:00:00Z', [big])];
+  const entities = indexableEntities(rows);
+  assert.deepEqual(entities.artists.map((a) => [a.name, a.count]), [['Headliner', 3], ['Opener', 2]]);
+  assert.equal(entities.venues[0].count, 3);
+  const trimmed = sitemapEntities(entities, now);
+  assert.deepEqual(trimmed.events.map((e) => e.title), ['Show 1', 'Show 2']);
+  assert.deepEqual(trimmed.artists.map((a) => a.name), ['Headliner']);
+  assert.equal(trimmed.venues.length, 1);
+  assert.equal(entities.events.length, 3, 'the trim never drops pages from the index gate');
+  assert.match(readFileSync(new URL('../functions/sitemap-entities.xml.js', import.meta.url), 'utf8'), /sitemapXml\(sitemapEntities\(entities\), \[\.\.\.cityPaths\(entities\.events\)/);
+});
+
+test('/venues server-renders crawlable directory rows the page script then replaces', () => {
+  const html = venueDirectoryHtml([
+    { id: venueId, name: 'Red <Rocks>', city: 'Morrison', state: 'CO', count: 9 },
+    { id: venueId2, name: 'Ogden', city: 'Denver', state: 'CO', count: 12 },
+    { id: id2, name: 'Fillmore SF', city: 'San Francisco', state: 'CA', count: 1 },
+  ]);
+  assert.ok(html.indexOf('>CO<') < html.indexOf('>CA<'), 'bigger state first');
+  assert.ok(html.indexOf('Ogden') < html.indexOf('Red &lt;Rocks&gt;'), 'busiest venue first');
+  assert.match(html, new RegExp(`<a class="v-row" href="/venue/${venueId}/red-rocks-morrison" aria-label="Red &lt;Rocks&gt; — 9 upcoming shows">`));
+  assert.match(html, /Denver · 12 upcoming shows/);
+  assert.match(html, /San Francisco · 1 upcoming show</);
+  assert.doesNotMatch(html, /<Rocks>/);
+  const template = readFileSync(new URL('../venues.html', import.meta.url), 'utf8');
+  const page = withVenueDirectory(template, [{ id: venueId, name: '$& Hall', city: 'Denver', state: 'CO', count: 2 }]);
+  assert.match(page, /<div id="grid-venues"><div class="v-group" data-ssr>.*\$&amp; Hall/s);
+  assert.match(readFileSync(new URL('../functions/venues.js', import.meta.url), 'utf8'), /htmlResponse\(withVenueDirectory\(template, venues\)/);
+  assert.match(template, /if \(!host\.querySelector\('\[data-ssr\]'\)\) D\.skeletonGrid\(host, 6\);/);
+  assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/venues'));
 });
 
 test('catalog HTML descriptions become clean plain text everywhere', () => {
