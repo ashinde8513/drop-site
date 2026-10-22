@@ -20,7 +20,7 @@ for f in ./*.txt; do case "$(basename "$f")" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f]
 cp _headers _redirects _routes.json dist/
 
 # Directories the live site serves.
-cp -R .well-known app assets vendor okf guides dist/
+cp -R .well-known app assets vendor okf guides tiktok dist/
 rm -rf dist/guides/src # markdown sources are not published
 # Newsletter: only approved issues (newsletter/published.json) ever ship;
 # newsletter/drafts/ and newsletter/src/ stay out of the deploy.
