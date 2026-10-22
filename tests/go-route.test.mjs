@@ -68,7 +68,7 @@ test('still routes iOS to the App Store when tracking fails', async () => {
     () => onRequest({ request: request('https://trydropapp.com/go', IOS_UA) }),
   );
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get('location'), APP_STORE);
+  assert.equal(response.headers.get('location'), `${APP_STORE}?pt=129160185&ct=go-qr&mt=8`);
 });
 
 test('still routes Android to Google Play when tracking fails', async () => {

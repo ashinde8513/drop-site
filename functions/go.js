@@ -14,7 +14,7 @@
 // just without attribution. A scan must never dead-end on an error page.
 
 const EDGE_URL = 'https://ebccwnkmsnhbljxxxdej.supabase.co/functions/v1/drop-card?k=drop-card-v1';
-const IOS_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825';
+const IOS_STORE_URL = 'https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=go-qr&mt=8';
 const ANDROID_STORE_URL = 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop';
 const WEB_URL = 'https://trydropapp.com/';
 const FORWARDED = ['placement', 'distributor', 'batch', 'variant'];
