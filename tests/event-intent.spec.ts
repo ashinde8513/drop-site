@@ -305,7 +305,7 @@ test.describe('public event intent continuation', () => {
 test('download page and app expose both official stores', async ({page}) => {
   await page.goto('/download.html');
   await expect(page.getByText('Available for iPhone and Android',{exact:true})).toBeVisible();
-  await expect(page.getByRole('link',{name:'Download Drop on the App Store'})).toHaveAttribute('href','https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+  await expect(page.getByRole('link',{name:'Download Drop on the App Store'})).toHaveAttribute('href','https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=site-download&mt=8');
   await expect(page.getByRole('link',{name:'Get Drop on Google Play'})).toHaveAttribute('href',PLAY_STORE+'&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Ddownload_page%26utm_campaign%3Dweb_download');
   await expect(page.getByText('Is Android coming?')).toHaveCount(0);
   await expect.poll(()=>page.getByRole('link',{name:'Get Drop on Google Play'}).locator('img').evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);

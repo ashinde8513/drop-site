@@ -536,9 +536,9 @@
     var ios = /iPhone|iPad|iPod/i.test(ua);
     if (!ios && !/Android/i.test(ua)) return;
     doc.querySelectorAll('[data-app-download]').forEach(function (a) {
-      // Play install referrer → Play Console acquisition by surface. (App Store
-      // campaign links need a provider token, so iOS stays the plain listing.)
-      a.href = ios ? APP_STORE_URL : PLAY_STORE_URL + '&referrer=' + encodeURIComponent(
+      // Store attribution by surface: App Store campaign (provider token pt,
+      // campaign ct) → App Analytics; Play install referrer → Play Console.
+      a.href = ios ? APP_STORE_URL + '?pt=129160185&ct=site-' + (a.getAttribute('data-app-download') || 'website') + '&mt=8' : PLAY_STORE_URL + '&referrer=' + encodeURIComponent(
         'utm_source=trydropapp.com&utm_medium=' + (a.getAttribute('data-app-download') || 'website') + '&utm_campaign=web_download');
     });
   }

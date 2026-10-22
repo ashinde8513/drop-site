@@ -760,7 +760,7 @@ test.describe('website smoke', () => {
     await page.goto('/download.html');
     const apple = page.getByRole('link', { name: 'Download Drop on the App Store' });
     const google = page.getByRole('link', { name: 'Get Drop on Google Play' });
-    await expect(apple).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(apple).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=site-download&mt=8');
     await expect(google).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Ddownload_page%26utm_campaign%3Dweb_download');
     await expect(apple.locator('img')).toHaveAttribute('alt', 'Download on the App Store');
     await expect(google.locator('img')).toHaveAttribute('alt', 'Get it on Google Play');
@@ -937,7 +937,7 @@ test.describe('website smoke', () => {
   test('link-in-bio orders the website, downloads, about, then every current social', async ({ page }) => {
     await page.goto('/link.html');
     await expect(page.locator('#visitWebsite')).toHaveAttribute('href', 'https://trydropapp.com/');
-    await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825');
+    await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=link-hub&mt=8');
     await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Dlink_hub%26utm_campaign%3Dweb_download');
     await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about.html');
     await expect(page.locator('.lh-links > *')).toHaveCount(5);

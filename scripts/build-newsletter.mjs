@@ -10,7 +10,7 @@ import { page, renderMarkdown } from './build-guides.mjs';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const SITE = 'https://trydropapp.com';
-const STORES = '[Get Drop on iPhone](https://apps.apple.com/us/app/drop-edm-events/id6790662825) · [Get Drop on Android](https://play.google.com/store/apps/details?id=app.resonanceventures.drop)';
+const STORES = '[Get Drop on iPhone](https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=newsletter&mt=8) · [Get Drop on Android](https://play.google.com/store/apps/details?id=app.resonanceventures.drop)';
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 // Email-only and internal lines (sourcing notes, subject, preheader, footer

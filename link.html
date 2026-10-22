@@ -57,7 +57,7 @@
           <span class="lh-ico" aria-hidden="true">⌂</span><span class="lh-label">Visit the Drop website</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
 
-        <a class="lh-link primary" id="getApp" href="https://apps.apple.com/us/app/drop-edm-events/id6790662825">
+        <a class="lh-link primary" id="getApp" href="https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&amp;ct=link-hub&amp;mt=8">
           <span class="lh-ico" aria-hidden="true">📲</span><span class="lh-label">Download on the App Store</span><span class="lh-chev" aria-hidden="true">›</span>
         </a>
 
@@ -94,13 +94,15 @@
 
   <script>
     // Each social bio can link /link?utm_source=<platform>[&utm_campaign=…]; carry
-    // that into the Play install referrer so Play Console splits installs by
-    // platform. Values are allowlisted to [a-z0-9_-]; nothing else is read.
+    // that into the Play install referrer and the App Store campaign (ct) so both
+    // stores split installs by platform. Values are allowlisted to [a-z0-9_-]; nothing else is read.
     (function () {
       var params = new URLSearchParams(location.search);
       function clean(v) { return /^[a-z0-9_-]{1,32}$/i.test(v || '') ? v.toLowerCase() : null; }
       var source = clean(params.get('utm_source'));
       if (!source) return;
+      var app = document.getElementById('getApp');
+      app.href = app.href.replace(/([?&]ct=)[^&]*/, '$1link-hub-' + source);
       var play = document.getElementById('getGooglePlay');
       play.href = play.href.split('&referrer=')[0] + '&referrer=' + encodeURIComponent(
         'utm_source=' + source + '&utm_medium=link_hub&utm_campaign=' + (clean(params.get('utm_campaign')) || 'web_download'));
