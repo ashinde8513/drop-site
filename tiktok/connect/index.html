@@ -28,14 +28,17 @@
   <main class="wsh" id="main">
     <div class="doc" style="max-width:760px;margin:0 auto;">
       <article class="doc-inner">
-        <h1>Connect TikTok to Drop</h1>
+        <h1>Connect TikTok to Drop <small id="sb" hidden style="font-size:.5em;border:1px solid currentColor;border-radius:4px;padding:2px 6px;vertical-align:middle">Sandbox</small></h1>
         <p>This connects Drop's own TikTok account (<strong>@trydrop.app</strong>) so Drop can post its own concert clips. It does not read or post to anyone else's account.</p>
         <p>Drop asks TikTok for three permissions: basic profile info (<code>user.info.basic</code>), upload videos (<code>video.upload</code>) and publish videos (<code>video.publish</code>). You approve them on TikTok. Drop never sees your TikTok password.</p>
         <p><a class="btn btn--primary" id="go" href="#">Continue with TikTok</a></p>
         <p>See our <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/terms">Terms of Service</a>.</p>
         <script>
           // ponytail: CSRF state only; code exchange happens server-side, never in the browser.
-          var APP_ID = 'awjy8o95hlaccnst'; // public TikTok client key, not a secret
+          // public TikTok client keys, not secrets. ?env=sandbox or #sandbox -> sandbox key.
+          var SANDBOX = new URLSearchParams(location.search).get('env') === 'sandbox' || location.hash === '#sandbox';
+          var APP_ID = SANDBOX ? 'sbawgbcbz71rc8ctc0' : 'awjy8o95hlaccnst';
+          if (SANDBOX) document.getElementById('sb').hidden = false;
           document.getElementById('go').addEventListener('click', function (e) {
             e.preventDefault();
             var s = crypto.getRandomValues(new Uint8Array(16)).reduce(function (a, b) { return a + ('0' + b.toString(16)).slice(-2); }, '');
