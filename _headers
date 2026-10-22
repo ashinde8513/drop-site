@@ -39,3 +39,8 @@
 
 /*.html
   Cache-Control: no-cache
+
+# TikTok OAuth pages: the callback URL carries a one-time code; keep it out of referrers.
+/tiktok/*
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow

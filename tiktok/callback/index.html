@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TikTok authorization</title>
+  <meta name="description" content="Result of connecting TikTok to Drop." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://trydropapp.com/tiktok/callback" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="wn" aria-label="Primary">
+    <div class="wn__inner">
+      <a class="wn__logo" href="/" aria-label="Drop home">DROP</a>
+      <div class="wn__right">
+        <a class="wn__link" href="/legal/privacy">Privacy</a>
+        <a class="wn__link" href="/legal/terms">Terms</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wsh" id="main">
+    <div class="doc" style="max-width:760px;margin:0 auto;">
+      <article class="doc-inner">
+        <h1 id="t">TikTok authorization</h1>
+        <p id="m">Checking…</p>
+        <p>Drop exchanges this code server-side; nothing is stored in your browser.</p>
+        <p><a href="/tiktok/connect">← Back to Connect TikTok</a></p>
+        <script>
+          // ponytail: display only. Code is masked, never logged, sent or stored.
+          var q = new URLSearchParams(location.search), t = document.getElementById('t'), m = document.getElementById('m');
+          var saved = null;
+          try { saved = sessionStorage.getItem('tiktok_oauth_state'); sessionStorage.removeItem('tiktok_oauth_state'); } catch (_) {}
+          var code = q.get('code'), err = q.get('error');
+          if (err) {
+            t.textContent = 'TikTok authorization failed';
+            m.textContent = err + (q.get('error_description') ? ': ' + q.get('error_description') : '');
+          } else if (!code) {
+            t.textContent = 'No authorization received';
+            m.textContent = 'This page expects a redirect from TikTok.';
+          } else if (!saved || saved !== q.get('state')) {
+            t.textContent = 'Authorization rejected';
+            m.textContent = 'State mismatch. Start again from the connect page.';
+          } else {
+            t.textContent = 'TikTok connected — authorization received';
+            m.textContent = 'Code: ' + '*'.repeat(Math.max(code.length - 4, 0)) + code.slice(-4);
+          }
+          history.replaceState(null, '', location.pathname);
+        </script>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="foot-fine">
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · <a href="/legal/privacy">Privacy</a> · <a href="/legal/terms">Terms</a></p>
+    </div>
+  </footer>
+</body>
+</html>

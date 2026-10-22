@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect TikTok to Drop</title>
+  <meta name="description" content="Connect Drop's own TikTok account so Drop can post its own concert clips." />
+  <meta name="theme-color" content="#0B0D12" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://trydropapp.com/tiktok/connect" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/site.css" />
+  <link rel="stylesheet" href="/shell.css" />
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="wn" aria-label="Primary">
+    <div class="wn__inner">
+      <a class="wn__logo" href="/" aria-label="Drop home">DROP</a>
+      <div class="wn__right">
+        <a class="wn__link" href="/legal/privacy">Privacy</a>
+        <a class="wn__link" href="/legal/terms">Terms</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wsh" id="main">
+    <div class="doc" style="max-width:760px;margin:0 auto;">
+      <article class="doc-inner">
+        <h1>Connect TikTok to Drop</h1>
+        <p>This connects Drop's own TikTok account (<strong>@trydrop.app</strong>) so Drop can post its own concert clips. It does not read or post to anyone else's account.</p>
+        <p>Drop asks TikTok for three permissions: basic profile info (<code>user.info.basic</code>), upload videos (<code>video.upload</code>) and publish videos (<code>video.publish</code>). You approve them on TikTok. Drop never sees your TikTok password.</p>
+        <p><a class="btn btn--primary" id="go" href="#">Continue with TikTok</a></p>
+        <p>See our <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/terms">Terms of Service</a>.</p>
+        <script>
+          // ponytail: CSRF state only; code exchange happens server-side, never in the browser.
+          var APP_ID = 'awjy8o95hlaccnst'; // public TikTok client key, not a secret
+          document.getElementById('go').addEventListener('click', function (e) {
+            e.preventDefault();
+            var s = crypto.getRandomValues(new Uint8Array(16)).reduce(function (a, b) { return a + ('0' + b.toString(16)).slice(-2); }, '');
+            try { sessionStorage.setItem('tiktok_oauth_state', s); } catch (_) {}
+            location.href = 'https://www.tiktok.com/v2/auth/authorize/?client_key=' + APP_ID +
+              '&scope=user.info.basic,video.upload,video.publish&response_type=code' +
+              '&redirect_uri=' + encodeURIComponent('https://trydropapp.com/tiktok/callback') +
+              '&state=' + s;
+          });
+        </script>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="foot-fine">
+      <p class="foot-legal">© 2026 Resonance Ventures LLC · <a href="/legal/privacy">Privacy</a> · <a href="/legal/terms">Terms</a></p>
+    </div>
+  </footer>
+</body>
+</html>
