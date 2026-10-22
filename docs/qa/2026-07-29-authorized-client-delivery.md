@@ -42,7 +42,7 @@ No OTA or App Store production release was authorized or performed. The producti
 - Archive SHA-256: `4b04a36c48c8b2d40fc5135e5564ee7e4484a1cca63eccac9a44ce47e14e4a0a`
 - Deployment: `appgdep_6a6adb8e9c4c8191b2899b1671661f51`, succeeded
 - URL: `https://drop-parity-preview.ashinde8513.chatgpt.site/app/next/`
-- Access readback: `custom`; only `ashinde8513@gmail.com`; no account, workspace, or tenant groups
+- Access readback: `custom`; only `the founder account email`; no account, workspace, or tenant groups
 
 ## Live verification
 
