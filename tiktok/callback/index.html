@@ -30,10 +30,12 @@
       <article class="doc-inner">
         <h1 id="t">TikTok authorization</h1>
         <p id="m">Checking…</p>
+        <p><button type="button" class="btn btn--primary" id="cp" hidden>Copy code</button> <span id="ok" hidden>Copied</span></p>
         <p>Drop exchanges this code server-side; nothing is stored in your browser.</p>
         <p><a href="/tiktok/connect">← Back to Connect TikTok</a></p>
         <script>
           // ponytail: display only. Code is masked, never logged, sent or stored.
+          (function () { // closure: the full code lives only in this scope
           var q = new URLSearchParams(location.search), t = document.getElementById('t'), m = document.getElementById('m');
           var saved = null;
           try { saved = sessionStorage.getItem('tiktok_oauth_state'); sessionStorage.removeItem('tiktok_oauth_state'); } catch (_) {}
@@ -50,8 +52,14 @@
           } else {
             t.textContent = 'TikTok connected — authorization received';
             m.textContent = 'Code: ' + '*'.repeat(Math.max(code.length - 4, 0)) + code.slice(-4);
+            var cp = document.getElementById('cp'), ok = document.getElementById('ok');
+            cp.hidden = false;
+            cp.addEventListener('click', function () {
+              navigator.clipboard.writeText(code).then(function () { ok.hidden = false; setTimeout(function () { ok.hidden = true; }, 2000); });
+            });
           }
           history.replaceState(null, '', location.pathname);
+          })();
         </script>
       </article>
     </div>
