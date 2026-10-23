@@ -1,0 +1,13 @@
+### Web app — bus to the show under the Tickets card (2026-10-23, Web app specs build lane)
+- **Changed:** board Spec01-Bus-Options. Bus pickups from `event_add_ons` (kind `bus`, Drop-App #1347) show inside the Tickets card as a "Bus to the show" group.
+  - Desktop: after the ticket primary. Phone: under the sellers. In the sellers sheet: after the primary.
+  - Radio rows show the pickup name, "City, ST" and the pickup time in the show's time zone. Past pickups are hidden.
+  - Rows without a vetted link are dashed and unselectable ("Booking link not available"); arrows skip them. When no row has a link, a plain list and one line replace the radios.
+  - Max 3 rows, then "Show N more".
+  - One secondary "Buy on Etix" button, named "Buy on Etix, bus from {pickup}, {city}". It reads "Buy bus on Etix" when the ticket seller is Etix too.
+  - Price: none today. "Listed from $12" if one arrives; "Free" only when price_max = 0.
+  - The seller title is a fallback name only, cut before any "(…)" claim.
+  - The footnote mentions bus links. With buses present, the sticky desktop card scrolls inside.
+  - Absent for ended shows, with no rows, or when the load fails.
+- **Tested:** `tests/offers.test.mjs` (busRows) and `tests/app-bus.spec.ts` (payload, states, keyboard, Etix label, phone sheet order, 44px and AA).
+- **Open:** merge waits until the #1347 migration (`event_add_ons`) is live. Before then every event page would request a missing table.

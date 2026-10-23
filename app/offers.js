@@ -258,7 +258,41 @@
     };
   }
 
+  // Bus to the show (board Spec01-Bus-Options): event_add_ons kind 'bus' rows -> pickup rows.
+  // Upcoming pickups only, by starts_at. The seller title is never shown raw: it is a fallback
+  // name only, cut before any "(...)" claim and at a word boundary. A row is bookable only with
+  // a vetted link (Etix must be Drop's own tracked link). Price: "Free" only when price_max is 0.
+  function shortTitle(title) {
+    var raw = String(title || '').trim(), t = raw.split(/[(|]|\s[-–—]\s/)[0].trim();
+    if (/\bfree\b/i.test(t)) return 'Bus pickup'; // a seller's "free" claim never reads as a price
+    if (t.length > 28) { t = t.slice(0, 28); t = t.slice(0, Math.max(t.lastIndexOf(' '), 1)).trim(); }
+    return t && t.length < raw.length ? t + '…' : t || 'Bus pickup';
+  }
+  // A valid show zone, else null (times then read in the viewer's own zone, and say so).
+  function validZone(tz) { try { return tz ? (new Intl.DateTimeFormat('en-US', { timeZone: tz }), tz) : null; } catch (e) { return null; } }
+  // ponytail: departed pickups drop out on the next render; add a timer if pages stay open across pickups.
+  function busRows(addOns, now, timeZone) {
+    var zone = validZone(timeZone);
+    var fmt = function (iso) { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: zone || undefined }).replace(/\u202f/g, ' '); };
+    return (addOns || []).filter(function (a) { var t = Date.parse(a.starts_at); return isFinite(t) && t >= now; })
+      .sort(function (a, b) { return Date.parse(a.starts_at) - Date.parse(b.starts_at); })
+      .map(function (a) {
+        var name = a.pickup_name ? String(a.pickup_name).trim() : shortTitle(a.title);
+        var place = [a.pickup_city, a.pickup_state].filter(Boolean).join(', ');
+        var cur = validCurrency(a.currency) || 'USD', min = a.price_min == null ? NaN : Number(a.price_min);
+        var price = a.price_max != null && Number(a.price_max) === 0 ? 'Free' : isFinite(min) && min > 0 ? 'Listed from ' + formatAmount(min, cur) : '';
+        var seller = String(a.provider || '').toLowerCase() === 'etix' ? 'Etix' : String(a.provider || 'seller').replace(/^./, function (c) { return c.toUpperCase(); });
+        // https only; an Etix provider row must carry Drop's own tracked Etix link.
+        var url = a.url && /^https:\/\//i.test(a.url) && isUsableTicketUrl(a.url, seller) ? a.url : '';
+        var time = fmt(a.starts_at);
+        return { id: a.id, name: name, place: place, city: a.pickup_city || '', time: time, price: price, url: url, seller: seller,
+          label: [name, place, 'pickup ' + time, price ? price.charAt(0).toLowerCase() + price.slice(1) : 'price not listed', url ? 'booking link available' : 'booking link not available'].filter(Boolean).join(', ') };
+      });
+  }
+
   var api = {
+    busRows: busRows,
+    validZone: validZone,
     comparableOfferEventIds: comparableOfferEventIds,
     venueNamesCompatible: venueNamesCompatible,
     usableTicketOffers: usableTicketOffers,
