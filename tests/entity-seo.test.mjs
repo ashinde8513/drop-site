@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CITIES, cityPaths, cleanCity, genreCityPaths, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
+import { CITIES, cityPaths, cleanCity, genreCitiesBlock, genreCityPaths, genreOtherCities, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
 import { GENERIC_KEYS, GENRE_MAP, genreOf, matchesGenre } from '../src/genres.mjs';
 import vm from 'node:vm';
 import {
@@ -224,6 +224,34 @@ test('/venues server-renders crawlable directory rows the page script then repla
   assert.match(readFileSync(new URL('../functions/venues.js', import.meta.url), 'utf8'), /htmlResponse\(withVenueDirectory\(template, venues\)/);
   assert.match(template, /if \(!host\.querySelector\('\[data-ssr\]'\)\) D\.skeletonGrid\(host, 6\);/);
   assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/venues'));
+});
+
+test('home lists every city hub plus /venues and /artists as crawlable links', () => {
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const nav = home.match(/<nav aria-label="Explore Drop by city">([\s\S]*?)<\/nav>/)[1];
+  assert.deepEqual([...nav.matchAll(/href="([^"]+)"/g)].map((m) => m[1]), CITIES.map((city) => '/city?city=' + encodeURIComponent(city)));
+  assert.match(home, /<a class="link-more" href="\/venues">All venues →<\/a>/);
+  assert.match(home, /<a class="link-more" href="\/artists">All artists →<\/a>/);
+  assert.match(readFileSync(new URL('../site.css', import.meta.url), 'utf8'), /ul\.chip-row \{ list-style: none; padding: 0; \}/);
+});
+
+test('genre pages server-render "<Genre> in other cities" from the sitemap rule', () => {
+  const house = { id: artistId, name: 'DJ', genres: ['house'] };
+  const ev = (n, city) => catalogEvent({ id: `2222222${n}-2222-4222-8222-22222222222${n}`, title: 'Show ' + n, city, event_artists: [{ artists: house }] });
+  const catalog = [ev(1, 'Denver'), ev(2, 'Denver'), ev(3, 'Denver'), ev(4, 'Seattle'), ev(5, 'Seattle'), ev(6, 'Seattle'), ev(7, 'Austin')];
+  assert.deepEqual(genreOtherCities('House', 'Seattle', catalog), ['Denver']);
+  assert.deepEqual(genreOtherCities('House', 'Austin', catalog), ['Denver', 'Seattle']);
+  const block = genreCitiesBlock('House', 'Austin', catalog);
+  assert.match(block, /<nav aria-label="House in other cities"><ul class="chip-row"><li><a class="chip" href="\/genre\?genre=House">Denver<\/a><\/li><li><a class="chip" href="\/genre\?genre=House&amp;city=Seattle">Seattle<\/a>/);
+  assert.equal(genreCitiesBlock('House', 'Austin', null), '');
+  assert.equal(genreCitiesBlock('House', 'Seattle', [ev(1, 'Denver')]), '');
+  const template = readFileSync(new URL('../genre.html', import.meta.url), 'utf8');
+  assert.match(template, /<!--genre-cities-->\n  <\/main>/);
+  assert.doesNotMatch(renderGenrePage(template, 'House', 'Seattle', true, true, [], null), /genre-cities|in other cities/);
+  assert.match(renderGenrePage(template, 'House', 'Austin', true, true, [], catalog), /House in other cities/);
+  const fn = readFileSync(new URL('../functions/genre.js', import.meta.url), 'utf8');
+  assert.match(fn, /Promise\.all\(\[upcomingEvents\(\{ city: indexableCity, genre \}\), catalog\(\)\]\)/);
+  assert.match(fn, /> 36e5/);
 });
 
 test('catalog HTML descriptions become clean plain text everywhere', () => {
