@@ -15,6 +15,10 @@ test('privacy policy discloses the app data the App Privacy label declares', () 
     ['required phone verification', /requires verifying a mobile phone number/],
     ['SoundCloud import', /Apple Music or SoundCloud/],
     ['no raw contact upload', /raw address-book details are not uploaded to or stored by Drop/],
+    ['Google Fonts recipient (audit 06 M4)', /Google Fonts, which receives your IP address/],
+    ['Cloudflare hosting + network-error reports', /Cloudflare for website hosting, security, and network-error reports/],
+    ['QR scan attribution', /record the scan with your device type/],
+    ['referral/creator code storage', /referral or creator code/],
   ]) assert.match(text, re, what);
   assert.doesNotMatch(text, /does not share your device location or a live crew location/, 'stale pre-1.0.4 location claim');
   assert.doesNotMatch(text, /optional SMS phone verification/, 'phone verification is required');
