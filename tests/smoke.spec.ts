@@ -940,12 +940,16 @@ test.describe('website smoke', () => {
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=link-hub&mt=8');
     await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Dlink_hub%26utm_campaign%3Dweb_download');
     await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about.html');
-    await expect(page.locator('.lh-links > *')).toHaveCount(5);
+    await expect(page.locator('.lh-links > *')).toHaveCount(7);
     await expect(page.locator('.lh-links > *').nth(0)).toHaveAttribute('id', 'visitWebsite');
     await expect(page.locator('.lh-links > *').nth(1)).toHaveAttribute('id', 'getApp');
     await expect(page.locator('.lh-links > *').nth(2)).toHaveAttribute('id', 'getGooglePlay');
     await expect(page.locator('.lh-links > *').nth(3)).toHaveAttribute('id', 'aboutDrop');
-    await expect(page.locator('.lh-links > *').nth(4)).toHaveClass(/lh-socials/);
+    await expect(page.locator('#sendClips')).toHaveAttribute('href', '/send');
+    await expect(page.locator('#submitEvent')).toHaveAttribute('href', '/submit');
+    await expect(page.locator('.lh-links > *').nth(4)).toHaveAttribute('id', 'sendClips');
+    await expect(page.locator('.lh-links > *').nth(5)).toHaveAttribute('id', 'submitEvent');
+    await expect(page.locator('.lh-links > *').nth(6)).toHaveClass(/lh-socials/);
     const threads = page.getByRole('link', { name: 'Threads', exact: true });
     await expect(threads).toHaveAttribute('href', 'https://www.threads.com/@trydropapp');
     await expect(threads).toHaveAttribute('target', '_blank');
