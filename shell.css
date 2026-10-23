@@ -366,13 +366,9 @@
 .share-story__inner { position: absolute; inset: 0; display: flex; flex-direction: column; padding: var(--sp-lg); }
 .share-story__grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; margin: var(--sp-md) 0; }
 .share-story__grid span { border-radius: var(--r-sm); background: rgba(255,255,255,0.06); }
-.share-story__stars { margin-top: 8px; color: var(--gold); font-size: 10px; letter-spacing: 1px; }
 
 .share-wrapped-card { border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--border-strong); box-shadow: var(--shadow-card); padding: var(--sp-xxl) var(--sp-xl); margin-bottom: var(--sp-lg); text-align: center; }
 .share-wrapped-num { font-family: var(--font-display); font-weight: 700; font-size: clamp(56px,11vw,88px); line-height: 1; background: var(--grad-glow); -webkit-background-clip: text; background-clip: text; color: transparent; margin: var(--sp-sm) 0; }
-.share-wrapped-stats { display: flex; justify-content: space-around; gap: var(--sp-md); margin-bottom: var(--sp-lg); }
-.share-wrapped-bar-track { height: 12px; border-radius: var(--r-pill); background: rgba(255,255,255,0.12); overflow: hidden; }
-.share-wrapped-bar-fill { height: 100%; background: var(--grad-glow-fill); border-radius: var(--r-pill); }
 
 @media (max-width: 720px) {
   .share-recap-grid { grid-template-columns: 1fr !important; }
