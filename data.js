@@ -19,9 +19,25 @@
   Drop.CITIES = CITIES;
   Drop.ALL_CITIES = 'All cities';
 
+  // A link's ?city= ends up as page text (nav, headings), so it is honoured only
+  // for a known market, "All cities", or the city this visitor picked themselves;
+  // a crafted link falls back to their saved city.
   Drop.city = function () {
     var selected = new URLSearchParams(location.search).get('city');
-    if (selected) return selected;
+    var saved = Drop.savedCity();
+    if (!selected) return saved;
+    if (Drop.knownCity(selected)) return Drop.knownCity(selected);
+    if (selected === Drop.ALL_CITIES || selected.toLowerCase() === saved.toLowerCase()) return selected;
+    return saved;
+  };
+  // Display-safe city: a link's ?city= is shown as page text only when it is a
+  // known market (anyone can craft a link); otherwise the visitor's saved city.
+  Drop.knownCity = function (value) {
+    var v = String(value || '').trim().toLowerCase();
+    for (var i = 0; i < CITIES.length; i++) if (CITIES[i].toLowerCase() === v) return CITIES[i];
+    return null;
+  };
+  Drop.savedCity = function () {
     try { return localStorage.getItem('drop.city') || 'Denver'; }
     catch (e) { return 'Denver'; } // ponytail: private-mode localStorage throws — default
   };

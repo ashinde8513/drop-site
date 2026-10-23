@@ -189,9 +189,8 @@
   <script>
     (function () {
       var D = window.Drop;
-      var city = new URLSearchParams(location.search).get('city') || D.city();
-      // Title-case a free-typed city param; leave known city names untouched.
-      city = city.charAt(0).toUpperCase() + city.slice(1);
+      // Only a known market from the link is shown (the server 404s the rest).
+      var city = D.knownCity(new URLSearchParams(location.search).get('city')) || D.savedCity();
 
       document.getElementById('city-h1').textContent = 'EDM shows in ' + city;
       document.getElementById('city-sub').textContent = 'Every rave, festival, and club night in ' + city + ' — with all-in prices and who’s going. Updated daily.';
