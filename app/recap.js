@@ -12,7 +12,7 @@
 
   var MAX_PHOTOS = 4;
   var MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-  var UNIT = { w: 320, h: 569, pad: 16, gap: 6, gridMargin: 12 }; // design unit; export is ×3.375
+  var UNIT = { pad: 16, gap: 6, gridMargin: 12 }; // 320 × 569 design unit; export is ×3.375
 
   // Cell rects (fractions of the grid box) for 1–4 photos, as on the Card-Frames board:
   // 1 full bleed · 2 stacked · 3 one large over two (rows 1.3fr / 1fr) · 4 two by two.
@@ -54,8 +54,9 @@
   // First frame (~0.1 s) of a video as a PNG object URL; the clip itself is never kept.
   function videoStill(file) {
     return new Promise(function (res, rej) {
-      var src = URL.createObjectURL(file), v = document.createElement('video');
-      var done = function (err, url) { URL.revokeObjectURL(src); v.removeAttribute('src'); if (err) rej(err); else res(url); };
+      var src = URL.createObjectURL(file), v = document.createElement('video'), settled = false;
+      var done = function (err, url) { if (settled) return; settled = true; clearTimeout(t); URL.revokeObjectURL(src); v.removeAttribute('src'); if (err) rej(err); else res(url); };
+      var t = setTimeout(function () { done(new Error('video still timed out')); }, 8000); // a hung decode must not trap the tile
       v.muted = true; v.playsInline = true; v.preload = 'metadata';
       v.onerror = function () { done(new Error('video decode failed')); };
       v.onloadeddata = function () { v.currentTime = Math.min(0.1, (v.duration || 0.2) / 2); };
@@ -79,7 +80,15 @@
     ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
   }
   function wrapLines(ctx, text, maxW, maxLines) {
-    var words = String(text).split(/\s+/), lines = [], line = '';
+    var words = [], lines = [], line = '';
+    // Hard-break any single word wider than the line so nothing runs off the card.
+    String(text).split(/\s+/).forEach(function (w) {
+      while (w.length > 1 && ctx.measureText(w).width > maxW) {
+        var n = w.length - 1; while (n > 1 && ctx.measureText(w.slice(0, n)).width > maxW) n--;
+        words.push(w.slice(0, n)); w = w.slice(n);
+      }
+      words.push(w);
+    });
     words.forEach(function (w) {
       var t = line ? line + ' ' + w : w;
       if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;

@@ -2312,14 +2312,14 @@
         <div class="rc-grid">
           <div class="rc-left">
             <h2 class="sec__title rc-h2">Pick up to 4 photos</h2>
-            <div class="rc-count" aria-live="polite">{{ rcCountLabel }}</div>
+            <div class="rc-count">{{ rcCountLabel }}</div>
             <div class="rc-slots">
               <sc-for list="{{ rcTiles }}" as="t" hint-placeholder-count="4">
                 <sc-if value="{{ t.empty }}"><button type="button" class="rc-slot" data-bind-key="{{ t.key }}" aria-label="{{ t.addLabel }}" onClick="{{ t.add }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add photo</button></sc-if>
                 <sc-if value="{{ t.loading }}"><div class="rc-tile skel" aria-hidden="true"></div></sc-if>
                 <sc-if value="{{ t.filled }}">
                   <div class="rc-tile {{ t.cls }}">
-                    <img src="{{ t.url }}" alt="" class="rc-tile__img">
+                    <img src="{{ t.url }}" alt="{{ t.alt }}" class="rc-tile__img">
                     <sc-if value="{{ t.video }}"><span class="rc-badge">VIDEO</span></sc-if>
                     <button type="button" class="rc-tile__btn rc-tile__rm" data-bind-key="{{ t.rmKey }}" aria-label="{{ t.rmLabel }}" onClick="{{ t.remove }}" onFocus="{{ t.focus }}"><span class="rc-dot"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
                     <div class="rc-tile__moves">
@@ -2372,7 +2372,6 @@
               <sc-if value="{{ rcCanShare }}"><button type="button" class="btn btn--secondary rc-secondary" data-bind-key="rc-save" aria-disabled="{{ rcActionsOff }}" onClick="{{ rcSave }}">Save image</button></sc-if>
             </div>
             <p class="rc-help" id="rc-help">{{ rcHelp }}</p>
-            <div class="sr-only" aria-live="polite">{{ rcBusyText }}</div>
             <sc-if value="{{ rcRenderErr }}"><p class="rc-alert" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>We couldn't make your card. Try again.</p></sc-if>
           </div>
         </div>
@@ -3338,7 +3337,7 @@
 
 <!-- ============ TOAST ============ -->
 <sc-if value="{{ toast }}">
-  <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;">
+  <div class="toast-wrap" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;">
     <div class="toast toast--success" role="status"><span class="toast__ico" aria-hidden="true">✓</span><span class="toast__msg">{{ toast }}</span></div>
   </div>
 </sc-if>

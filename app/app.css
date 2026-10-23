@@ -738,7 +738,8 @@ image-slot::before { content: attr(placeholder); }
 .rc-gate .rc-alert { justify-content: center; margin-bottom: var(--sp-md); }
 .rc-gate__actions { display: flex; gap: var(--sp-md); justify-content: center; }
 @media (max-width: 720px) {
-  .rc-wrap { padding: var(--sp-md) var(--sp-lg) 140px; }
+  .rc-wrap { padding: var(--sp-md) var(--sp-lg) calc(170px + env(safe-area-inset-bottom)); } /* clears the fixed bar */
+  .rc-on .toast-wrap { bottom: calc(160px + env(safe-area-inset-bottom)) !important; } /* toast above the bar, not over it */
   .rc-grid { grid-template-columns: 1fr; gap: var(--sp-xl); }
   .rc-right { position: static; }
   .rc-card { width: 320px; margin: 0 auto -71px; transform: scale(0.875); transform-origin: top center; } /* board: the 320 unit at .875, so type matches the export */
