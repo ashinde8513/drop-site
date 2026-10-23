@@ -15,7 +15,7 @@ const open = async (page: Page) => { await page.goto('/app/index.html'); await e
 const detail = async (page: Page) => { await open(page); await page.getByText('Parity Night').first().click(); await expect(page.locator('button[aria-label="Save event"]:visible').first()).toBeVisible(); };
 const nav = async (page: Page, isMobile: boolean, item: string) => {
   if (isMobile) { await page.getByRole('button', { name:'Menu' }).click(); await page.locator('.mnav__panel').getByRole('button', { name:new RegExp(item) }).click(); }
-  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByRole('button', { name:item, exact:true }).click(); }
+  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByLabel('Primary').getByRole('button', { name:item, exact:true }).click(); }
 };
 const save = (page: Page) => page.locator('button[aria-label="Save event"]:visible').first();
 const going = (page: Page) => page.getByRole('button', { name:'✓ Going' }).locator('visible=true').first();

@@ -10,7 +10,7 @@ const pastRow = (status: string, id = PAST_ID, title = 'Past Night') => ({ user_
 const open = async (page: Page) => { await page.goto('/app/index.html'); await expect(page.getByText('Parity Three Night').first()).toBeVisible(); };
 const nav = async (page: Page, isMobile: boolean, item: string) => {
   if (isMobile) { await page.getByRole('button', { name:'Menu' }).click(); await page.locator('.mnav__panel').getByRole('button', { name:new RegExp(item) }).click(); }
-  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByRole('button', { name:item, exact:true }).click(); }
+  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByLabel('Primary').getByRole('button', { name:item, exact:true }).click(); }
 };
 const profileItem = async (page: Page, isMobile: boolean, item: string | RegExp) => { await nav(page, isMobile, 'Profile'); await page.getByRole('button', { name:item }).first().click(); };
 const pastTab = async (page: Page, isMobile: boolean) => { await nav(page, isMobile, 'My Shows'); await page.locator('.seg__item', { hasText:'Past' }).click(); };

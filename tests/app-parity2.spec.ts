@@ -8,7 +8,7 @@ const EVENT = { id:EV_ID, title:'Parity Two Night', date:day(5), venue_name:'Mis
 const open = async (page: Page, title = 'Parity Two Night') => { await page.goto('/app/index.html'); await expect(page.getByText(title).first()).toBeVisible(); };
 const nav = async (page: Page, isMobile: boolean, item: string) => {
   if (isMobile) { await page.getByRole('button', { name:'Menu' }).click(); await page.locator('.mnav__panel').getByRole('button', { name:new RegExp(item) }).click(); }
-  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByRole('button', { name:item, exact:true }).click(); }
+  else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByLabel('Primary').getByRole('button', { name:item, exact:true }).click(); }
 };
 const profileItem = async (page: Page, isMobile: boolean, item: string | RegExp) => { await nav(page, isMobile, 'Profile'); await page.getByRole('button', { name:item }).first().click(); };
 const footer = (page: Page, link: string) => page.getByRole('link', { name:link, exact:true }).click();
