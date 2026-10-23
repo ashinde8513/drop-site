@@ -201,7 +201,31 @@ export function genreCityPaths(events) {
 }
 
 // events === null means the catalog was unreachable: keep the city-based decision.
-export function renderGenrePage(template, genre, city, hasCity, indexable = true, events = null) {
+// Cities (other than `city`) whose `genre` page is indexable: the genreCityPaths()
+// rule, so every link is also a sitemap URL. `catalog` = getEntityUrls().events.
+export function genreOtherCities(genre, city, catalog) {
+  const shows = new Map();
+  for (const event of catalog) {
+    if (!matchesGenre(event, genre)) continue;
+    const key = String(event.city || '').toLowerCase();
+    shows.set(key, (shows.get(key) || 0) + 1);
+  }
+  return CITIES.filter((other) => other !== city && (shows.get(other.toLowerCase()) || 0) >= MIN_GENRE_SHOWS);
+}
+
+// '' (no heading, no empty box) when the catalog was unreachable or nothing qualifies.
+export function genreCitiesBlock(genre, city, catalog) {
+  const cities = catalog ? genreOtherCities(genre, city, catalog) : [];
+  if (!cities.length) return '';
+  const label = escapeHtml(genre) + ' in other cities';
+  return '<section class="section section--flush-top"><div class="wrap"><div class="section-head">' +
+    '<span class="eyebrow"><span class="dot"></span>Cities</span><h2 class="sec-h2">' + label + '</h2></div>' +
+    '<nav aria-label="' + label + '"><ul class="chip-row">' +
+    cities.map((other) => '<li><a class="chip" href="' + escapeHtml(genrePath(genre, other)) + '">' + escapeHtml(other) + '</a></li>').join('') +
+    '</ul></nav></div></section>';
+}
+
+export function renderGenrePage(template, genre, city, hasCity, indexable = true, events = null, catalog = null) {
   const canonical = 'https://trydropapp.com' + genrePath(genre, hasCity ? city : null);
   const description = 'Upcoming ' + genre.toLowerCase() + ' shows, the artists defining the sound, and where to catch them live near ' + city + '.';
   const shows = events || [];
@@ -212,5 +236,6 @@ export function renderGenrePage(template, genre, city, hasCity, indexable = true
     indexable: indexable && (events === null || shows.length >= MIN_GENRE_SHOWS),
   });
   const name = 'Upcoming ' + genre + ' shows in ' + city;
-  return inject(html, 'rail-genre-shows', linkBlock(name, eventItems(shows)), itemListLd(name, shows));
+  return inject(html, 'rail-genre-shows', linkBlock(name, eventItems(shows)), itemListLd(name, shows))
+    .replace('<!--genre-cities-->', () => genreCitiesBlock(genre, city, catalog));
 }
