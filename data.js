@@ -301,6 +301,20 @@
       });
   };
 
+  // One saved recap's public card (shared_recap_card RPC): event facts plus the sharer's
+  // first name only when they made their profile and history public. Null when unavailable.
+  Drop.fetchSharedRecap = function (id) {
+    return fetch(REST + 'rpc/shared_recap_card', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: id }),
+      referrerPolicy: 'no-referrer',
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json().then(function (rows) { return (rows && rows[0]) || null; });
+    });
+  };
+
   // Name-prefix + substring artist lookup for the search typeahead.
   Drop.searchArtists = function (query, limit) {
     return get('artists?' + q({
