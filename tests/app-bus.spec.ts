@@ -35,6 +35,8 @@ test('one pickup, no price: a secondary "Buy on Etix" under the group; the ticke
   await expect(pick).toHaveAttribute('aria-checked', 'true');
   const busBuy = group(page).getByRole('link', { name:'Buy on Etix, bus from Union Station, Denver' });
   await expect(busBuy).toHaveAttribute('href', ETIX(77));
+  await busBuy.scrollIntoViewIfNeeded();
+  await expect(busBuy).toBeVisible();
   await expect(busBuy).toHaveAttribute('rel', 'noopener sponsored');
   await expect(busBuy).toHaveClass(/btn--secondary/);
   await expect(card(page).locator('.btn--primary:visible')).toHaveCount(isMobile ? 0 : 1); // phone: the bar holds the primary
