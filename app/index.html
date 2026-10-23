@@ -476,12 +476,13 @@
 
           <!-- Tickets card (design spec 01): one radiogroup of sellers, one primary. Desktop CSS lifts it into the sticky right column. -->
           <section class="tk" aria-labelledby="tk-title" aria-busy="{{ tkBusy }}">
-            <h2 class="tk__title" id="tk-title">Tickets</h2>
+            <h2 class="{{ tkTitleCls }}" id="tk-title">Tickets</h2>
             <sc-if value="{{ tkLoading }}">
+              <span class="skel skel--title tk-sk-title" aria-hidden="true"></span>
               <span class="sr-only" role="status">Loading sellers</span>
               <div class="tk__list" aria-hidden="true">
                 <sc-for list="{{ tkSkel }}" as="k" hint-placeholder-count="3">
-                  <div class="tk-row tk-row--sk"><span class="skel skel--avatar tk-sk-dot"></span><span class="tk-row__main"><span class="skel skel--text" style="width:60%;"></span><span class="skel skel--text" style="width:40%;"></span></span><span class="skel skel--title" style="width:64px;"></span></div>
+                  <div class="tk-row tk-row--sk"><span class="skel skel--avatar tk-sk-dot"></span><span class="tk-row__main"><span class="skel skel--text" style="width:60%;"></span><span class="skel skel--text tk-sk-line" style="width:40%;"></span></span><span class="skel skel--title tk-sk-price"></span></div>
                 </sc-for>
               </div>
               <div class="skel tk-sk-btn" aria-hidden="true"></div>
@@ -516,7 +517,7 @@
               </div>
               <sc-if value="{{ tkCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" aria-expanded="{{ tkExpandedAttr }}" aria-controls="tk-list" onClick="{{ tkMore }}">{{ tkMoreLabel }}</button></sc-if>
               <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
-              <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
+              <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
               <span id="tk-newtab" class="sr-only">Opens in a new tab</span>
               <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
             </sc-if>
@@ -592,7 +593,7 @@
       <div class="ed-bottombar">
         <button type="button" class="{{ aeGoingCls }} ed-bottombar__going" style="height:48px;" onClick="{{ aeGoing }}">✓ Going</button>
         <sc-if value="{{ tkHasSheet }}"><button type="button" id="tk-sellers" class="btn btn--secondary ed-bottombar__icon" aria-label="{{ tkSellersLabel }}" aria-haspopup="dialog" onClick="{{ tkOpenSheet }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></sc-if>
-        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary ed-bottombar__tickets" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
+        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary ed-bottombar__tickets" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
       </div>
     </sc-if>
   </main>
@@ -624,7 +625,7 @@
           </sc-for>
         </div>
         <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
-        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
+        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
         <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
       </div>
     </div>

@@ -211,7 +211,8 @@
     var price = raw == null || raw === '' ? NaN : Number(raw);
     var currency = validCurrency(o.currency);
     var fresh = freshness(o.last_seen_at, now);
-    var amount = isFinite(price) && price >= 0 && currency && fresh !== 'stale' ? price : null;
+    // Like native quoteTotal: only a fresh quote is shown; unknown age reads Live price too.
+    var amount = isFinite(price) && price >= 0 && currency && fresh === 'fresh' ? price : null;
     var max = o.price_max == null || o.price_max === '' ? NaN : Number(o.price_max);
     return { amount: amount, currency: currency, fresh: fresh, stale: fresh === 'stale', upTo: amount != null && isFinite(max) && max > amount ? max : null };
   }
@@ -224,7 +225,7 @@
     var basis = rows.map(function (r) { return !!r.offer.price_includes_fees; });
     var comparable = rows.length >= 2 && !!currencies[0] &&
       rows.every(function (r, i) { return currencies[i] === currencies[0] && basis[i] === basis[0] && (!r.offer.kind || r.offer.kind === 'primary'); });
-    var priced = comparable ? rows.filter(function (r) { return r.q.amount != null && r.q.fresh === 'fresh'; })
+    var priced = comparable ? rows.filter(function (r) { return r.q.amount != null; })
       .sort(function (a, b) { return a.q.amount - b.q.amount; }) : [];
     if (priced.length && !(priced[1] && priced[1].q.amount === priced[0].q.amount)) {
       tag = { id: priced[0].offer.id, text: priced.length === rows.length ? 'Lowest listed' : 'Lowest known' };

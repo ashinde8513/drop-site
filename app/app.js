@@ -1710,7 +1710,7 @@ class Component extends DCLogic {
   // de-duplicated like native; offers[id] = rows, or 'error' (card shows retry).
   syncOffers(force){
     const st = this.state, id = st.activeId;
-    if (st.screen !== 'event' || !supa || !ATTRIBUTION_UUID.test(String(id || '')) || (this._offersKey === id && !force)) return;
+    if (st.screen !== 'event' || (this._offersKey === id && !force)) return;
     this._offersKey = id;
     const done = (rows)=>{
       if (this._offersKey !== id) return;
@@ -1719,6 +1719,7 @@ class Component extends DCLogic {
       this._tkRefocus = false;
       queueMicrotask(()=>(document.querySelector('#tk-list [tabindex="0"]') || document.getElementById('tk-retry'))?.focus());
     };
+    if (!supa || !ATTRIBUTION_UUID.test(String(id || ''))) { done('error'); return; }
     this.offerEventIds(id)
       .then(ids=>supa.from('ticket_offers')
         .select('id,event_id,vendor,url,price_min,price_max,currency,price_includes_fees,kind,last_seen_at,last_refreshed,fetched_at')
@@ -2387,8 +2388,10 @@ class Component extends DCLogic {
     const tkSel = tkRows.find(r=>r.id === (s.tkSel||{})[ae.id]) || tkRows[0] || null;
     // Native ticketOpenTarget: the selected link, else events.ticket_url, else the first linked row.
     const tkTarget = !tkHasRows || !tkSel ? null : tkSel.url ? tkSel : legacyRow || tkRows.find(r=>r.url) || null;
+    // Selecting a row past the first 3 expands the list first, so the selection is never hidden.
     const tkPick = (row, prefix)=>{
-      this.setState(x=>({ tkSel:{ ...x.tkSel, [ae.id]: row.id } }));
+      const deep = tkRows.indexOf(row) >= 3;
+      this.setState(x=>({ tkSel:{ ...x.tkSel, [ae.id]: row.id }, tkAll: deep ? { ...x.tkAll, [ae.id]: true } : x.tkAll }));
       queueMicrotask(()=>document.getElementById(prefix + row.id)?.focus());
     };
     const TK_KEYS = { ArrowDown:1, ArrowRight:1, ArrowUp:-1, ArrowLeft:-1 };
@@ -2406,7 +2409,11 @@ class Component extends DCLogic {
         seller: r.seller, tag: r.tag, hasTag: !!r.tag, line: r.line, hasLine: !!r.line,
         priced: !!r.amount, amount: r.amount || 'Live price', amtCls: r.amount ? 'tk-row__amt' : 'tk-row__amt tk-row__amt--live',
         caption: r.caption, hasCaption: !!r.caption,
-        label: r.amount ? r.seller + ', listed from ' + r.amount + (r.tag ? ', ' + r.tag.toLowerCase() : '') : r.seller + ', price not listed, see current total on seller site',
+        // Name carries what the row shows (captions, stale note, tag): the visible text is replaced by it.
+        label: [r.seller, ...(r.amount
+          ? ['listed from ' + r.amount, ...(r.caption ? r.caption.split(' · ') : []), r.tag]
+          : ['price not listed', r.line === 'Previous quote expired' ? r.line : '', 'see current total on seller site'])]
+          .filter(Boolean).map((t, i)=>i ? t.charAt(0).toLowerCase() + t.slice(1) : t).join(', '),
         pick: ()=>tkPick(r, prefix), key: (e)=>tkKey(e, i, prefix),
       };
     };
@@ -3367,7 +3374,7 @@ class Component extends DCLogic {
       // event detail
       ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:aeFriendIds.length>0, friendsLabel:fl(aeFriendIds.length), friendAvatars:aeFriendAvatars, lineup,
         description: Drop ? Drop.plainText(ae.descriptionHtml) : '' },
-      tkLoading, tkBusy: tkLoading ? 'true' : null, tkSkel: [1, 2, 3], tkEnded, tkError, tkHasRows,
+      tkLoading, tkBusy: tkLoading ? 'true' : null, tkTitleCls: tkLoading ? 'sr-only' : 'tk__title', tkSkel: [1, 2, 3], tkEnded, tkError, tkHasRows,
       tkEmpty: !tkEnded && Array.isArray(offState) && !tkRows.length,
       tkShowSub: tkHasRows && !tkError, tkSub, tkRowsVisible,
       tkCanExpand: tkHasRows && tkRows.length > 3, tkExpandedAttr: tkExpanded ? 'true' : 'false',

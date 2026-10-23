@@ -157,6 +157,7 @@ test('9 price unknown or stale: Live price lines, tag reads Lowest known', async
     offer({ vendor:'Etix', url:null }),
   ] } });
   await expect(rows(page).nth(0)).toHaveAccessibleName('AXS, listed from $89, lowest known');
+  await expect(rows(page).nth(2)).toHaveAccessibleName('Ticketmaster, price not listed, previous quote expired, see current total on seller site');
   await expect(card(page).getByText('Previous quote expired')).toBeVisible();
   await expect(card(page).getByText('See current total on seller site')).toBeVisible();
   await expect(card(page).getByText('Live price')).toHaveCount(2);
@@ -176,7 +177,7 @@ test('11 fees included only when the row says so', async ({ page }) => {
     offer({ vendor:'Tixr', url:'https://www.tixr.com/e/9', price_min:104, price_includes_fees:true }),
     offer({ vendor:'Dice', url:'https://dice.fm/e/9', price_min:98.5, price_includes_fees:true }),
   ] } });
-  await expect(rows(page).nth(0)).toHaveAccessibleName('Dice, listed from $98.50, lowest listed');
+  await expect(rows(page).nth(0)).toHaveAccessibleName('Dice, listed from $98.50, fees included, lowest listed');
   await expect(card(page).getByText('Fees included')).toHaveCount(2);
 });
 
@@ -185,6 +186,13 @@ test('12 more than 3 sellers collapse to 3; the selected row never hides', async
     offer({ vendor:'Etix', url:'https://etix.prf.hn/click/camref:1100l5NLJm/pubref:7/destination:' + encodeURIComponent('https://www.etix.com/ticket/p/7/x'), price_min:99 }),
     offer({ vendor:'Tixr', url:'https://www.tixr.com/e/5', price_min:120 }),
   ] } });
+  await expect(rows(page)).toHaveCount(3);
+  await rows(page).nth(0).focus();
+  await page.keyboard.press('End'); // a hidden row: the list expands first
+  await expect(rows(page)).toHaveCount(5);
+  await expect(rows(page).nth(4)).toBeFocused();
+  await card(page).getByRole('button', { name:'Show fewer' }).click();
+  await rows(page).nth(0).click();
   await expect(rows(page)).toHaveCount(3);
   const more = card(page).getByRole('button', { name:'Show all 5 sellers' });
   await expect(more).toHaveAttribute('aria-expanded', 'false');

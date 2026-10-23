@@ -101,7 +101,9 @@ test('tag only when comparable; cheapest-first only then', () => {
     assert.deepEqual(c.rows.map((r) => r.seller), ['AXS', 'Zed']);
   }
   assert.equal(card([a]).tag, null);
-  assert.equal(card([{ ...a, last_seen_at: null }, b]).tag.id, 'b', 'unknown freshness never wins the tag');
+  c = card([{ ...a, last_seen_at: null }, b]);
+  assert.deepEqual(c.tag, { id: 'b', text: 'Lowest known' }, 'unknown freshness never wins the tag');
+  assert.equal(c.rows.find((r) => r.id === 'a').amount, null, 'and its price is not shown');
 });
 
 test('unknown, stale and unverified prices read Live price; captions only from data', () => {
