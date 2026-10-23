@@ -2559,8 +2559,10 @@ class Component extends DCLogic {
     const busList = tkEnded || !Offers ? [] : Offers.busRows((s.bus || {})[ae.id], tkNow, ae.timezone);
     const busBookable = busList.filter(b=>b.url);
     const busSel = busBookable.find(b=>b.id === (s.busSel || {})[ae.id]) || busBookable[0] || null;
-    const busExpanded = !!(s.busAll || {})[ae.id];
-    const busZone = (()=>{ try { return ae.timezone ? new Intl.DateTimeFormat('en-US', { timeZone:ae.timezone, timeZoneName:'longGeneric' }).formatToParts(new Date()).find(p=>p.type === 'timeZoneName').value : ''; } catch (e) { return ''; } })();
+    // The selection never hides: a default pick past the first 3 opens the list.
+    const busExpanded = !!(s.busAll || {})[ae.id] || (!!busSel && busList.indexOf(busSel) >= 3);
+    const busTz = Offers ? Offers.validZone(ae.timezone) : null;
+    const busZone = busTz ? new Intl.DateTimeFormat('en-US', { timeZone:busTz, timeZoneName:'longGeneric' }).formatToParts(new Date()).find(p=>p.type === 'timeZoneName').value : '';
     const busPick = (b, prefix)=>{
       const deep = busList.indexOf(b) >= 3;
       this.setState(x=>({ busSel:{ ...x.busSel, [ae.id]: b.id }, busAll: deep ? { ...x.busAll, [ae.id]: true } : x.busAll }));
@@ -2578,8 +2580,8 @@ class Component extends DCLogic {
       return { domId: prefix + b.id, name:b.name, place:b.place, time:b.time, price:b.price, hasPrice:!!b.price, label:b.label, out:!ok,
         cls: 'tk-row bs-r' + (ok ? '' : ' is-out'), checked: on ? 'true' : 'false', tabindex: on ? '0' : '-1', disabled: ok ? null : 'true',
         pick: ()=>{ if (ok) busPick(b, prefix); }, key: (e)=>{ if (ok) busKey(e, b, prefix); } };
-    }).filter((r, i)=>busExpanded || i < 3 || (!!busSel && busList[i].id === busSel.id));
-    const busHidden = busList.length - Math.min(3, busList.length);
+    }).filter((r, i)=>busExpanded || i < 3);
+    const busHidden = busExpanded ? 0 : Math.max(0, busList.length - 3);
     const busOnEtix = !!busSel && busSel.seller === 'Etix' && !!tkTarget && /etix/i.test(tkTarget.seller || '');
 
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
@@ -4056,10 +4058,10 @@ class Component extends DCLogic {
       aeSave:()=>this.toggleSave(ae.id),
       tkMore:()=>this.setState(x=>({ tkAll:{ ...x.tkAll, [ae.id]: !(x.tkAll||{})[ae.id] } })),
       busShow: busList.length > 0, busPickable: busBookable.length > 0, busNonePickable: busList.length > 0 && !busBookable.length,
-      busSub: busBookable.length ? 'Pickup spots and times from the bus seller.' + (busZone ? ' Times are ' + busZone + ', the show’s time zone.' : '') : 'Booking links aren’t available for these pickups yet.',
+      busSub: busBookable.length ? 'Pickup spots and times from the bus seller. ' + (busZone ? 'Times are ' + busZone + ', the show’s time zone.' : 'Times are in your local time.') : 'Booking links aren’t available for these pickups yet.',
       busListLabel: 'Bus pickups, ' + busList.length + (busList.length === 1 ? ' option' : ' options'),
       busRows: busRowsFor('bsrow-'), busSheetRows: tkSheetOpen ? busRowsFor('bssrow-') : [],
-      busCanExpand: busHidden > 0, busExpandedAttr: busExpanded ? 'true' : 'false',
+      busCanExpand: busList.length > 3, busExpandedAttr: busExpanded ? 'true' : 'false',
       busMoreText: busExpanded ? 'Show fewer' : 'Show ' + busHidden + ' more',
       busMoreLabel: busExpanded ? 'Show fewer bus pickups' : 'Show ' + busHidden + ' more bus pickup' + (busHidden === 1 ? '' : 's'),
       busMore:()=>this.setState(x=>({ busAll:{ ...x.busAll, [ae.id]: !(x.busAll || {})[ae.id] } })),

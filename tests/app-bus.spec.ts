@@ -31,7 +31,7 @@ test('one pickup, no price: a secondary "Buy on Etix" under the group; the ticke
   await expect(group(page)).toBeVisible();
   await expect(group(page)).toContainText('Pickup spots and times from the bus seller. Times are Mountain Time, the show’s time zone.');
   const pick = group(page).getByRole('radiogroup', { name:'Bus pickups, 1 option' }).getByRole('radio');
-  await expect(pick).toHaveAccessibleName(/^Union Station, Denver, CO, pickup \d{1,2}:\d\d [AP]M, price not listed, booking link available$/);
+  await expect(pick).toHaveAccessibleName(/^Union Station, Denver, CO, pickup \d{1,2}:\d\d\s[AP]M, price not listed, booking link available$/);
   await expect(pick).toHaveAttribute('aria-checked', 'true');
   const busBuy = group(page).getByRole('link', { name:'Buy on Etix, bus from Union Station, Denver' });
   await expect(busBuy).toHaveAttribute('href', ETIX(77));
@@ -74,6 +74,17 @@ test('several pickups: sorted, 3 + "Show 1 more", a row without a link is shown 
   await expect(group(page).getByRole('link', { name:'Buy on Etix, bus from Belmar Center, Lakewood' })).toHaveAttribute('href', ETIX(4));
   await radios.nth(2).click({ force:true }); // not selectable
   await expect(radios.nth(3)).toHaveAttribute('aria-checked', 'true');
+});
+
+test('the default pick past the first 3 opens the list, so the selection never hides', async ({ page }) => {
+  await open(page, { event_add_ons:[
+    bus({ pickup_name:'A', starts_at:iso(START - 4 * 3600000) }), bus({ pickup_name:'B', starts_at:iso(START - 3.5 * 3600000) }),
+    bus({ pickup_name:'C', starts_at:iso(START - 3 * 3600000) }), bus({ pickup_name:'D', starts_at:iso(START - 2 * 3600000), url:ETIX(3) }),
+  ] });
+  const radios = group(page).getByRole('radio');
+  await expect(radios).toHaveCount(4);
+  await expect(radios.nth(3)).toHaveAttribute('aria-checked', 'true');
+  await expect(group(page).getByRole('button', { name:/^Show \d+ more/ })).toHaveCount(0);
 });
 
 test('no link on any pickup: a plain list and one line, never a dead button', async ({ page }) => {

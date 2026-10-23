@@ -150,3 +150,16 @@ test('busRows: upcoming pickups by time, vetted links, no raw seller claims, hon
   assert.equal(O.busRows([bus({ id: 'x', price_min: 0, price_max: null })], now, 'America/Denver')[0].price, '', 'a $0 minimum alone is not Free');
   assert.deepEqual(O.busRows(null, now), []);
 });
+
+test('busRows: links are https and Etix rows need Drop\'s own Etix link; seller "free" claims never show; bad zones fall back', () => {
+  const now = Date.parse('2026-10-23T18:00:00Z');
+  const row = (o) => O.busRows([{ id: 'x', provider: 'etix', title: 'Bus', starts_at: '2026-10-23T22:00:00Z', pickup_name: 'P', pickup_city: 'Denver', pickup_state: 'CO', ...o }], now, 'America/Denver')[0];
+  assert.equal(row({ url: 'https://example.com/bus' }).url, '', 'a non-Etix site under an Etix provider is not bookable');
+  assert.equal(row({ provider: 'busco', url: 'http://busco.example/x' }).url, '', 'plain http is not bookable');
+  assert.equal(row({ provider: 'busco', url: 'https://busco.example/x' }).url, 'https://busco.example/x');
+  assert.equal(row({ pickup_name: null, title: 'Free shuttle from Union Station' }).name, 'Bus pickup');
+  assert.doesNotMatch(row({}).time, / /);
+  assert.equal(O.validZone('Not/AZone'), null);
+  assert.equal(O.validZone(null), null);
+  assert.equal(O.validZone('America/Denver'), 'America/Denver');
+});
