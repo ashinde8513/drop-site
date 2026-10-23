@@ -618,6 +618,7 @@ image-slot::before { content: attr(placeholder); }
 .mp-sel__title { font: 700 var(--fs-lg) var(--font-display); letter-spacing: var(--tr-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mp-legend { position: absolute; left: calc(var(--sp-lg) + 320px + var(--sp-lg)); bottom: var(--sp-lg); z-index: 5; display: flex; gap: var(--sp-md); padding: 6px var(--sp-md); border-radius: var(--r-md); background: var(--surface-alt); border: 1px solid var(--border-strong); font-size: var(--fs-xs); color: var(--text-secondary); }
 .mp-lg { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 1100px) { .mp-legend { display: none; } } /* no room beside the selected card */
 .mp-lg__d { width: 14px; height: 14px; border-radius: 50%; background: var(--surface-hi); border: 2px solid var(--white); }
 .mp-lg__d--going { background: var(--going); }
 .mp-lg__d--int { background: var(--interested); }

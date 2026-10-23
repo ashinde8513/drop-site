@@ -68,22 +68,24 @@
     el.className = 'mp-gl';
     var map = null, gl = null, markers = {}, data = { pins: [], selectedId: null }, ready = null, focusId = null;
     // The first fit can run before the page CSS sizes the container; refit on resize until the user moves the map.
-    var lastFit = null, touched = false, FIT = { padding: 64, maxZoom: 13, duration: 0 };
+    var lastFit = null, touched = false, ro = null, FIT = { padding: 64, maxZoom: 13, duration: 0 };
 
     function load() {
       if (ready) return ready;
       var base = '/vendor/maplibre/'; // site root on both hosts (the app-host Worker passes /vendor/ through)
-      var css = document.createElement('link');
-      css.rel = 'stylesheet'; css.href = base + 'maplibre-gl.css';
-      document.head.appendChild(css);
+      if (!document.querySelector('link[data-maplibre]')) {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet'; css.href = base + 'maplibre-gl.css'; css.setAttribute('data-maplibre', '');
+        document.head.appendChild(css);
+      }
       ready = import(base + 'maplibre-gl.mjs').then(function (mod) {
         gl = mod.default || mod;
         map = new gl.Map({ container: el, style: STYLE_URL, center: opts.center, zoom: opts.zoom || 11,
           attributionControl: { compact: false }, dragRotate: false, pitchWithRotate: false, touchPitch: false });
         map.touchZoomRotate.disableRotation();
         map.on('movestart', function (e) { if (e.originalEvent) touched = true; });
-        if (typeof ResizeObserver === 'function') new ResizeObserver(function () { if (!map) return; map.resize(); if (lastFit && !touched) map.fitBounds(lastFit, FIT); }).observe(el);
-        map.on('moveend', function () { recluster(); opts.onMove(visibleIds()); });
+        if (!ro && typeof ResizeObserver === 'function') (ro = new ResizeObserver(function () { if (!map || !el.clientWidth) return; map.resize(); if (lastFit && !touched) map.fitBounds(lastFit, FIT); })).observe(el);
+        map.on('moveend', function () { if (!el.clientWidth) return; recluster(); opts.onMove(visibleIds()); });
         map.on('error', function (e) { if (!map.loaded() && opts.onError) opts.onError(e && e.error); });
         return new Promise(function (res) { map.once('load', function () { res(map); }); });
       });
@@ -120,7 +122,7 @@
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + list.length) % list.length;
       else if (e.key === 'Escape') { e.preventDefault(); opts.onEscape(); return; }
       if (j < 0) return;
-      e.preventDefault();
+      e.preventDefault(); e.stopPropagation(); // keep MapLibre's own arrow-key panning out of it
       list.forEach(function (b, k) { b.tabIndex = k === j ? 0 : -1; });
       focusId = list[j].dataset.key;
       list[j].focus();

@@ -310,7 +310,7 @@
         <div class="wsh__controls disc-controls">
           <div class="seg" role="group" aria-label="Feed">
             <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
-              <button type="button" class="seg__item {{ t.cls }}" aria-pressed="{{ t.pressed }}" onClick="{{ t.pick }}">{{ t.label }}</button>
+              <button type="button" class="seg__item {{ t.cls }}" data-bind-key="feed-{{ t.label }}" aria-pressed="{{ t.pressed }}" onClick="{{ t.pick }}">{{ t.label }}</button>
             </sc-for>
           </div>
         </div>
@@ -318,14 +318,14 @@
 
       <div class="mp-bar">
         <div class="m-rail mp-chips">
-          <sc-if value="{{ mapOn }}"><div class="seg mp-pd mp-phone" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></sc-if>
+          <sc-if value="{{ mapOn }}"><div class="seg mp-pd mp-phone" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" data-bind-key="mp-label-p-{{ m.label }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></sc-if>
           <sc-for list="{{ dateChips }}" as="d" hint-placeholder-count="3">
-            <button type="button" class="chip {{ d.cls }}" aria-pressed="{{ d.pressed }}" onClick="{{ d.pick }}"><span class="chip__dot"></span>{{ d.label }}</button>
+            <button type="button" class="chip {{ d.cls }}" data-bind-key="chip-{{ d.label }}" aria-pressed="{{ d.pressed }}" onClick="{{ d.pick }}"><span class="chip__dot"></span>{{ d.label }}</button>
           </sc-for>
         </div>
         <div class="seg mp-lm" role="group" aria-label="View">
-          <button type="button" id="mp-view-list" class="seg__item {{ viewListCls }}" aria-pressed="{{ viewListPressed }}" onClick="{{ viewList }}">List</button>
-          <button type="button" id="mp-view-map" class="seg__item {{ viewMapCls }}" aria-pressed="{{ viewMapPressed }}" onClick="{{ viewMap }}">Map</button>
+          <button type="button" id="mp-view-list" data-bind-key="mp-view-list" class="seg__item {{ viewListCls }}" aria-pressed="{{ viewListPressed }}" onClick="{{ viewList }}">List</button>
+          <button type="button" id="mp-view-map" data-bind-key="mp-view-map" class="seg__item {{ viewMapCls }}" aria-pressed="{{ viewMapPressed }}" onClick="{{ viewMap }}">Map</button>
         </div>
       </div>
 
@@ -354,8 +354,8 @@
           <div class="mp-split">
             <section class="mp-railp mp-desk" aria-labelledby="mp-rail-h">
               <div class="mp-railp__head"><h2 id="mp-rail-h" aria-live="polite">{{ mapCount }}</h2><span>{{ mapRailHint }}</span></div>
-              <div class="mp-rail" id="mp-rail" tabindex="0" aria-label="Shows in the map view. Same shows as the pins.">
-                <sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.7"/></svg>{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ c.badgePath }}"/></svg>{{ c.badge }}</span></sc-if></span></span></a></sc-for>
+              <div class="mp-rail" id="mp-rail" role="region" tabindex="0" aria-label="Shows in the map view. Same shows as the pins.">
+                <sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" data-bind-key="d-{{ c.key }}" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.7"/></svg>{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ c.badgePath }}"/></svg>{{ c.badge }}</span></sc-if></span></span></a></sc-for>
                 <sc-if value="{{ mapNone }}"><div class="mp-none"><p>No shows in this area.</p><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapZoomOut }}">Zoom out</button></div></sc-if>
               </div>
             </section>
@@ -365,15 +365,15 @@
               <sc-if value="{{ mapErr }}">
                 <div class="mp-err" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M4 4l16 16"/></svg><span>We couldn't load the map.</span><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapRetry }}">Try again</button></div>
               </sc-if>
-              <sc-if value="{{ mapCanvas }}"><div class="mp-tl mp-desk"><div class="seg mp-pd" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></div></sc-if>
+              <sc-if value="{{ mapCanvas }}"><div class="mp-tl mp-desk"><div class="seg mp-pd" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" data-bind-key="mp-label-d-{{ m.label }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></div></sc-if>
               <div class="mp-tc">
                 <sc-if value="{{ mapPartial }}"><div class="mp-partial" role="status"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>{{ mapPartialText }}</span></div></sc-if>
                 <sc-if value="{{ mapGeoOff }}"><div class="mp-note" role="status"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><path d="M4 4l16 16"/></svg><span>Location is off. <a href="#" onClick="{{ mapPickCity }}">Pick a city</a> instead.</span></div></sc-if>
               </div>
               <sc-if value="{{ mapCanvas }}">
                 <div class="mp-ctl">
-                  <button type="button" class="mp-near {{ mapNearCls }}" onClick="{{ mapNearMe }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>{{ mapNearLabel }}</span></button>
-                  <div class="mp-zoom" role="group" aria-label="Zoom"><button type="button" aria-label="Zoom in" onClick="{{ mapZoomIn }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" aria-label="Zoom out" onClick="{{ mapZoomStep }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button></div>
+                  <button type="button" class="mp-near {{ mapNearCls }}" data-bind-key="mp-near" aria-label="{{ mapNearLabel }}" onClick="{{ mapNearMe }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>{{ mapNearLabel }}</span></button>
+                  <div class="mp-zoom" role="group" aria-label="Zoom"><button type="button" data-bind-key="mp-zoom-in" aria-label="Zoom in" onClick="{{ mapZoomIn }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-bind-key="mp-zoom-out" aria-label="Zoom out" onClick="{{ mapZoomStep }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button></div>
                 </div>
                 <div class="mp-legend mp-desk" aria-hidden="true"><span class="mp-lg"><span class="mp-lg__d mp-lg__d--going"></span>Going</span><span class="mp-lg"><span class="mp-lg__d mp-lg__d--int"></span>Interested</span><span class="mp-lg"><span class="mp-lg__d"></span>No status</span></div>
               </sc-if>
@@ -387,14 +387,14 @@
           </div>
           <!-- phone: the rail becomes a bottom sheet; a selected pin swaps in one card and the primary -->
           <div class="mp-sheet mp-phone {{ mapSheetCls }}" role="region" aria-label="Shows">
-            <button type="button" class="mp-sheet__handle" aria-expanded="{{ mapSheetExpanded }}" aria-label="{{ mapSheetHandleLabel }}" onClick="{{ mapSheetToggle }}"><i></i></button>
+            <button type="button" class="mp-sheet__handle" data-bind-key="mp-sheet-handle" aria-expanded="{{ mapSheetExpanded }}" aria-label="{{ mapSheetHandleLabel }}" onClick="{{ mapSheetToggle }}"><i></i></button>
             <div class="mp-sheet__count" aria-live="polite">{{ mapCount }}</div>
             <sc-if value="{{ mapHasSel }}">
               <div class="mp-rail"><sc-for list="{{ mapSelCards }}" as="c" hint-placeholder-count="1"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.7"/></svg>{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ c.badgePath }}"/></svg>{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
               <a class="btn btn--primary btn--block" href="#" onClick="{{ mapSel.open }}">View event</a>
             </sc-if>
             <sc-if value="{{ mapSheetList }}">
-              <div class="mp-rail"><sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.7"/></svg>{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ c.badgePath }}"/></svg>{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
+              <div class="mp-rail"><sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" data-bind-key="p-{{ c.key }}" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.7"/></svg>{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ c.badgePath }}"/></svg>{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
               <sc-if value="{{ mapNone }}"><div class="mp-none"><p>No shows in this area.</p><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapZoomOut }}">Zoom out</button></div></sc-if>
             </sc-if>
           </div>
@@ -603,7 +603,7 @@
                 </button>
                 </sc-for>
               </div>
-              <sc-if value="{{ tkCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" aria-expanded="{{ tkExpandedAttr }}" aria-controls="tk-list" onClick="{{ tkMore }}">{{ tkMoreLabel }}</button></sc-if>
+              <sc-if value="{{ tkCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" data-bind-key="tk-more" aria-expanded="{{ tkExpandedAttr }}" aria-controls="tk-list" onClick="{{ tkMore }}">{{ tkMoreLabel }}</button></sc-if>
               <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
               <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
               <span id="tk-newtab" class="sr-only">Opens in a new tab</span>

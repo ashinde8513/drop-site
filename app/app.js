@@ -1292,13 +1292,16 @@ class Component extends DCLogic {
     if (!slot || !d || !DropMap) return;
     if (!this._mapView) this._mapView = DropMap.createMapView({
       center: d.center,
-      onMove: (ids)=>{ if ((this.state.mapInView || []).join() !== ids.join() || !this.state.mapInView) this.setState({ mapInView: ids }); },
+      onMove: (ids)=>{ if (this.state.dview !== 'map' || this.state.screen !== 'discover') return; if ((this.state.mapInView || []).join() !== ids.join() || !this.state.mapInView) this.setState({ mapInView: ids }); },
       // Selecting a pin jumps the map just enough that the selected card never hides it.
       onSelect: (id)=>{ const p = (this._pins || []).find(x=>x.id === id); this.setState({ mapSel: id, mapSheet: false }); if (p && this._mapView) this._mapView.reveal(p.lng, p.lat); },
       onError: (e)=>{ console.error('[app] map failed:', e && e.message); this.setState({ mapErr: true }); },
       onEscape: ()=>document.getElementById('mp-view-map')?.focus(),
     });
     this._mapView.attach(slot, d);
+    if (!this._mapLive) { this._mapLive = document.createElement('div'); this._mapLive.className = 'sr-only'; this._mapLive.setAttribute('aria-live', 'polite'); document.body.appendChild(this._mapLive); }
+    const count = document.getElementById('mp-rail-h')?.textContent || '';
+    if (this._mapLive.textContent !== count) this._mapLive.textContent = count;
   }
   loadFriends(uid){
     if (!supa) return;
@@ -2347,7 +2350,7 @@ class Component extends DCLogic {
 
     const tabList = ['Happening','For You','Crew'].map(t=>({
       label:t, cls: s.dtab===t?'is-active':'', pressed: s.dtab===t ? 'true' : 'false',
-      pick:()=>this.setState({ dtab:t, mapSel:null }),
+      pick:()=>{ if (t === 'Crew') this._crewKey = null; this.setState({ dtab:t, mapSel:null }); },
     }));
     const chipDefs = [['all','All upcoming'],['today','Today'],['weekend','This weekend'],['30','Next 30 days']];
     const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pressed: s.dchip===k ? 'true' : 'false', pick:()=>{ this.setState({ dchip:k, mapSel:null }); this.loadEvents(); } }));
@@ -2475,7 +2478,7 @@ class Component extends DCLogic {
     // show (native's zero-signal fallback). Crew = shows a friend is going to
     // or interested in.
     const followA = s.following || {}, followV = s.followingVenue || {};
-    const hasPicks = Object.keys(followA).length > 0 || Object.keys(followV).length > 0;
+    const hasPicks = Object.values(followA).some(Boolean) || Object.values(followV).some(Boolean); // unfollow writes false
     const tabPass = e => s.dtab === 'For You' ? (!hasPicks || !!followV[e.venue] || e.lineup.some(n=>followA[n]))
       : s.dtab === 'Crew' ? !!(s.crewIds && s.crewIds[e.id]) : true;
     const discoverSource = (genreActive ? events.filter(e=>e.genre===s.genre) : events).filter(facetPass).filter(tabPass);
@@ -2495,7 +2498,7 @@ class Component extends DCLogic {
     });
     const gridLabel = genreActive ? (s.genre+' shows') : dateChipLabel;
     const gridEmpty = discoverSource.length===0;
-    const tabEmpty = { 'For You': ['No picks yet', 'Follow a few artists and we’ll tune this to you.'], Crew: ['No crew plans yet', 'When friends mark Going, their shows land here.'] }[s.dtab] || null;
+    const tabEmpty = events.some(tabPass) ? null : { 'For You': ['No picks yet', 'Follow a few artists and we’ll tune this to you.'], Crew: ['No crew plans yet', 'When friends mark Going, their shows land here.'] }[s.dtab] || null;
 
     // ===== Discover map (design spec 04) =====
     // Same events as the list; pins only where coordinates exist. States in
@@ -2515,7 +2518,7 @@ class Component extends DCLogic {
     const mapCard = (e, onMap) => {
       const st = statusOf(e.id), n = (s.goingCounts || {})[e.id];
       return {
-        cls: selEv && e.id === selEv.id ? 'is-sel' : '', current: selEv && e.id === selEv.id ? 'true' : null,
+        key: 'mp-card-' + e.id, cls: selEv && e.id === selEv.id ? 'is-sel' : '', current: selEv && e.id === selEv.id ? 'true' : null,
         gradStyle: 'background-image:' + e.grad + ';background-size:cover;background-position:center;',
         dateShort: e.dateLong, title: e.title, venue: e.venue,
         price: DropMap ? DropMap.priceText(pinEv(e), fmtAmt) : '', going: n > 0 ? n + ' going' : '',
@@ -3331,7 +3334,7 @@ class Component extends DCLogic {
       viewMapCls: s.dview === 'map' ? 'is-active' : '', viewMapPressed: s.dview === 'map' ? 'true' : 'false',
       mapLabels: [['price', 'Price'], ['date', 'Date']].map(([k, label])=>({ label, cls: s.mapLabel === k ? 'is-active' : '', pressed: s.mapLabel === k ? 'true' : 'false', pick:()=>this.setState({ mapLabel:k }) })),
       mapAllCards: mapWarm ? discoverSource.slice(0, 50).map(e=>mapCard(e, false)) : [], mapTotalLabel: DropMap ? DropMap.countLabel(discoverSource.length) : '',
-      mapRail, mapCount: DropMap ? DropMap.countLabel(railSource.length) : '', mapRailHint: mapErrOn ? 'List still works' : 'In the map view',
+      mapRail, mapCount: DropMap ? DropMap.countLabel(railSource.length) : '', mapRailHint: (mapErrOn ? 'List still works' : 'In the map view') + (railSource.length > 50 ? ' · first 50 listed' : ''),
       mapNone: mapReady && !mapErrOn && !!inView && railSource.length === 0,
       mapPartial: mapReady && !mapErrOn && mapped.length < discoverSource.length,
       mapPartialText: 'Showing ' + mapped.length + ' of ' + discoverSource.length + ' shows with a map location.',
@@ -3757,8 +3760,8 @@ class Component extends DCLogic {
       mapZoomIn:()=>this._mapView && this._mapView.zoom(1),
       mapZoomStep:()=>this._mapView && this._mapView.zoom(-1),
       mapZoomOut:()=>this._mapView && this._mapView.zoomOut(),
-      mapRetry:()=>{ if (this._mapView) this._mapView.reset(); this._fitKey = null; this.setState({ mapErr:false }); },
-      mapSkip:(e)=>{ this.prevent(e); document.getElementById('mp-rail')?.focus(); },
+      mapRetry:()=>{ if (this._mapView) this._mapView.reset(); this._fitKey = null; this.setState({ mapErr:false }); if (this.state.eventsError) this.loadEvents(); },
+      mapSkip:(e)=>{ this.prevent(e); const rail = document.getElementById('mp-rail'); (rail && rail.offsetParent ? rail : document.querySelector('.mp-sheet__handle'))?.focus(); },
       mapKey:(e)=>{ if (e.key === 'Escape') { e.preventDefault(); document.getElementById('mp-view-map')?.focus(); } },
       mapSheetToggle:()=>this.setState(x=>({ mapSheet: !(x.mapSheet && !x.mapSel), mapSel: null })),
       // Location is asked only on this click, never on load; the fix stays in the browser.
