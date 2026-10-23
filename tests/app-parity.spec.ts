@@ -124,9 +124,8 @@ test.describe('D friends', () => {
     await open(page);
     await nav(page, isMobile, 'Crew');
     await expect(page.locator('.s3-people').getByText('Rave Friend')).toBeVisible(); // rows show city, not @handle (spec 03)
-    const profileQ = (await fakeCalls(page, 'from')).find((c: any) => c.table === 'profiles' && c.ops.some((o: any) => o[0] === 'in'));
-    expect(profileQ.ops.find((o: any) => o[0] === 'in')[1][0]).toBe('id');
-    expect([...profileQ.ops.find((o: any) => o[0] === 'in')[1][1]].sort()).toEqual([FRIEND_ID, PENDING_ID].sort());
+    // One server call returns both sides with the other person's card (blocked pairs dropped server-side).
+    expect((await fakeCalls(page, 'rpc')).filter((c: any) => c.name === 'list_my_friend_edges').length).toBeGreaterThan(0);
     await page.locator('.seg__item', { hasText:'Requests' }).click();
     await expect(page.locator('.s3-people').getByText('New Crew')).toBeVisible();
     await page.getByRole('button', { name:'Accept request from New Crew' }).click();
