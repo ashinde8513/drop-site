@@ -1,6 +1,10 @@
 # Spec 04: Discover map
 
-Status: prepared, awaiting design. Written 2026-10-19. Docs only, nothing built.
+Status: **built 2026-10-23** in `app/` (`app/map.js`, tests `tests/map.test.mjs` + `tests/app-map.spec.ts`) from the approved canvas boards "Spec 04 · Discover map" (canvas "Drop Website Rebuild — Recovered") and Arya's A51 decisions. Written 2026-10-19.
+
+- Provider: MapLibre GL JS 6.15.0 (BSD-3, self-hosted unmodified in `vendor/maplibre/`, lazy-loaded only on Map) + OpenFreeMap's dark style (`tiles.openfreemap.org`): no key, no account, $0; openfreemap.org FAQ "Is commercial usage allowed? Yes" (checked 2026-10-23). ToS: as-is, no SLA, may stop without notice — if it does, the map shows its error state and the list keeps working.
+- Data (read-only, 2026-10-23): 2,918 of 3,534 upcoming published events have coordinates (Denver 256 of 287), so "partial" is the common state.
+- For You / Crew filter list and map alike (A51): For You = followed artists or venues (no follows yet = every show, native's zero-signal fallback); Crew = shows an accepted friend is going to or interested in (native rule).
 
 ## Claude design project header
 - Project: **Drop Website** (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`)

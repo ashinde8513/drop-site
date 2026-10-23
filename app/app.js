@@ -422,6 +422,7 @@
     : null;
   var Drop = window.Drop || null; // from data.js — public event catalog + formatters
   var Offers = window.DropOffers || null; // from offers.js — seller matching + price rules (spec 01)
+  var DropMap = window.DropMap || null; // from map.js — Discover map (spec 04)
 
   function looksLikeEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
   function cleanUsername(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
@@ -841,6 +842,8 @@
       isFestival: !!ev.is_festival,
       endDate: ev.end_date || null,
       timezone: ev.timezone || null,
+      lat: ev.lat == null ? NaN : Number(ev.lat), lng: ev.lng == null ? NaN : Number(ev.lng),
+      priceMin: ev.price_min, priceMax: ev.price_max, currency: ev.currency || 'USD',
     };
   }
 
@@ -936,6 +939,8 @@ class Component extends DCLogic {
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
     alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null,
+    // discover map (spec 04)
+    dview: 'list', mapLabel: 'price', mapSel: null, mapInView: null, mapErr: false, mapGeo: 'idle', mapSheet: false, goingCounts: {}, crewIds: null,
     // pick artists / venues / crew / plans / wrapped
     artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
@@ -1265,7 +1270,39 @@ class Component extends DCLogic {
       this.setState(s=>({ eventSocial:{...s.eventSocial, [id]: going} }));
     });
   }
-  setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); this.syncOffers(); }
+  setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); this.syncOffers(); this.syncCrew(); }
+  // Crew tab: shows an accepted friend is going to or interested in (native rule). Re-runs when the friend set changes.
+  syncCrew(){
+    const st = this.state;
+    if (st.dtab !== 'Crew' || !st.authed || !st.userId || !supa) return;
+    const ids = this.acceptedFriendIds(), key = st.userId + ids.join();
+    if (this._crewKey === key) return;
+    this._crewKey = key;
+    if (!ids.length) { this.setState({ crewIds:{} }); return; }
+    supa.from('attendance').select('event_id').in('user_id', ids).in('status', ['going', 'interested']).then(({ data, error })=>{
+      if (this._crewKey !== key) return;
+      if (error) console.error('[app] crew shows load failed:', error.message);
+      const crewIds = {}; (data || []).forEach(r=>{ crewIds[r.event_id] = true; });
+      this.setState({ crewIds });
+    });
+  }
+  // Called after every render: the map element survives re-renders by moving into the new #mp-slot.
+  afterMount(){
+    const slot = document.getElementById('mp-slot'), d = this._mapData;
+    if (!slot || !d || !DropMap) return;
+    if (!this._mapView) this._mapView = DropMap.createMapView({
+      center: d.center,
+      onMove: (ids)=>{ if (this.state.dview !== 'map' || this.state.screen !== 'discover') return; if ((this.state.mapInView || []).join() !== ids.join() || !this.state.mapInView) this.setState({ mapInView: ids }); },
+      // Selecting a pin jumps the map just enough that the selected card never hides it.
+      onSelect: (id)=>{ const p = (this._pins || []).find(x=>x.id === id); this.setState({ mapSel: id, mapSheet: false }); if (p && this._mapView) this._mapView.reveal(p.lng, p.lat); },
+      onError: (e)=>{ console.error('[app] map failed:', e && e.message); this.setState({ mapErr: true }); },
+      onEscape: ()=>document.getElementById('mp-view-map')?.focus(),
+    });
+    this._mapView.attach(slot, d);
+    if (!this._mapLive) { this._mapLive = document.createElement('div'); this._mapLive.className = 'sr-only'; this._mapLive.setAttribute('aria-live', 'polite'); document.body.appendChild(this._mapLive); }
+    const count = document.getElementById('mp-rail-h')?.textContent || '';
+    if (this._mapLive.textContent !== count) this._mapLive.textContent = count;
+  }
   loadFriends(uid){
     if (!supa) return;
     supa.from('friendships').select('id,requester_id,recipient_id,status').or('requester_id.eq.'+uid+',recipient_id.eq.'+uid).then(({ data, error })=>{
@@ -2312,10 +2349,11 @@ class Component extends DCLogic {
     const rmDisplayName = (s.profile && (s.profile.display_name || s.profile.username)) || (s.userEmail ? s.userEmail.split('@')[0] : 'there');
 
     const tabList = ['Happening','For You','Crew'].map(t=>({
-      label:t, cls: s.dtab===t?'is-active':'', pick:()=>this.setState({dtab:t}),
+      label:t, cls: s.dtab===t?'is-active':'', pressed: s.dtab===t ? 'true' : 'false',
+      pick:()=>{ if (t === 'Crew') this._crewKey = null; this.setState({ dtab:t, mapSel:null }); },
     }));
     const chipDefs = [['all','All upcoming'],['today','Today'],['weekend','This weekend'],['30','Next 30 days']];
-    const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pick:()=>{ this.setState({dchip:k}); this.loadEvents(); } }));
+    const dateChips = chipDefs.map(([k,label])=>({ label, cls: s.dchip===k?'is-active':'', pressed: s.dchip===k ? 'true' : 'false', pick:()=>{ this.setState({ dchip:k, mapSel:null }); this.loadEvents(); } }));
     const dateChipLabel = ({all:'All upcoming',today:'Today',weekend:'This weekend','30':'Next 30 days'})[s.dchip];
 
     // City picker dropdown — filterable, scrollable catalog; picking a city
@@ -2435,7 +2473,15 @@ class Component extends DCLogic {
 
     // ===== Genre filter (discover) =====
     const genreActive = !!s.genre;
-    const discoverSource = (genreActive ? events.filter(e=>e.genre===s.genre) : events).filter(facetPass);
+    // Feed tabs filter the list and the map alike (A51). For You = shows by
+    // followed artists or at followed venues; with no follows yet it is every
+    // show (native's zero-signal fallback). Crew = shows a friend is going to
+    // or interested in.
+    const followA = s.following || {}, followV = s.followingVenue || {};
+    const hasPicks = Object.values(followA).some(Boolean) || Object.values(followV).some(Boolean); // unfollow writes false
+    const tabPass = e => s.dtab === 'For You' ? (!hasPicks || !!followV[e.venue] || e.lineup.some(n=>followA[n]))
+      : s.dtab === 'Crew' ? !!(s.crewIds && s.crewIds[e.id]) : true;
+    const discoverSource = (genreActive ? events.filter(e=>e.genre===s.genre) : events).filter(facetPass).filter(tabPass);
     // Tiles = every genre with a loaded show, busiest first. GENRES is only
     // the tint palette now; unknown genres get a stable hashed gradient.
     const genreCounts = {};
@@ -2452,6 +2498,52 @@ class Component extends DCLogic {
     });
     const gridLabel = genreActive ? (s.genre+' shows') : dateChipLabel;
     const gridEmpty = discoverSource.length===0;
+    const tabEmpty = events.some(tabPass) ? null : { 'For You': ['No picks yet', 'Follow a few artists and we’ll tune this to you.'], Crew: ['No crew plans yet', 'When friends mark Going, their shows land here.'] }[s.dtab] || null;
+
+    // ===== Discover map (design spec 04) =====
+    // Same events as the list; pins only where coordinates exist. States in
+    // precedence order: loading, error, warming up (nothing mapped), map.
+    const mapOn = s.screen === 'discover' && s.dview === 'map';
+    const fmtAmt = Offers ? Offers.formatAmount : (v=>'$' + v);
+    const pinEv = e => ({ title:e.title, venue_name:e.venue, date:e.date, timezone:e.timezone, price_min:e.priceMin, price_max:e.priceMax, currency:e.currency });
+    const mapped = discoverSource.filter(e=>isFinite(e.lat) && isFinite(e.lng));
+    const mapLoading = mapOn && (s.loading || s.eventsLoading);
+    const mapWarm = mapOn && !mapLoading && !s.eventsError && !s.mapErr && mapped.length === 0;
+    const mapReady = mapOn && !mapLoading && !mapWarm;
+    const mapErrOn = mapReady && (!!s.mapErr || !!s.eventsError);
+    const inView = s.mapInView ? new Set(s.mapInView) : null;
+    const railSource = mapErrOn ? discoverSource : mapped.filter(e=>!inView || inView.has(e.id));
+    const selEv = mapped.find(e=>e.id === s.mapSel) || null;
+    const statusOf = id => s.rsvp[id] === 'going' ? 'going' : s.rsvp[id] === 'interested' ? 'interested' : null;
+    const mapCard = (e, onMap) => {
+      const st = statusOf(e.id), n = (s.goingCounts || {})[e.id];
+      return {
+        key: 'mp-card-' + e.id, cls: selEv && e.id === selEv.id ? 'is-sel' : '', current: selEv && e.id === selEv.id ? 'true' : null,
+        gradStyle: 'background-image:' + e.grad + ';background-size:cover;background-position:center;',
+        dateShort: e.dateLong, title: e.title, venue: e.venue,
+        price: DropMap ? DropMap.priceText(pinEv(e), fmtAmt) : '', going: n > 0 ? n + ' going' : '',
+        badge: st === 'going' ? 'Going' : st === 'interested' ? 'Interested' : '', badgeCls: st === 'going' ? 'mp-badge--going' : 'mp-badge--int',
+        badgePath: st === 'going' ? 'M5 12l5 5 9-10' : 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
+        pick: (ev)=>{ this.prevent(ev); if (!onMap) { e.open(ev); return; } this.setState({ mapSel: e.id }); if (this._mapView) this._mapView.reveal(e.lng, e.lat); },
+      };
+    };
+    // ponytail: rail renders the first 50 by date; the heading keeps the full count.
+    const mapRail = mapReady ? railSource.slice(0, 50).map(e=>mapCard(e, !mapErrOn)) : [];
+    this._mapData = null; // afterMount attaches the map only when this is set
+    if (mapReady && !mapErrOn && mapped.length && DropMap) {
+      const pins = mapped.map(e=>({ id:e.id, lat:e.lat, lng:e.lng, status:statusOf(e.id), label:DropMap.pinLabel(pinEv(e), s.mapLabel, fmtAmt), name:DropMap.pinName(pinEv(e), statusOf(e.id), fmtAmt) }));
+      const pinKey = pins.map(p=>p.id + p.status + p.label).join();
+      const fitKey = s.city + '|' + pins.map(p=>p.id).join();
+      if (pinKey !== this._pinKey) { this._pinKey = pinKey; this._pins = pins; }
+      this._mapData = { pins: this._pins, selectedId: selEv ? selEv.id : null, fit: fitKey !== this._fitKey, center: [mapped[0].lng, mapped[0].lat] };
+      this._fitKey = fitKey;
+      // Going counts for the rail (one batched RPC; failure just hides "N going").
+      const want = mapped.map(e=>e.id).filter(id=>!(id in (s.goingCounts || {})));
+      if (want.length && Drop && this._goingAsk !== want.join()) {
+        this._goingAsk = want.join();
+        Drop.fetchGoingCounts(want).then(m=>this.setState(x=>({ goingCounts: { ...Object.fromEntries(want.map(id=>[id, 0])), ...x.goingCounts, ...m } })));
+      }
+    }
 
     // Discover pagination (design: 24/page client pager over the loaded set)
     const PAGE = 24;
@@ -3234,6 +3326,26 @@ class Component extends DCLogic {
       verifyEmail: s.verifyEmail || 'your email', verifyMessage: s.verifyMessage,
       city: s.city, cityOpen: s.cityOpen, cityExpanded: s.cityOpen ? 'true' : 'false', cityFilter: s.cityFilter, cityList, cityFilterEmpty, menuOpen: s.menuOpen, menuItems, navOpen: s.navOpen, mobileMenu,
       events, genres, discoverEvents, discShowPager, discPageLabel, discPrevDisabled, discNextDisabled, genreActive, gridLabel, gridEmpty, genreName: s.genre,
+      gridEmptyTab: gridEmpty && !!tabEmpty, gridEmptyCity: gridEmpty && !tabEmpty, gridEmptyTitle: tabEmpty ? tabEmpty[0] : '', gridEmptyBody: tabEmpty ? tabEmpty[1] : '', gridEmptyPicks: s.dtab === 'For You',
+      // discover map (spec 04)
+      listOn: s.dview !== 'map', mapOn, mapOnCls: mapOn ? 'mp-on' : '', cityName: (s.city || '').split(',')[0], mapLoading, mapWarm, mapReady, mapErr: mapErrOn, mapCanvas: mapReady && !mapErrOn,
+      mapSkel: [1, 2, 3],
+      viewListCls: s.dview !== 'map' ? 'is-active' : '', viewListPressed: s.dview !== 'map' ? 'true' : 'false',
+      viewMapCls: s.dview === 'map' ? 'is-active' : '', viewMapPressed: s.dview === 'map' ? 'true' : 'false',
+      mapLabels: [['price', 'Price'], ['date', 'Date']].map(([k, label])=>({ label, cls: s.mapLabel === k ? 'is-active' : '', pressed: s.mapLabel === k ? 'true' : 'false', pick:()=>this.setState({ mapLabel:k }) })),
+      mapAllCards: mapWarm ? discoverSource.slice(0, 50).map(e=>mapCard(e, false)) : [], mapTotalLabel: DropMap ? DropMap.countLabel(discoverSource.length) : '',
+      mapRail, mapCount: DropMap ? DropMap.countLabel(railSource.length) : '', mapRailHint: (mapErrOn ? 'List still works' : 'In the map view') + (railSource.length > 50 ? ' · first 50 listed' : ''),
+      mapNone: mapReady && !mapErrOn && !!inView && railSource.length === 0,
+      mapPartial: mapReady && !mapErrOn && mapped.length < discoverSource.length,
+      mapPartialText: 'Showing ' + mapped.length + ' of ' + discoverSource.length + ' shows with a map location.',
+      mapAria: 'Map of shows in ' + ((s.city || '').split(',')[0] || 'your area') + '. ' + (DropMap ? DropMap.countLabel(railSource.length) : '') + '. The list has the same shows.',
+      mapGeoOff: mapReady && s.mapGeo === 'denied', mapNearCls: s.mapGeo === 'denied' ? 'is-off' : '', mapNearLabel: s.mapGeo === 'pending' ? 'Locating…' : 'Near me',
+      mapHasSel: mapReady && !!selEv,
+      mapSel: selEv ? { ...mapCard(selEv, true), open:(ev)=>selEv.open(ev) } : {},
+      mapSelCards: selEv ? [mapCard(selEv, true)] : [],
+      mapSheetList: mapReady && !selEv && s.mapSheet, mapSheetExpanded: s.mapSheet && !selEv ? 'true' : 'false',
+      mapSheetHandleLabel: s.mapSheet && !selEv ? 'Collapse shows list' : 'Expand shows list',
+      mapSheetCls: selEv || s.mapSheet ? 'is-open' : '',
       homeEmpty: !s.eventsLoading && events.length===0,
       eventsLoading: s.eventsLoading, eventsError: s.eventsError,
       tabs: tabList, dateChips, dateChipLabel,
@@ -3643,6 +3755,24 @@ class Component extends DCLogic {
       // City picker (design round 4) — filter/type + "Back to Denver"
       discPrev:(e)=>{ this.prevent(e); this.setState(st=>({discPage: Math.max(0, st.discPage-1)})); },
       discNext:(e)=>{ this.prevent(e); this.setState(st=>({discPage: st.discPage+1})); },
+      viewList:()=>{ this.setState({ dview:'list' }); },
+      viewMap:()=>{ this.setState({ dview:'map' }); },
+      mapZoomIn:()=>this._mapView && this._mapView.zoom(1),
+      mapZoomStep:()=>this._mapView && this._mapView.zoom(-1),
+      mapZoomOut:()=>this._mapView && this._mapView.zoomOut(),
+      mapRetry:()=>{ if (this._mapView) this._mapView.reset(); this._fitKey = null; this.setState({ mapErr:false }); if (this.state.eventsError) this.loadEvents(); },
+      mapSkip:(e)=>{ this.prevent(e); const rail = document.getElementById('mp-rail'); (rail && rail.offsetParent ? rail : document.querySelector('.mp-sheet__handle'))?.focus(); },
+      mapKey:(e)=>{ if (e.key === 'Escape') { e.preventDefault(); document.getElementById('mp-view-map')?.focus(); } },
+      mapSheetToggle:()=>this.setState(x=>({ mapSheet: !(x.mapSheet && !x.mapSel), mapSel: null })),
+      // Location is asked only on this click, never on load; the fix stays in the browser.
+      mapNearMe:()=>{
+        if (!navigator.geolocation) { this.setState({ mapGeo:'denied' }); return; }
+        this.setState({ mapGeo:'pending' });
+        navigator.geolocation.getCurrentPosition(
+          (p)=>{ this.setState({ mapGeo:'active' }); if (this._mapView) this._mapView.centerOn(p.coords.longitude, p.coords.latitude, 12); },
+          ()=>this.setState({ mapGeo:'denied' }), { timeout:10000, maximumAge:600000 });
+      },
+      mapPickCity:(e)=>{ this.prevent(e); this.setState({ cityOpen:true }); queueMicrotask(()=>document.getElementById('city-filter')?.focus()); },
       cityToDenver:(e)=>{ this.prevent(e); this.setState({city:'Denver, CO', cityOpen:false, cityFilter:''}); this.loadEvents(); },
       setCityFilter:(e)=>this.setState({cityFilter:e.target.value}),
       cityKey:(e)=>{ if(e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); const qq=(this.state.cityFilter||'').trim().toLowerCase(); if(!qq) return; const m=this.CITIES.find(c=>c.label.toLowerCase()===qq) || this.CITIES.find(c=>c.label.toLowerCase().includes(qq)) || this.CITIES.find(c=>stateName(c.state).toLowerCase().includes(qq)); this.setState({city: m?m.label:this.state.cityFilter.trim(), cityOpen:false, cityFilter:''}); this.loadEvents(); queueMicrotask(()=>document.getElementById('city-toggle')?.focus()); } },
@@ -3901,7 +4031,11 @@ class Component extends DCLogic {
         const preserveAuthInputs = instance.state.screen === renderedScreen
           && instance.state.authed === renderedAuthed
           && instance.state.userId === renderedUserId;
+        const kept = document.activeElement;
         mount(container, render, instance.renderVals(), preserveAuthInputs);
+        instance.afterMount();
+        // An element that survives the render (a map pin) keeps focus.
+        if (kept && kept !== document.body && kept.isConnected && document.activeElement !== kept) kept.focus({ preventScroll:true });
         renderedScreen = instance.state.screen;
         renderedAuthed = instance.state.authed;
         renderedUserId = instance.state.userId;
@@ -3909,6 +4043,7 @@ class Component extends DCLogic {
       });
     };
     mount(container, render, instance.renderVals());
+    instance.afterMount();
     wireGenreRail();
 
     // PHASE 1: real events + session check, run once after first mount.
