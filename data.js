@@ -297,22 +297,22 @@
 
   Drop.fetchArtist = function (id) {
     var artistP = get('artists?' + q({ select: 'id,name,genres,image_url,merch_url,website_url,verified', id: 'eq.' + id, limit: 1 }));
-    // Events for this artist, upcoming. `!inner` on the join table makes the
-    // filter an actual server-side narrowing of parent rows (plain
-    // `event_artists.artists.id=eq.X` only narrows the embed, not which
-    // events come back — otherwise real shows can be silently truncated by
-    // unrelated events earlier in the site-wide result set).
-    var evP = get('events?' + q({
-      select: EVENT_COLS + ',event_artists!inner(artists(id,name,genres,image_url))',
-      status: 'eq.published',
-      date: 'gte.' + todayISO(),
-      order: 'date.asc',
-      'event_artists.artist_id': 'eq.' + id,
+    // Upcoming events for this artist, starting from its event_artists rows
+    // (indexed on artist_id) — the events-first `!inner` shape probed every
+    // upcoming event (mirrors src/entity-seo.mjs getArtist). The nested embed
+    // still carries only this artist.
+    var evP = get('event_artists?' + q({
+      select: 'events!inner(' + EVENT_COLS + ',event_artists(artists(id,name,genres,image_url)))',
+      artist_id: 'eq.' + id,
+      'events.status': 'eq.published',
+      'events.date': 'gte.' + todayISO(),
+      'events.event_artists.artist_id': 'eq.' + id,
+      order: 'events(date).asc,events(id).asc',
       limit: 1000
     }));
     return Promise.all([artistP, evP]).then(function (r) {
       if (!r[0] || !r[0].length) throw new Error('not found');
-      return { artist: r[0][0], events: r[1] };
+      return { artist: r[0][0], events: (r[1] || []).map(function (link) { return link.events; }) };
     });
   };
 

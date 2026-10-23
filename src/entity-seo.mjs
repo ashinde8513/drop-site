@@ -185,19 +185,24 @@ export async function getVenue(id) {
   };
 }
 
+// Start from the artist's event_artists rows (index on artist_id) and embed the
+// events: the events-first `event_artists!inner` shape probed every upcoming event
+// (perf audit 2026-10-23 P3: 157 ms mean, #2 by DB time; this shape ~8.5 ms).
+// Output is the same rows; the nested embed still carries only this artist.
 export async function getArtist(id) {
-  const [artists, events] = await Promise.all([
+  const [artists, links] = await Promise.all([
     rest('artists', { select: 'id,name,genres,image_url,website_url,verified', id: 'eq.' + id, limit: 1 }),
-    rest('events', {
-      select: EVENT_SELECT.replace('event_artists(', 'event_artists!inner('),
-      status: 'eq.published',
-      or: upcomingFilter(),
-      'event_artists.artist_id': 'eq.' + id,
-      order: 'date.asc',
+    rest('event_artists', {
+      select: 'events!inner(' + EVENT_SELECT + ')',
+      artist_id: 'eq.' + id,
+      'events.status': 'eq.published',
+      'events.or': upcomingFilter(),
+      'events.event_artists.artist_id': 'eq.' + id,
+      order: 'events(date).asc,events(id).asc',
       limit: 1000,
     }),
   ]);
-  return artists.length ? { artist: artists[0], events } : null;
+  return artists.length ? { artist: artists[0], events: links.map((link) => link.events) } : null;
 }
 
 export function indexableEntities(rows) {
