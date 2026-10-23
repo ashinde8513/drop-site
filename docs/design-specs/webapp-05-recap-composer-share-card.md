@@ -1,6 +1,10 @@
 # Spec 05: Recap composer and share card
 
-Status: prepared, awaiting design. Written 2026-10-19. Docs only, nothing built.
+Status: **composer built 2026-10-23** in `app/` (`app/recap.js`, tests `tests/recap.test.mjs` + `tests/app-recap.spec.ts`) from the approved canvas boards "Spec 05 · Recap composer" and Arya's A52 decisions (photos stay on the device; sharing needs at least 1 photo). Written 2026-10-19.
+
+- Storage mode (a) only: no bucket, no upload; the PNG is drawn on a canvas in the browser (EXIF dropped). Option B frames stay unbuilt.
+- Read-only checks 2026-10-23: `recap_posts` has a UNIQUE (user_id, event_id) and insert/update-own policies, so the upsert after a share/save works for the web client; `attendance` insert/update-own allow the gate's "Yes, I was there".
+- Public share page (`share-recap.html`, ?r=<id> resolver) is **not** in this change: it needs a new SECURITY DEFINER RPC (production migration) and the page is another lane's scope; asked via the coordinator. The in-app "Shared recap" mock (fake "A night out" copy) is retired.
 
 ## Claude design project header
 - Project: **Drop Website** (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`)
