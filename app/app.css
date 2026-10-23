@@ -804,7 +804,7 @@ image-slot::before { content: attr(placeholder); }
 .s3-inl .tk-ico { color: var(--danger); flex: 0 0 auto; }
 .s3-inl span { flex: 1; min-width: 0; }
 .s3-card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-lg); display: flex; flex-direction: column; gap: var(--sp-sm); align-items: flex-start; }
-.s3-pcard .s3-menuwrap { position: absolute; top: var(--sp-md); right: var(--sp-md); }
+.s3-pcard .s3-menuwrap:not(.s3-relwrap) { position: absolute; top: var(--sp-md); right: var(--sp-md); }
 .s3-pname { margin: var(--sp-sm) 0 0; font: 700 var(--fs-xl)/1.15 var(--font-display); letter-spacing: var(--tr-snug); }
 .s3-puser { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); }
 .s3-bio { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); line-height: var(--lh-base); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
@@ -846,7 +846,7 @@ image-slot::before { content: attr(placeholder); }
   .s3-phone { display: inline-flex !important; }
   .s3-phone-only { display: inline-flex !important; }
   .s3-tabs { display: flex; width: 100%; align-self: stretch; }
-  .s3-tabs .seg__item { flex: 1; display: inline-flex; align-items: center; justify-content: center; }
+  .s3-tabs .seg__item { flex: 1 1 0; min-width: 0; padding: 0 var(--sp-sm); display: inline-flex; align-items: center; justify-content: center; }
   /* tabs sit above Find; the Find tab hides everything else in the right column */
   .s3-people { order: -1; }
   .s3-find:not(.is-tab) { display: none; }
@@ -916,7 +916,7 @@ image-slot::before { content: attr(placeholder); }
 @media (max-width: 720px) {
   /* phone plan: compact header, RSVP on top, members collapse, chat fills the rest with the composer pinned */
   .s3-page--plan { height: calc(100dvh - var(--s3-nav-h, 65px)); padding-bottom: 0; gap: var(--sp-md); overflow-y: auto; }
-  .s3-cols--plan { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--sp-md); }
+  .s3-cols--plan { display: flex; flex-direction: column; align-items: stretch; flex: 1; min-height: 0; gap: var(--sp-md); }
   .s3-cols--plan > .s3-col { gap: var(--sp-md); }
   .s3-desk { display: none !important; }
   .s3-phone-flex { display: flex !important; }
