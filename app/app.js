@@ -423,6 +423,9 @@
   var Drop = window.Drop || null; // from data.js — public event catalog + formatters
   var Offers = window.DropOffers || null; // from offers.js — seller matching + price rules (spec 01)
   var DropMap = window.DropMap || null; // from map.js — Discover map (spec 04)
+  var Recap = window.DropRecap || null; // from recap.js — recap card (spec 05)
+  // One check per page: can this browser share a PNG file (else Save image is the primary)?
+  var CAN_SHARE_FILES = (function () { try { return !!(navigator.canShare && navigator.canShare({ files:[new File([''], 'x.png', { type:'image/png' })] })); } catch (e) { return false; } })();
 
   function looksLikeEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
   function cleanUsername(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
@@ -953,7 +956,8 @@ class Component extends DCLogic {
     logArtist: '', logVenue: '', logCity: '', logState: '', logDate: '',
     loggedShows: [],
     // memories / recap
-    recapWasThere: null, recapPhotos: {},
+    // recap composer (spec 05): photos are in-memory object URLs only (A52)
+    recapEvent: null, rcGateBusy: false, rcGateErr: false, rcPhotos: [], rcRating: 0, rcAltFor: null, rcFileErr: '', rcBusy: false, rcRenderErr: false,
     tagActioned: {},
     // drop+
     plusPlan: 'annual',
@@ -1099,6 +1103,7 @@ class Component extends DCLogic {
   }
 
   go(s){
+    if (this.state.screen === 'recap' && s !== 'recap') { (this.state.rcPhotos || []).forEach(p=>p.url && URL.revokeObjectURL(p.url)); this.setState({ rcPhotos:[] }); }
     // Authed users never land on the marketing hero — Discover is the
     // logged-in main (design contract; hero is a signed-out surface).
     if (s === 'home' && this.state.authed) s = 'discover';
@@ -1271,6 +1276,78 @@ class Component extends DCLogic {
     });
   }
   setState(update, cb){ super.setState(update, cb); this.syncEventSocial(); this.syncOffers(); this.syncCrew(); }
+  // ===== Recap composer (spec 05) — photos never leave the browser (A52) =====
+  openRecap(ev){
+    (this.state.rcPhotos || []).forEach(p=>p.url && URL.revokeObjectURL(p.url));
+    this.setState({ screen:'recap', recapEvent:{ id:ev.id, title:ev.title, venue_name:ev.venue_name, date:ev.date, timezone:ev.timezone || null },
+      rcGateBusy:false, rcGateErr:false, rcPhotos:[], rcRating:0, rcAltFor:null, rcFileErr:'', rcBusy:false, rcRenderErr:false });
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  }
+  // "Yes, I was there": record attendance (own row, RLS write-own), then open the composer.
+  rcConfirmAttended(){
+    const ev = this.state.recapEvent, uid = this.state.userId;
+    if (!ev || !supa || !uid || this.state.rcGateBusy) return;
+    this.setState({ rcGateBusy:true, rcGateErr:false });
+    supa.from('attendance').upsert({ user_id:uid, event_id:ev.id, status:'attended' }, { onConflict:'user_id,event_id' }).then(({ error })=>{
+      const here = (this.state.recapEvent || {}).id === ev.id; // a late answer for another show changes only its rsvp
+      if (error) { console.error('[app] attendance save failed:', error.message); if (here) this.setState({ rcGateBusy:false, rcGateErr:true }); return; }
+      this.setState(x=>({ rcGateBusy: here ? false : x.rcGateBusy, rsvp:{ ...x.rsvp, [ev.id]:'attended' } }));
+    });
+  }
+  rcAddFiles(files){
+    if (!Recap) return;
+    let room = Recap.MAX_PHOTOS - this.state.rcPhotos.length, err = '';
+    files.forEach(f=>{
+      if (room <= 0) return;
+      const bad = Recap.fileError(f);
+      if (bad) { err = bad; return; }
+      room--;
+      const key = 'p' + (this._rcSeq = (this._rcSeq || 0) + 1);
+      this.setState(x=>({ rcPhotos:[...x.rcPhotos, { key, loading:true, alt:'' }] }));
+      const ready = /^video\//.test(f.type) ? Recap.videoStill(f).then(url=>({ url, kind:'video' }))
+        : new Promise((res, rej)=>{ const url = URL.createObjectURL(f), img = new Image(); img.onload = ()=>res({ url, kind:'image' }); img.onerror = ()=>{ URL.revokeObjectURL(url); rej(new Error('decode')); }; img.src = url; });
+      ready.then(({ url, kind })=>{
+        if (!this.state.rcPhotos.some(p=>p.key === key)) { URL.revokeObjectURL(url); return; } // removed while decoding
+        this.setState(x=>({ rcPhotos: x.rcPhotos.map(p=>p.key === key ? { key, url, kind, alt:'' } : p), rcAltFor:key }));
+      }, ()=>{ if (this.state.rcPhotos.some(p=>p.key === key)) this.setState(x=>({ rcPhotos: x.rcPhotos.filter(p=>p.key !== key), rcFileErr: Recap.FILE_ERROR })); });
+    });
+    this.setState({ rcFileErr: err });
+  }
+  rcRemove(key){
+    const p = this.state.rcPhotos.find(x=>x.key === key);
+    if (p && p.url) URL.revokeObjectURL(p.url);
+    this.setState(x=>({ rcPhotos: x.rcPhotos.filter(q=>q.key !== key), rcAltFor: x.rcAltFor === key ? null : x.rcAltFor }));
+    queueMicrotask(()=>document.querySelector('.rc-slot')?.focus());
+  }
+  // Render the 1080×1920 PNG, then share it (where the browser can share files) or save it.
+  rcExport(mode){
+    const s = this.state, ev = s.recapEvent, photos = s.rcPhotos.filter(p=>p.url);
+    if (!ev || !photos.length || s.rcBusy || !Recap) return;
+    this.setState({ rcBusy:true, rcRenderErr:false });
+    const date = ev.date ? new Date(ev.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', timeZone: ev.timezone || undefined }) : '';
+    Recap.renderCard({ artist:ev.title || 'Your show', meta:Recap.metaLine(ev.venue_name, date), rating:s.rcRating, urls:photos.map(p=>p.url) }).then(blob=>{
+      const name = 'drop-recap-' + Recap.slug(ev.title) + '.png';
+      const file = new File([blob], name, { type:'image/png' });
+      const save = ()=>{
+        const url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 4000);
+        this.flash('Card saved.');
+      };
+      const done = ()=>{
+        this.setState({ rcBusy:false });
+        // Feeds the crew activity feed like native; after success only, never blocking.
+        if (supa && s.userId) supa.from('recap_posts').upsert({ user_id:s.userId, event_id:ev.id }, { onConflict:'user_id,event_id' }).then(({ error })=>{ if (error) console.error('[app] recap_posts upsert failed:', error.message); });
+      };
+      if (mode === 'share' && CAN_SHARE_FILES) {
+        return navigator.share({ files:[file], title:(ev.title || 'My night') + ' on Drop' }).then(done, (e)=>{
+          if (e && e.name === 'AbortError') { this.setState({ rcBusy:false }); return; }
+          save(); done(); // e.g. NotAllowedError after the async render: the card still lands on the device
+        });
+      }
+      save(); done();
+    }).catch(e=>{ console.error('[app] recap render failed:', e && e.message); this.setState({ rcBusy:false, rcRenderErr:true }); });
+  }
   // Crew tab: shows an accepted friend is going to or interested in (native rule). Re-runs when the friend set changes.
   syncCrew(){
     const st = this.state;
@@ -1287,7 +1364,14 @@ class Component extends DCLogic {
     });
   }
   // Called after every render: the map element survives re-renders by moving into the new #mp-slot.
+  // One live region outside the rebuilt tree; text set here is announced reliably.
+  announce(text){
+    if (!this._live) { this._live = document.createElement('div'); this._live.className = 'sr-only'; this._live.setAttribute('aria-live', 'polite'); document.body.appendChild(this._live); }
+    if (this._live.textContent !== text) this._live.textContent = text;
+  }
   afterMount(){
+    if (this.state.screen === 'recap') this.announce(this.state.rcBusy ? 'Making your card...' : (document.querySelector('.rc-count')?.textContent || ''));
+    if (typeof document !== 'undefined') document.documentElement.classList.toggle('rc-on', this.state.screen === 'recap');
     const slot = document.getElementById('mp-slot'), d = this._mapData;
     if (!slot || !d || !DropMap) return;
     if (!this._mapView) this._mapView = DropMap.createMapView({
@@ -1660,7 +1744,7 @@ class Component extends DCLogic {
   loadLoggedShows(uid){
     if (!supa) return;
     supa.from('logged_shows')
-      .select('artist_name,venue_name,city,state,show_date')
+      .select('artist_name,venue_name,city,state,show_date,event_id')
       .eq('user_id', uid)
       .order('show_date', { ascending:false })
       .limit(200)
@@ -2874,6 +2958,7 @@ class Component extends DCLogic {
           gradStyle: 'background-image:'+gradFor(ev.id||'past'),
           attended, notAttended: !attended,
           markAttended:()=>this.markAttended(ev.id),
+          makeRecap:()=>this.openRecap(ev),
           rateLabel: r>0 ? 'You rated '+r+'★' : 'Rate this show',
           stars: [1,2,3,4,5].map(n=>({ glyph: n<=r?'★':'☆', color: n<=r+0.5?'var(--gold)':'var(--text-secondary)', label:'Rate '+n+' star'+(n===1?'':'s'), set:()=>{ if(!this.state.authed){ this.openGate('Log in to rate shows'); return; } this.rateShow(ev.id, n); } })),
         };
@@ -3086,15 +3171,50 @@ class Component extends DCLogic {
     const memorySlots = [1,2,3,4,5,6].map(n=>({ id:'mem-'+n }));
 
     // ===== Recap =====
-    const recapGate = s.recapWasThere !== true;
-    const recapBuild = s.recapWasThere === true;
-    const recapChosen = Object.keys(s.recapPhotos).filter(k=>s.recapPhotos[k]).length;
-    const recapSlots = [1,2,3,4].map(n=>({ id:'recap-'+n, n }));
-    const recapPreviewCells = [1,2,3,4].map(n=>({ id:'recap-'+n, bg:'background:rgba(255,255,255,0.06);' }));
-    const recapLast = wrappedPastRows.slice().sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    const recapCardTitle = recapLast ? (recapLast.title || 'Your show') : 'Your recap';
-    const recapCardMeta = recapLast ? [recapLast.venue_name, (Drop && Drop.fmtDate(recapLast.date, true)) || ''].filter(Boolean).join(' · ') : 'Log a show to fill this card';
-    const recapCountLabel = 'Drag photos into the four slots — they fill the recap card on the right.';
+    // ===== Recap composer (design spec 05) =====
+    // The show comes from the route (recapEvent), never "latest past show".
+    const rcEv = s.recapEvent || {};
+    const rcAttended = !!rcEv.id && (s.rsvp[rcEv.id] === 'attended' || (s.loggedShows || []).some(l=>l.event_id === rcEv.id));
+    const rcGate = !!rcEv.id && !rcAttended;
+    const rcPhotos = s.rcPhotos || [];
+    const rcReady = rcPhotos.filter(p=>!p.loading);
+    const rcDateLong = rcEv.date ? new Date(rcEv.date).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric', timeZone: rcEv.timezone || undefined }) : '';
+    const rcDateCard = rcEv.date ? new Date(rcEv.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', timeZone: rcEv.timezone || undefined }) : '';
+    const rcMeta = Recap ? Recap.metaLine(rcEv.venue_name, rcDateCard) : '';
+    const rcMove = (i, d)=>{
+      const next = rcPhotos.slice(), [p] = next.splice(i, 1); next.splice(i + d, 0, p);
+      this.setState({ rcPhotos: next, rcAltFor: p.key });
+      queueMicrotask(()=>document.querySelector('[data-bind-key="rc-' + (d < 0 ? 'l' : 'r') + '-' + p.key + '"]:not([disabled])')?.focus()
+        || document.querySelector('[data-bind-key="rc-' + (d < 0 ? 'r' : 'l') + '-' + p.key + '"]')?.focus());
+    };
+    const rcTiles = [0, 1, 2, 3].map(i=>{
+      const p = rcPhotos[i], n = i + 1;
+      if (!p) return { empty:true, key:'rc-add-' + n, addLabel:'Add photo ' + n, add:()=>document.getElementById('rc-file')?.click() };
+      if (p.loading) return { loading:true };
+      return {
+        filled:true, url:p.url, alt:p.alt || '', video:p.kind === 'video', cls: s.rcAltFor === p.key ? 'is-focus' : '',
+        rmKey:'rc-x-' + p.key, rmLabel:'Remove photo ' + n, remove:()=>this.rcRemove(p.key),
+        leftKey:'rc-l-' + p.key, rightKey:'rc-r-' + p.key, leftLabel:'Move photo ' + n + ' left', rightLabel:'Move photo ' + n + ' right',
+        first: i === 0, last: i === rcReady.length - 1, left:()=>rcMove(i, -1), right:()=>rcMove(i, 1),
+        // Keyboard focus only: a mouse press re-rendering here would swallow its own click.
+        focus:(e)=>{ if (e.target.matches && !e.target.matches(':focus-visible')) return; if (this.state.rcAltFor !== p.key) this.setState({ rcAltFor: p.key }); },
+      };
+    });
+    const rcAltPhoto = rcReady.find(p=>p.key === s.rcAltFor) || null;
+    const rcStarsVm = [1, 2, 3, 4, 5].map(n=>({
+      id:'rc-star-' + n, label: n + (n === 1 ? ' star' : ' stars'), glyph: n <= s.rcRating ? '★' : '☆',
+      checked: s.rcRating === n ? 'true' : 'false', tabindex: (s.rcRating || 1) === n ? '0' : '-1',
+      pick:()=>this.setState({ rcRating:n }),
+      key:(e)=>{
+        const d = { ArrowRight:1, ArrowUp:1, ArrowLeft:-1, ArrowDown:-1 }[e.key];
+        if (!d) return;
+        e.preventDefault();
+        const next = Math.min(5, Math.max(1, (s.rcRating || n) + d));
+        this.setState({ rcRating:next }); queueMicrotask(()=>document.getElementById('rc-star-' + next)?.focus());
+      },
+    }));
+    const rcOff = rcReady.length === 0 || s.rcBusy || rcPhotos.some(p=>p.loading);
+    const rcCanShare = CAN_SHARE_FILES;
 
     // ===== Seen history =====
     const seenByYear = new Map();
@@ -3262,7 +3382,7 @@ class Component extends DCLogic {
     const signupBars = this.ADMIN_SIGNUPS.map(v=>({ h:(v/maxSignup*100)+'%', value:v+' signups' }));
 
     return {
-      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharerecap' && s.screen!=='sharewrapped' && s.screen!=='claim',
+      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharewrapped' && s.screen!=='claim',
       screenHome: s.screen==='home', screenLogin: s.screen==='login', screenSignup: s.screen==='signup',
       screenDiscover: s.screen==='discover', screenEvent: s.screen==='event',
       screenSearch: s.screen==='search', screenFestival: s.screen==='festival', screenActivation: s.screen==='activation',
@@ -3281,7 +3401,7 @@ class Component extends DCLogic {
       screen404: s.screen==='e404', screenLink: s.screen==='link',
       screenAbout: s.screen==='about', screenGetApp: s.screen==='getapp', screenPromoters: s.screen==='promoters',
       screenCity: s.screen==='city', screenGenre: s.screen==='genre',
-      screenSharePlan: s.screen==='shareplan', screenShareRecap: s.screen==='sharerecap', screenShareWrapped: s.screen==='sharewrapped',
+      screenSharePlan: s.screen==='shareplan', screenShareWrapped: s.screen==='sharewrapped',
       screenTaste: s.screen==='taste', screenSuggest: s.screen==='suggest', screenError: s.screen==='error',
       screenPromoter: s.screen==='promoter', screenPromoManage: s.screen==='promomanage', screenAdmin: s.screen==='admin',
       isPromoter: s.isPromoter, notPromoter: !s.isPromoter,
@@ -3460,7 +3580,20 @@ class Component extends DCLogic {
       logArtist: s.logArtist, logVenue: s.logVenue, logCity: s.logCity, logState: s.logState, logDate: s.logDate,
       // memories / recap / seen / tagged
       memorySlots,
-      recapGate, recapBuild, recapSlots, recapPreviewCells, recapCountLabel, recapCardTitle, recapCardMeta,
+      rcGate, rcBuild: !!rcEv.id && !rcGate, rcArtist: rcEv.title || '', rcVenue: rcEv.venue_name || '', rcDateLong, rcMeta,
+      rcGrad: 'background-image:' + gradFor(rcEv.id || 'recap'),
+      rcGateBusy: s.rcGateBusy ? 'true' : null, rcGateBusyCls: s.rcGateBusy ? 'is-loading' : '', rcGateErr: s.rcGateErr, rcYesLabel: s.rcGateBusy ? 'Saving…' : 'Yes, I was there',
+      rcCountLabel: rcReady.length + ' of 4 added', rcTiles, rcHasVideo: rcReady.some(p=>p.kind === 'video'),
+      rcFileErr: !!s.rcFileErr, rcFileErrText: s.rcFileErr,
+      rcAltOn: !!rcAltPhoto, rcAltLabel: rcAltPhoto ? 'Describe photo ' + (rcReady.indexOf(rcAltPhoto) + 1) + ' (optional)' : '', rcAltValue: rcAltPhoto ? rcAltPhoto.alt : '',
+      rcStars: rcStarsVm, rcRated: s.rcRating > 0, rcRateText: s.rcRating > 0 ? s.rcRating + ' of 5' : 'Not rated',
+      rcStarsText: '★★★★★'.slice(0, s.rcRating) + '☆☆☆☆☆'.slice(0, 5 - s.rcRating),
+      rcCells: rcReady.map(p=>({ url:p.url, video:p.kind === 'video' })), rcEmpty: rcReady.length === 0, rcGridCls: 'rc-card__grid--' + Math.max(1, rcReady.length),
+      rcCardLabel: Recap ? Recap.cardLabel({ artist:rcEv.title, venue:rcEv.venue_name, date:rcDateCard, rating:s.rcRating, photos:rcReady.length }) : '',
+      rcCanShare, rcSaveIsPrimary: !rcCanShare, rcActionsOff: rcOff ? 'true' : null,
+      rcShareLabel: s.rcBusy ? 'Making your card...' : 'Share recap', rcSaveLabel: s.rcBusy ? 'Making your card...' : 'Save image',
+      rcHelp: rcReady.length === 0 ? 'Add at least 1 photo to share.' : 'Saves as a 1080 × 1920 PNG.',
+      rcBusyText: s.rcBusy ? 'Making your card...' : '', rcRenderErr: s.rcRenderErr,
       seenYears, seenEmpty: seenYears.length===0,
       taggedList, taggedEmpty: taggedList.length===0,
       // drop+
@@ -3518,7 +3651,8 @@ class Component extends DCLogic {
       goLogShow:(e)=>{ this.prevent(e); if(!this.state.authed){ this.openGate('Log in to log shows'); return; } this.setState({logSelected:{}}); this.go('logshow'); this.logSearch(); },
       genrePrev:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: -Math.round(r.clientWidth*0.9), behavior: scrollMotion() }); },
       genreNext:()=>{ const r=document.getElementById('genreRail'); if(r) r.scrollBy({ left: Math.round(r.clientWidth*0.9), behavior: scrollMotion() }); },
-      goRecap:(e)=>{ this.prevent(e); this.setState({recapWasThere:null}); this.go('recap'); },
+      // Memories' button opens the most recent past show (the route still carries that show).
+      goRecap:(e)=>{ this.prevent(e); const ev = wrappedPastRows.filter(r=>r.id).sort((a,b)=>new Date(b.date)-new Date(a.date))[0]; if (!ev) { this.flash('Log a past show to make a recap'); return; } this.openRecap(ev); }, // ponytail: hand-logged shows have no event id, so no recap
       goSeen:(e)=>{ this.prevent(e); this.go('seen'); },
       goPaywall:(e)=>{ this.prevent(e); this.go('paywall'); },
       go404:(e)=>{ this.prevent(e); this.go('e404'); },
@@ -3529,7 +3663,6 @@ class Component extends DCLogic {
       goCity:(e)=>{ this.prevent(e); this.go('city'); },
       goGenre:(e)=>{ this.prevent(e); this.go('genre'); },
       goSharePlan:(e)=>{ this.prevent(e); this.go('shareplan'); },
-      goShareRecap:(e)=>{ this.prevent(e); this.go('sharerecap'); },
       goShareWrapped:(e)=>{ this.prevent(e); this.go('sharewrapped'); },
       appToast:()=>{ if (typeof location !== 'undefined') location.href = 'https://trydropapp.com/download.html'; },
       downloadIos:()=>{ if (typeof location !== 'undefined') location.href = APP_STORE_URL; },
@@ -3588,9 +3721,12 @@ class Component extends DCLogic {
       setLogDate:(e)=>this.setState({logDate:e.target.value}),
       addSelectedShows:()=>this.logAddSelected(),
       submitManualLog:()=>this.logSubmitManual(),
-      recapYes:()=>this.setState({recapWasThere:true}),
-      recapShare:()=>this.flash('Recap card copied to share'),
-      recapDownload:()=>this.flash('Recap image (9:16) downloaded'),
+      rcYes:()=>this.rcConfirmAttended(),
+      rcPick:(e)=>{ const files = Array.from(e.target.files || []); e.target.value = ''; this.rcAddFiles(files); },
+      rcSetAlt:(e)=>{ const key = this.state.rcAltFor, v = e.target.value; this.setState(x=>({ rcPhotos: x.rcPhotos.map(p=>p.key === key ? { ...p, alt:v } : p) })); },
+      rcClearRating:()=>{ this.setState({ rcRating:0 }); queueMicrotask(()=>document.getElementById('rc-star-1')?.focus()); },
+      rcShare:()=>{ if (!rcOff) this.rcExport('share'); else if (!rcReady.length) this.flash('Add at least 1 photo to share.'); },
+      rcSave:()=>{ if (!rcOff) this.rcExport('save'); else if (!rcReady.length) this.flash('Add at least 1 photo to share.'); },
       doReset:()=>{
         if (!supa) return;
         const pw = fieldVal('reset-password'), pw2 = fieldVal('reset-password-confirm');
