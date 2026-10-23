@@ -124,3 +124,29 @@ test('unknown, stale and unverified prices read Live price; captions only from d
   assert.equal(O.freshness('bad', now), 'unknown');
   assert.equal(O.freshness('2099-01-01', now), 'unknown');
 });
+
+// Bus to the show (board Spec01-Bus-Options).
+test('busRows: upcoming pickups by time, vetted links, no raw seller claims, honest price', () => {
+  const now = Date.parse('2026-10-23T18:00:00Z');
+  const owned = 'https://etix.prf.hn/click/camref:1100l5NLJm/pubref:77/destination:' + encodeURIComponent('https://www.etix.com/ticket/p/77/bus');
+  const bus = (o) => ({ kind: 'bus', provider: 'etix', title: 'ODESZA Bus To Show Pickup Spot (FREE EVENT)', url: null, starts_at: '2026-10-23T22:00:00Z', pickup_name: null, pickup_city: 'Denver', pickup_state: 'CO', price_min: null, price_max: null, currency: 'USD', ...o });
+  const rows = O.busRows([
+    bus({ id: 'late', starts_at: '2026-10-23T23:30:00Z', pickup_name: 'Belmar Center', pickup_city: 'Lakewood', price_min: 0, price_max: 0 }),
+    bus({ id: 'early', starts_at: '2026-10-23T21:30:00Z', pickup_name: 'Union Station', url: owned, price_min: 12, price_max: 15 }),
+    bus({ id: 'gone', starts_at: '2026-10-23T17:00:00Z', pickup_name: 'Left already' }),
+    bus({ id: 'foreign', url: 'https://www.etix.com/ticket/p/77' }),
+  ], now, 'America/Denver');
+  assert.deepEqual(rows.map(r => r.id), ['early', 'foreign', 'late']);
+  assert.equal(rows[0].time, '3:30 PM');
+  assert.equal(rows[0].url, owned);
+  assert.equal(rows[0].price, 'Listed from $12');
+  assert.equal(rows[0].label, 'Union Station, Denver, CO, pickup 3:30 PM, listed from $12, booking link available');
+  assert.equal(rows[1].url, '', 'an Etix link that is not Drop\'s tracked link is not bookable');
+  assert.equal(rows[1].name, 'ODESZA Bus To Show Pickup…', 'title fallback is cut before the seller\'s "(FREE EVENT)"');
+  assert.doesNotMatch(rows[1].name, /FREE/);
+  assert.equal(rows[1].price, '');
+  assert.match(rows[1].label, /price not listed, booking link not available$/);
+  assert.equal(rows[2].price, 'Free', 'Free only when price_max is 0');
+  assert.equal(O.busRows([bus({ id: 'x', price_min: 0, price_max: null })], now, 'America/Denver')[0].price, '', 'a $0 minimum alone is not Free');
+  assert.deepEqual(O.busRows(null, now), []);
+});

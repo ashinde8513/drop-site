@@ -258,7 +258,34 @@
     };
   }
 
+  // Bus to the show (board Spec01-Bus-Options): event_add_ons kind 'bus' rows -> pickup rows.
+  // Upcoming pickups only, by starts_at. The seller title is never shown raw: it is a fallback
+  // name only, cut before any "(...)" claim and at a word boundary. A row is bookable only with
+  // a vetted link (Etix must be Drop's own tracked link). Price: "Free" only when price_max is 0.
+  function shortTitle(title) {
+    var raw = String(title || '').trim(), t = raw.split(/[(|]|\s[-–—]\s/)[0].trim();
+    if (t.length > 28) { t = t.slice(0, 28); t = t.slice(0, Math.max(t.lastIndexOf(' '), 1)).trim(); }
+    return t && t.length < raw.length ? t + '…' : t || 'Bus pickup';
+  }
+  function busRows(addOns, now, timeZone) {
+    var fmt = function (iso) { try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: timeZone || undefined }); } catch (e) { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); } };
+    return (addOns || []).filter(function (a) { var t = Date.parse(a.starts_at); return (a.kind == null || a.kind === 'bus') && isFinite(t) && t >= now; })
+      .sort(function (a, b) { return Date.parse(a.starts_at) - Date.parse(b.starts_at); })
+      .map(function (a) {
+        var name = a.pickup_name ? String(a.pickup_name).trim() : shortTitle(a.title);
+        var place = [a.pickup_city, a.pickup_state].filter(Boolean).join(', ');
+        var cur = validCurrency(a.currency) || 'USD', min = a.price_min == null ? NaN : Number(a.price_min);
+        var price = a.price_max != null && Number(a.price_max) === 0 ? 'Free' : isFinite(min) && min > 0 ? 'Listed from ' + formatAmount(min, cur) : '';
+        var url = a.url && isUsableTicketUrl(a.url) ? a.url : '';
+        var seller = String(a.provider || '').toLowerCase() === 'etix' ? 'Etix' : String(a.provider || 'seller').replace(/^./, function (c) { return c.toUpperCase(); });
+        var time = fmt(a.starts_at);
+        return { id: a.id, name: name, place: place, city: a.pickup_city || '', time: time, price: price, url: url, seller: seller,
+          label: [name, place, 'pickup ' + time, price ? price.charAt(0).toLowerCase() + price.slice(1) : 'price not listed', url ? 'booking link available' : 'booking link not available'].filter(Boolean).join(', ') };
+      });
+  }
+
   var api = {
+    busRows: busRows,
     comparableOfferEventIds: comparableOfferEventIds,
     venueNamesCompatible: venueNamesCompatible,
     usableTicketOffers: usableTicketOffers,

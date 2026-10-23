@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=20261023-spec05';
+    style.href = appAssetBase + file + '?v=20261023-bus';
     document.head.appendChild(style);
   });
 </script>
@@ -563,7 +563,7 @@
           </div>
 
           <!-- Tickets card (design spec 01): one radiogroup of sellers, one primary. Desktop CSS lifts it into the sticky right column. -->
-          <section class="tk" aria-labelledby="tk-title" aria-busy="{{ tkBusy }}">
+          <section class="{{ tkCardCls }}" aria-labelledby="tk-title" aria-busy="{{ tkBusy }}">
             <h2 class="{{ tkTitleCls }}" id="tk-title">Tickets</h2>
             <sc-if value="{{ tkLoading }}">
               <span class="skel skel--title tk-sk-title" aria-hidden="true"></span>
@@ -607,7 +607,17 @@
               <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
               <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
               <span id="tk-newtab" class="sr-only">Opens in a new tab</span>
-              <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
+              <sc-if value="{{ busShow }}">
+              <div class="bs" role="group" aria-labelledby="bs-h">
+                <h3 class="bs__h" id="bs-h"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3M8 14.5h.01M16 14.5h.01"/></svg>Bus to the show</h3>
+                <p class="tk__sub">{{ busSub }}</p>
+                <sc-if value="{{ busPickable }}"><div class="tk__list" id="bs-list" role="radiogroup" aria-label="{{ busListLabel }}"><sc-for list="{{ busRows }}" as="r" hint-placeholder-count="2"><button type="button" role="radio" class="{{ r.cls }}" id="{{ r.domId }}" data-bind-key="{{ r.domId }}" aria-checked="{{ r.checked }}" aria-disabled="{{ r.disabled }}" tabindex="{{ r.tabindex }}" aria-label="{{ r.label }}" onClick="{{ r.pick }}" onKeyDown="{{ r.key }}"><span class="tk-row__radio" aria-hidden="true"></span><span class="tk-row__main"><span class="tk-row__name">{{ r.name }}</span><sc-if value="{{ r.place }}"><span class="tk-row__line">{{ r.place }}</span></sc-if><sc-if value="{{ r.hasPrice }}"><span class="tk-row__line bs-pr">{{ r.price }}</span></sc-if><sc-if value="{{ r.out }}"><span class="bs-st"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Booking link not available</span></sc-if></span><span class="tk-row__price"><span class="tk-row__lab">Pickup</span><span class="tk-row__amt">{{ r.time }}</span></span></button></sc-for></div></sc-if>
+                <sc-if value="{{ busNonePickable }}"><ul class="tk__list bs-plain" id="bs-list" aria-label="{{ busListLabel }}"><sc-for list="{{ busRows }}" as="r" hint-placeholder-count="2"><li class="tk-row bs-r is-out" aria-label="{{ r.label }}"><span class="tk-row__radio" aria-hidden="true"></span><span class="tk-row__main"><span class="tk-row__name">{{ r.name }}</span><sc-if value="{{ r.place }}"><span class="tk-row__line">{{ r.place }}</span></sc-if><sc-if value="{{ r.hasPrice }}"><span class="tk-row__line bs-pr">{{ r.price }}</span></sc-if><sc-if value="{{ r.out }}"><span class="bs-st"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Booking link not available</span></sc-if></span><span class="tk-row__price"><span class="tk-row__lab">Pickup</span><span class="tk-row__amt">{{ r.time }}</span></span></li></sc-for></ul></sc-if>
+                <sc-if value="{{ busCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" data-bind-key="bs-list-more" aria-expanded="{{ busExpandedAttr }}" aria-controls="bs-list" aria-label="{{ busMoreLabel }}" onClick="{{ busMore }}">{{ busMoreText }}</button></sc-if>
+                <sc-if value="{{ busHasBuy }}"><a class="btn btn--secondary btn--block bs-buy" href="{{ busBuyUrl }}" target="_blank" rel="noopener sponsored" aria-label="{{ busBuyName }}" aria-describedby="tk-newtab">{{ busBuyText }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
+              </div>
+            </sc-if>
+              <p class="tk__foot">{{ tkFoot }}</p>
             </sc-if>
           </section>
 
@@ -714,7 +724,17 @@
         </div>
         <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
         <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
-        <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
+        <sc-if value="{{ busShow }}">
+              <div class="bs" role="group" aria-labelledby="bs-sh">
+                <h3 class="bs__h" id="bs-sh"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3M8 14.5h.01M16 14.5h.01"/></svg>Bus to the show</h3>
+                <p class="tk__sub">{{ busSub }}</p>
+                <sc-if value="{{ busPickable }}"><div class="tk__list" id="bs-slist" role="radiogroup" aria-label="{{ busListLabel }}"><sc-for list="{{ busSheetRows }}" as="r" hint-placeholder-count="2"><button type="button" role="radio" class="{{ r.cls }}" id="{{ r.domId }}" data-bind-key="{{ r.domId }}" aria-checked="{{ r.checked }}" aria-disabled="{{ r.disabled }}" tabindex="{{ r.tabindex }}" aria-label="{{ r.label }}" onClick="{{ r.pick }}" onKeyDown="{{ r.key }}"><span class="tk-row__radio" aria-hidden="true"></span><span class="tk-row__main"><span class="tk-row__name">{{ r.name }}</span><sc-if value="{{ r.place }}"><span class="tk-row__line">{{ r.place }}</span></sc-if><sc-if value="{{ r.hasPrice }}"><span class="tk-row__line bs-pr">{{ r.price }}</span></sc-if><sc-if value="{{ r.out }}"><span class="bs-st"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Booking link not available</span></sc-if></span><span class="tk-row__price"><span class="tk-row__lab">Pickup</span><span class="tk-row__amt">{{ r.time }}</span></span></button></sc-for></div></sc-if>
+                <sc-if value="{{ busNonePickable }}"><ul class="tk__list bs-plain" id="bs-slist" aria-label="{{ busListLabel }}"><sc-for list="{{ busSheetRows }}" as="r" hint-placeholder-count="2"><li class="tk-row bs-r is-out" aria-label="{{ r.label }}"><span class="tk-row__radio" aria-hidden="true"></span><span class="tk-row__main"><span class="tk-row__name">{{ r.name }}</span><sc-if value="{{ r.place }}"><span class="tk-row__line">{{ r.place }}</span></sc-if><sc-if value="{{ r.hasPrice }}"><span class="tk-row__line bs-pr">{{ r.price }}</span></sc-if><sc-if value="{{ r.out }}"><span class="bs-st"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Booking link not available</span></sc-if></span><span class="tk-row__price"><span class="tk-row__lab">Pickup</span><span class="tk-row__amt">{{ r.time }}</span></span></li></sc-for></ul></sc-if>
+                <sc-if value="{{ busCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" data-bind-key="bs-slist-more" aria-expanded="{{ busExpandedAttr }}" aria-controls="bs-slist" aria-label="{{ busMoreLabel }}" onClick="{{ busMore }}">{{ busMoreText }}</button></sc-if>
+                <sc-if value="{{ busHasBuy }}"><a class="btn btn--secondary btn--block bs-buy" href="{{ busBuyUrl }}" target="_blank" rel="noopener sponsored" aria-label="{{ busBuyName }}" aria-describedby="tk-newtab">{{ busBuyText }}<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></sc-if>
+              </div>
+            </sc-if>
+        <p class="tk__foot">{{ tkFoot }}</p>
       </div>
     </div>
   </sc-if>
@@ -3353,7 +3373,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   // offers.js (seller rules) must run before app.js; async=false keeps order.
-  ['offers.js?v=20261023-spec05', 'map.js?v=20261023-spec05', 'recap.js?v=20261023-spec05', 'app.js?v=20261023-spec05'].forEach(function (file) {
+  ['offers.js?v=20261023-bus', 'map.js?v=20261023-bus', 'recap.js?v=20261023-bus', 'app.js?v=20261023-bus'].forEach(function (file) {
     var s = document.createElement('script');
     s.src = appAssetBase + file;
     s.async = false;
