@@ -94,7 +94,7 @@ test.describe('4 honest copy', () => {
     await expect(page.locator('body')).not.toContainText(/free month/i);
     await page.goto('/app/index.html'); await expect(page.getByText('Parity Two Night').first()).toBeVisible();
     await nav(page, isMobile, 'Crew');
-    await page.getByRole('button', { name:/Invite friends/ }).click();
+    await page.getByRole('button', { name:/Invite by link/ }).click();
     await expect(page.locator('body')).not.toContainText(/free month|odesza|maya/i);
     await page.goto('/app/index.html'); await expect(page.getByText('Parity Two Night').first()).toBeVisible();
     await profileItem(page, isMobile, /Memories/);

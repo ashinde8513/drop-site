@@ -79,13 +79,13 @@ test.describe('2 blocked accounts (type B)', () => {
 });
 
 test.describe('3 spec 02 honest app-only states', () => {
-  test('plans tab, tagged, wallet say the feature lives in the app with one primary button', async ({ page, isMobile }) => {
+  test('tagged and wallet say the feature lives in the app with one primary button (plans moved to the web, spec 03)', async ({ page, isMobile }) => {
     await bootSignedIn(page, {}, [EVENT]);
     await open(page);
     await nav(page, isMobile, 'Crew');
     await page.locator('.seg__item', { hasText:'Plans' }).click();
-    await expect(page.getByRole('heading', { name:'Plans live in the app' })).toBeVisible();
-    await expect(page.getByRole('link', { name:'Browse shows' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'No plans yet' })).toBeVisible();
+    await expect(page.getByRole('button', { name:'Find a show' })).toBeVisible();
     for (const [item, title] of [[/Tagged in shows/, 'Tags are handled in the app'], [/Drop\+ wallet/, 'Cashback shows up in the app']] as const) {
       await profileItem(page, isMobile, item);
       const box = page.locator('.empty--wide', { has:page.getByRole('heading', { name:title }) });

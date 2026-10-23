@@ -1,6 +1,6 @@
 # Spec 03: Social surfaces (friends, public profile, plan detail and chat, block and report)
 
-Status: prepared, awaiting design. Written 2026-10-19. Docs only, nothing built.
+Status: **built 2026-10-23** in `app/` (tests `tests/app-social.spec.ts`) from the approved canvas boards "Spec 03 · Social surfaces" and Arya's A53 decisions (on a plan, Send is the only primary and RSVP is a segmented control; with several requests only the first Accept is primary). Block/report wording and report reasons are drafts pending the coordinator's safety review. Live RLS checked read-only 2026-10-23: `friendships` accept works through a `status` column grant plus policy; `user_blocks` has no UPDATE policy, so block is a plain insert; `content_reports.content_type` is one of comment, chat_message, profile, event; other users' friend counts and non-friends' attended rows are not readable, so the profile shows "Shows seen" only for friends and omits a friends count. Written 2026-10-19.
 
 ## Claude design project header
 - Project: **Drop Website** (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`)

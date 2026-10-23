@@ -55,6 +55,15 @@ const FAKE = String.raw`
       var rpcErr = (cfg.errors || {})['rpc.' + name];
       if (rpcErr) return res(null, { message:rpcErr });
       if (cfg.rpc && name in cfg.rpc) return res(cfg.rpc[name]);
+      // Like the server: both directions with the other person's card; blocked pairs dropped either way.
+      if (name === 'list_my_friend_edges') {
+        var me = '${USER_ID}', rows = cfg.rows || {}, blocks = rows.user_blocks || [];
+        return res((rows.friendships || []).filter(function (f) { return f.requester_id === me || f.recipient_id === me; }).map(function (f) {
+          var other = f.requester_id === me ? f.recipient_id : f.requester_id;
+          var p = (rows.profiles || []).filter(function (x) { return x.id === other; })[0] || {};
+          return { friendship_id:f.id, status:f.status, requester_id:f.requester_id, recipient_id:f.recipient_id, other_id:other, other_username:p.username || null, other_display_name:p.display_name || null, other_profile_image:p.profile_image || null, other_city:p.city || null, other_state:p.state || null };
+        }).filter(function (e) { return !blocks.some(function (b) { return (b.blocker_id === me && b.blocked_id === e.other_id) || (b.blocker_id === e.other_id && b.blocked_id === me); }); }));
+      }
       return res(name === 'complete_signup_profile' ? true : null);
     },
     from:query
