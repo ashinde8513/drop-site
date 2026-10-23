@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=20261023-spec01';
+    style.href = appAssetBase + file + '?v=20261023-spec04';
     document.head.appendChild(style);
   });
 </script>
@@ -308,19 +308,99 @@
       <div class="wsh__headrow">
         <div class="wsh__title">Discover</div>
         <div class="wsh__controls disc-controls">
-          <div class="seg">
+          <div class="seg" role="group" aria-label="Feed">
             <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
-              <div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div>
+              <button type="button" class="seg__item {{ t.cls }}" aria-pressed="{{ t.pressed }}" onClick="{{ t.pick }}">{{ t.label }}</button>
             </sc-for>
           </div>
         </div>
       </div>
 
-      <div class="m-rail" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
-        <sc-for list="{{ dateChips }}" as="d" hint-placeholder-count="3">
-          <button type="button" class="chip {{ d.cls }}" onClick="{{ d.pick }}"><span class="chip__dot"></span>{{ d.label }}</button>
-        </sc-for>
+      <div class="mp-bar">
+        <div class="m-rail mp-chips">
+          <sc-if value="{{ mapOn }}"><div class="seg mp-pd mp-phone" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></sc-if>
+          <sc-for list="{{ dateChips }}" as="d" hint-placeholder-count="3">
+            <button type="button" class="chip {{ d.cls }}" aria-pressed="{{ d.pressed }}" onClick="{{ d.pick }}"><span class="chip__dot"></span>{{ d.label }}</button>
+          </sc-for>
+        </div>
+        <div class="seg mp-lm" role="group" aria-label="View">
+          <button type="button" id="mp-view-list" class="seg__item {{ viewListCls }}" aria-pressed="{{ viewListPressed }}" onClick="{{ viewList }}">List</button>
+          <button type="button" id="mp-view-map" class="seg__item {{ viewMapCls }}" aria-pressed="{{ viewMapPressed }}" onClick="{{ viewMap }}">Map</button>
+        </div>
       </div>
+
+      <!-- ============ DISCOVER MAP (design spec 04) ============ -->
+      <sc-if value="{{ mapOn }}">
+        <sc-if value="{{ mapLoading }}">
+          <div class="mp-split" aria-busy="true">
+            <span class="sr-only" role="status">Loading the map</span>
+            <div class="mp-railp mp-desk" aria-hidden="true"><span class="skel skel--title" style="width:40%;margin:var(--sp-xs) var(--sp-xs) var(--sp-md);"></span><div class="mp-rail"><sc-for list="{{ mapSkel }}" as="k" hint-placeholder-count="3"><div class="skel mp-skelcard"></div></sc-for></div></div>
+            <div class="skel mp-map mp-map--canvas mp-map--flat" aria-hidden="true"></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ mapWarm }}">
+          <div class="mp-warm">
+            <svg class="tk-ico mp-warm__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
+            <h2 class="mp-warm__title">Map is warming up</h2>
+            <p class="mp-warm__body">We're still adding locations for shows near you. Browse the list for now.</p>
+            <button type="button" class="btn btn--primary btn--sm" onClick="{{ viewList }}">Show the list</button>
+          </div>
+          <section class="mp-warmlist" aria-labelledby="mp-warm-h">
+            <div class="mp-railp__head"><h2 id="mp-warm-h">Shows in {{ city }}</h2><span>{{ mapTotalLabel }}</span></div>
+            <div class="mp-rail mp-rail--grid"><sc-for list="{{ mapAllCards }}" as="c" hint-placeholder-count="6"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going">{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}">{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
+          </section>
+        </sc-if>
+        <sc-if value="{{ mapReady }}">
+          <div class="mp-split">
+            <section class="mp-railp mp-desk" aria-labelledby="mp-rail-h">
+              <div class="mp-railp__head"><h2 id="mp-rail-h" aria-live="polite">{{ mapCount }}</h2><span>{{ mapRailHint }}</span></div>
+              <div class="mp-rail" id="mp-rail" tabindex="0" aria-label="Shows in the map view. Same shows as the pins.">
+                <sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going">{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}">{{ c.badge }}</span></sc-if></span></span></a></sc-for>
+                <sc-if value="{{ mapNone }}"><div class="mp-none"><p>No shows in this area.</p><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapZoomOut }}">Zoom out</button></div></sc-if>
+              </div>
+            </section>
+            <div class="mp-map mp-map--canvas" role="group" aria-roledescription="map" aria-label="{{ mapAria }}" onKeyDown="{{ mapKey }}">
+              <a class="mp-skip" href="#mp-rail" onClick="{{ mapSkip }}">Skip map</a>
+              <div id="mp-slot" class="mp-slot"></div>
+              <sc-if value="{{ mapErr }}">
+                <div class="mp-err" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>We couldn't load the map.</span><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapRetry }}">Try again</button></div>
+              </sc-if>
+              <div class="mp-tl mp-desk"><div class="seg mp-pd" role="group" aria-label="Pin label"><sc-for list="{{ mapLabels }}" as="m" hint-placeholder-count="2"><button type="button" class="seg__item {{ m.cls }}" aria-pressed="{{ m.pressed }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div></div>
+              <div class="mp-tc">
+                <sc-if value="{{ mapPartial }}"><div class="mp-partial" role="status"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>{{ mapPartialText }}</span></div></sc-if>
+                <sc-if value="{{ mapGeoOff }}"><div class="mp-note" role="status"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><path d="M4 4l16 16"/></svg><span>Location is off. <a href="#" onClick="{{ mapPickCity }}">Pick a city</a> instead.</span></div></sc-if>
+              </div>
+              <sc-if value="{{ mapCanvas }}">
+                <div class="mp-ctl">
+                  <button type="button" class="mp-near {{ mapNearCls }}" onClick="{{ mapNearMe }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>{{ mapNearLabel }}</span></button>
+                  <div class="mp-zoom" role="group" aria-label="Zoom"><button type="button" aria-label="Zoom in" onClick="{{ mapZoomIn }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" aria-label="Zoom out" onClick="{{ mapZoomStep }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button></div>
+                </div>
+                <div class="mp-legend mp-desk" aria-hidden="true"><span class="mp-lg"><span class="mp-lg__d mp-lg__d--going"></span>Going</span><span class="mp-lg"><span class="mp-lg__d mp-lg__d--int"></span>Interested</span><span class="mp-lg"><span class="mp-lg__d"></span>No status</span></div>
+              </sc-if>
+              <sc-if value="{{ mapHasSel }}">
+                <div class="mp-sel mp-desk" aria-current="true">
+                  <div class="mp-sel__row"><span class="mp-sel__img" aria-hidden="true" style="{{ mapSel.gradStyle }}"></span><span class="mp-sel__txt"><span class="mp-card__date">{{ mapSel.dateShort }}</span><span class="mp-sel__title">{{ mapSel.title }}</span><span class="mp-card__venue">{{ mapSel.venue }}</span></span></div>
+                  <a class="btn btn--primary btn--sm btn--block" href="#" onClick="{{ mapSel.open }}">View event</a>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <!-- phone: the rail becomes a bottom sheet; a selected pin swaps in one card and the primary -->
+          <div class="mp-sheet mp-phone {{ mapSheetCls }}" role="region" aria-label="Shows">
+            <button type="button" class="mp-sheet__handle" aria-expanded="{{ mapSheetExpanded }}" aria-label="{{ mapSheetHandleLabel }}" onClick="{{ mapSheetToggle }}"><i></i></button>
+            <div class="mp-sheet__count" aria-live="polite">{{ mapCount }}</div>
+            <sc-if value="{{ mapHasSel }}">
+              <div class="mp-rail"><sc-for list="{{ mapSelCards }}" as="c" hint-placeholder-count="1"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going">{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}">{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
+              <a class="btn btn--primary btn--block" href="#" onClick="{{ mapSel.open }}">View event</a>
+            </sc-if>
+            <sc-if value="{{ mapSheetList }}">
+              <div class="mp-rail"><sc-for list="{{ mapRail }}" as="c" hint-placeholder-count="4"><a class="mp-card {{ c.cls }}" href="#" aria-current="{{ c.current }}" onClick="{{ c.pick }}"><span class="mp-card__img" aria-hidden="true" style="{{ c.gradStyle }}"></span><span class="mp-card__body"><span class="mp-card__date">{{ c.dateShort }}</span><span class="mp-card__title">{{ c.title }}</span><span class="mp-card__venue">{{ c.venue }}</span><span class="mp-card__foot"><sc-if value="{{ c.price }}"><b>{{ c.price }}</b></sc-if><sc-if value="{{ c.going }}"><span class="mp-card__going">{{ c.going }}</span></sc-if><sc-if value="{{ c.badge }}"><span class="mp-badge {{ c.badgeCls }}">{{ c.badge }}</span></sc-if></span></span></a></sc-for></div>
+              <sc-if value="{{ mapNone }}"><div class="mp-none"><p>No shows in this area.</p><button type="button" class="btn btn--ghost btn--sm" onClick="{{ mapZoomOut }}">Zoom out</button></div></sc-if>
+            </sc-if>
+          </div>
+        </sc-if>
+      </sc-if>
+      <sc-if value="{{ listOn }}">
 
 
       <!-- Pick your night (genre filter) -->
@@ -410,7 +490,14 @@
         </div>
       </sc-if>
 
-      <sc-if value="{{ gridEmpty }}">
+      <sc-if value="{{ gridEmptyTab }}">
+        <div class="empty">
+          <h2 class="empty__title">{{ gridEmptyTitle }}</h2>
+          <p class="empty__body">{{ gridEmptyBody }}</p>
+          <sc-if value="{{ gridEmptyPicks }}"><button type="button" class="btn btn--primary btn--sm" onClick="{{ goArtists }}">Follow artists</button></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ gridEmptyCity }}">
         <div class="empty">
           <div class="empty__ico">🎧</div>
           <div class="empty__title">No {{ genreName }} shows in {{ city }} yet — shows coming soon</div>
@@ -420,6 +507,7 @@
             <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goSuggest }}">Know of one? Suggest an event</button>
           </div>
         </div>
+      </sc-if>
       </sc-if>
       </sc-if>
     </div>
@@ -3262,7 +3350,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   // offers.js (seller rules) must run before app.js; async=false keeps order.
-  ['offers.js?v=20261023-spec01', 'app.js?v=20261023-spec01'].forEach(function (file) {
+  ['offers.js?v=20261023-spec04', 'map.js?v=20261023-spec04', 'app.js?v=20261023-spec04'].forEach(function (file) {
     var s = document.createElement('script');
     s.src = appAssetBase + file;
     s.async = false;

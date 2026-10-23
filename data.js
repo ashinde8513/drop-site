@@ -146,7 +146,7 @@
 
   var EVENT_COLS =
     'id,title,description,date,end_date,venue_id,venue_name,venue_address,city,state,image_url,ticket_url,' +
-    'price_min,price_max,currency,is_festival,time_tbd,timezone,status,lifecycle_status,ticket_status,created_at';
+    'price_min,price_max,currency,is_festival,time_tbd,timezone,status,lifecycle_status,ticket_status,created_at,lat,lng';
   var EVENT_SELECT = EVENT_COLS + ',event_artists(artists(id,name,genres,image_url))';
 
   // ---- Public fetchers ----------------------------------------------------
