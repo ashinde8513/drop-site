@@ -23,4 +23,8 @@ test('privacy policy discloses the app data the App Privacy label declares', () 
   ]) assert.match(text, re, what);
   assert.doesNotMatch(text, /does not share your device location or a live crew location/, 'stale pre-1.0.4 location claim');
   assert.doesNotMatch(text, /optional SMS phone verification/, 'phone verification is required');
+  assert.match(text, /delete or de-identify associated personal information within 30 days/, 'deletion commitment (A56)');
+  const del = readFileSync(new URL('../delete-account.html', import.meta.url), 'utf8');
+  assert.match(del, /within 30 days\./, '/delete-account states the same commitment');
+  assert.doesNotMatch(text + del, /reasonable period/);
 });
