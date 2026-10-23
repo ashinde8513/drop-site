@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=cf4d0dc';
+    style.href = appAssetBase + file + '?v=20261023-spec01';
     document.head.appendChild(style);
   });
 </script>
@@ -428,7 +428,7 @@
 
 <!-- ============ EVENT DETAIL ============ -->
 <sc-if value="{{ screenEvent }}">
-  <main class="wsh">
+  <main class="wsh" inert="{{ tkSheetOpen }}">
     <div class="ed-wrap" style="max-width:1440px;margin:0 auto;padding:var(--sp-lg) var(--sp-xl) var(--sp-xxxl);">
       <a href="#" onClick="{{ goDiscover }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to discover</a>
       <sc-if value="{{ loading }}">
@@ -444,9 +444,8 @@
         </div>
       </sc-if>
       <sc-if value="{{ contentReady }}">
-      <div class="ed-grid" style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-xxl);align-items:start;">
-        <!-- LEFT -->
-        <div>
+      <div class="ed-grid" style="display:grid;grid-template-columns:1fr 360px;column-gap:var(--sp-xxl);align-items:start;">
+        <div class="ed-main">
           <div style="position:relative;height:360px;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);background-size:cover;background-position:center;{{ ae.gradStyle }}">
             <div style="position:absolute;inset:0;background:var(--scrim);"></div>
             <div style="position:absolute;top:var(--sp-lg);right:var(--sp-lg);display:flex;gap:var(--sp-sm);">
@@ -468,6 +467,60 @@
             <div class="metric"><span class="metric__label">Going</span><span class="metric__value" style="font-size:var(--fs-xl);color:var(--going);">{{ ae.goingCount }}</span></div>
             <div class="metric"><span class="metric__label">Interested</span><span class="metric__value" style="font-size:var(--fs-xl);color:var(--interested);">{{ ae.interestedCount }}</span></div>
           </div>
+
+          <!-- actions: Going/Interested stay secondary so the ticket button is the one primary -->
+          <div class="ed-actions">
+            <button type="button" class="{{ aeGoingCls }}" onClick="{{ aeGoing }}">✓ Going</button>
+            <button type="button" class="{{ aeInterestedCls }}" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }} Interested</button>
+          </div>
+
+          <!-- Tickets card (design spec 01): one radiogroup of sellers, one primary. Desktop CSS lifts it into the sticky right column. -->
+          <section class="tk" aria-labelledby="tk-title" aria-busy="{{ tkBusy }}">
+            <h2 class="tk__title" id="tk-title">Tickets</h2>
+            <sc-if value="{{ tkLoading }}">
+              <span class="sr-only" role="status">Loading sellers</span>
+              <div class="tk__list" aria-hidden="true">
+                <sc-for list="{{ tkSkel }}" as="k" hint-placeholder-count="3">
+                  <div class="tk-row tk-row--sk"><span class="skel skel--avatar tk-sk-dot"></span><span class="tk-row__main"><span class="skel skel--text" style="width:60%;"></span><span class="skel skel--text" style="width:40%;"></span></span><span class="skel skel--title" style="width:64px;"></span></div>
+                </sc-for>
+              </div>
+              <div class="skel tk-sk-btn" aria-hidden="true"></div>
+            </sc-if>
+            <sc-if value="{{ tkEnded }}">
+              <div class="tk-empty"><span class="tk-empty__ico" aria-hidden="true"><svg class="tk-ico" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><strong>This show has ended.</strong></div>
+            </sc-if>
+            <sc-if value="{{ tkEmpty }}">
+              <div class="tk-empty"><span class="tk-empty__ico" aria-hidden="true"><svg class="tk-ico" viewBox="0 0 24 24" focusable="false"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/></svg></span><strong>No tickets listed yet.</strong><p>Sellers appear here as they list this show.</p></div>
+            </sc-if>
+            <sc-if value="{{ tkError }}">
+              <div class="tk-err" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>We couldn’t load sellers.</span><button type="button" id="tk-retry" class="btn btn--ghost btn--sm" onClick="{{ tkRetry }}">Try again</button></div>
+            </sc-if>
+            <sc-if value="{{ tkShowSub }}"><p class="tk__sub">{{ tkSub }}</p></sc-if>
+            <sc-if value="{{ tkHasRows }}">
+              <div class="tk__list" id="tk-list" role="radiogroup" aria-label="Ticket sellers">
+                <sc-for list="{{ tkRowsVisible }}" as="r" hint-placeholder-count="3">
+                <button type="button" role="radio" class="tk-row" id="{{ r.domId }}" data-bind-key="{{ r.domId }}" aria-checked="{{ r.checked }}" tabindex="{{ r.tabindex }}" aria-label="{{ r.label }}" onClick="{{ r.pick }}" onKeyDown="{{ r.key }}">
+                  <span class="tk-row__radio" aria-hidden="true"></span>
+                  <span class="tk-row__main">
+                    <span class="tk-row__name">{{ r.seller }}</span>
+                    <sc-if value="{{ r.hasTag }}"><span class="statuschip statuschip--attended statuschip--sm">{{ r.tag }}</span></sc-if>
+                    <sc-if value="{{ r.hasLine }}"><span class="tk-row__line">{{ r.line }}</span></sc-if>
+                  </span>
+                  <span class="tk-row__price">
+                    <sc-if value="{{ r.priced }}"><span class="tk-row__lab">Listed from</span></sc-if>
+                    <span class="{{ r.amtCls }}">{{ r.amount }}</span>
+                    <sc-if value="{{ r.hasCaption }}"><span class="tk-row__lab">{{ r.caption }}</span></sc-if>
+                  </span>
+                </button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ tkCanExpand }}"><button type="button" class="btn btn--ghost btn--sm btn--block tk__more" aria-expanded="{{ tkExpandedAttr }}" aria-controls="tk-list" onClick="{{ tkMore }}">{{ tkMoreLabel }}</button></sc-if>
+              <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
+              <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
+              <span id="tk-newtab" class="sr-only">Opens in a new tab</span>
+              <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
+            </sc-if>
+          </section>
 
           <!-- friends going wedge -->
           <sc-if value="{{ ae.hasFriends }}">
@@ -504,28 +557,6 @@
           </div>
           </sc-if>
 
-          <!-- price comparison -->
-          <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
-            <div class="sec__title" style="margin-bottom:var(--sp-md);">Tickets</div>
-            <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-              <sc-for list="{{ ae.priceRows }}" as="p" hint-placeholder-count="1">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid {{ p.border }};border-radius:var(--r-md);">
-                  <div style="display:flex;align-items:center;gap:var(--sp-md);">
-                    <span style="font-weight:600;">{{ p.seller }}</span>
-                    <sc-if value="{{ p.best }}"><span style="font-size:10px;font-weight:800;letter-spacing:var(--tr-wide);color:var(--ink);background:var(--attended);padding:3px 8px;border-radius:var(--r-pill);">LOWEST LISTED</span></sc-if>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--sp-md);">
-                    <span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ p.price }}</span>
-                    <button type="button" class="btn btn--secondary btn--sm" onClick="{{ p.open }}">Get tickets</button>
-                  </div>
-                </div>
-              </sc-for>
-              <sc-if value="{{ aeSingleSeller }}">
-                <p style="margin:0;font-size:var(--fs-xs);color:var(--text-muted);">Heads up: this is the only site currently selling tickets for this show — more sellers will appear here as they list it.</p>
-              </sc-if>
-            </div>
-          </div>
-
           <!-- tool row -->
           <div style="display:flex;flex-wrap:wrap;gap:var(--sp-sm);padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
             <sc-if value="{{ ae.isFestival }}"><button type="button" class="chip" onClick="{{ goFestival }}">🗓 View set times</button></sc-if>
@@ -554,36 +585,50 @@
           </div>
         </div>
 
-        <!-- RIGHT: sticky buy box -->
-        <aside class="ed-aside" style="position:sticky;top:88px;">
-          <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:var(--sp-lg);box-shadow:var(--shadow-card);">
-            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--sp-md);">
-              <span style="color:var(--text-muted);font-size:var(--fs-sm);">From</span>
-              <span style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);">{{ ae.price }}</span>
-            </div>
-            <button type="button" class="btn btn--primary btn--block" style="margin-bottom:var(--sp-md);" onClick="{{ aeTickets }}">Get tickets</button>
-            <div style="display:flex;gap:var(--sp-sm);">
-              <button type="button" class="{{ aeGoingCls }}" style="flex:1;" onClick="{{ aeGoing }}">✓ Going</button>
-              <button type="button" class="{{ aeInterestedCls }}" style="flex:1;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }} Interested</button>
-            </div>
-            <div style="margin-top:var(--sp-md);padding-top:var(--sp-md);border-top:1px solid var(--border);display:flex;align-items:center;gap:var(--sp-sm);color:var(--text-secondary);font-size:var(--fs-xs);">
-              <span style="width:8px;height:8px;border-radius:50%;background:var(--attended);box-shadow:0 0 8px var(--attended);"></span>{{ ae.onsale }}
-            </div>
-          </div>
-          <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-md);" onClick="{{ requirePlan }}">Invite friends to this show</button>
-        </aside>
       </div>
       </sc-if>
     </div>
     <sc-if value="{{ contentReady }}">
       <div class="ed-bottombar">
-        <button type="button" onClick="{{ aeSave }}" class="{{ aeSaveCls }} ed-bottombar__icon" aria-label="Save event" style="width:48px;height:48px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;">{{ aeSaveGlyph }}</button>
-        <button type="button" class="{{ aeInterestedCls }} ed-bottombar__icon" aria-label="Mark interested" style="height:48px;" onClick="{{ aeInterested }}">{{ aeInterestedGlyph }}</button>
         <button type="button" class="{{ aeGoingCls }} ed-bottombar__going" style="height:48px;" onClick="{{ aeGoing }}">✓ Going</button>
-        <button type="button" class="btn btn--primary ed-bottombar__tickets" onClick="{{ aeTickets }}">Get tickets</button>
+        <sc-if value="{{ tkHasSheet }}"><button type="button" id="tk-sellers" class="btn btn--secondary ed-bottombar__icon" aria-label="{{ tkSellersLabel }}" aria-haspopup="dialog" onClick="{{ tkOpenSheet }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></sc-if>
+        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary ed-bottombar__tickets" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
       </div>
     </sc-if>
   </main>
+  <!-- Sellers sheet (phone, spec 01 board 3): same radiogroup, one primary; the page behind is inert -->
+  <sc-if value="{{ tkSheetOpen }}">
+    <div class="overlay tk-overlay" onClick="{{ tkCloseSheet }}">
+      <div class="sheet tk-sheet" role="dialog" aria-modal="true" aria-labelledby="tk-sheet-title" onClick="{{ stop }}" onKeyDown="{{ tkSheetKey }}">
+        <div class="sheet__handle" aria-hidden="true"></div>
+        <div class="tk-sheet__head">
+          <h2 class="sheet__title" id="tk-sheet-title">Choose where to buy</h2>
+          <button type="button" class="btn btn--ghost btn--sm tk-sheet__close" aria-label="Close" onClick="{{ tkCloseSheet }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <p class="tk__sub">{{ tkSub }}</p>
+        <div class="tk__list" role="radiogroup" aria-label="Ticket sellers">
+          <sc-for list="{{ tkSheetRows }}" as="r" hint-placeholder-count="3">
+                <button type="button" role="radio" class="tk-row" id="{{ r.domId }}" data-bind-key="{{ r.domId }}" aria-checked="{{ r.checked }}" tabindex="{{ r.tabindex }}" aria-label="{{ r.label }}" onClick="{{ r.pick }}" onKeyDown="{{ r.key }}">
+                  <span class="tk-row__radio" aria-hidden="true"></span>
+                  <span class="tk-row__main">
+                    <span class="tk-row__name">{{ r.seller }}</span>
+                    <sc-if value="{{ r.hasTag }}"><span class="statuschip statuschip--attended statuschip--sm">{{ r.tag }}</span></sc-if>
+                    <sc-if value="{{ r.hasLine }}"><span class="tk-row__line">{{ r.line }}</span></sc-if>
+                  </span>
+                  <span class="tk-row__price">
+                    <sc-if value="{{ r.priced }}"><span class="tk-row__lab">Listed from</span></sc-if>
+                    <span class="{{ r.amtCls }}">{{ r.amount }}</span>
+                    <sc-if value="{{ r.hasCaption }}"><span class="tk-row__lab">{{ r.caption }}</span></sc-if>
+                  </span>
+                </button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ tkSeatGeek }}"><a class="tk__attr" href="https://seatgeek.com" target="_blank" rel="noopener" aria-describedby="tk-newtab">Prices via <b>SeatGeek</b></a></sc-if>
+        <sc-if value="{{ tkHasBuy }}"><a class="btn btn--primary btn--block tk__buy" href="{{ tkBuyUrl }}" target="_blank" rel="noopener sponsored" aria-describedby="tk-newtab" onClick="{{ tkBuy }}">Buy on {{ tkBuyLabel }} <span aria-hidden="true">↗</span></a></sc-if>
+        <p class="tk__foot">Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket links.</p>
+      </div>
+    </div>
+  </sc-if>
 </sc-if>
 
 <!-- ============ SEARCH RESULTS ============ -->
@@ -3215,9 +3260,13 @@
      would 404 on the app host. -->
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
-  var appScript = document.createElement('script');
-  appScript.src = appAssetBase + 'app.js?v=20260904-event-intent';
-  document.body.appendChild(appScript);
+  // offers.js (seller rules) must run before app.js; async=false keeps order.
+  ['offers.js?v=20261023-spec01', 'app.js?v=20261023-spec01'].forEach(function (file) {
+    var s = document.createElement('script');
+    s.src = appAssetBase + file;
+    s.async = false;
+    document.body.appendChild(s);
+  });
 </script>
 <!--/email_off-->
 </body>
