@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=20261023-spec05';
+    style.href = appAssetBase + file + '?v=20261023-spec03';
     document.head.appendChild(style);
   });
 </script>
@@ -3389,7 +3389,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   // offers.js (seller rules) must run before app.js; async=false keeps order.
-  ['offers.js?v=20261023-spec05', 'map.js?v=20261023-spec05', 'recap.js?v=20261023-spec05', 'app.js?v=20261023-spec05'].forEach(function (file) {
+  ['offers.js?v=20261023-spec03', 'map.js?v=20261023-spec03', 'recap.js?v=20261023-spec03', 'app.js?v=20261023-spec03'].forEach(function (file) {
     var s = document.createElement('script');
     s.src = appAssetBase + file;
     s.async = false;

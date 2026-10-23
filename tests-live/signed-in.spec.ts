@@ -11,7 +11,7 @@ const menu = async (page, item: string) => {
   await page.getByRole('button', { name:item, exact:true }).click();
 };
 
-test('fixture account: inbox, seen history, rating, blocked accounts', async ({ page }) => {
+test('fixture account: inbox, seen history, rating, recap composer, friends and plans, blocked accounts', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/?mode=login');
@@ -34,10 +34,25 @@ test('fixture account: inbox, seen history, rating, blocked accounts', async ({ 
   await menu(page, 'My Shows');
   await page.locator('.seg__item', { hasText:'Past' }).click();
   await expect(page.getByText('You rated 4★')).toBeVisible();
+  // Spec 03: Friends screen with real tabs and plans; the blocked fixture person never appears.
+  await menu(page, 'Crew');
+  await expect(page.getByRole('heading', { name:'Friends', exact:true })).toBeVisible();
+  await expect(page.getByRole('tab', { name:/^Friends/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.s3-people .s3-row, .s3-people .s3-empty').first()).toBeVisible();
+  await expect(page.locator('.s3-people').getByText('Alex R.')).toHaveCount(0);
+  await page.getByRole('tab', { name:'Plans' }).click();
+  await expect(page.locator('.s3-planrow, .empty__title').first()).toBeVisible();
 
   await menu(page, 'Settings');
   await page.getByRole('button', { name:/Blocked accounts/ }).click();
   await expect(page.getByText('Alex R.')).toBeVisible();
+
+  // Spec 05 (last: the composer has no nav): it opens for an attended show; nothing uploads or writes until Share/Save.
+  await menu(page, 'My Shows');
+  await page.locator('.seg__item', { hasText:'Past' }).click();
+  await page.getByRole('button', { name:'Make a recap' }).first().click();
+  await expect(page.getByRole('heading', { name:'Build your recap' })).toBeVisible();
+  await expect(page.getByRole('button', { name:/Add photo/ }).first()).toBeVisible();
 
   expect(errors).toEqual([]);
 });
