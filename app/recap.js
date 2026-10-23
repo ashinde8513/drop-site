@@ -16,12 +16,13 @@
 
   // Cell rects (fractions of the grid box) for 1–4 photos, as on the Card-Frames board:
   // 1 full bleed · 2 stacked · 3 one large over two (rows 1.3fr / 1fr) · 4 two by two.
-  function cells(n, gap) {
-    var g = gap || 0, half = (1 - g) / 2;
+  // gap / gapY: the cell gap as a fraction of the grid width / height (equal px both ways).
+  function cells(n, gap, gapY) {
+    var g = gap || 0, v = gapY == null ? g : gapY, hw = (1 - g) / 2, hh = (1 - v) / 2;
     if (n <= 1) return [[0, 0, 1, 1]];
-    if (n === 2) return [[0, 0, 1, half], [0, half + g, 1, half]];
-    if (n === 3) { var top = (1 - g) * 1.3 / 2.3; return [[0, 0, 1, top], [0, top + g, half, 1 - top - g], [half + g, top + g, half, 1 - top - g]]; }
-    return [[0, 0, half, half], [half + g, 0, half, half], [0, half + g, half, half], [half + g, half + g, half, half]];
+    if (n === 2) return [[0, 0, 1, hh], [0, hh + v, 1, hh]];
+    if (n === 3) { var top = (1 - v) * 1.3 / 2.3; return [[0, 0, 1, top], [0, top + v, hw, 1 - top - v], [hw + g, top + v, hw, 1 - top - v]]; }
+    return [[0, 0, hw, hh], [hw + g, 0, hw, hh], [0, hh + v, hw, hh], [hw + g, hh + v, hw, hh]];
   }
 
   function stars(rating) { return rating > 0 ? rating + ' stars' : ''; }
@@ -115,11 +116,11 @@
       var artist = wrapLines(ctx, d.artist, W - 2 * P, 2);
       var metaH = 47 * 1.35, starH = d.rating > 0 ? 54 + 30 : 0;
       var textH = artist.length * 88 * 1.1 + 20 + metaH + starH;
-      var gx = P, gy = P + 48 + UNIT.gridMargin * K, gw = W - 2 * P, gh = H - P - textH - UNIT.gridMargin * K - gy;
-      cells(imgs.length, (UNIT.gap * K) / gw).forEach(function (r, i) {
-        var x = gx + r[0] * gw, y = gy + r[1] * gh * (gw / gw), w = r[2] * gw, h = r[3] * gh;
-        // ponytail: one gap fraction for both axes (from the width); fine at 9:16
-        y = gy + r[1] * gh; ctx.save(); roundRect(ctx, x, y, w, h, 34); ctx.clip(); cover(ctx, imgs[i], x, y, w, h); ctx.restore();
+      var gx = P, gy = P + 61 + UNIT.gridMargin * K, gw = W - 2 * P, gh = H - P - textH - UNIT.gridMargin * K - gy; // 61 = mark row (18 × 3.375)
+      var gap = UNIT.gap * K;
+      cells(imgs.length, gap / gw, gap / gh).forEach(function (r, i) {
+        var x = gx + r[0] * gw, y = gy + r[1] * gh, w = r[2] * gw, h = r[3] * gh;
+        ctx.save(); roundRect(ctx, x, y, w, h, 34); ctx.clip(); cover(ctx, imgs[i], x, y, w, h); ctx.restore();
       });
       var ty = H - P - textH;
       ctx.textBaseline = 'top'; ctx.fillStyle = '#FFFFFF'; ctx.font = '700 88px "Space Grotesk", system-ui, sans-serif';

@@ -3166,7 +3166,7 @@ class Component extends DCLogic {
     const rcGate = !!rcEv.id && !rcAttended && !s.rcGatePassed;
     const rcPhotos = s.rcPhotos || [];
     const rcReady = rcPhotos.filter(p=>!p.loading);
-    const rcDateLong = rcEv.date && Drop ? Drop.fmtDate(rcEv.date, true) : '';
+    const rcDateLong = rcEv.date ? new Date(rcEv.date).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric', timeZone: rcEv.timezone || undefined }) : '';
     const rcDateCard = rcEv.date ? new Date(rcEv.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', timeZone: rcEv.timezone || undefined }) : '';
     const rcMeta = Recap ? Recap.metaLine(rcEv.venue_name, rcDateCard) : '';
     const rcMove = (i, d)=>{

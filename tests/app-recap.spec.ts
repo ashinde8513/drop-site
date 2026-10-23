@@ -146,5 +146,6 @@ test('phone: the one primary sits in a bottom bar (thumb zone)', async ({ page, 
   const vh = page.viewportSize()!.height;
   expect(box.y).toBeGreaterThan(vh * 0.6);
   expect(box.y + box.height).toBeLessThanOrEqual(vh);
+  expect(box.height).toBeGreaterThanOrEqual(44);
   await expect(page.locator('main .btn--primary:visible')).toHaveCount(1);
 });
