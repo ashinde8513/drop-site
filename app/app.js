@@ -953,7 +953,7 @@ class Component extends DCLogic {
     crewTab: 'Friends',
     // social (spec 03)
     friendsLoading: true, friendsError: false, findQuery: '', findResults: null, findBusy: false, findError: false, addBusy: {}, addErr: {}, reqBusy: {},
-    myPlans: null, myPlansError: false, planId: null, plan: null, planBusy: false, planError: false, planGone: false, planMembers: [], planMsgs: [], planPending: [], planDraft: '', planNew: false, planMembersOpen: false,
+    myPlans: null, myPlansError: false, planId: null, plan: null, planBusy: false, planError: false, planGone: false, planMembers: [], planMsgs: [], planPending: [], planDraft: '', planNew: false, planMembersOpen: false, plansPastOpen: false,
     socMenu: null, dlg: null, personId: null, person: null, personBusy: false, personError: false, personBioOpen: false,
     wrappedRange: 'This year',
     invited: {},
@@ -1297,10 +1297,11 @@ class Component extends DCLogic {
     const uid = this.state.userId;
     if (!supa || !uid) return;
     this.setState({ myPlansError:false });
-    supa.from('plan_members').select('status, plans(id, event_id, creator_id, events(id,title,date,venue_name,city,time_tbd))').eq('user_id', uid).then(({ data, error })=>{
+    supa.from('plan_members').select('status, plans(id, event_id, creator_id, events(id,title,date,venue_name,city,time_tbd,image_url), plan_members(user_id, status, profiles(id,display_name,username,profile_image)))').eq('user_id', uid).then(({ data, error })=>{
       if (this.state.userId !== uid) return;
       if (error) { console.error('[app] plans load failed:', error.message); this.setState({ myPlans:[], myPlansError:true }); return; }
-      this.setState({ myPlans:(data || []).filter(r=>r.plans).map(r=>({ id:r.plans.id, status:r.status, creator:r.plans.creator_id, event:r.plans.events || {} })) });
+      this.setState({ myPlans:(data || []).filter(r=>r.plans && r.status !== 'declined').map(r=>({ id:r.plans.id, status:r.status, creator:r.plans.creator_id, event:r.plans.events || {},
+        members:(r.plans.plan_members || []).filter(m=>m.status !== 'declined') })) });
     });
   }
   // "Plan with friends" on a show: one plan per show per creator (create_or_get_plan).
@@ -3251,10 +3252,12 @@ class Component extends DCLogic {
     ]);
     const friendsAll = edges.filter(r=>r.status === 'accepted');
     const requestsAll = edges.filter(r=>r.status === 'pending' && r.recipient_id === meId);
-    const crewTabs = ['Friends','Requests','Find','Plans'].map(t=>{
-      const n = t === 'Friends' ? friendsAll.length : t === 'Requests' ? requestsAll.length : null;
+    const upcomingPlans = (s.myPlans || []).filter(pl=>!(pl.event.date && new Date(pl.event.date) < new Date(new Date().setHours(0, 0, 0, 0)))).length;
+    const crewTabs = ['Friends','Requests','Plans','Find'].map(t=>{
+      const n = t === 'Friends' ? friendsAll.length : t === 'Requests' ? requestsAll.length : t === 'Plans' ? upcomingPlans : null;
+      const wait = t === 'Plans' ? s.myPlans === null : s.friendsLoading;
       const on = s.crewTab === t;
-      return { label:t, count: n == null || s.friendsLoading ? '' : String(n), aria: n == null || s.friendsLoading ? t : t + ' ' + n,
+      return { label:t, count: n == null || wait ? '' : String(n), aria: n == null || wait ? t : t + ' ' + n,
         cls: (on ? 'is-active' : '') + (t === 'Find' ? ' s3-phone' : ''), selected: on ? 'true' : 'false', tabindex: on ? '0' : '-1', key:'crewtab-' + t, panel: t === 'Find' ? 'find-panel' : 'crew-panel',
         pick:()=>this.setState({ crewTab:t, socMenu:null }),
         keyDown:(e)=>{
@@ -3305,16 +3308,32 @@ class Component extends DCLogic {
       ...(({ menuKey, menuOpen, menuExpanded, toggleMenu, menuKeyDown, items })=>({ relKey:menuKey, relOpen:menuOpen, relExpanded:menuExpanded, relToggle:toggleMenu, relKeyDown:menuKeyDown, relItems:items, relMenu:'rel-' + ppId }))(personMenu(ppId, pp, ppRel.row, 'rel-' + ppId)),
     } : null;
     const blockedRow = (s.blockedRows || []).find(b=>b.id === ppId);
-    const REPORT_REASONS = ['Spam or scam', 'Harassment or bullying', 'Hate speech', 'Sexual or explicit content', 'Violence or threats', 'Other']; // native ReportBlockSheet list; copy pending A53 safety review
+    // One taxonomy shared with native (coordinator, pending A64).
+    const REPORT_REASONS = ['Spam or scam', 'Harassment or bullying', 'Hate speech', 'Sexual or explicit content', 'Violence or threats', 'Self-harm or suicide', 'Pretending to be someone else', 'Other'];
     const dlg = s.dlg;
     // ===== Plans (spec 03): the viewer's real plans; detail = members, RSVP, leave, chat =====
     const statusLabel = st => ({ going:'Going', maybe:'Maybe', invited:'Invited', declined:'Declined' })[st] || '';
     const chipFor = st => st === 'going' ? 'statuschip statuschip--going s3-chip' : st === 'maybe' ? 'statuschip statuschip--interested s3-chip' : 'statuschip s3-chip s3-chip--req';
-    const plansList = (s.myPlans || []).map(pl=>({
-      title: pl.event.title || 'Untitled show', dateShort: ((Drop && Drop.fmtDate(pl.event.date, pl.event.time_tbd)) || '').toUpperCase(), venueCity:[pl.event.venue_name, pl.event.city].filter(Boolean).join(' · '),
-      gradStyle:'background-image:' + gradFor(pl.event.id || pl.id), statusLabel: statusLabel(pl.status), statusCls: chipFor(pl.status),
-      open:(e)=>{ this.prevent(e); this.openPlan(pl.id); },
-    }));
+    // Plans tab board: "Interested" for maybe; others first in the stack; past plans fold away.
+    const listLabel = st => st === 'maybe' ? 'Interested' : statusLabel(st);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const planRow = (pl, past) => {
+      const others = pl.members.filter(m=>m.user_id !== meId && !blockedIds.has(m.user_id)), n = others.length + 1;
+      const names = others.slice(0, 2).map(m=>nameOf(m.profiles)), more = others.length - names.length;
+      const dayText = ((Drop && Drop.fmtDate(pl.event.date, pl.event.time_tbd)) || '').split(' · ')[0];
+      const title = pl.event.title || 'Untitled show';
+      return { title, sub:[dayText, pl.event.venue_name].filter(Boolean).join(' · '), countLabel: n + ' in this plan',
+        withText: names.length ? 'With ' + names.join(', ') + (more > 0 ? ' and ' + more + ' more' : '') + '. ' : '',
+        stack: others.slice(0, 4).map(m=>avOf(m.user_id, m.profiles || {})),
+        artStyle: (pl.event.image_url && avStyle(pl.event.image_url)) || 'background-image:' + AV_GRADS[hashStr(pl.event.id || pl.id) % AV_GRADS.length] + ';',
+        statusLabel: listLabel(pl.status), statusCls: chipFor(pl.status).replace(' s3-chip ', ' ').replace(/ s3-chip$/, ''), rowCls: 'frow s3-row s3-prow' + (past ? ' s3-prow--past' : ''), key:'plan-' + pl.id,
+        aria: [title, dayText, pl.event.venue_name].filter(Boolean).join(', ') + '. Your status: ' + listLabel(pl.status) + '. Open plan.',
+        open:(e)=>{ this.prevent(e); this.openPlan(pl.id); } };
+    };
+    const byDate = (a, b)=>String(a.event.date || '').localeCompare(String(b.event.date || ''));
+    const isPast = pl => pl.event.date && new Date(pl.event.date) < today;
+    const plansList = (s.myPlans || []).filter(pl=>!isPast(pl)).sort(byDate).map(pl=>planRow(pl, false));
+    const plansPast = (s.myPlans || []).filter(isPast).sort(byDate).reverse().map(pl=>planRow(pl, true));
     const pl = s.plan, plEv = (pl && pl.events) || {};
     const members = (s.planMembers || []).filter(m=>!blockedIds.has(m.user_id));
     const meMember = members.find(m=>m.user_id === meId);
@@ -3337,7 +3356,7 @@ class Component extends DCLogic {
         keyDown:(e)=>{ const d = { ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1 }[e.key]; if (!d) return; e.preventDefault(); const nx = all[(i + d + all.length) % all.length][0]; this.setPlanRsvp(nx); queueMicrotask(()=>document.querySelector('[data-bind-key="rsvp-' + nx + '"]')?.focus()); } };
     });
     const pd = pl ? {
-      title: plEv.title || 'Untitled show', ...dateParts(plEv), venue: plEv.venue_name || '', gradStyle:'background-image:' + gradFor(plEv.id || pl.id),
+      title: plEv.title || 'Untitled show', ...dateParts(plEv), venue: plEv.venue_name || '', gradStyle:'background-image:' + AV_GRADS[hashStr(plEv.id || pl.id) % AV_GRADS.length],
       summary: [counts.going + ' going', counts.maybe ? counts.maybe + ' maybe' : '', counts.invited ? counts.invited + ' invited' : ''].filter(Boolean).join(' · '),
       members: members.map(m=>{ const p = m.profiles || {}, me = m.user_id === meId;
         return { name: nameOf(p), sub: me ? 'You' + (pl.creator_id === meId ? ' · host' : '') : placeOf(p) || (pl.creator_id === m.user_id ? 'Host' : ''), ...avOf(m.user_id, p),
@@ -3869,7 +3888,7 @@ class Component extends DCLogic {
       findIdle: findState === 'idle', findBusy: findState === 'busy', findNone: findState === 'none', findErr: findState === 'error', findHas: findState === 'results',
       findCount: findState === 'results' || findState === 'none' ? findRows.length + (findRows.length === 1 ? ' person found' : ' people found') : '',
       findNoneText: 'No one found for \u2018' + findQ + '\u2019. Check the spelling or try their username.', retryFind:()=>this.searchPeople(this.state.findQuery), goFindTab:()=>this.setState({ crewTab:'Find' }),
-      plansList, plansListEmpty: plansList.length===0,
+      plansList, plansListEmpty: (s.myPlans || []).length === 0,
       // public profile (spec 03)
       screenPerson: s.screen === 'person', person, personMenuKey: ppId || '', personLoading: s.personBusy, personErr: s.personError && !s.personBusy,
       personPrivate: !s.personBusy && !s.personError && !!pp && !!pp.private && !blockedRow, personBlocked: !s.personBusy && !!blockedRow,
@@ -3879,7 +3898,7 @@ class Component extends DCLogic {
       // dialogs (block / report / remove / leave)
       dlgOpen: !!dlg, dlgBlock: !!dlg && dlg.kind === 'block', dlgReport: !!dlg && dlg.kind === 'report', dlgRemove: !!dlg && dlg.kind === 'remove', dlgLeave: !!dlg && dlg.kind === 'leave',
       dlgTitle: !dlg ? '' : dlg.kind === 'block' ? 'Block ' + dlg.name + '?' : dlg.kind === 'report' ? 'Report ' + dlg.name : dlg.kind === 'remove' ? 'Remove ' + dlg.name + '?' : 'Leave this plan?',
-      dlgBody: !dlg ? '' : dlg.kind === 'block' ? "They won't be able to find you or see your profile on Drop, and they won't be told. You can unblock them in Settings."
+      dlgBody: !dlg ? '' : dlg.kind === 'block' ? "They won't be able to find you or see your profile in the app, and they won't be told. People who aren't signed in can still see your public profile page. You can unblock them in Settings."
         : dlg.kind === 'remove' ? 'You can add each other again later.' : dlg.kind === 'leave' ? "You'll stop getting messages from it." : '',
       dlgConfirmLabel: !dlg ? '' : dlg.busy ? ({ block:'Blocking…', report:'Sending…', remove:'Removing…', leave:'Leaving…' })[dlg.kind]
         : ({ block:'Block ' + dlg.name, report:'Send report', remove:'Remove friend', leave:'Leave plan' })[dlg.kind],
@@ -3899,6 +3918,8 @@ class Component extends DCLogic {
       },
       // plans (spec 03)
       plansLoading: s.myPlans === null, plansReady: s.myPlans !== null && !s.myPlansError, plansError: s.myPlansError, retryPlans:()=>this.loadMyPlans(),
+      plansPast, plansHasPast: plansPast.length > 0, plansPastCount: String(plansPast.length), plansPastOpen: s.plansPastOpen ? 'true' : 'false', plansPastShown: !!s.plansPastOpen && plansPast.length > 0,
+      plansNoneUpcoming: plansList.length === 0 && plansPast.length > 0, togglePastPlans:()=>this.setState({ plansPastOpen: !this.state.plansPastOpen }),
       pd, planLoading: s.planBusy, planErr: s.planError && !s.planBusy, planGone: s.planGone && !s.planBusy, planReady: !!pd && !s.planBusy && !s.planError && !s.planGone,
       planSkel: [1, 2, 3], planDraft: s.planDraft, planNew: s.planNew,
       setPlanDraft:(e)=>this.setState({ planDraft:e.target.value }),

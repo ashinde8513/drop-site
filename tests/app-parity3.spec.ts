@@ -85,7 +85,7 @@ test.describe('3 spec 02 honest app-only states', () => {
     await nav(page, isMobile, 'Crew');
     await page.locator('.seg__item', { hasText:'Plans' }).click();
     await expect(page.getByRole('heading', { name:'No plans yet' })).toBeVisible();
-    await expect(page.getByRole('button', { name:'Browse shows' })).toBeVisible();
+    await expect(page.getByRole('button', { name:'Find a show' })).toBeVisible();
     for (const [item, title] of [[/Tagged in shows/, 'Tags are handled in the app'], [/Drop\+ wallet/, 'Cashback shows up in the app']] as const) {
       await profileItem(page, isMobile, item);
       const box = page.locator('.empty--wide', { has:page.getByRole('heading', { name:title }) });

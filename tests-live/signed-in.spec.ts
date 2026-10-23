@@ -41,7 +41,7 @@ test('fixture account: inbox, seen history, rating, recap composer, friends and 
   await expect(page.locator('.s3-people .s3-row, .s3-people .s3-empty').first()).toBeVisible();
   await expect(page.locator('.s3-people').getByText('Alex R.')).toHaveCount(0);
   await page.getByRole('tab', { name:'Plans' }).click();
-  await expect(page.locator('.s3-planrow, .empty__title').first()).toBeVisible();
+  await expect(page.locator('.s3-prow, .empty__title').first()).toBeVisible();
 
   await menu(page, 'Settings');
   await page.getByRole('button', { name:/Blocked accounts/ }).click();

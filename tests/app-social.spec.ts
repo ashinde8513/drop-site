@@ -108,7 +108,7 @@ test('actions menu + block dialog: keyboard menu, focus on Cancel, Escape return
   const dialog = page.getByRole('dialog', { name:'Block Maya Chen?' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name:'Cancel' })).toBeFocused();
-  await expect(dialog).toContainText("They won't be able to find you or see your profile on Drop, and they won't be told. You can unblock them in Settings.");
+  await expect(dialog).toContainText("They won't be able to find you or see your profile in the app, and they won't be told. People who aren't signed in can still see your public profile page. You can unblock them in Settings.");
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(more).toBeFocused();
@@ -269,6 +269,48 @@ test('chat: newest 200 shown oldest first, typing keeps it pinned to the end, op
   await expect.poll(atEnd).toBe(true);
   await page.getByLabel('Message your crew').pressSequentially('On my way');
   expect(await atEnd()).toBe(true);
+});
+
+test('plans tab: upcoming by date with members and status, past folded away, one link per row; empty and error states', async ({ page, isMobile }) => {
+  const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString();
+  const ev = (id: string, title: string, n: number) => ({ id, title, date:day(n), venue_name:'Ogden Theatre', city:'Denver', time_tbd:false, image_url:null });
+  const mem = (uid: string, name: string, status = 'going') => ({ user_id:uid, status, profiles:{ id:uid, display_name:name, username:null, profile_image:null } });
+  const row = (id: string, status: string, e: object, members: object[]) => ({ user_id:USER_ID, status, plans:{ id, event_id:(e as any).id, creator_id:USER_ID, events:e, plan_members:[mem(USER_ID, 'Jordan Reyes', status), ...members] } });
+  await boot(page, { rows:{ friendships:FRIENDSHIPS, profiles:PROFILES, plan_members:[
+    row('p-later', 'going', ev('e2', 'Later Show', 9), [mem(MAYA, 'Maya Chen')]),
+    row('p-soon', 'maybe', ev('e1', 'Soon Show', 2), [mem(MAYA, 'Maya Chen'), mem(DEV, 'Devon Park', 'maybe'), mem(LENA, 'Lena Cruz', 'invited')]),
+    row('p-old', 'going', ev('e0', 'Old Show', -20), []),
+  ] } });
+  await friends(page, isMobile);
+  await tab(page, /^Plans 2$/).click();
+  const links = page.getByRole('list', { name:'Upcoming plans' }).getByRole('link');
+  await expect(links).toHaveCount(2);
+  await expect(links.first()).toHaveAttribute('aria-label', /^Soon Show, .+, Ogden Theatre\. Your status: Interested\. Open plan\.$/);
+  await expect(links.first()).toContainText('4 in this plan');
+  await expect(links.first()).toContainText('With Maya Chen, Devon Park and 1 more.');
+  await expect(links.nth(1)).toHaveAttribute('aria-label', /^Later Show, .+Your status: Going\./);
+  const past = page.getByRole('button', { name:/Past plans/ });
+  await expect(past).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('list', { name:'Past plans' })).toHaveCount(0);
+  await past.click();
+  await expect(past).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('list', { name:'Past plans' }).getByRole('link')).toHaveAttribute('aria-label', /^Old Show/);
+  expect(await audit(page)).toEqual({ small:[], low:[] });
+  await links.first().click();
+  await expect(page.getByRole('link', { name:'Back to plans' })).toBeVisible();
+  await page.getByRole('link', { name:'Back to plans' }).click();
+  await expect(tab(page, /^Plans/)).toHaveAttribute('aria-selected', 'true');
+});
+
+test('plans tab: zero plans is a real empty with one primary; a failed load is an alert with Try again', async ({ page, isMobile }) => {
+  await boot(page, { errors:{ 'plan_members.select':'down' } });
+  await friends(page, isMobile);
+  await tab(page, /^Plans/).click();
+  await expect(page.getByRole('alert').filter({ hasText:"We couldn't load your plans" })).toBeVisible();
+  await page.evaluate(() => { delete (window as any).__cfg.errors; (window as any).__cfg.rows.plan_members = []; });
+  await page.getByRole('button', { name:'Try again' }).click();
+  await expect(page.getByRole('heading', { name:'No plans yet' })).toBeVisible();
+  await expect(page.locator('main .btn--primary')).toHaveText(['Find a show']);
 });
 
 test('plan: not a member reads neutral, only Back', async ({ page }) => {
