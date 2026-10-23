@@ -26,6 +26,8 @@ async function render({ request }) {
   const city = cleanCity(params.get('city') || 'Denver');
   if (!city) return htmlResponse(notFound, 404);
   const indexableCity = knownCity(city);
+  // An unknown ?city= would put link-supplied text in the heading: drop it.
+  if (params.has('city') && !indexableCity) return new Response(null, { status: 301, headers: { Location: '/genre?genre=' + encodeURIComponent(GENRES.includes(params.get('genre')) ? params.get('genre') : 'House') } });
   const genre = GENRES.includes(params.get('genre')) ? params.get('genre') : 'House';
   const canonical = '/genre?genre=' + encodeURIComponent(genre) + (params.has('city') ? '&city=' + encodeURIComponent(indexableCity || city) : '');
   if (indexableCity && url.pathname + url.search !== canonical) return new Response(null, { status: 301, headers: { Location: canonical } });

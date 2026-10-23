@@ -8,7 +8,7 @@ import {
   artistPath, escapeHtml, eventAvailabilityText, eventPath, eventView, indexableEntities,
   isIndexableArtist, isIndexableEvent, isIndexableVenue, renderTemplate, routeId,
   safeAttributionQuery, schemaEventStatus, schemaOfferAvailability, sitemapXml, slugify,
-  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle, countryOf, sitemapEntities, venueDirectoryHtml, withVenueDirectory,
+  ticketActionText, venuePath, redirectResponse, plainText, clipText, eventTitle, countryOf, getArtist, sitemapEntities, venueDirectoryHtml, withVenueDirectory,
 } from '../src/entity-seo.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -252,6 +252,30 @@ test('genre pages server-render "<Genre> in other cities" from the sitemap rule'
   const fn = readFileSync(new URL('../functions/genre.js', import.meta.url), 'utf8');
   assert.match(fn, /Promise\.all\(\[upcomingEvents\(\{ city: indexableCity, genre \}\), catalog\(\)\]\)/);
   assert.match(fn, /> 36e5/);
+});
+
+test('artist page reads upcoming shows event_artists-first and returns plain event rows', async () => {
+  const seen = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    seen.push(String(url));
+    const body = String(url).includes('/artists?') ? [{ id: artistId, name: 'A' }] : [{ events: { id, title: 'Show', date: '2026-11-01T02:00:00Z' } }];
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const data = await getArtist(artistId);
+    assert.deepEqual(data.events, [{ id, title: 'Show', date: '2026-11-01T02:00:00Z' }]);
+    const q = decodeURIComponent(seen.find((u) => u.includes('/event_artists?')));
+    assert.match(q, new RegExp(`artist_id=eq\\.${artistId}`));
+    assert.match(q, /select=events!inner\(id,title,/);
+    assert.match(q, /events\.status=eq\.published/);
+    assert.match(q, new RegExp(`events\\.event_artists\\.artist_id=eq\\.${artistId}`));
+    assert.match(q, /order=events\(date\)\.asc,events\(id\)\.asc/);
+    assert.ok(!seen.some((u) => u.includes('/rest/v1/events?')), 'no events-first scan');
+  } finally {
+    globalThis.fetch = original;
+  }
+  assert.match(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), /get\('event_artists\?' \+ q\(\{\n\s+select: 'events!inner\(' \+ EVENT_COLS/);
 });
 
 test('catalog HTML descriptions become clean plain text everywhere', () => {

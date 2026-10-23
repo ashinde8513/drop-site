@@ -19,9 +19,25 @@
   Drop.CITIES = CITIES;
   Drop.ALL_CITIES = 'All cities';
 
+  // A link's ?city= ends up as page text (nav, headings), so it is honoured only
+  // for a known market, "All cities", or the city this visitor picked themselves;
+  // a crafted link falls back to their saved city.
   Drop.city = function () {
     var selected = new URLSearchParams(location.search).get('city');
-    if (selected) return selected;
+    var saved = Drop.savedCity();
+    if (!selected) return saved;
+    if (Drop.knownCity(selected)) return Drop.knownCity(selected);
+    if (selected === Drop.ALL_CITIES || selected.toLowerCase() === saved.toLowerCase()) return selected;
+    return saved;
+  };
+  // Display-safe city: a link's ?city= is shown as page text only when it is a
+  // known market (anyone can craft a link); otherwise the visitor's saved city.
+  Drop.knownCity = function (value) {
+    var v = String(value || '').trim().toLowerCase();
+    for (var i = 0; i < CITIES.length; i++) if (CITIES[i].toLowerCase() === v) return CITIES[i];
+    return null;
+  };
+  Drop.savedCity = function () {
     try { return localStorage.getItem('drop.city') || 'Denver'; }
     catch (e) { return 'Denver'; } // ponytail: private-mode localStorage throws — default
   };
@@ -297,22 +313,22 @@
 
   Drop.fetchArtist = function (id) {
     var artistP = get('artists?' + q({ select: 'id,name,genres,image_url,merch_url,website_url,verified', id: 'eq.' + id, limit: 1 }));
-    // Events for this artist, upcoming. `!inner` on the join table makes the
-    // filter an actual server-side narrowing of parent rows (plain
-    // `event_artists.artists.id=eq.X` only narrows the embed, not which
-    // events come back — otherwise real shows can be silently truncated by
-    // unrelated events earlier in the site-wide result set).
-    var evP = get('events?' + q({
-      select: EVENT_COLS + ',event_artists!inner(artists(id,name,genres,image_url))',
-      status: 'eq.published',
-      date: 'gte.' + todayISO(),
-      order: 'date.asc',
-      'event_artists.artist_id': 'eq.' + id,
+    // Upcoming events for this artist, starting from its event_artists rows
+    // (indexed on artist_id) — the events-first `!inner` shape probed every
+    // upcoming event (mirrors src/entity-seo.mjs getArtist). The nested embed
+    // still carries only this artist.
+    var evP = get('event_artists?' + q({
+      select: 'events!inner(' + EVENT_COLS + ',event_artists(artists(id,name,genres,image_url)))',
+      artist_id: 'eq.' + id,
+      'events.status': 'eq.published',
+      'events.date': 'gte.' + todayISO(),
+      'events.event_artists.artist_id': 'eq.' + id,
+      order: 'events(date).asc,events(id).asc',
       limit: 1000
     }));
     return Promise.all([artistP, evP]).then(function (r) {
       if (!r[0] || !r[0].length) throw new Error('not found');
-      return { artist: r[0][0], events: r[1] };
+      return { artist: r[0][0], events: (r[1] || []).map(function (link) { return link.events; }) };
     });
   };
 

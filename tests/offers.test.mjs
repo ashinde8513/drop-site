@@ -112,12 +112,14 @@ test('unknown, stale and unverified prices read Live price; captions only from d
     { ...a, id: 'cur', vendor: 'DICE', currency: null },
     { ...a, id: 'fees', vendor: 'Tixr', price_min: 98.5, price_includes_fees: true },
     { ...a, id: 'max', vendor: 'AXS', price_min: 92, price_max: 140 },
+    { ...a, id: 'zero', vendor: 'TicketWeb', price_min: 0 },
   ]).rows;
   const by = Object.fromEntries(rows.map((r) => [r.id, r]));
   assert.equal(by.n.amount, null); assert.equal(by.n.line, 'See current total on seller site');
   assert.equal(by.cur.amount, null);
   assert.equal(by.fees.amount, '$98.50'); assert.equal(by.fees.caption, 'Fees included');
   assert.equal(by.max.caption, 'up to $140');
+  assert.equal(by.zero.amount, null, 'never "$0"');
   assert.equal(O.freshness(null, now), 'unknown');
   assert.equal(O.freshness('bad', now), 'unknown');
   assert.equal(O.freshness('2099-01-01', now), 'unknown');

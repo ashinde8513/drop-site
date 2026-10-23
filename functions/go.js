@@ -26,6 +26,12 @@ function isIOS(userAgent) {
   return /Macintosh/i.test(userAgent) && /Mobile\/|Touch/i.test(userAgent);
 }
 
+// ponytail: substring list, not a bot database; widen when scan rows show new agents.
+const BOT_UA = /bot\b|bot\/|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|slack|curl\/|wget|python|node-fetch|httpclient|headless|lighthouse|monitor/i;
+export function isBot(userAgent) {
+  return !userAgent || BOT_UA.test(userAgent);
+}
+
 function isAndroid(userAgent) {
   return /Android/i.test(userAgent);
 }
@@ -44,6 +50,9 @@ export async function onRequest({ request }) {
 
   const incoming = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
+  // Crawlers, link previews and HEAD probes never scanned a card: route them
+  // without calling the Edge Function so they don't mint scan rows.
+  if (request.method === 'HEAD' || isBot(userAgent)) return fallback(userAgent);
   const target = new URL(EDGE_URL);
   for (const name of FORWARDED) {
     const value = incoming.searchParams.get(name);
@@ -65,5 +74,9 @@ export async function onRequest({ request }) {
     // fall through to the untracked redirect below
   }
 
+  return fallback(userAgent);
+}
+
+function fallback(userAgent) {
   return redirect(isIOS(userAgent) ? IOS_STORE_URL : (isAndroid(userAgent) ? ANDROID_STORE_URL : WEB_URL));
 }

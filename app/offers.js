@@ -212,7 +212,8 @@
     var currency = validCurrency(o.currency);
     var fresh = freshness(o.last_seen_at, now);
     // Like native quoteTotal: only a fresh quote is shown; unknown age reads Live price too.
-    var amount = isFinite(price) && price >= 0 && currency && fresh === 'fresh' ? price : null;
+    // $0 may be a free show or a feed placeholder: claim neither (never "$0", same as map pins).
+    var amount = isFinite(price) && price > 0 && currency && fresh === 'fresh' ? price : null;
     var max = o.price_max == null || o.price_max === '' ? NaN : Number(o.price_max);
     return { amount: amount, currency: currency, fresh: fresh, stale: fresh === 'stale', upTo: amount != null && isFinite(max) && max > amount ? max : null };
   }

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { onRequest } from '../functions/go.js';
+import { isBot, onRequest } from '../functions/go.js';
 
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36';
@@ -105,4 +105,20 @@ test('rejects non-GET methods', async () => {
 test('/go is registered as a Pages Function route', () => {
   const routes = JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8'));
   assert.ok(routes.include.includes('/go'), '_routes.json must invoke the Function for /go');
+});
+
+test('bots, link previews and HEAD probes skip the Edge Function (no scan row)', async () => {
+  let called = 0;
+  const stub = async () => { called++; return new Response(null, { status: 302, headers: { location: 'https://trydropapp.com/?drop_scan=x' } }); };
+  for (const ua of ['Googlebot/2.1 (+http://www.google.com/bot.html)', 'facebookexternalhit/1.1', 'WhatsApp/2.23', 'Slackbot-LinkExpanding 1.0', 'curl/8.4.0', 'python-requests/2.31', '']) {
+    const response = await withFetch(stub, () => onRequest({ request: request('https://trydropapp.com/go?placement=card', ua) }));
+    assert.equal(response.status, 302, ua);
+    assert.equal(response.headers.get('location'), 'https://trydropapp.com/', ua);
+  }
+  const head = await withFetch(stub, () => onRequest({ request: request('https://trydropapp.com/go', IOS_UA, 'HEAD') }));
+  assert.equal(head.headers.get('location'), `${APP_STORE}?pt=129160185&ct=go-qr&mt=8`);
+  assert.equal(called, 0, 'no Edge Function call for bots or HEAD');
+  for (const ua of [IOS_UA, ANDROID_UA]) assert.equal(isBot(ua), false, ua);
+  await withFetch(stub, () => onRequest({ request: request('https://trydropapp.com/go', IOS_UA) }));
+  assert.equal(called, 1, 'a real phone scan still reaches the Edge Function');
 });
