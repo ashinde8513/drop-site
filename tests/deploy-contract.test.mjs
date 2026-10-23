@@ -57,6 +57,12 @@ test('static and Function responses share one security header baseline', async (
   }
 });
 
+test('partner upload short links redirect to the two Google Forms', () => {
+  const redirects = readRepo('_redirects');
+  assert.match(redirects, /^\/submit\s+https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform\s+302$/m);
+  assert.match(redirects, /^\/send\s+https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform\s+302$/m);
+});
+
 test('legacy routes land on pages that exist', () => {
   const redirects = readRepo('_redirects');
   assert.match(redirects, /^\/plan\/\*\s+\/share-plan\s+200$/m);

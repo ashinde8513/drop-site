@@ -12,6 +12,10 @@
 /crew-picks/:id /download  200
 /onboarding /download  302
 
+# Partner/fan content upload forms (Google Forms, trydropapp@gmail.com). Short links go in DMs, flyers and bios.
+/submit https://docs.google.com/forms/d/e/1FAIpQLSdMxUgV5Askouk3-pkbN9AI_zsORzLoPfEkpuLzo4-R26P6sA/viewform  302
+/send   https://docs.google.com/forms/d/e/1FAIpQLSco5S_BFK0zjeyiRU7f1GMlbLLjGh5-rbcMYAelanAlkdDBlA/viewform  302
+
 # /app* redirect removed — the standalone post-login web app (ported Prism
 # design SPA) is served natively by Pages from /app/.
 
