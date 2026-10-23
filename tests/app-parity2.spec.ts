@@ -71,7 +71,7 @@ test.describe('4 honest copy', () => {
   test('no ODESZA/Maya on share, wrapped-share, referral; Drop+ CTA disabled; no free-month promise', async ({ page }) => {
     await bootSignedIn(page, { signedOut:true }, [EVENT]);
     await open(page);
-    for (const link of ['Shared recap', 'Shared Wrapped', 'Referral']) {
+    for (const link of ['Shared Wrapped', 'Referral']) { // the in-app Shared recap mock is retired (spec 05)
       await footer(page, link);
       await expect(page.locator('main')).toBeVisible();
       await expect(page.locator('body')).not.toContainText(/odesza|maya|red rocks/i);
@@ -99,8 +99,7 @@ test.describe('4 honest copy', () => {
     await page.goto('/app/index.html'); await expect(page.getByText('Parity Two Night').first()).toBeVisible();
     await profileItem(page, isMobile, /Memories/);
     await page.getByRole('button', { name:'Create recap' }).click();
-    await page.getByRole('button', { name:'Yes, I was there' }).click();
-    await expect(page.getByText('Log a show to fill this card')).toBeVisible();
+    await expect(page.getByText('Log a past show to make a recap')).toBeVisible(); // no past show, no invented one
     await expect(page.locator('body')).not.toContainText(/odesza|red rocks/i);
   });
 });

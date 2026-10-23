@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=20261023-spec04';
+    style.href = appAssetBase + file + '?v=20261023-spec05';
     document.head.appendChild(style);
   });
 </script>
@@ -1599,6 +1599,7 @@
                 <div style="color:var(--text-secondary);font-size:var(--fs-sm);">{{ p.dateShort }} · {{ p.venueCity }}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <button type="button" class="btn btn--ghost btn--sm" onClick="{{ p.makeRecap }}">Make a recap</button>
                 <sc-if value="{{ p.notAttended }}"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ p.markAttended }}">I went</button><span style="font-size:var(--fs-xs);color:var(--text-secondary);">Mark it attended to rate it</span></sc-if>
                 <sc-if value="{{ p.attended }}"><span style="font-size:var(--fs-xs);color:var(--text-secondary);">{{ p.rateLabel }}</span>
                 <div style="display:flex;gap:4px;">
@@ -2281,65 +2282,98 @@
   </main>
 </sc-if>
 
-<!-- ============ POST-SHOW RECAP ============ -->
+<!-- ============ POST-SHOW RECAP (design spec 05; photos stay on the device, A52) ============ -->
 <sc-if value="{{ screenRecap }}">
-  <main style="position:relative;overflow:hidden;min-height:100vh;">
-    <div style="position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(226,77,255,0.2),transparent 62%);top:-180px;right:-80px;filter:blur(40px);pointer-events:none;"></div>
-    <div style="position:relative;max-width:900px;margin:0 auto;padding:var(--sp-xl) var(--sp-xl) var(--sp-xxxl);">
-      <a href="#" onClick="{{ goMemories }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to memories</a>
+  <main class="rc-page">
+    <div class="rc-glow" aria-hidden="true"></div>
+    <div class="rc-wrap">
+      <a href="#" class="rc-back" onClick="{{ goMemories }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg>Back to memories</a>
 
-      <!-- Were you there gate -->
-      <sc-if value="{{ recapGate }}">
-        <div style="max-width:460px;margin:8vh auto 0;text-align:center;">
-          <div style="width:120px;height:120px;border-radius:var(--r-xl);margin:0 auto var(--sp-lg);background:linear-gradient(120deg,#2b1c4d,#0d3b52 55%,#143a22);"></div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);margin:6px 0 var(--sp-xs);">Were you there?</h1>
-          <p style="color:var(--text-secondary);margin:0 0 var(--sp-xl);">Confirm you attended to build a recap. Recaps are only for shows you were actually at.</p>
-          <div style="display:flex;gap:var(--sp-md);justify-content:center;">
-            <button type="button" class="btn btn--primary" onClick="{{ recapYes }}">Yes, I was there</button>
+      <!-- Were you there gate: skipped when the show is already attended or logged -->
+      <sc-if value="{{ rcGate }}">
+        <div class="rc-gate">
+          <div class="rc-gate__art" aria-hidden="true" style="{{ rcGrad }}"></div>
+          <h1 class="rc-title">Were you there?</h1>
+          <p class="rc-gate__show">{{ rcArtist }} · {{ rcVenue }}</p>
+          <p class="rc-gate__date">{{ rcDateLong }}</p>
+          <p class="rc-gate__body">Confirm you attended to build a recap. Recaps are only for shows you were at.</p>
+          <sc-if value="{{ rcGateErr }}"><p class="rc-alert" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Could not save. Try again.</p></sc-if>
+          <div class="rc-gate__actions">
+            <button type="button" class="btn btn--primary {{ rcGateBusyCls }}" data-bind-key="rc-yes" aria-busy="{{ rcGateBusy }}" aria-disabled="{{ rcGateBusy }}" onClick="{{ rcYes }}">{{ rcYesLabel }}</button>
             <button type="button" class="btn btn--ghost" onClick="{{ goMemories }}">Not this one</button>
           </div>
         </div>
       </sc-if>
 
-      <!-- Builder -->
-      <sc-if value="{{ recapBuild }}">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0 0 var(--sp-xl);">Build your recap</h1>
-        <div class="m-stack" style="display:grid;grid-template-columns:1fr 320px;gap:var(--sp-xxl);align-items:start;">
-          <div>
-            <div class="sec__title" style="margin-bottom:var(--sp-sm);">Pick up to 4 photos</div>
-            <div style="font-size:var(--fs-xs);color:var(--text-muted);margin-bottom:var(--sp-md);">{{ recapCountLabel }}</div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--sp-md);">
-              <sc-for list="{{ recapSlots }}" as="p" hint-placeholder-count="4">
-                <div style="position:relative;aspect-ratio:1;border-radius:var(--r-md);overflow:hidden;border:1px dashed var(--border-strong);">
-                  <image-slot id="{{ p.id }}" shape="rect" placeholder="Photo {{ p.n }}"></image-slot>
-                </div>
+      <!-- Composer -->
+      <sc-if value="{{ rcBuild }}">
+        <h1 class="rc-title">Build your recap</h1>
+        <div class="rc-sub"><p>{{ rcArtist }} · {{ rcVenue }} · {{ rcDateLong }}</p><span class="statuschip statuschip--attended rc-chip">Attended</span></div>
+        <div class="rc-grid">
+          <div class="rc-left">
+            <h2 class="sec__title rc-h2">Pick up to 4 photos</h2>
+            <div class="rc-count" aria-live="polite">{{ rcCountLabel }}</div>
+            <div class="rc-slots">
+              <sc-for list="{{ rcTiles }}" as="t" hint-placeholder-count="4">
+                <sc-if value="{{ t.empty }}"><button type="button" class="rc-slot" data-bind-key="{{ t.key }}" aria-label="{{ t.addLabel }}" onClick="{{ t.add }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add photo</button></sc-if>
+                <sc-if value="{{ t.loading }}"><div class="rc-tile skel" aria-hidden="true"></div></sc-if>
+                <sc-if value="{{ t.filled }}">
+                  <div class="rc-tile {{ t.cls }}">
+                    <img src="{{ t.url }}" alt="" class="rc-tile__img">
+                    <sc-if value="{{ t.video }}"><span class="rc-badge">VIDEO</span></sc-if>
+                    <button type="button" class="rc-tile__btn rc-tile__rm" data-bind-key="{{ t.rmKey }}" aria-label="{{ t.rmLabel }}" onClick="{{ t.remove }}" onFocus="{{ t.focus }}"><span class="rc-dot"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+                    <div class="rc-tile__moves">
+                      <button type="button" class="rc-tile__btn" data-bind-key="{{ t.leftKey }}" aria-label="{{ t.leftLabel }}" disabled="{{ t.first }}" onClick="{{ t.left }}" onFocus="{{ t.focus }}"><span class="rc-dot"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></span></button>
+                      <button type="button" class="rc-tile__btn" data-bind-key="{{ t.rightKey }}" aria-label="{{ t.rightLabel }}" disabled="{{ t.last }}" onClick="{{ t.right }}" onFocus="{{ t.focus }}"><span class="rc-dot"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></span></button>
+                    </div>
+                  </div>
+                </sc-if>
               </sc-for>
             </div>
-          </div>
-          <!-- 9:16 branded preview -->
-          <div style="position:sticky;top:88px;">
-            <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Recap card · 9:16</div>
-            <div style="aspect-ratio:9/16;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border-strong);position:relative;background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);box-shadow:var(--shadow-card);">
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:var(--sp-lg);">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="width:14px;height:14px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);"></span>
-                  <span style="font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:var(--tr-tight);">DROP</span>
+            <sc-if value="{{ rcHasVideo }}"><p class="rc-note"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>Videos show as a still on the card.</p></sc-if>
+            <sc-if value="{{ rcFileErr }}"><p class="rc-alert" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>{{ rcFileErrText }}</p></sc-if>
+            <div class="rc-add">
+              <label class="btn btn--ghost btn--sm rc-add__btn"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add photos<input id="rc-file" type="file" accept="image/*,video/*" multiple class="sr-only" onChange="{{ rcPick }}"></label>
+              <span class="rc-privacy"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Photos stay on your device.</span>
+            </div>
+            <sc-if value="{{ rcAltOn }}">
+              <div class="rc-field">
+                <label for="rc-alt" class="rc-label">{{ rcAltLabel }}</label>
+                <input id="rc-alt" type="text" value="{{ rcAltValue }}" onInput="{{ rcSetAlt }}" placeholder="Example: sunset over the stage, row 14">
+                <div class="rc-help">Read aloud by screen readers. Left empty, the photo is treated as decoration.</div>
+              </div>
+            </sc-if>
+            <div class="rc-field">
+              <div id="rc-rate-l" class="rc-label">Your rating (optional)</div>
+              <div class="rc-rate">
+                <div role="radiogroup" aria-labelledby="rc-rate-l" class="rc-stars">
+                  <sc-for list="{{ rcStars }}" as="st" hint-placeholder-count="5"><button type="button" role="radio" class="rc-star" id="{{ st.id }}" data-bind-key="{{ st.id }}" aria-checked="{{ st.checked }}" aria-label="{{ st.label }}" tabindex="{{ st.tabindex }}" onClick="{{ st.pick }}" onKeyDown="{{ st.key }}">{{ st.glyph }}</button></sc-for>
                 </div>
-                <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;margin:var(--sp-md) 0;">
-                  <sc-for list="{{ recapPreviewCells }}" as="c" hint-placeholder-count="4">
-                    <div style="border-radius:var(--r-sm);overflow:hidden;position:relative;{{ c.bg }}"><image-slot id="{{ c.id }}" shape="rect"></image-slot></div>
-                  </sc-for>
-                </div>
-                <div>
-                  <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">{{ recapCardTitle }}</div>
-                  <div style="font-size:11px;color:var(--text-secondary);">{{ recapCardMeta }}</div>
-                </div>
+                <span class="rc-help rc-rate__txt">{{ rcRateText }}</span>
+                <sc-if value="{{ rcRated }}"><button type="button" class="rc-clear" data-bind-key="rc-clear" onClick="{{ rcClearRating }}">Clear rating</button></sc-if>
               </div>
             </div>
-            <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-md);">
-              <button type="button" class="btn btn--primary" style="flex:1;" onClick="{{ recapShare }}">↗ Share</button>
-              <button type="button" class="btn btn--secondary" onClick="{{ recapDownload }}">↓</button>
+          </div>
+          <div class="rc-right">
+            <div class="rc-cardlab">Recap card</div>
+            <div class="rc-card" role="img" aria-label="{{ rcCardLabel }}">
+              <div class="rc-card__mark" aria-hidden="true"><span class="rc-card__drop"></span>DROP</div>
+              <div class="rc-card__grid {{ rcGridCls }}" aria-hidden="true">
+                <sc-for list="{{ rcCells }}" as="c" hint-placeholder-count="4"><span class="rc-card__cell"><img src="{{ c.url }}" alt=""><sc-if value="{{ c.video }}"><span class="rc-badge">VIDEO</span></sc-if></span></sc-for>
+                <sc-if value="{{ rcEmpty }}"><span class="rc-card__hint">Add up to 4 photos</span></sc-if>
+              </div>
+              <div class="rc-card__artist" aria-hidden="true">{{ rcArtist }}</div>
+              <div class="rc-card__meta" aria-hidden="true">{{ rcMeta }}</div>
+              <sc-if value="{{ rcRated }}"><div class="rc-card__stars" aria-hidden="true">{{ rcStarsText }}</div></sc-if>
             </div>
+            <div class="rc-actions">
+              <sc-if value="{{ rcCanShare }}"><button type="button" class="btn btn--primary rc-primary" data-bind-key="rc-share" aria-disabled="{{ rcActionsOff }}" aria-describedby="rc-help" onClick="{{ rcShare }}">{{ rcShareLabel }}</button></sc-if>
+              <sc-if value="{{ rcSaveIsPrimary }}"><button type="button" class="btn btn--primary rc-primary" data-bind-key="rc-save-p" aria-disabled="{{ rcActionsOff }}" aria-describedby="rc-help" onClick="{{ rcSave }}">{{ rcSaveLabel }}</button></sc-if>
+              <sc-if value="{{ rcCanShare }}"><button type="button" class="btn btn--secondary rc-secondary" data-bind-key="rc-save" aria-disabled="{{ rcActionsOff }}" onClick="{{ rcSave }}">Save image</button></sc-if>
+            </div>
+            <p class="rc-help" id="rc-help">{{ rcHelp }}</p>
+            <div class="sr-only" aria-live="polite">{{ rcBusyText }}</div>
+            <sc-if value="{{ rcRenderErr }}"><p class="rc-alert" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>We couldn't make your card. Try again.</p></sc-if>
           </div>
         </div>
       </sc-if>
@@ -2801,35 +2835,6 @@
   </main>
 </sc-if>
 
-<!-- ============ SHARED RECAP (public) ============ -->
-<sc-if value="{{ screenShareRecap }}">
-  <main style="position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--sp-xxl) var(--sp-xl);">
-    <div style="position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(77,226,255,0.24),transparent 62%);bottom:-200px;left:-100px;filter:blur(42px);animation:floatGlow 11s var(--ease) infinite reverse;pointer-events:none;"></div>
-    <div class="m-stack" style="position:relative;width:100%;max-width:640px;display:grid;grid-template-columns:280px 1fr;gap:var(--sp-xxl);align-items:center;">
-      <div style="aspect-ratio:9/16;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border-strong);position:relative;background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);box-shadow:var(--shadow-card);">
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:var(--sp-lg);">
-          <div style="display:flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);"></span><span style="font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:var(--tr-tight);">DROP</span></div>
-          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;margin:var(--sp-md) 0;">
-            <span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.08);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.05);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.06);"></span><span style="border-radius:var(--r-sm);background:rgba(255,255,255,0.04);"></span>
-          </div>
-          <div>
-            <div style="font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.1;">A night out</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Shared on Drop</div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:var(--tr-tight);background:var(--grad-chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:var(--sp-lg);"><span style="width:14px;height:14px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--grad-glow);box-shadow:var(--shadow-glow);"></span>DROP</a>
-        <div class="wsc__date">SHOW RECAP</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,40px);letter-spacing:var(--tr-tight);line-height:1.05;margin:6px 0 var(--sp-sm);">A night out on Drop</h1>
-        <p style="color:var(--text-secondary);font-size:var(--fs-md);margin:0 0 var(--sp-xl);">See the shows your friends are hitting and build recaps of your own.</p>
-        <button type="button" class="btn btn--primary btn--block" onClick="{{ goSignup }}">Join Drop</button>
-        <button type="button" class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" onClick="{{ appToast }}">Get the app</button>
-      </div>
-    </div>
-  </main>
-</sc-if>
-
 <!-- ============ SHARED WRAPPED (public) ============ -->
 <sc-if value="{{ screenShareWrapped }}">
   <main style="position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--sp-xxl) var(--sp-xl);">
@@ -3274,7 +3279,6 @@
         <div style="display:flex;flex-direction:column;gap:8px;min-width:130px;">
           <span style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);">Shared links</span>
           <a href="#" onClick="{{ goSharePlan }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Shared plan</a>
-          <a href="#" onClick="{{ goShareRecap }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Shared recap</a>
           <a href="#" onClick="{{ goShareWrapped }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Shared Wrapped</a>
           <a href="#" onClick="{{ goLink }}" style="color:var(--text-secondary);font-size:var(--fs-sm);">Link hub</a>
         </div>
@@ -3350,7 +3354,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   // offers.js (seller rules) must run before app.js; async=false keeps order.
-  ['offers.js?v=20261023-spec04', 'map.js?v=20261023-spec04', 'app.js?v=20261023-spec04'].forEach(function (file) {
+  ['offers.js?v=20261023-spec05', 'map.js?v=20261023-spec05', 'recap.js?v=20261023-spec05', 'app.js?v=20261023-spec05'].forEach(function (file) {
     var s = document.createElement('script');
     s.src = appAssetBase + file;
     s.async = false;
