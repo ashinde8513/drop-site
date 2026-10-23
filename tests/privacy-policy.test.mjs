@@ -17,6 +17,7 @@ test('privacy policy discloses the app data the App Privacy label declares', () 
     ['no raw contact upload', /raw address-book details are not uploaded to or stored by Drop/],
     ['Google Fonts recipient (audit 06 M4)', /Google Fonts, which receives your IP address/],
     ['Cloudflare hosting + network-error reports', /Cloudflare for website hosting, security, and network-error reports/],
+    ['OpenFreeMap tiles (A56)', /OpenFreeMap, which serves map tiles through Cloudflare.*Drop sends it no account information/],
     ['QR scan attribution', /record the scan with your device type/],
     ['referral/creator code storage', /referral or creator code/],
   ]) assert.match(text, re, what);
