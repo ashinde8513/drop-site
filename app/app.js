@@ -1293,8 +1293,8 @@ class Component extends DCLogic {
     if (!this._mapView) this._mapView = DropMap.createMapView({
       center: d.center,
       onMove: (ids)=>{ if ((this.state.mapInView || []).join() !== ids.join() || !this.state.mapInView) this.setState({ mapInView: ids }); },
-      // Selecting a pin centres it (board: "the map jumps"), so the selected card never hides it.
-      onSelect: (id)=>{ const p = (this._pins || []).find(x=>x.id === id); this.setState({ mapSel: id, mapSheet: false }); if (p && this._mapView) this._mapView.panTo(p.lng, p.lat); },
+      // Selecting a pin jumps the map just enough that the selected card never hides it.
+      onSelect: (id)=>{ const p = (this._pins || []).find(x=>x.id === id); this.setState({ mapSel: id, mapSheet: false }); if (p && this._mapView) this._mapView.reveal(p.lng, p.lat); },
       onError: (e)=>{ console.error('[app] map failed:', e && e.message); this.setState({ mapErr: true }); },
       onEscape: ()=>document.getElementById('mp-view-map')?.focus(),
     });
@@ -2521,7 +2521,7 @@ class Component extends DCLogic {
         price: DropMap ? DropMap.priceText(pinEv(e), fmtAmt) : '', going: n > 0 ? n + ' going' : '',
         badge: st === 'going' ? 'Going' : st === 'interested' ? 'Interested' : '', badgeCls: st === 'going' ? 'mp-badge--going' : 'mp-badge--int',
         badgePath: st === 'going' ? 'M5 12l5 5 9-10' : 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
-        pick: (ev)=>{ this.prevent(ev); if (!onMap) { e.open(ev); return; } this.setState({ mapSel: e.id }); if (this._mapView) this._mapView.panTo(e.lng, e.lat); },
+        pick: (ev)=>{ this.prevent(ev); if (!onMap) { e.open(ev); return; } this.setState({ mapSel: e.id }); if (this._mapView) this._mapView.reveal(e.lng, e.lat); },
       };
     };
     // ponytail: rail renders the first 50 by date; the heading keeps the full count.

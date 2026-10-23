@@ -188,7 +188,18 @@
       },
       zoom: function (d) { touched = true; if (map) map.easeTo({ zoom: map.getZoom() + d, duration: 0 }); },
       zoomOut: function () { touched = true; if (map) map.easeTo({ zoom: Math.max(3, map.getZoom() - 2), duration: 0 }); },
-      panTo: function (lng, lat) { touched = true; if (map) map.jumpTo({ center: [lng, lat] }); },
+      // Pan only as far as needed to show the pin: inside the canvas and clear of the
+      // selected card (desktop, bottom-left) or the sheet (phone, bottom). Others stay put.
+      reveal: function (lng, lat) {
+        if (!map) return;
+        var p = map.project([lng, lat]), w = el.clientWidth, h = el.clientHeight, m = 44;
+        var phone = window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+        var cover = phone ? { w: w, top: h - 180 } : { w: 352, top: h - 200 };
+        var dx = p.x < m ? p.x - m : p.x > w - m ? p.x - (w - m) : 0;
+        var dy = p.y < m ? p.y - m : p.y > h - m ? p.y - (h - m) : 0;
+        if (p.x - dx < cover.w && p.y - dy > cover.top - m) dy = p.y - (cover.top - m);
+        if (dx || dy) { touched = true; map.panBy([dx, dy], { duration: 0 }); }
+      },
       centerOn: function (lng, lat, zoom) { touched = true; if (map) map.jumpTo({ center: [lng, lat], zoom: zoom || Math.max(map.getZoom(), 12) }); },
       reset: function () { ready = null; if (map) map.remove(); map = null; markers = {}; },
     };
