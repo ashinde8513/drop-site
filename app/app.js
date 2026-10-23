@@ -888,7 +888,7 @@
     var rows = [['Top artist', wr.topArtist], ['Top venue', wr.topVenue], ['Top genre', wr.topGenre]];
     var y = H - 260;
     rows.forEach(function (pair) {
-      ctx.fillStyle = '#7C8597';
+      ctx.fillStyle = '#98A2B4';
       ctx.font = '400 24px "Sora", system-ui, sans-serif';
       ctx.fillText(pair[0], 56, y);
       ctx.fillStyle = '#FFFFFF';
