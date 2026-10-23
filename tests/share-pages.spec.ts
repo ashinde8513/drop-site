@@ -56,3 +56,16 @@ test('wrapped passes only a UUID referral', async ({ page }) => {
   await expect(page.locator('#wr-join')).toHaveAttribute('href', `https://app.trydropapp.com/?mode=signup&ref=${REF}&src=wrapped`);
   await expect(page.locator('#wr-eyebrow')).toHaveText('DROP WRAPPED');
 });
+
+for (const path of ['/city.html', '/genre.html?genre=Techno&']) {
+  test(`${path.split('?')[0]} shows a link's city only when it is a known market`, async ({ page }) => {
+    await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    const join = path.includes('?') ? '' : '?';
+    await page.goto(path + join + 'city=' + encodeURIComponent('Buy tickets at evil.example'));
+    const text = await visibleText(page);
+    expect(text).not.toContain('evil.example');
+    expect(text).toContain('Denver');
+    await page.goto(path + join + 'city=las%20vegas');
+    await expect(page.locator('h1')).toContainText('Las Vegas');
+  });
+}

@@ -184,8 +184,8 @@
       var params = new URLSearchParams(location.search);
       var genre = params.get('genre') || 'House';
       if (ALL_GENRES.indexOf(genre) === -1) genre = 'House'; // ponytail: unknown genre param → safe default, no 404 needed for a client-rendered template
-      var city = params.get('city') || D.city();
-      city = city.charAt(0).toUpperCase() + city.slice(1);
+      // Only a known market from the link is shown as text (anyone can craft a link).
+      var city = D.knownCity(params.get('city')) || D.savedCity();
       var genreLower = genre.toLowerCase();
 
       document.getElementById('genre-eyebrow').textContent = genre + ' · ' + city;
