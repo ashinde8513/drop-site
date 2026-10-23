@@ -1,6 +1,8 @@
 # Spec 01: Multi-seller ticket sheet
 
-Status: prepared, awaiting design. Written 2026-10-19. Docs only, nothing built.
+Status: **built 2026-10-23** in `app/` (offers rules in `app/offers.js`, tests `tests/offers.test.mjs` + `tests/app-tickets.spec.ts`) from the approved canvas boards "Spec 01 · Multi-seller tickets" (canvas "Drop Website Rebuild — Recovered") and Arya's A50 decisions. The canvas boards and build notes supersede this brief where they differ (tag "Lowest listed / Lowest known", "Live price", "Buy on {Seller}", "$89" prices). Written 2026-10-19.
+
+Web comparability rule (no `ticket_class` column live, checked 2026-10-22/23): 2+ sellers, every row `kind = primary`, one valid ISO currency on every row, one `price_includes_fees` value on every row, unique lowest fresh price. Grants checked read-only 2026-10-23: anon and authenticated SELECT on `ticket_offers` both return rows for a published 2-offer event; writes have only RESTRICTIVE policies (denied).
 
 ## Claude design project header
 - Project: **Drop Website** (`5b6f000f-c206-44b6-ab8a-5981e36f2af9`)

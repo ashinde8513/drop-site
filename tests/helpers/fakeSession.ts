@@ -3,10 +3,11 @@ import type { Page } from '@playwright/test';
 export const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 // Signed-in fake Supabase client. Config (window.__cfg): signedOut, failComplianceTimes,
-// rows {table: [...]}, rpc {name: data}, errors {'table.op' | 'rpc.name': 'message'}. Records window.__fake.calls.
+// rows {table: [...]}, rpc {name: data}, errors {'table.op' | 'rpc.name': 'message'},
+// hold [table] (queries wait for window.__fake.release()). Records window.__fake.calls.
 const FAKE = String.raw`
 (function () {
-  var cfg = window.__cfg || {}, calls = [], listeners = [], failLeft = cfg.failComplianceTimes || 0;
+  var cfg = window.__cfg || {}, calls = [], listeners = [], failLeft = cfg.failComplianceTimes || 0, held = [];
   var session = cfg.signedOut ? null : { user:{ id:'${USER_ID}', email:'a@example.com', created_at:'2020-01-01T00:00:00Z' } };
   function res(data, error) { return { data:data, error:error || null, count:0 }; }
   function query(table) {
@@ -20,7 +21,8 @@ const FAKE = String.raw`
         return !(c in r) || (o[0] === 'eq' ? r[c] === o[1][1] : o[0] === 'in' ? o[1][1].indexOf(r[c]) > -1 : true);
       }); });
       var one = ops.some(function (o) { return o[0] === 'single' || o[0] === 'maybeSingle'; });
-      return Promise.resolve(err ? res(null, { message:err }) : res(one ? rows[0] || null : rows));
+      var gate = (cfg.hold || []).indexOf(table) > -1 ? new Promise(function (r) { held.push(r); }) : Promise.resolve();
+      return gate.then(function () { return err ? res(null, { message:err }) : res(one ? rows[0] || null : rows); });
     }
     chain = new Proxy({}, { get:function (_, k) {
       if (k === 'then' || k === 'catch' || k === 'finally') return function () { var p = run(); return p[k].apply(p, arguments); };
@@ -31,7 +33,9 @@ const FAKE = String.raw`
   window.__fake = {
     calls:calls,
     emit:function (e) { listeners.forEach(function (l) { l(e, session); }); },
-    setRows:function (table, rows) { (cfg.rows = cfg.rows || {})[table] = rows; }
+    setRows:function (table, rows) { (cfg.rows = cfg.rows || {})[table] = rows; },
+    setError:function (key, message) { (cfg.errors = cfg.errors || {})[key] = message; },
+    release:function () { cfg.hold = []; held.splice(0).forEach(function (r) { r(); }); }
   };
   window.supabase = { createClient:function () { return {
     auth:{

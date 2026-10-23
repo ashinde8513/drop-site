@@ -4,14 +4,8 @@ import { bootSignedIn, fakeCalls, USER_ID } from './helpers/fakeSession';
 const EV_ID = '9bd6c283-051a-42d5-a1a6-b01ba64266a4';
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const EVENT = { id:EV_ID, title:'Parity Two Night', date:day(5), venue_name:'Mission Ballroom', city:'Denver', state:'CO', status:'published', image_url:null, event_artists:[], is_festival:false, ticket_url:'https://www.axs.com/fallback', price_min:40, price_max:60 };
-const offer = (o: object) => ({ event_id:EV_ID, kind:'primary', currency:'USD', price_min:null, price_max:null, all_in_price:null, price_text:null, ...o });
-const OFFERS = [
-  offer({ vendor:'Ticketmaster', url:'https://www.ticketmaster.com/e/1', all_in_price:79 }),
-  offer({ vendor:'AXS', url:'https://www.axs.com/e/2', price_min:55 }),
-];
 
 const open = async (page: Page, title = 'Parity Two Night') => { await page.goto('/app/index.html'); await expect(page.getByText(title).first()).toBeVisible(); };
-const detail = async (page: Page) => { await open(page); await page.getByText('Parity Two Night').first().click(); await expect(page.getByText('Tickets', { exact:true }).first()).toBeVisible(); };
 const nav = async (page: Page, isMobile: boolean, item: string) => {
   if (isMobile) { await page.getByRole('button', { name:'Menu' }).click(); await page.locator('.mnav__panel').getByRole('button', { name:new RegExp(item) }).click(); }
   else { await page.getByRole('button', { name:'Account menu' }).click(); await page.getByRole('button', { name:item, exact:true }).click(); }
@@ -19,42 +13,7 @@ const nav = async (page: Page, isMobile: boolean, item: string) => {
 const profileItem = async (page: Page, isMobile: boolean, item: string | RegExp) => { await nav(page, isMobile, 'Profile'); await page.getByRole('button', { name:item }).first().click(); };
 const footer = (page: Page, link: string) => page.getByRole('link', { name:link, exact:true }).click();
 
-test.describe('1 all ticket sellers', () => {
-  test('anonymous: offers queried, rows ordered by price, lowest tagged, row opens its own url', async ({ page }) => {
-    await bootSignedIn(page, { signedOut:true, rows:{ ticket_offers:OFFERS } }, [EVENT]);
-    await detail(page);
-    const calls = (await fakeCalls(page, 'from')).filter((c: any) => c.table === 'ticket_offers');
-    expect(calls[0].ops).toEqual([
-      ['select', ['vendor,url,price_min,price_max,currency,all_in_price,price_text,price_includes_fees,url_domain,kind,last_refreshed']],
-      ['eq', ['event_id', EV_ID]],
-    ]);
-    const sellers = page.locator('span', { hasText:/^(AXS|Ticketmaster)$/ });
-    await expect(sellers).toHaveText(['AXS', 'Ticketmaster']);
-    await expect(page.getByText('LOWEST LISTED')).toHaveCount(1);
-    await expect(page.getByText('$55')).toBeVisible();
-    await expect(page.getByText('$79')).toBeVisible();
-    await expect(page.getByText('only site currently selling')).toHaveCount(0);
-    await page.evaluate(() => { (window as any).__opened = []; window.open = ((u: string, t: string, f: string) => { (window as any).__opened.push([u, t, f]); return null; }) as any; });
-    await page.getByRole('button', { name:'Get tickets' }).nth(1).click();
-    expect(await page.evaluate(() => (window as any).__opened[0])).toEqual(['https://www.ticketmaster.com/e/1', '_blank', 'noopener']);
-  });
-
-  test('zero offers falls back to the event ticket_url row', async ({ page }) => {
-    await bootSignedIn(page, { signedOut:true }, [EVENT]);
-    await detail(page);
-    await expect(page.locator('span', { hasText:/^AXS$/ })).toHaveCount(1);
-    await expect(page.getByText('LOWEST LISTED')).toHaveCount(0);
-    await expect(page.getByText('only site currently selling')).toBeVisible();
-  });
-
-  test('price-less offer shows See price and sorts last', async ({ page }) => {
-    await bootSignedIn(page, { signedOut:true, rows:{ ticket_offers:[offer({ vendor:'DICE', url:'https://dice.fm/e/3' }), OFFERS[0]] } }, [EVENT]);
-    await detail(page);
-    await expect(page.locator('span', { hasText:/^(DICE|Ticketmaster)$/ })).toHaveText(['Ticketmaster', 'DICE']);
-    await expect(page.getByText('See price')).toBeVisible();
-    await expect(page.getByText('LOWEST LISTED')).toHaveCount(0);
-  });
-});
+// 1 all ticket sellers: moved to app-tickets.spec.ts (design spec 01).
 
 test.describe('2 notifications inbox', () => {
   const ALERTS = [
