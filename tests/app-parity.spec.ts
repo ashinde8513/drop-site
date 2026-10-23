@@ -123,19 +123,18 @@ test.describe('D friends', () => {
     await bootSignedIn(page, { rows }, [EVENT]);
     await open(page);
     await nav(page, isMobile, 'Crew');
-    await expect(page.getByText('Rave Friend')).toBeVisible();
-    await expect(page.getByText('@ravefriend')).toBeVisible();
+    await expect(page.locator('.s3-people').getByText('Rave Friend')).toBeVisible(); // rows show city, not @handle (spec 03)
     const profileQ = (await fakeCalls(page, 'from')).find((c: any) => c.table === 'profiles' && c.ops.some((o: any) => o[0] === 'in'));
     expect(profileQ.ops.find((o: any) => o[0] === 'in')[1][0]).toBe('id');
     expect([...profileQ.ops.find((o: any) => o[0] === 'in')[1][1]].sort()).toEqual([FRIEND_ID, PENDING_ID].sort());
     await page.locator('.seg__item', { hasText:'Requests' }).click();
-    await expect(page.getByText('New Crew')).toBeVisible();
-    await page.getByRole('button', { name:'Accept' }).click();
+    await expect(page.locator('.s3-people').getByText('New Crew')).toBeVisible();
+    await page.getByRole('button', { name:'Accept request from New Crew' }).click();
     const [upd] = await ops(page, 'friendships', 'update');
     expect(upd).toEqual([['update', [{ status:'accepted' }]], ['eq', ['id', 'f2']]]);
-    await expect(page.getByText('New Crew')).toHaveCount(0);
+    await expect(page.locator('.s3-people').getByText('New Crew')).toHaveCount(0);
     await page.locator('.seg__item', { hasText:'Friends' }).click();
-    await expect(page.getByText('New Crew')).toBeVisible();
+    await expect(page.locator('.s3-people').getByText('New Crew')).toBeVisible();
   });
 
   test('failed accept rolls back', async ({ page, isMobile }) => {
@@ -143,9 +142,9 @@ test.describe('D friends', () => {
     await open(page);
     await nav(page, isMobile, 'Crew');
     await page.locator('.seg__item', { hasText:'Requests' }).click();
-    await page.getByRole('button', { name:'Accept' }).click();
+    await page.getByRole('button', { name:'Accept request from New Crew' }).click();
     await expect(page.getByText('Could not update that request — try again')).toBeVisible();
-    await expect(page.getByText('New Crew')).toBeVisible();
+    await expect(page.locator('.s3-people').getByText('New Crew')).toBeVisible();
   });
 
   test('event detail shows accepted friends going, via one in() query', async ({ page }) => {

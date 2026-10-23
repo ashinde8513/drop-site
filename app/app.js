@@ -948,7 +948,10 @@ class Component extends DCLogic {
     artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
     crewTab: 'Friends', reqActioned: {}, addedPeople: {},
-    activePlan: 'p-odesza', planSpot: {}, planTab: 'plan',
+    // social (spec 03)
+    friendsLoading: true, friendsError: false, findQuery: '', findResults: null, findBusy: false, findError: false, addBusy: {}, addErr: {}, reqBusy: {},
+    myPlans: null, myPlansError: false, planId: null, plan: null, planBusy: false, planError: false, planGone: false, planMembers: [], planMsgs: [], planPending: [], planDraft: '', planNew: false,
+    socMenu: null, dlg: null, personId: null, person: null, personBusy: false, personError: false, personBioOpen: false,
     wrappedRange: 'This year',
     invited: {},
     // log a past show — archive picker (multi-select) + manual form
@@ -1029,7 +1032,6 @@ class Component extends DCLogic {
   FRIENDS = [];
   REQUESTS = [];
   FIND_PEOPLE = [];
-  PLANS = [];
 
   // ponytail: no Drop+ wallet/ledger table wired this phase — earn history
   // stays empty (honest "No Drop+ activity yet" empty state).
@@ -1214,18 +1216,198 @@ class Component extends DCLogic {
     });
   }
   // friendships: accept (recipient, pending row) / decline (delete). Optimistic with rollback.
-  answerFriend(row, accept){
+  // Accept / decline / remove / cancel: the row stays until the server confirms (spec 03).
+  answerFriend(row, accept, name){
+    const uid = this.state.userId;
+    if (!supa || !uid || this.state.reqBusy[row.id]) return Promise.resolve(false);
+    this.setState(x=>({ reqBusy:{ ...x.reqBusy, [row.id]: accept ? 'accept' : 'decline' } }));
+    const q = supa.from('friendships');
+    return (accept ? q.update({ status:'accepted' }).eq('id', row.id) : q.delete().eq('id', row.id)).then(({ error })=>{
+      const busy = { ...this.state.reqBusy }; delete busy[row.id];
+      if (this.state.userId !== uid) return false;
+      if (error) { console.error('[app] friendships write failed:', error.message); this.setState({ reqBusy:busy }); this.flash('Could not update that request — try again'); return false; }
+      this.setState(x=>({ reqBusy:busy, friendRows: accept ? x.friendRows.map(r=>r.id===row.id ? { ...r, status:'accepted' } : r) : x.friendRows.filter(r=>r.id!==row.id) }));
+      if (name) this.flash(accept ? name + ' added to your crew' : 'Request declined');
+      return true;
+    });
+  }
+  // Find people: debounced RPC (2–64 chars server-side), stale answers ignored.
+  searchPeople(q){
+    clearTimeout(this._findT);
+    const query = q.trim();
+    this.setState({ findQuery:q, findError:false, ...(query.length < 2 ? { findResults:null, findBusy:false } : { findBusy:true }) });
+    if (query.length < 2 || !supa) return;
+    const token = this._findToken = {};
+    this._findT = setTimeout(()=>{
+      supa.rpc('search_public_profiles', { p_query:query, p_limit:20 }).then(({ data, error })=>{
+        if (this._findToken !== token) return;
+        if (error) { console.error('[app] people search failed:', error.message); this.setState({ findBusy:false, findError:true }); return; }
+        this.setState({ findBusy:false, findResults:data || [] });
+      });
+    }, 250);
+  }
+  addFriend(p){
+    const uid = this.state.userId, name = p.display_name || p.username || 'them';
+    if (!supa || !uid || this.state.addBusy[p.id]) return;
+    this.setState(x=>({ addBusy:{ ...x.addBusy, [p.id]:true }, addErr:{ ...x.addErr, [p.id]:'' } }));
+    supa.from('friendships').insert({ requester_id:uid, recipient_id:p.id, status:'pending' }).then(({ error })=>{
+      const busy = { ...this.state.addBusy }; delete busy[p.id];
+      // 23505: already related — show the real state instead of an error.
+      if (error && error.code !== '23505') { console.error('[app] friend request failed:', error.message); this.setState(x=>({ addBusy:busy, addErr:{ ...x.addErr, [p.id]:"We couldn't add " + name + '. Try again.' } })); return; }
+      this.setState(x=>({ addBusy:busy, friendProfiles:{ ...x.friendProfiles, [p.id]:{ id:p.id, username:p.username, display_name:p.display_name, profile_image:p.profile_image, city:p.city, state:p.state } } }));
+      this.loadFriends(uid);
+    });
+  }
+  // Public profile: RPC (email/role only for self), then what the viewer may see.
+  openPerson(id){
+    if (!id) return;
+    if (id === this.state.userId) { this.go('profile'); return; }
+    this.setState({ screen:'person', personId:id, person:null, personBusy:true, personError:false, personBioOpen:false, socMenu:null });
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+    this.loadPerson(id);
+  }
+  loadPerson(id){
+    if (!supa) return;
+    this.setState({ personBusy:true, personError:false });
+    const token = this._personToken = {};
+    const nowIso = new Date().toISOString();
+    Promise.all([
+      supa.rpc('public_profile', { uid:id }),
+      supa.from('artist_follows').select('artists(name)').eq('user_id', id),
+      supa.from('attendance').select('status, events(id,title,date,venue_name,city,time_tbd)').eq('user_id', id).eq('status', 'going'),
+      supa.from('attendance').select('event_id', { count:'exact', head:true }).eq('user_id', id).eq('status', 'attended'),
+    ]).then(([prof, follows, going, seen])=>{
+      if (this._personToken !== token) return;
+      if (prof.error) { console.error('[app] profile load failed:', prof.error.message); this.setState({ personBusy:false, personError:true }); return; }
+      const row = Array.isArray(prof.data) ? prof.data[0] : prof.data;
+      this.setState({ personBusy:false, person: row ? {
+        ...row,
+        artists: (follows.data || []).map(f=>f.artists && f.artists.name).filter(Boolean),
+        going: (going.data || []).map(a=>a.events).filter(e=>e && e.date && e.date >= nowIso).sort((a,b)=>a.date.localeCompare(b.date)),
+        seenCount: seen.error ? null : seen.count,
+      } : { private:true } });
+    }, (e)=>{ if (this._personToken === token) { console.error('[app] profile load failed:', e && e.message); this.setState({ personBusy:false, personError:true }); } });
+  }
+  // ===== Plans + chat (spec 03) =====
+  loadMyPlans(){
     const uid = this.state.userId;
     if (!supa || !uid) return;
-    const before = this.state.friendRows;
-    this.setState(s=>({ friendRows: accept ? s.friendRows.map(r=>r.id===row.id ? {...r, status:'accepted'} : r) : s.friendRows.filter(r=>r.id!==row.id) }));
-    const q = supa.from('friendships');
-    (accept ? q.update({ status:'accepted' }).eq('id', row.id) : q.delete().eq('id', row.id)).then(({ error })=>{
-      if (!error || this.state.userId !== uid) return;
-      console.error('[app] friendships write failed:', error.message);
-      this.setState({ friendRows: before });
-      this.flash('Could not update that request — try again');
+    this.setState({ myPlansError:false });
+    supa.from('plan_members').select('status, plans(id, event_id, creator_id, events(id,title,date,venue_name,city,time_tbd))').eq('user_id', uid).then(({ data, error })=>{
+      if (this.state.userId !== uid) return;
+      if (error) { console.error('[app] plans load failed:', error.message); this.setState({ myPlans:[], myPlansError:true }); return; }
+      this.setState({ myPlans:(data || []).filter(r=>r.plans).map(r=>({ id:r.plans.id, status:r.status, creator:r.plans.creator_id, event:r.plans.events || {} })) });
     });
+  }
+  // "Plan with friends" on a show: one plan per show per creator (create_or_get_plan).
+  planForEvent(eventId){
+    if (!this.state.authed) { this.openGate('Log in to make plans'); return; }
+    if (!supa) return;
+    supa.rpc('create_or_get_plan', { p_event_id:eventId }).then(({ data, error })=>{
+      if (error || !data) { console.error('[app] plan create failed:', error && error.message); this.flash("We couldn't start a plan. Try again."); return; }
+      this.openPlan(data);
+    });
+  }
+  openPlan(id){
+    this.setState({ screen:'plan', planId:id, plan:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', planNew:false, planGone:false, planError:false, socMenu:null });
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+    this.loadPlan(id, true);
+    clearInterval(this._planPoll);
+    // ponytail: 10 s polling while the plan is open; switch to Supabase realtime if chat gets busy.
+    this._planPoll = setInterval(()=>{ if (this.state.screen !== 'plan' || this.state.planId !== id) { clearInterval(this._planPoll); return; } this.loadPlanMessages(id); }, 10000);
+  }
+  loadPlan(id, first){
+    if (!supa) return;
+    const uid = this.state.userId;
+    if (first) this.setState({ planBusy:true, planError:false });
+    Promise.all([
+      supa.from('plans').select('id, event_id, creator_id, events(id,title,date,venue_name,city,time_tbd)').eq('id', id).maybeSingle(),
+      supa.from('plan_members').select('user_id, status, profiles(id,username,display_name,profile_image,city,state)').eq('plan_id', id),
+    ]).then(([pl, mem])=>{
+      if (this.state.planId !== id) return;
+      if (pl.error || mem.error) { console.error('[app] plan load failed:', (pl.error || mem.error).message); this.setState({ planBusy:false, planError:true }); return; }
+      const members = mem.data || [];
+      // Not a member, or gone: one neutral view that never says which.
+      if (!pl.data || !members.some(m=>m.user_id === uid)) { this.setState({ planBusy:false, planGone:true }); return; }
+      this.setState({ planBusy:false, plan:pl.data, planMembers:members });
+      this.loadPlanMessages(id);
+    }, (e)=>{ if (this.state.planId === id) { console.error('[app] plan load failed:', e && e.message); this.setState({ planBusy:false, planError:true }); } });
+  }
+  loadPlanMessages(id){
+    if (!supa) return;
+    supa.from('plan_messages').select('id, user_id, body, created_at, profiles(display_name, username)').eq('plan_id', id).order('created_at', { ascending:true }).limit(200).then(({ data, error })=>{
+      if (this.state.planId !== id || error) { if (error) console.error('[app] plan messages load failed:', error.message); return; }
+      const rows = data || [], had = this.state.planMsgs.length;
+      const log = document.getElementById('plan-log');
+      const atEnd = !log || log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+      this.setState({ planMsgs:rows, planNew: had > 0 && rows.length > had && !atEnd });
+      if (atEnd) queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; });
+    });
+  }
+  setPlanRsvp(status){
+    const uid = this.state.userId, id = this.state.planId;
+    if (!supa || !uid || !id) return;
+    const before = this.state.planMembers;
+    this.setState(x=>({ planMembers: x.planMembers.map(m=>m.user_id === uid ? { ...m, status } : m) }));
+    supa.from('plan_members').upsert({ plan_id:id, user_id:uid, status }, { onConflict:'plan_id,user_id' }).then(({ error })=>{
+      if (error) { console.error('[app] plan rsvp failed:', error.message); this.setState({ planMembers:before }); this.flash("We couldn't save that. Try again."); }
+    });
+  }
+  // Text only, 1–500 chars (DB check). A failed send keeps its text with Try again.
+  sendPlanMessage(retry){
+    const uid = this.state.userId, id = this.state.planId;
+    const body = (retry ? retry.body : this.state.planDraft).trim().slice(0, 500);
+    if (!supa || !uid || !id || !body) return;
+    const temp = retry ? retry.temp : 'tmp-' + Date.now();
+    this.setState(x=>({ planDraft: retry ? x.planDraft : '', planPending:[...x.planPending.filter(p=>p.temp !== temp), { temp, body, failed:false }] }));
+    queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; });
+    supa.from('plan_messages').insert({ plan_id:id, user_id:uid, body }).then(({ error })=>{
+      if (this.state.planId !== id) return;
+      if (error) { console.error('[app] plan message failed:', error.message); this.setState(x=>({ planPending: x.planPending.map(p=>p.temp === temp ? { ...p, failed:true } : p) })); return; }
+      this.setState(x=>({ planPending: x.planPending.filter(p=>p.temp !== temp) }));
+      this.loadPlanMessages(id);
+    });
+  }
+  // Block / report / leave dialogs (desktop modal, phone sheet). Initial focus is Cancel.
+  openDialog(kind, target, opener){
+    // Focus returns to the invoking control: the "…" menu button when opened from its menu.
+    this._dlgOpener = opener || (document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.bindKey : null);
+    this.setState({ socMenu:null, dlg:{ kind, ...target, busy:false, err:'', reason:'' } });
+    queueMicrotask(()=>document.getElementById('dlg-cancel')?.focus());
+  }
+  closeDialog(){
+    this.setState({ dlg:null });
+    const key = this._dlgOpener;
+    queueMicrotask(()=>{ const el = key && document.querySelector('[data-bind-key="' + CSS.escape(key) + '"]'); if (el) el.focus(); });
+  }
+  confirmDialog(){
+    const d = this.state.dlg, uid = this.state.userId;
+    if (!d || d.busy || !supa || !uid) return;
+    if (d.kind === 'report' && !d.reason) return;
+    this.setState(x=>({ dlg:{ ...x.dlg, busy:true, err:'' } }));
+    const fail = (msg)=>(e)=>{ console.error('[app] ' + d.kind + ' failed:', e && e.message); this.setState(x=>({ dlg: x.dlg ? { ...x.dlg, busy:false, err:msg } : null })); };
+    if (d.kind === 'block') {
+      supa.from('user_blocks').insert({ blocker_id:uid, blocked_id:d.id }).then(({ error })=>{
+        if (error && error.code !== '23505') return fail("We couldn't block " + d.name + '. Try again.')(error);
+        // Client filter too: the person leaves every list at once.
+        this.setState(x=>({ dlg:null, blockedRows:[...(x.blockedRows || []).filter(b=>b.id !== d.id), { id:d.id, display_name:d.name, username:d.username || '' }],
+          friendRows: x.friendRows.filter(r=>r.requester_id !== d.id && r.recipient_id !== d.id) }));
+        this.flash(d.name + ' is blocked.');
+      });
+    } else if (d.kind === 'report') {
+      supa.from('content_reports').insert({ reporter_id:uid, content_type:'profile', content_id:d.id, reported_user_id:d.id, reason:d.reason }).then(({ error })=>{
+        if (error) return fail("We couldn't send your report. Try again.")(error);
+        this.closeDialog(); this.flash('Report sent. Thank you.');
+      });
+    } else if (d.kind === 'remove') {
+      this.answerFriend(d.row, false).then(ok=>{ if (ok) { this.closeDialog(); this.flash(d.name + ' removed.'); } else this.setState(x=>({ dlg: x.dlg ? { ...x.dlg, busy:false, err:"We couldn't remove " + d.name + '. Try again.' } : null })); });
+    } else if (d.kind === 'leave') {
+      supa.rpc('leave_plan', { p_plan_id:d.id }).then(({ error })=>{
+        if (error) return fail("We couldn't leave the plan. Try again.")(error);
+        this.setState(x=>({ dlg:null, myPlans:(x.myPlans || []).filter(p=>p.id !== d.id), screen:'crew', crewTab:'Plans' }));
+        this.flash('You left the plan.');
+      });
+    }
   }
   async submitSuggestion(){
     const s = this.state, uid = s.userId;
@@ -1389,17 +1571,18 @@ class Component extends DCLogic {
   }
   loadFriends(uid){
     if (!supa) return;
+    this.setState({ friendsLoading:true, friendsError:false });
     supa.from('friendships').select('id,requester_id,recipient_id,status').or('requester_id.eq.'+uid+',recipient_id.eq.'+uid).then(({ data, error })=>{
-      if (error) { console.error('[app] friendships load failed:', error.message); return; }
+      if (error) { console.error('[app] friendships load failed:', error.message); this.setState({ friendsLoading:false, friendsError:true }); return; }
       if (this.state.userId !== uid) return;
       const friendRows = (data||[]).filter(r=>r.status==='accepted' || r.status==='pending');
       const ids = [...new Set(friendRows.map(r=>r.requester_id===uid ? r.recipient_id : r.requester_id))];
-      if (!ids.length) { this.setState({ friendRows, friendProfiles:{} }); return; }
-      supa.from('profiles').select('id,username,display_name,profile_image').in('id', ids).then(({ data: people, error: pe })=>{
+      if (!ids.length) { this.setState({ friendRows, friendProfiles:{}, friendsLoading:false }); return; }
+      supa.from('profiles').select('id,username,display_name,profile_image,city,state').in('id', ids).then(({ data: people, error: pe })=>{
         if (pe) console.error('[app] friend profiles load failed:', pe.message);
         if (this.state.userId !== uid) return;
         const friendProfiles = {}; (people||[]).forEach(p=>{ friendProfiles[p.id] = p; });
-        this.setState({ friendRows, friendProfiles });
+        this.setState({ friendRows, friendProfiles, friendsLoading:false });
       });
     });
   }
@@ -1712,6 +1895,7 @@ class Component extends DCLogic {
       this.setState({ setToggles });
     });
     this.loadFriends(uid);
+    this.loadMyPlans();
     Promise.all([
       supa.from('attendance').select('id', { count:'exact', head:true }).eq('user_id', uid).in('status', ['going','attended']),
       supa.from('artist_follows').select('artist_id', { count:'exact', head:true }).eq('user_id', uid),
@@ -1811,9 +1995,10 @@ class Component extends DCLogic {
     const uid = this.state.userId;
     if (!supa || !uid) return;
     this.setState(x=>({ blockedRows: x.blockedRows.filter(b=>b.id !== row.id) }));
-    supa.from('user_blocks').delete().eq('blocker_id', uid).eq('blocked_id', row.id).then(({ error })=>{
-      if (error) { console.error('[app] unblock failed:', error.message); this.setState(x=>({ blockedRows: [...x.blockedRows, row] })); this.flash('Could not unblock — try again'); return; }
+    return supa.from('user_blocks').delete().eq('blocker_id', uid).eq('blocked_id', row.id).then(({ error })=>{
+      if (error) { console.error('[app] unblock failed:', error.message); this.setState(x=>({ blockedRows: [...x.blockedRows, row] })); this.flash('Could not unblock — try again'); return false; }
       this.flash('Unblocked ' + (row.display_name || row.username || 'account'));
+      return true;
     });
   }
   // Optimistic read-mark; ids = alert ids. Rolls back + flashes on error.
@@ -3004,46 +3189,134 @@ class Component extends DCLogic {
     });
 
     // ===== Crew =====
-    const crewTabs = ['Friends','Requests','Find','Plans'].map(t=>({ label:t, cls: s.crewTab===t?'is-active':'', pick:()=>this.setState({crewTab:t}) }));
-    const overlapChip = arr => arr.slice(0,3).map(n=>({ label:n }));
-    const overlapText = arr => arr.length+' shared artist'+(arr.length===1?'':'s');
-    // Real friendships (friendRows) + counterpart profiles; mine = I am either side.
+    // ===== Friends (design spec 03) — one edge list drives tabs, counts, rows and relationship states =====
     const meId = s.userId;
-    const person = r => {
-      const pid = r.requester_id===meId ? r.recipient_id : r.requester_id, p = s.friendProfiles[pid] || {};
-      return { row:r, name:p.display_name || p.username || 'Drop user', handle:p.username ? '@'+p.username : '', avStyle:avStyle(p.profile_image) };
+    const blockedIds = new Set((s.blockedRows || []).map(b=>b.id));
+    const edges = (s.friendRows || []).filter(r=>!blockedIds.has(r.requester_id === meId ? r.recipient_id : r.requester_id));
+    const otherOf = r => r.requester_id === meId ? r.recipient_id : r.requester_id;
+    const relOf = id => {
+      if (blockedIds.has(id)) return { kind:'blocked' };
+      const r = edges.find(e=>otherOf(e) === id);
+      if (!r) return { kind:'none' };
+      return { kind: r.status === 'accepted' ? 'friends' : r.requester_id === meId ? 'requested' : 'incoming', row:r };
     };
-    const friendsList = (s.friendRows||[]).filter(r=>r.status==='accepted').map(person)
-      .map(f=>({ name:f.name, handle:f.handle, avStyle:f.avStyle, ring:'var(--border)', chips:[], overlapLabel:'', overlapColor:'var(--accent)' }));
-    const requestsList = (s.friendRows||[]).filter(r=>r.status==='pending' && r.recipient_id===meId).map(person)
-      .map(r=>({ name:r.name, handle:r.handle, avStyle:r.avStyle,
-        accept:()=>{ this.answerFriend(r.row, true); this.flash(r.name+' added to your crew'); },
-        decline:()=>{ this.answerFriend(r.row, false); this.flash('Request declined'); } }));
-    const findList = this.FIND_PEOPLE.map(p=>{ const on=!!s.addedPeople[p.id]; return { name:p.name, handle:p.handle, mutuals:p.mutuals, chips:overlapChip(p.overlap),
-      label: on?'Requested':'＋ Add', cls: on?'wsc__act is-going':'wsc__act', add:()=>{ this.setState(x=>({ addedPeople:{...x.addedPeople, [p.id]:true} })); this.flash('Request sent to '+p.name); } }; });
-    // No plans table this phase — PLANS is always empty, so this stays [].
-    const plansList = this.PLANS.map(pl=>{ const e=events.find(x=>x.id===pl.eventId) || {}; const going=pl.roster.filter(m=>m.status==='going').length;
-      return { title:e.title, dateShort:e.dateShort, venueCity:e.venueCity, gradStyle:'background-image:'+e.grad,
-        avatars: pl.roster.slice(0,3).map(m=>({ ring:m.ring })), goingLabel: going+' going',
-        open:()=>{ this.setState({screen:'plan', activePlan:pl.id}); if(typeof window!=='undefined') window.scrollTo(0,0); } }; });
-
-    // ===== Plan detail — guarded: PLANS is empty this phase, so `plan` is
-    // always null and this screen is unreached from the (also-empty) Plans
-    // tab; the fallback keeps render() crash-free if it's ever hit anyway. =====
-    const plan = this.PLANS.find(p=>p.id===s.activePlan) || this.PLANS[0] || null;
-    const planEv = plan ? (events.find(e=>e.id===plan.eventId) || null) : null;
-    const pdSpot = plan ? s.planSpot[plan.id] : undefined;
-    const pd = (plan && planEv) ? {
-      title:planEv.title, dateShort:planEv.dateShort, venueCity:planEv.venueCity, gradStyle:'background-image:'+planEv.grad,
-      roster: plan.roster,
-      spotOptions: plan.spots.map((sp,i)=>{ const on = pdSpot===undefined ? i===0 : pdSpot===i; return { label:sp,
-        bg: on?'rgba(77,226,255,0.1)':'var(--surface)', border: on?'var(--accent)':'var(--border)', dot: on?'var(--accent)':'var(--border-strong)', glyph: on?'●':'',
-        pick:()=>this.setState(x=>({ planSpot:{...x.planSpot, [plan.id]:i} })) }; }),
-      chat: plan.chat.map(c=>({ who:c.who, time:c.time, text:c.text, color: c.me?'var(--accent)':c.color,
-        align: c.me?'flex-direction:row-reverse;':'', metaAlign: c.me?'text-align:right;':'', showAvatar: !c.me,
-        bubbleBg: c.me?'rgba(77,226,255,0.14)':'var(--surface)' })),
-    } : { title:'', dateShort:'', venueCity:'', gradStyle:'background-image:'+EVENT_GRADS[0], roster:[], spotOptions:[], chat:[] };
-
+    const nameOf = p => (p && (p.display_name || p.username)) || 'Drop user';
+    const initialsOf = n => String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(w=>w[0]).join('').toUpperCase() || '?';
+    const placeOf = p => [p && p.city, p && p.state].filter(Boolean).join(', ');
+    const avOf = (id, p) => ({ avStyle: avStyle(p && p.profile_image) || 'background-image:' + gradFor('av:' + id) + ';', initials: initialsOf(nameOf(p)) });
+    // Overflow menu: real menu button; arrows move, Escape returns to the button.
+    const menuFor = (key, items) => ({
+      menuKey: 'more-' + key, menuOpen: s.socMenu === key, menuExpanded: s.socMenu === key ? 'true' : 'false',
+      toggleMenu: ()=>{ const open = this.state.socMenu !== key; this.setState({ socMenu: open ? key : null }); if (open) queueMicrotask(()=>document.querySelector('[data-menu="' + key + '"] [role=menuitem]')?.focus()); },
+      menuKeyDown: (e)=>{ if (['ArrowDown','Enter',' '].includes(e.key) && this.state.socMenu !== key) { e.preventDefault(); this.setState({ socMenu:key }); queueMicrotask(()=>document.querySelector('[data-menu="' + key + '"] [role=menuitem]')?.focus()); } },
+      items: items.map((it, i)=>({ ...it, dangerCls: it.danger ? 's3-mi--danger' : '', itemKeyDown:(e)=>{
+        const all = Array.from(document.querySelectorAll('[data-menu="' + key + '"] [role=menuitem]'));
+        const j = { ArrowDown:i + 1, ArrowUp:i - 1, Home:0, End:all.length - 1 }[e.key];
+        if (e.key === 'Escape' || e.key === 'Tab') { if (e.key === 'Escape') e.preventDefault(); this.setState({ socMenu:null }); queueMicrotask(()=>document.querySelector('[data-bind-key="more-' + key + '"]')?.focus()); return; }
+        if (j == null) return;
+        e.preventDefault(); all[(j + all.length) % all.length]?.focus();
+      } })),
+    });
+    const target = (id, p) => ({ id, name:nameOf(p), username:(p && p.username) || '' });
+    const personMenu = (id, p, row) => menuFor(id, [
+      ...(row && row.status === 'accepted' ? [{ label:'Remove friend', danger:false, pick:()=>this.openDialog('remove', { ...target(id, p), row }, 'more-' + id) }] : []),
+      { label:'Block', danger:true, pick:()=>this.openDialog('block', target(id, p), 'more-' + id) },
+      { label:'Report', danger:true, pick:()=>this.openDialog('report', target(id, p), 'more-' + id) },
+    ]);
+    const friendsAll = edges.filter(r=>r.status === 'accepted');
+    const requestsAll = edges.filter(r=>r.status === 'pending' && r.recipient_id === meId);
+    const crewTabs = ['Friends','Requests','Find','Plans'].map(t=>{
+      const n = t === 'Friends' ? friendsAll.length : t === 'Requests' ? requestsAll.length : null;
+      const on = s.crewTab === t;
+      return { label:t, count: n == null || s.friendsLoading ? '' : String(n), aria: n == null || s.friendsLoading ? t : t + ' ' + n,
+        cls: (on ? 'is-active' : '') + (t === 'Find' ? ' s3-phone' : ''), selected: on ? 'true' : 'false', tabindex: on ? '0' : '-1', key:'crewtab-' + t,
+        pick:()=>this.setState({ crewTab:t, socMenu:null }),
+        keyDown:(e)=>{
+          const vis = Array.from(document.querySelectorAll('.s3-tabs [role=tab]')).filter(b=>b.offsetParent);
+          const k = vis.indexOf(e.currentTarget), j = { ArrowRight:k + 1, ArrowLeft:k - 1, Home:0, End:vis.length - 1 }[e.key];
+          if (j == null) return; e.preventDefault();
+          const next = vis[(j + vis.length) % vis.length]; if (next) { next.click(); queueMicrotask(()=>document.querySelector('[data-bind-key="' + next.dataset.bindKey + '"]')?.focus()); }
+        } };
+    });
+    const friendsList = friendsAll.map(r=>{
+      const id = otherOf(r), p = s.friendProfiles[id] || {};
+      return { id, name:nameOf(p), sub:placeOf(p), ...avOf(id, p), open:()=>this.openPerson(id), moreLabel:'More actions for ' + nameOf(p), ...personMenu(id, p, r) };
+    });
+    const requestsList = requestsAll.map((r, i)=>{
+      const id = otherOf(r), p = s.friendProfiles[id] || {}, busy = s.reqBusy[r.id];
+      return { id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(id, p), open:()=>this.openPerson(id),
+        // Only the first Accept on the screen is primary (A53).
+        acceptCls: 'btn ' + (i === 0 ? 'btn--primary' : 'btn--secondary') + ' btn--sm', acceptLabel: busy === 'accept' ? 'Accepting…' : 'Accept',
+        acceptName:'Accept request from ' + nameOf(p), declineName:'Decline request from ' + nameOf(p), busy: busy ? 'true' : null, declineOff: busy === 'accept',
+        accept:()=>this.answerFriend(r, true, nameOf(p)), decline:()=>this.answerFriend(r, false, nameOf(p)) };
+    });
+    const findRows = (s.findResults || []).filter(p=>p.id !== meId && !blockedIds.has(p.id)).map(p=>{
+      const rel = relOf(p.id), busy = !!s.addBusy[p.id];
+      return { id:p.id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(p.id, p), open:()=>this.openPerson(p.id),
+        isFriend: rel.kind === 'friends', isRequested: rel.kind === 'requested', isIncoming: rel.kind === 'incoming', canAdd: rel.kind === 'none',
+        addLabel: busy ? 'Sending…' : 'Add friend', addName: 'Add friend, ' + nameOf(p), addBusy: busy ? 'true' : null, addErr: s.addErr[p.id] || '',
+        add:()=>this.addFriend(p), accept:()=>rel.row && this.answerFriend(rel.row, true, nameOf(p)) };
+    });
+    const findQ = s.findQuery.trim();
+    const findState = findQ.length < 2 ? 'idle' : s.findBusy ? 'busy' : s.findError ? 'error' : findRows.length ? 'results' : 'none';
+    // Public profile
+    const pp = s.person, ppId = s.personId, ppRel = ppId ? relOf(ppId) : { kind:'none' };
+    const ppName = pp && !pp.private ? nameOf(pp) : '';
+    const ppAdd = ppId && s.addBusy[ppId];
+    const person = pp && !pp.private ? {
+      name:ppName, handle:[pp.username ? '@' + pp.username : '', placeOf(pp)].filter(Boolean).join(' · '), bio:pp.bio || '', hasBio:!!pp.bio,
+      bioCls: s.personBioOpen ? 's3-bio is-open' : 's3-bio', bioToggle: s.personBioOpen ? 'Show less' : 'Read more', longBio: (pp.bio || '').length > 160,
+      ...avOf(ppId, pp),
+      showSeen: ppRel.kind === 'friends' && pp.seenCount != null, seen: pp.seenCount, artistsCount: pp.artists.length,
+      going: pp.going.slice(0, 4).map(e=>({ title:e.title, dateShort:((Drop && Drop.fmtDate(e.date, e.time_tbd)) || '').toUpperCase(), venue:e.venue_name || '', gradStyle:'background-image:' + gradFor(e.id), open:()=>{ this.setState({ screen:'event', activeId:e.id }); if (typeof window !== 'undefined') window.scrollTo(0, 0); } })),
+      hasGoing: pp.going.length > 0, artists: pp.artists.slice(0, 6).map(n=>({ name:n })), hasArtists: pp.artists.length > 0, moreArtists: pp.artists.length > 6 ? 'See all ' + pp.artists.length : '',
+      relNone: ppRel.kind === 'none', relRequested: ppRel.kind === 'requested', relIncoming: ppRel.kind === 'incoming', relFriends: ppRel.kind === 'friends',
+      addLabel: ppAdd ? 'Sending…' : 'Add friend', addBusy: ppAdd ? 'true' : null, addErr: s.addErr[ppId] || '',
+      acceptLabel: ppRel.row && s.reqBusy[ppRel.row.id] === 'accept' ? 'Accepting…' : 'Accept request',
+      add:()=>this.addFriend({ id:ppId, ...pp }), accept:()=>ppRel.row && this.answerFriend(ppRel.row, true, ppName), decline:()=>ppRel.row && this.answerFriend(ppRel.row, false, ppName),
+      moreLabel:'More actions for ' + ppName, ...personMenu(ppId, pp, ppRel.row),
+    } : null;
+    const blockedRow = (s.blockedRows || []).find(b=>b.id === ppId);
+    const REPORT_REASONS = ['Spam or scam', 'Harassment or bullying', 'Hate speech', 'Sexual or explicit content', 'Violence or threats', 'Other']; // native ReportBlockSheet list; copy pending A53 safety review
+    const dlg = s.dlg;
+    // ===== Plans (spec 03): the viewer's real plans; detail = members, RSVP, leave, chat =====
+    const statusLabel = st => ({ going:'Going', maybe:'Maybe', invited:'Invited', declined:'Declined' })[st] || '';
+    const chipFor = st => st === 'going' ? 'statuschip statuschip--going s3-chip' : st === 'maybe' ? 'statuschip statuschip--interested s3-chip' : 'statuschip s3-chip s3-chip--req';
+    const plansList = (s.myPlans || []).map(pl=>({
+      title: pl.event.title || 'Untitled show', dateShort: ((Drop && Drop.fmtDate(pl.event.date, pl.event.time_tbd)) || '').toUpperCase(), venueCity:[pl.event.venue_name, pl.event.city].filter(Boolean).join(' · '),
+      gradStyle:'background-image:' + gradFor(pl.event.id || pl.id), statusLabel: statusLabel(pl.status), statusCls: chipFor(pl.status),
+      open:()=>this.openPlan(pl.id),
+    }));
+    const pl = s.plan, plEv = (pl && pl.events) || {};
+    const members = (s.planMembers || []).filter(m=>!blockedIds.has(m.user_id));
+    const meMember = members.find(m=>m.user_id === meId);
+    const counts = { going:0, maybe:0, invited:0 }; members.forEach(m=>{ if (m.status in counts) counts[m.status]++; });
+    const dayOf = iso => { const d = new Date(iso), t = new Date(), y = new Date(t); y.setDate(t.getDate() - 1);
+      return d.toDateString() === t.toDateString() ? 'Today' : d.toDateString() === y.toDateString() ? 'Yesterday' : d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }); };
+    const timeOf = iso => new Date(iso).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+    const chat = []; let lastDay = '';
+    (s.planMsgs || []).filter(m=>!blockedIds.has(m.user_id)).forEach(m=>{
+      const day = dayOf(m.created_at); if (day !== lastDay) { chat.push({ isDay:true, day }); lastDay = day; }
+      const mine = m.user_id === meId, p = m.profiles || {};
+      chat.push({ isMsg:true, cls: mine ? 's3-m s3-m--me' : 's3-m', who: mine ? '' : nameOf(p).split(' ')[0], showWho: !mine, ...avOf(m.user_id, p), showAv: !mine, body:m.body, cap: day + ' ' + timeOf(m.created_at) });
+    });
+    (s.planPending || []).forEach(p=>chat.push({ isMsg:true, cls: 's3-m s3-m--me ' + (p.failed ? 's3-m--fail' : 's3-m--pend'), body:p.body, cap: p.failed ? 'Not sent' : 'Sending…', showWho:false, showAv:false, failed:p.failed, retry:()=>this.sendPlanMessage(p) }));
+    const myRsvp = meMember && ['going', 'maybe'].includes(meMember.status) ? meMember.status : null;
+    const rsvpOpts = [['going', "I'm going"], ['maybe', 'Maybe']].map(([k, label], i, all)=>{
+      const on = myRsvp === k;
+      return { label, cls: k === 'going' ? 'is-going' : 'is-maybe', checked: on ? 'true' : 'false', tabindex: on || (!myRsvp && i === 0) ? '0' : '-1', key:'rsvp-' + k,
+        pick:()=>this.setPlanRsvp(k),
+        keyDown:(e)=>{ const d = { ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1 }[e.key]; if (!d) return; e.preventDefault(); const nx = all[(i + d + all.length) % all.length][0]; this.setPlanRsvp(nx); queueMicrotask(()=>document.querySelector('[data-bind-key="rsvp-' + nx + '"]')?.focus()); } };
+    });
+    const pd = pl ? {
+      title: plEv.title || 'Untitled show', dateShort: ((Drop && Drop.fmtDate(plEv.date, plEv.time_tbd)) || '').toUpperCase(), venue: plEv.venue_name || '', gradStyle:'background-image:' + gradFor(plEv.id || pl.id),
+      summary: [counts.going + ' going', counts.maybe ? counts.maybe + ' maybe' : '', counts.invited ? counts.invited + ' invited' : ''].filter(Boolean).join(' · '),
+      members: members.map(m=>{ const p = m.profiles || {}, me = m.user_id === meId;
+        return { name: nameOf(p), sub: me ? 'You' + (pl.creator_id === meId ? ' · host' : '') : placeOf(p) || (pl.creator_id === m.user_id ? 'Host' : ''), ...avOf(m.user_id, p),
+          status: statusLabel(m.status), chipCls: chipFor(m.status), open:()=>{ if (!me) this.openPerson(m.user_id); } }; }),
+      memberCount: members.length + ' in this plan', rsvp: rsvpOpts, chat, chatEmpty: chat.length === 0,
+      sendOff: !s.planDraft.trim() ? 'true' : null, sendLabel: (s.planPending || []).some(p=>!p.failed) ? 'Sending…' : 'Send',
+    } : null;
     // ===== Crew builder interstitial — reuses the real active event (ae),
     // not the deleted EVENTS mock. Plans live in the app (spec 02). =====
     const cbEv = ae;
@@ -3389,7 +3662,7 @@ class Component extends DCLogic {
       screenRsvpMoment: s.screen==='rsvpmoment',
       screenArtist: s.screen==='artist', screenVenue: s.screen==='venue', screenMyShows: s.screen==='myshows',
       screenArtists: s.screen==='artists', screenVenues: s.screen==='venues', screenClaim: s.screen==='claim',
-      screenCrew: s.screen==='crew', screenPlan: s.screen==='plan', screenCrewBuilder: s.screen==='crewbuilder',
+      screenCrew: s.screen==='crew', screenPlan: s.screen==='plan', socInert: !!s.dlg, screenCrewBuilder: s.screen==='crewbuilder',
       screenInvite: s.screen==='invite', screenWrapped: s.screen==='wrapped',
       screenProfile: s.screen==='profile', screenEditProfile: s.screen==='editprofile',
       screenNotifications: s.screen==='notifications', screenSettings: s.screen==='settings',
@@ -3561,11 +3834,53 @@ class Component extends DCLogic {
       venueQuery: s.venueQuery, venueGroups, venuesEmpty: venMatched.length===0,
       // crew
       crewTabs,
-      crewFriends: s.crewTab==='Friends', crewRequests: s.crewTab==='Requests', crewFind: s.crewTab==='Find', crewPlans: s.crewTab==='Plans',
-      friendsList, friendsEmpty: friendsList.length===0, requestsList, requestsEmpty: requestsList.length===0,
-      findList, findEmpty: findList.length===0, plansList, plansListEmpty: plansList.length===0,
-      // plan detail
-      pd,
+      crewFriends: s.crewTab==='Friends', crewRequests: s.crewTab==='Requests', crewFindTab: s.crewTab==='Find', crewPlans: s.crewTab==='Plans',
+      crewPeopleTab: s.crewTab !== 'Plans', crewFindCls: s.crewTab === 'Find' ? 's3-col s3-find is-tab' : 's3-col s3-find',
+      friendsLoading: s.friendsLoading, friendsError: s.friendsError && !s.friendsLoading, friendsReady: !s.friendsLoading && !s.friendsError,
+      friendsList, friendsEmpty: !s.friendsLoading && !s.friendsError && friendsList.length===0, requestsList, requestsEmpty: !s.friendsLoading && !s.friendsError && requestsList.length===0,
+      friendSkel: [1, 2, 3, 4], retryFriends:()=>this.loadFriends(this.state.userId),
+      findQuery: s.findQuery, setFind:(e)=>this.searchPeople(e.target.value), findRows,
+      findIdle: findState === 'idle', findBusy: findState === 'busy', findNone: findState === 'none', findErr: findState === 'error', findHas: findState === 'results',
+      findCount: findState === 'results' || findState === 'none' ? findRows.length + (findRows.length === 1 ? ' person found' : ' people found') : '',
+      findNoneText: 'No one found for \u2018' + findQ + '\u2019. Check the spelling or try their username.', retryFind:()=>this.searchPeople(this.state.findQuery), goFindTab:()=>this.setState({ crewTab:'Find' }),
+      plansList, plansListEmpty: plansList.length===0,
+      // public profile (spec 03)
+      screenPerson: s.screen === 'person', person, personMenuKey: ppId || '', personLoading: s.personBusy, personErr: s.personError && !s.personBusy,
+      personPrivate: !s.personBusy && !s.personError && !!pp && !!pp.private && !blockedRow, personBlocked: !s.personBusy && !!blockedRow,
+      personBlockedText: blockedRow ? 'You blocked ' + nameOf(blockedRow) + '.' : '', personUnblock:()=>{ if (blockedRow) { const p = this.unblock(blockedRow); if (p) p.then(ok=>{ if (ok) this.loadPerson(ppId); }); } },
+      personReady: !s.personBusy && !s.personError && !!person && !blockedRow, togglePersonBio:()=>this.setState(x=>({ personBioOpen:!x.personBioOpen })),
+      retryPerson:()=>this.loadPerson(ppId), goBackFromPerson:(e)=>{ this.prevent(e); this.go('crew'); },
+      // dialogs (block / report / remove / leave)
+      dlgOpen: !!dlg, dlgBlock: !!dlg && dlg.kind === 'block', dlgReport: !!dlg && dlg.kind === 'report', dlgRemove: !!dlg && dlg.kind === 'remove', dlgLeave: !!dlg && dlg.kind === 'leave',
+      dlgTitle: !dlg ? '' : dlg.kind === 'block' ? 'Block ' + dlg.name + '?' : dlg.kind === 'report' ? 'Report ' + dlg.name : dlg.kind === 'remove' ? 'Remove ' + dlg.name + '?' : 'Leave this plan?',
+      dlgBody: !dlg ? '' : dlg.kind === 'block' ? "They won't be able to find you or see your profile on Drop, and they won't be told. You can unblock them in Settings."
+        : dlg.kind === 'remove' ? 'You can add each other again later.' : dlg.kind === 'leave' ? "You'll stop getting messages from it." : '',
+      dlgConfirmLabel: !dlg ? '' : dlg.busy ? ({ block:'Blocking…', report:'Sending…', remove:'Removing…', leave:'Leaving…' })[dlg.kind]
+        : ({ block:'Block ' + dlg.name, report:'Send report', remove:'Remove friend', leave:'Leave plan' })[dlg.kind],
+      dlgCancelLabel: dlg && dlg.kind === 'leave' ? 'Stay in plan' : 'Cancel',
+      dlgDanger: !!dlg && dlg.kind !== 'report', dlgConfirmCls: dlg && dlg.kind === 'report' ? 'btn btn--primary' : 'btn btn--danger',
+      dlgBusy: dlg && dlg.busy ? 'true' : null, dlgOff: !!dlg && (dlg.busy || (dlg.kind === 'report' && !dlg.reason)) ? 'true' : null,
+      dlgErr: dlg ? dlg.err : '', dlgHasErr: !!(dlg && dlg.err),
+      dlgReasons: REPORT_REASONS.map(r=>({ label:r, value:r, checked: !!dlg && dlg.reason === r, cls: dlg && dlg.reason === r ? 's3-rad is-on' : 's3-rad', pick:()=>this.setState(x=>({ dlg:{ ...x.dlg, reason:r } })) })),
+      dlgCancel:()=>this.closeDialog(), dlgConfirm:()=>this.confirmDialog(),
+      dlgKey:(e)=>{
+        if (e.key === 'Escape') { e.preventDefault(); this.closeDialog(); return; }
+        if (e.key !== 'Tab') return;
+        const items = Array.from(e.currentTarget.querySelectorAll('button, input, a[href]')).filter(el=>!el.disabled);
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        items[(i < 0 ? 0 : i + (e.shiftKey ? -1 : 1) + items.length) % items.length]?.focus();
+      },
+      // plans (spec 03)
+      plansLoading: s.myPlans === null, plansReady: s.myPlans !== null && !s.myPlansError, plansError: s.myPlansError, retryPlans:()=>this.loadMyPlans(),
+      pd, planLoading: s.planBusy, planErr: s.planError && !s.planBusy, planGone: s.planGone && !s.planBusy, planReady: !!pd && !s.planBusy && !s.planError && !s.planGone,
+      planSkel: [1, 2, 3], planDraft: s.planDraft, planNew: s.planNew,
+      setPlanDraft:(e)=>this.setState({ planDraft:e.target.value }),
+      // Enter sends, Shift+Enter is a newline, never during IME composition.
+      planDraftKey:(e)=>{ if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); this.sendPlanMessage(); } },
+      planSend:()=>this.sendPlanMessage(), planLeave:()=>pl && this.openDialog('leave', { id:pl.id, name:'' }),
+      planRetry:()=>this.loadPlan(this.state.planId, true), planJump:()=>{ this.setState({ planNew:false }); queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; }); },
+      goPlans:(e)=>{ this.prevent(e); this.setState({ screen:'crew', crewTab:'Plans' }); this.loadMyPlans(); if (typeof window !== 'undefined') window.scrollTo(0, 0); },
       // crew builder
       cbTitle: cbEv.title.split(' — ')[0],
       // invite
@@ -3762,7 +4077,6 @@ class Component extends DCLogic {
       },
       setVenueQuery:(e)=>this.setState({venueQuery:e.target.value}),
       artBulkFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>{ const f={...x.followArt}; artFiltered.forEach(a=>{ f[a.name]=!artAllFollowed; }); return {followArt:f}; }); this.flash(artAllFollowed?('Unfollowed all '+s.artGenre):('Following all '+s.artGenre)); },
-      planSend:()=>this.flash('Message sent to your crew'),
       // ponytail: no image-perfect html-to-image lib — native share sheet
       // (text+URL) for "post to story", canvas render (below) for the actual
       // image download. Covers both asks without a screenshot dependency.
@@ -4039,7 +4353,7 @@ class Component extends DCLogic {
       aeCopyCode:()=>{ if (ae.presaleCode && navigator.clipboard) navigator.clipboard.writeText(ae.presaleCode).then(()=>this.flash('Presale code copied'), ()=>{}); },
       aeIcs:()=>this.downloadIcs([{ id:ae.id, title:ae.title, date:ae.date, end_date:ae.endDate, venue_name:ae.venue, city:ae.city }]),
       toggleDesc:()=>this.setState(st=>({descClamped:!st.descClamped})),
-      requirePlan:()=>{ if(!this.state.authed){ this.openGate('Log in to make plans'); return; } this.setState({screen:'crewbuilder'}); if(typeof window!=='undefined') window.scrollTo(0,0); },
+      requirePlan:()=>this.planForEvent(ae.id), // spec 03: plans live on the web now
       requireComment:()=>{ if(!this.state.authed) this.openGate('Log in to comment'); },
 
       // search handlers
