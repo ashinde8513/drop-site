@@ -194,7 +194,11 @@ test('phone: sheet shows the count; handle expands the list; a picked pin swaps 
   await sheet.getByRole('button', { name:'Expand shows list' }).click();
   await expect(sheet.locator('.mp-card')).toHaveCount(3);
   await expect(sheet.getByRole('button', { name:'Collapse shows list' })).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('button', { name:/Rezz at Ogden Theatre$/ }).click();
+  await sheet.locator('.mp-card', { hasText:'Rezz' }).click();
   await expect(sheet.locator('.mp-card')).toHaveCount(1);
-  await expect(sheet.getByRole('link', { name:'View event' })).toBeVisible();
+  await expect(page.getByRole('button', { name:/Rezz at Ogden Theatre$/ })).toHaveAttribute('aria-pressed', 'true');
+  const view = sheet.getByRole('link', { name:'View event' });
+  await expect(view).toBeVisible();
+  expect((await view.boundingBox())!.y + 54).toBeLessThanOrEqual(844); // thumb zone, on screen
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390); // no sideways scroll
 });

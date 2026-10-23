@@ -188,6 +188,7 @@
       },
       zoom: function (d) { touched = true; if (map) map.easeTo({ zoom: map.getZoom() + d, duration: 0 }); },
       zoomOut: function () { touched = true; if (map) map.easeTo({ zoom: Math.max(3, map.getZoom() - 2), duration: 0 }); },
+      panTo: function (lng, lat) { touched = true; if (map) map.jumpTo({ center: [lng, lat] }); },
       centerOn: function (lng, lat, zoom) { touched = true; if (map) map.jumpTo({ center: [lng, lat], zoom: zoom || Math.max(map.getZoom(), 12) }); },
       reset: function () { ready = null; if (map) map.remove(); map = null; markers = {}; },
     };
