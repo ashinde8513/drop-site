@@ -33,7 +33,7 @@
 
 /* ===== Segmented control (glass) ===== */
 .seg { display: inline-flex; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
-.seg__item { padding: 7px 16px; border: 0; background: transparent; border-radius: var(--r-pill); font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.seg__item { padding: 7px 16px; border: 0; background: transparent; border-radius: var(--r-pill); font: inherit; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
 .seg__item.is-active { background: var(--surface-hi); color: var(--text); }
 
 /* ===== Event card (mirrors src/components/EventCard.tsx) ===== */
@@ -384,7 +384,7 @@
   @keyframes floatGlow { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,-24px); } }
   /* Skeleton loading */
   @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-  .skel { background: var(--surface-hi); background-image: linear-gradient(90deg, transparent 0, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 60%, transparent 100%); background-size: 800px 100%; background-repeat: no-repeat; animation: shimmer 1.4s var(--ease) infinite; border-radius: var(--r-sm); }
+  .skel { background: var(--surface-hi); background-image: linear-gradient(90deg, transparent 0, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 60%, transparent 100%); background-size: 800px 100%; background-repeat: no-repeat; animation: shimmer 1.4s var(--ease) infinite; }
   .is-active-legal { background: var(--surface-hi); color: var(--text) !important; }
   .drop-scroll { min-height: 100vh; }
   /* Page must never scroll sideways — rails scroll inside their own boxes. */
@@ -443,12 +443,12 @@
 
     /* ===== EVENT DETAIL: stack, drop buy box, sticky bottom bar ===== */
     .ed-grid { grid-template-columns: 1fr !important; gap: var(--sp-lg) !important; }
-    .ed-aside { display: none !important; }
-    .ed-wrap { padding-bottom: 96px !important; }
+    .tk .tk__buy { display: none; } /* the bottom bar holds the phone primary */
+    .ed-wrap { padding-left: var(--sp-lg) !important; padding-right: var(--sp-lg) !important; padding-bottom: 96px !important; }
     .ed-bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; gap: var(--sp-sm); align-items: center; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--glass-dark); backdrop-filter: blur(12px); border-top: 1px solid var(--border-strong); }
-    .ed-bottombar__icon { flex: 0 0 48px; padding-inline: 0; }
-    .ed-bottombar__going { flex: 0 1 82px; min-width: 72px; padding-inline: 10px; }
-    .ed-bottombar__tickets { flex: 1 1 160px; min-width: 0; min-height: 48px; height: auto; padding: 8px 12px; font-size: var(--fs-sm); line-height: 1.2; }
+    .ed-bottombar__icon { flex: 0 0 48px; height: 48px; padding-inline: 0; }
+    .ed-bottombar__going { flex: 0 0 88px; padding-inline: 10px; }
+    .ed-bottombar__tickets { flex: 1 1 160px; min-width: 0; min-height: 48px; height: auto; padding: 8px 12px; font-size: var(--fs-sm); line-height: 1.2; text-align: center; }
 
     /* ===== SEARCH: stack filter above results, compact panel ===== */
     .search-grid { grid-template-columns: 1fr !important; }
@@ -481,3 +481,62 @@
 /* ===== image-slot placeholder (image-slot.js dropped; CSS-only gradient fallback) ===== */
 image-slot { display: flex; align-items: center; justify-content: center; position: absolute; inset: 0; background-image: linear-gradient(135deg, rgba(93,207,230,0.14), rgba(195,80,217,0.14)); color: var(--text-muted); font-family: var(--font-body); font-size: var(--fs-xs); text-align: center; padding: var(--sp-sm); }
 image-slot::before { content: attr(placeholder); }
+
+/* ===== Tickets card (design spec 01) — one radiogroup of sellers, one primary ===== */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.ed-actions { display: flex; gap: var(--sp-sm); padding: var(--sp-lg) 0; border-bottom: 1px solid var(--border); }
+.ed-actions .wsc__act { min-height: 44px; font-size: var(--fs-sm); }
+.tk { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-lg); margin: var(--sp-xl) 0; }
+.tk__title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.2; letter-spacing: -0.3px; color: var(--text); }
+.tk__sub { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+.tk__list { display: flex; flex-direction: column; gap: var(--sp-sm); margin-top: var(--sp-md); }
+.tk-row { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: center; column-gap: var(--sp-md); width: 100%; min-height: 64px; padding: var(--sp-md) var(--sp-lg); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.tk-row[aria-checked=true] { border-color: var(--accent); background: linear-gradient(rgba(77,226,255,0.07), rgba(77,226,255,0.07)), var(--surface-alt); }
+.tk-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tk-row--sk { cursor: default; }
+.tk-row__radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--text-muted); display: grid; place-items: center; } /* --text-muted is a 3:1 UI ring here, never text */
+.tk-row[aria-checked=true] .tk-row__radio { border-color: var(--accent); }
+.tk-row[aria-checked=true] .tk-row__radio::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.tk-row__main { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+.tk-row__name { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.2; letter-spacing: -0.3px; overflow-wrap: anywhere; }
+.tk-row__line, .tk-row__lab { font-size: 12px; line-height: 1.35; color: var(--text-secondary); }
+.tk-row__price { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+.tk-row__amt { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; }
+.tk-row__amt--live { font-size: 16px; }
+.statuschip--sm { gap: 5px; padding: 3px 9px; font-size: 10px; line-height: 1.3; letter-spacing: 1.2px; text-transform: uppercase; pointer-events: none; }
+.statuschip--sm::before { font-size: 10px; }
+.tk__more { margin-top: var(--sp-sm); }
+.tk__attr { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 12px; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px; }
+.tk__attr b { color: var(--text); }
+.tk__buy { height: 52px; margin-top: var(--sp-lg); font-size: 15px; }
+.tk__buy, .ed-bottombar__tickets { gap: 6px; box-shadow: none; } /* board: flat primary inside the card and bar */
+.tk__foot { margin: 14px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.tk-ico.tk-ico--sm { width: 18px; height: 18px; }
+.tk-ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tk-err { display: flex; align-items: center; gap: 10px; margin-top: var(--sp-md); padding: 10px 10px 10px var(--sp-md); border-radius: var(--r-md); background: rgba(255,92,114,0.10); border: 1px solid rgba(255,92,114,0.45); font-size: var(--fs-sm); line-height: 1.3; }
+.tk-err .tk-ico { color: var(--danger); }
+.tk-err span { flex: 1; min-width: 0; }
+.tk-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 14px; }
+.tk-empty__ico { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 50%; background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-secondary); }
+.tk-empty strong { font-family: var(--font-display); font-size: 16px; line-height: 1.25; letter-spacing: -0.3px; }
+.tk-empty p { margin: 0; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary); }
+.skel--avatar.tk-sk-dot { width: 22px; height: 22px; }
+.tk-row--sk .tk-row__main { gap: 8px; width: 100%; }
+.tk-sk-title { display: block; width: 40%; }
+.tk-sk-line { height: 12px; }
+.tk-sk-price { width: 76px; height: 22px; }
+.tk-sk-btn { height: 52px; margin-top: var(--sp-lg); border-radius: var(--r-md); }
+.tk-overlay { z-index: 70; } /* above the fixed bottom bar */
+.tk-sheet { max-height: calc(100vh - 66px); overflow: hidden auto; padding: 10px var(--sp-lg) calc(28px + env(safe-area-inset-bottom)); }
+.tk-sheet .sheet__handle { margin-bottom: var(--sp-md); }
+.tk-sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-md); }
+.tk-sheet__head .sheet__title { margin: 0; }
+.tk-sheet__close { width: 44px; padding: 0; }
+.tk-sheet .tk-row { background: var(--surface); }
+.tk-sheet .tk-row[aria-checked=true] { background: linear-gradient(rgba(77,226,255,0.07), rgba(77,226,255,0.07)), var(--surface); }
+/* Desktop: the card keeps its DOM place (phone order) but sits atop the sticky right column. */
+@media (min-width: 721px) {
+  .ed-main { display: contents; }
+  .ed-main > * { grid-column: 1; }
+  .ed-main > .tk { grid-column: 2; grid-row: 1 / span 20; position: sticky; top: 88px; align-self: start; margin: 0; }
+}

@@ -216,8 +216,11 @@
     const valueAttr = node.getAttribute('value');
     const wholeVal = valueAttr && /^\{\{([\s\S]+?)\}\}$/.exec(valueAttr);
     const bindKey = wholeVal ? wholeVal[1].trim() : null;
+    // The template parser puts <svg> subtrees in the SVG namespace; keep them
+    // there or icons build as unknown HTML elements and never paint.
+    const svgNs = node.namespaceURI === 'http://www.w3.org/2000/svg' ? node.namespaceURI : null;
     return (vals) => {
-      const el = document.createElement(tag);
+      const el = svgNs ? document.createElementNS(svgNs, node.localName) : document.createElement(tag);
       for (const [name, fn] of attrs) {
         if (EVENT_MAP[name]) {
           const handler = fn(vals);
@@ -418,6 +421,7 @@
       })
     : null;
   var Drop = window.Drop || null; // from data.js — public event catalog + formatters
+  var Offers = window.DropOffers || null; // from offers.js — seller matching + price rules (spec 01)
 
   function looksLikeEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
   function cleanUsername(v) { return String(v || '').trim().replace(/^@+/, '').toLowerCase(); }
@@ -828,7 +832,7 @@
       ticketUrl: (Drop && Drop.safeUrl(ev.ticket_url)) || '',
       friends: 0,
       goingCount: '—', interestedCount: '—',
-      presaleLive: false, presaleCode: '', onsale: ev.status === 'published' ? 'On sale now' : 'Not yet on sale',
+      presaleLive: false, presaleCode: '',
       lineup: artists.map(function (a) { return a.name; }),
       lineupArtists: artists, // [{id,name,genres,image_url}] — real artist ids, used to wire follow writes
       city: ev.city || '',
@@ -931,7 +935,7 @@ class Component extends DCLogic {
     setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
-    alertRows: [], offers: {},
+    alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null,
     // pick artists / venues / crew / plans / wrapped
     artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
@@ -1701,18 +1705,46 @@ class Component extends DCLogic {
       if (error) { console.error('[app] alerts update failed:', error.message); flip(false); this.flash('Could not update notifications — try again'); }
     });
   }
-  // Every seller listed for the open event (ticket_offers is public for published events).
-  syncOffers(){
+  // Every seller for the open show (ticket_offers is public for published
+  // events), including other source rows of the same performance. Vetted and
+  // de-duplicated like native; offers[id] = rows, or 'error' (card shows retry).
+  syncOffers(force){
     const st = this.state, id = st.activeId;
-    if (st.screen !== 'event' || !supa || !ATTRIBUTION_UUID.test(String(id || '')) || this._offersKey === id) return;
+    if (st.screen !== 'event' || (this._offersKey === id && !force)) return;
     this._offersKey = id;
-    supa.from('ticket_offers')
-      .select('vendor,url,price_min,price_max,currency,all_in_price,price_text,price_includes_fees,url_domain,kind,last_refreshed')
-      .eq('event_id', id)
+    const done = (rows)=>{
+      if (this._offersKey !== id) return;
+      this.setState(s=>({ offers:{ ...s.offers, [id]: rows } }));
+      if (!this._tkRefocus) return;
+      this._tkRefocus = false;
+      queueMicrotask(()=>(document.querySelector('#tk-list [tabindex="0"]') || document.getElementById('tk-retry'))?.focus());
+    };
+    if (!supa || !ATTRIBUTION_UUID.test(String(id || ''))) { done('error'); return; }
+    this.offerEventIds(id)
+      .then(ids=>supa.from('ticket_offers')
+        .select('id,event_id,vendor,url,price_min,price_max,currency,price_includes_fees,kind,last_seen_at,last_refreshed,fetched_at')
+        .in('event_id', ids))
       .then(({ data, error })=>{
-        if (error) { console.error('[app] ticket_offers load failed:', error.message); this._offersKey = null; return; }
-        this.setState(s=>({ offers:{ ...s.offers, [id]: data || [] } }));
-      });
+        if (error || !Offers) { console.error('[app] ticket_offers load failed:', error ? error.message : 'offers.js missing'); done('error'); return; }
+        done(Offers.bestOfferPerVendor(Offers.usableTicketOffers(data || [])));
+      }, (e)=>{ console.error('[app] ticket_offers load failed:', e && e.message); done('error'); });
+  }
+  // Same-show source rows (native getComparableEventIds): published events
+  // within ±3 h, then the fail-closed matcher. Any failure = this event only.
+  async offerEventIds(id){
+    const cols = 'id,title,date,city,venue_name,venue_id,time_tbd,timezone,source,event_artists(artist_id,position,artists(name))';
+    const { data:anchor } = await supa.from('events').select(cols).eq('id', id).maybeSingle();
+    const t = anchor ? Date.parse(anchor.date) : NaN;
+    if (!Offers || !isFinite(t)) return [id];
+    const H = 3 * 3600000, candidates = [anchor];
+    for (let from = 0; ; from += 500) {
+      const { data, error } = await supa.from('events').select(cols).eq('status', 'published')
+        .gte('date', new Date(t - H).toISOString()).lte('date', new Date(t + H).toISOString()).order('id').range(from, from + 499);
+      if (error) return [id];
+      candidates.push(...(data || []).filter(c=>c.id !== id));
+      if ((data || []).length < 500) break;
+    }
+    return Offers.comparableOfferEventIds(id, candidates);
   }
   // ===== Log a past show — archive picker query + bulk/manual writes =====
   // Recent PAST published events, optional title/venue search + year filter.
@@ -2234,7 +2266,7 @@ class Component extends DCLogic {
     const ae = events.find(e=>e.id===s.activeId) || events[0] || {
       id:null, title:'', venue:'', venueCity:'', dateShort:'', dateLong:'', price:'See tickets', genre:'',
       grad:EVENT_GRADS[0], gradStyle:'background-image:'+EVENT_GRADS[0], friends:0, goingCount:'—', interestedCount:'—',
-      presaleLive:false, presaleCode:'', onsale:'', lineup:[], lineupArtists:[], city:'',
+      presaleLive:false, presaleCode:'', lineup:[], lineupArtists:[], city:'',
     };
 
     const aeSt = s.rsvp[ae.id];
@@ -2337,21 +2369,61 @@ class Component extends DCLogic {
     const lineup = lineupArtists.length
       ? lineupArtists.map((a,i)=>({ name:a.name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(a.name, a.id) }))
       : (ae.lineup||[]).map((name,i)=>({ name, headStyle: i===0?'border-color:var(--accent);color:var(--accent);':'', open:()=>this.openArtist(name, null) }));
-    // Real sellers from ticket_offers (cheapest known first, unknown price last);
-    // falls back to the one events.ticket_url row when there are none. Never invents a price.
-    const money = (v, cur)=>{ try { return new Intl.NumberFormat('en-US', { style:'currency', currency:cur||'USD', maximumFractionDigits:0 }).format(v); } catch(e) { return '$'+Math.round(v); } };
-    const offerRows = ((s.offers||{})[ae.id]||[]).map(o=>{
-      const url = Drop && Drop.safeUrl(o.url); if (!url) return null;
-      const num = o.all_in_price != null ? Number(o.all_in_price) : (o.price_min != null ? Number(o.price_min) : null);
-      const known = num != null && isFinite(num);
-      return { seller:o.vendor || (Drop && Drop.sellerName(url)) || 'Tickets', price:o.price_text || (known ? money(num, o.currency) : 'See price'),
-        num:known ? num : Infinity, best:false, border:'var(--border)', open:()=>window.open(url, '_blank', 'noopener') };
-    }).filter(Boolean).sort((a,b)=>a.num-b.num);
-    if (offerRows.filter(r=>r.num !== Infinity).length > 1) { offerRows[0].best = true; offerRows[0].border = 'var(--attended)'; }
-    const priceRows = offerRows.length ? offerRows : ae.ticketUrl ? [
-      { seller:(Drop && Drop.sellerName(ae.ticketUrl)) || 'Tickets', price:ae.price, best:false, border:'var(--attended)', open:()=>window.open(ae.ticketUrl, '_blank', 'noopener') },
-    ] : [];
-    const aeSingleSeller = priceRows.length === 1;
+    // ===== Tickets card (design spec 01; A50 price rules in offers.js) =====
+    // One radiogroup of sellers and one primary, "Buy on {Seller}". With no
+    // seller rows the event's own vetted ticket_url is the one row, price not claimed.
+    const tkNow = Date.now();
+    const offState = (s.offers||{})[ae.id]; // undefined = loading, 'error', or rows
+    const tkCard = Array.isArray(offState) ? Offers.ticketRows(offState, tkNow) : { rows:[], tag:null };
+    const legacyUrl = ae.ticketUrl && Offers && Offers.isUsableTicketUrl(ae.ticketUrl) ? ae.ticketUrl : '';
+    const legacyRow = legacyUrl ? { id:'legacy', seller:Offers.hostOf(legacyUrl).replace(/^www\./, ''), url:legacyUrl, amount:null, caption:'', line:'See current total on seller site', tag:'' } : null;
+    const tkRows = tkCard.rows.length ? tkCard.rows : (offState !== undefined && legacyRow ? [legacyRow] : []);
+    // ponytail: no end time = 12 h after the start; add per-venue curfews if shows run later.
+    const aeEnd = Date.parse(ae.endDate || '') || Date.parse(ae.date || '') + 12 * 3600000;
+    const tkEnded = isFinite(aeEnd) && aeEnd < tkNow;
+    const tkLoading = !tkEnded && offState === undefined;
+    const tkError = !tkEnded && offState === 'error';
+    const tkHasRows = !tkEnded && tkRows.length > 0;
+    // Selection is the offer id; a vanished id falls back to the default (tagged row sorts first).
+    const tkSel = tkRows.find(r=>r.id === (s.tkSel||{})[ae.id]) || tkRows[0] || null;
+    // Native ticketOpenTarget: the selected link, else events.ticket_url, else the first linked row.
+    const tkTarget = !tkHasRows || !tkSel ? null : tkSel.url ? tkSel : legacyRow || tkRows.find(r=>r.url) || null;
+    // Selecting a row past the first 3 expands the list first, so the selection is never hidden.
+    const tkPick = (row, prefix)=>{
+      const deep = tkRows.indexOf(row) >= 3;
+      this.setState(x=>({ tkSel:{ ...x.tkSel, [ae.id]: row.id }, tkAll: deep ? { ...x.tkAll, [ae.id]: true } : x.tkAll }));
+      queueMicrotask(()=>document.getElementById(prefix + row.id)?.focus());
+    };
+    const TK_KEYS = { ArrowDown:1, ArrowRight:1, ArrowUp:-1, ArrowLeft:-1 };
+    const tkKey = (e, i, prefix)=>{
+      const n = tkRows.length;
+      const j = e.key in TK_KEYS ? (i + TK_KEYS[e.key] + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1;
+      if (j < 0) return;
+      e.preventDefault();
+      tkPick(tkRows[j], prefix);
+    };
+    const tkRowVm = prefix => (r, i)=>{
+      const on = !!tkSel && r.id === tkSel.id;
+      return {
+        domId: prefix + r.id, checked: on ? 'true' : 'false', tabindex: on ? '0' : '-1',
+        seller: r.seller, tag: r.tag, hasTag: !!r.tag, line: r.line, hasLine: !!r.line,
+        priced: !!r.amount, amount: r.amount || 'Live price', amtCls: r.amount ? 'tk-row__amt' : 'tk-row__amt tk-row__amt--live',
+        caption: r.caption, hasCaption: !!r.caption,
+        // Name carries what the row shows (captions, stale note, tag): the visible text is replaced by it.
+        label: [r.seller, ...(r.amount
+          ? ['listed from ' + r.amount, ...(r.caption ? r.caption.split(' · ') : []), r.tag]
+          : ['price not listed', r.line === 'Previous quote expired' ? r.line : '', 'see current total on seller site'])]
+          .filter(Boolean).map((t, i)=>i ? t.charAt(0).toLowerCase() + t.slice(1) : t).join(', '),
+        pick: ()=>tkPick(r, prefix), key: (e)=>tkKey(e, i, prefix),
+      };
+    };
+    // >3 sellers collapse to 3; the selected row never hides.
+    const tkExpanded = !!(s.tkAll||{})[ae.id];
+    const tkRowsVisible = tkRows.map(tkRowVm('tkrow-')).filter((r, i)=>tkExpanded || i < 3 || tkRows[i] === tkSel);
+    const tkSub = tkRows.length === 1 ? 'Only one seller lists this show right now.'
+      : 'Same show, ' + tkRows.length + ' sellers — ' + (tkCard.tag && tkCard.tag.text === 'Lowest listed'
+        ? 'compare listed prices to find the best deal.' : 'compare available prices or open a seller for its live total.');
+    const tkSheetOpen = s.tkSheet === ae.id && tkHasRows;
 
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
     // hi at the slider cap means "$200+" (unbounded above); lo 0 = free shows in
@@ -3300,9 +3372,17 @@ class Component extends DCLogic {
       gate: s.gate, gateTitle: s.gateTitle, toast: s.toast,
 
       // event detail
-      ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:aeFriendIds.length>0, friendsLabel:fl(aeFriendIds.length), friendAvatars:aeFriendAvatars, lineup, priceRows,
+      ae: { ...ae, gradStyle:'background-image:'+ae.grad, hasFriends:aeFriendIds.length>0, friendsLabel:fl(aeFriendIds.length), friendAvatars:aeFriendAvatars, lineup,
         description: Drop ? Drop.plainText(ae.descriptionHtml) : '' },
-      aeSingleSeller,
+      tkLoading, tkBusy: tkLoading ? 'true' : null, tkTitleCls: tkLoading ? 'sr-only' : 'tk__title', tkSkel: [1, 2, 3], tkEnded, tkError, tkHasRows,
+      tkEmpty: !tkEnded && Array.isArray(offState) && !tkRows.length,
+      tkShowSub: tkHasRows && !tkError, tkSub, tkRowsVisible,
+      tkCanExpand: tkHasRows && tkRows.length > 3, tkExpandedAttr: tkExpanded ? 'true' : 'false',
+      tkMoreLabel: tkExpanded ? 'Show fewer' : 'Show all ' + tkRows.length + ' sellers',
+      tkSeatGeek: tkHasRows && tkRows.some(r=>r.seatgeek),
+      tkHasBuy: !!tkTarget, tkBuyUrl: tkTarget ? tkTarget.url : '', tkBuyLabel: tkTarget ? tkTarget.seller : '',
+      tkHasSheet: !!tkTarget && tkRows.length > 1, tkSellersLabel: 'Choose a seller, ' + tkRows.length + ' listed',
+      tkSheetOpen, tkSheetRows: tkSheetOpen ? tkRows.map(tkRowVm('tksrow-')) : [],
       descCls: s.descClamped?'is-clamped':'', descToggle: s.descClamped?'Read more':'Show less',
       aeGoingCls: 'wsc__act'+(aeSt==='going'?' is-going':''),
       aeInterestedCls: 'wsc__act'+(aeSt==='interested'?' is-interested':''),
@@ -3673,7 +3753,21 @@ class Component extends DCLogic {
       aeGoing:()=>this.toggleRsvp(ae.id,'going'),
       aeInterested:()=>this.toggleRsvp(ae.id,'interested'),
       aeSave:()=>this.toggleSave(ae.id),
-      aeTickets:()=>{ const r = priceRows[0]; if (r) r.open(); else this.flash('Tickets not on sale yet'); },
+      tkMore:()=>this.setState(x=>({ tkAll:{ ...x.tkAll, [ae.id]: !(x.tkAll||{})[ae.id] } })),
+      tkRetry:()=>{ this._tkRefocus = true; this.setState(x=>({ offers:{ ...x.offers, [ae.id]: undefined } })); this.syncOffers(true); },
+      // Sellers sheet (phone): modal, focus on the selected row, Esc/Close return focus to the Sellers icon.
+      tkOpenSheet:()=>{ this.setState({ tkSheet: ae.id }); queueMicrotask(()=>document.getElementById('tksrow-' + (tkSel && tkSel.id))?.focus()); },
+      tkCloseSheet:()=>{ this.setState({ tkSheet: null }); queueMicrotask(()=>document.getElementById('tk-sellers')?.focus()); },
+      tkSheetKey:(e)=>{
+        if (e.key === 'Escape') { e.preventDefault(); this.setState({ tkSheet: null }); queueMicrotask(()=>document.getElementById('tk-sellers')?.focus()); return; }
+        if (e.key !== 'Tab') return;
+        const items = Array.from(e.currentTarget.querySelectorAll('button:not([tabindex="-1"]), a[href]'));
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        items[(i < 0 ? 0 : i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
+      },
+      // Buying from the sheet closes it; the link itself opens the seller.
+      tkBuy:()=>{ if (this.state.tkSheet) this.setState({ tkSheet: null }); },
       aeShare:()=>this.shareEvent(ae.id),
       aeOpenVenue:(e)=>{ this.prevent(e); this.setState({screen:'venue', activeVenue:ae.venue, venueCity:ae.city||''}); if(typeof window!=='undefined') window.scrollTo(0,0); },
       aeCopyCode:()=>{ if (ae.presaleCode && navigator.clipboard) navigator.clipboard.writeText(ae.presaleCode).then(()=>this.flash('Presale code copied'), ()=>{}); },
