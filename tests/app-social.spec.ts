@@ -278,3 +278,37 @@ test('plan: not a member reads neutral, only Back', async ({ page }) => {
   await expect(page.getByRole('heading', { name:'This plan is private or no longer exists.' })).toBeVisible();
   await expect(page.getByRole('button', { name:'Back' })).toBeVisible();
 });
+
+// Every visible control is ≥ 44px tall and secondary text clears WCAG AA (4.5:1) on its opaque backdrop.
+const audit = (page: Page) => page.evaluate(() => {
+  const rgb = (c: string) => c.match(/[\d.]+/g)!.map(Number);
+  const lum = (c: string) => { const [r, g, b] = rgb(c).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const bgOf = (el: Element | null): string => { for (; el; el = el.parentElement) { const c = getComputedStyle(el).backgroundColor, a = rgb(c)[3]; if (a === undefined || a === 1) return c; } return 'rgb(11,13,18)'; };
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const vis = (el: Element) => (el as HTMLElement).offsetParent && el.getBoundingClientRect().width > 0;
+  const small = [...document.querySelectorAll('main button, main [role=tab], main [role=radio], main a.s3-txt, main .s3-back, .s3-modal button')].filter(vis)
+    .filter(el => el.getBoundingClientRect().height < 43.5).map(el => (el.textContent || el.getAttribute('aria-label') || '').trim() + ' ' + Math.round(el.getBoundingClientRect().height));
+  const low = [...document.querySelectorAll('.s3-sub, .s3-cap, .s3-day, .s3-live, .s3-hint, .s3-stat span, .s3-who, .s3-quiet, .s3-name, .s3-lbl')].filter(vis).filter(el => (el.textContent || '').trim())
+    .map(el => [el.className + ': ' + (el.textContent || '').trim().slice(0, 20), ratio(getComputedStyle(el).color, bgOf(el))] as const).filter(([, r]) => r < 4.5).map(([n, r]) => n + ' ' + r.toFixed(2));
+  return { small, low };
+});
+
+test('a11y: 44px targets and AA secondary text on Friends, Find, Requests and plan', async ({ page, isMobile }) => {
+  await boot(page, { rpc:{ create_or_get_plan:PLAN, search_public_profiles:[prof(SAM, 'Sam Okafor', 'samokafor')], public_profile:[prof(MAYA, 'Maya Chen', 'mayachen')] }, rows:{ friendships:FRIENDSHIPS, profiles:PROFILES,
+    plans:[{ id:PLAN, event_id:EV.id, creator_id:USER_ID, events:EV }],
+    plan_members:[{ plan_id:PLAN, user_id:USER_ID, status:'going', profiles:prof(USER_ID, 'Jordan Reyes', 'jordan') }],
+    plan_messages:[{ id:'m1', user_id:MAYA, body:'Hi', created_at:new Date().toISOString(), profiles:{ display_name:'Maya Chen' } }] } });
+  await friends(page, isMobile);
+  expect(await audit(page)).toEqual({ small:[], low:[] });
+  if (isMobile) await tab(page, /^Find$/).click();
+  await page.getByRole('searchbox', { name:'Search people' }).fill('sam');
+  await expect(page.locator('.s3-live')).toHaveText('1 person found');
+  expect(await audit(page)).toEqual({ small:[], low:[] });
+  await tab(page, /^Requests/).click();
+  expect(await audit(page)).toEqual({ small:[], low:[] });
+  await page.goto('/app/index.html');
+  await page.getByText('Social Night').first().click();
+  await page.getByRole('button', { name:/Plan with friends/ }).click();
+  await expect(page.getByRole('heading', { name:'Social Night' })).toBeVisible();
+  expect(await audit(page)).toEqual({ small:[], low:[] });
+});
