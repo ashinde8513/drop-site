@@ -215,7 +215,7 @@
     // (see mount()) — derived from its static `value="{{ expr }}"` binding.
     const valueAttr = node.getAttribute('value');
     const wholeVal = valueAttr && /^\{\{([\s\S]+?)\}\}$/.exec(valueAttr);
-    const bindKey = wholeVal ? wholeVal[1].trim() : null;
+    const bindKey = wholeVal && !node.hasAttribute('data-bind-key') ? wholeVal[1].trim() : null;
     // The template parser puts <svg> subtrees in the SVG namespace; keep them
     // there or icons build as unknown HTML elements and never paint.
     const svgNs = node.namespaceURI === 'http://www.w3.org/2000/svg' ? node.namespaceURI : null;
@@ -584,7 +584,7 @@
   var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
   var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
   // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
-  var USER_DATA_RESET = { ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
+  var USER_DATA_RESET = { ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, myPlans:null, myPlansError:false, findQuery:'', findResults:null, findError:false, addBusy:{}, addErr:{}, reqBusy:{}, socMenu:null, dlg:null, person:null, personId:null, plan:null, planId:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var EVENT_INTENT_KEY = 'drop.eventIntent';
   var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
@@ -713,6 +713,9 @@
     return Math.abs(h);
   }
   function gradFor(id) { return EVENT_GRADS[hashStr(id) % EVENT_GRADS.length]; }
+  // Spec 03 avatars: ink initials on bright brand pairs (>= 5:1); the event gradients are too dark for text.
+  var AV_GRADS = [['brand-cyan', 'brand-lime'], ['brand-lime', 'brand-cyan'], ['brand-cyan', 'brand-magenta'], ['brand-magenta', 'brand-cyan'], ['brand-magenta', 'gold'], ['gold', 'brand-magenta'], ['chrome', 'brand-cyan']]
+    .map(function (p) { return 'linear-gradient(135deg,var(--' + p[0] + '),var(--' + p[1] + '))'; });
 
   // Discover date-chip -> real from/to window for Drop.fetchEvents.
   function dateWindow(dchip) {
@@ -947,10 +950,10 @@ class Component extends DCLogic {
     // pick artists / venues / crew / plans / wrapped
     artGenre: 'All', artShown: 48, followArt: {}, followVen: {},
     venueQuery: '',
-    crewTab: 'Friends', reqActioned: {}, addedPeople: {},
+    crewTab: 'Friends',
     // social (spec 03)
     friendsLoading: true, friendsError: false, findQuery: '', findResults: null, findBusy: false, findError: false, addBusy: {}, addErr: {}, reqBusy: {},
-    myPlans: null, myPlansError: false, planId: null, plan: null, planBusy: false, planError: false, planGone: false, planMembers: [], planMsgs: [], planPending: [], planDraft: '', planNew: false,
+    myPlans: null, myPlansError: false, planId: null, plan: null, planBusy: false, planError: false, planGone: false, planMembers: [], planMsgs: [], planPending: [], planDraft: '', planNew: false, planMembersOpen: false,
     socMenu: null, dlg: null, personId: null, person: null, personBusy: false, personError: false, personBioOpen: false,
     wrappedRange: 'This year',
     invited: {},
@@ -1262,6 +1265,7 @@ class Component extends DCLogic {
   openPerson(id){
     if (!id) return;
     if (id === this.state.userId) { this.go('profile'); return; }
+    this._focusMain = true;
     this.setState({ screen:'person', personId:id, person:null, personBusy:true, personError:false, personBioOpen:false, socMenu:null });
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
     this.loadPerson(id);
@@ -1309,7 +1313,8 @@ class Component extends DCLogic {
     });
   }
   openPlan(id){
-    this.setState({ screen:'plan', planId:id, plan:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', planNew:false, planGone:false, planError:false, socMenu:null });
+    this._focusMain = true;
+    this.setState({ screen:'plan', planId:id, plan:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', planNew:false, planMembersOpen:false, planGone:false, planError:false, socMenu:null });
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
     this.loadPlan(id, true);
     clearInterval(this._planPoll);
@@ -1335,22 +1340,28 @@ class Component extends DCLogic {
   }
   loadPlanMessages(id){
     if (!supa) return;
-    supa.from('plan_messages').select('id, user_id, body, created_at, profiles(display_name, username)').eq('plan_id', id).order('created_at', { ascending:true }).limit(200).then(({ data, error })=>{
+    // Newest 200, shown oldest first.
+    supa.from('plan_messages').select('id, user_id, body, created_at, profiles(display_name, username)').eq('plan_id', id).order('created_at', { ascending:false }).limit(200).then(({ data, error })=>{
       if (this.state.planId !== id || error) { if (error) console.error('[app] plan messages load failed:', error.message); return; }
-      const rows = data || [], had = this.state.planMsgs.length;
+      const rows = (data || []).slice().sort((a, b)=>String(a.created_at).localeCompare(String(b.created_at)));
+      const last = this.state.planMsgs[this.state.planMsgs.length - 1], newest = rows[rows.length - 1];
+      const fresh = !!last && !!newest && newest.id !== last.id;
       const log = document.getElementById('plan-log');
       const atEnd = !log || log.scrollHeight - log.scrollTop - log.clientHeight < 40;
-      this.setState({ planMsgs:rows, planNew: had > 0 && rows.length > had && !atEnd });
+      this.setState({ planMsgs:rows, planNew: fresh && !atEnd });
+      if (fresh && newest.user_id !== this.state.userId) this.announce('New message from ' + ((newest.profiles && (newest.profiles.display_name || newest.profiles.username)) || 'your crew').split(' ')[0]);
       if (atEnd) queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; });
     });
   }
   setPlanRsvp(status){
     const uid = this.state.userId, id = this.state.planId;
     if (!supa || !uid || !id) return;
-    const before = this.state.planMembers;
+    if ((this.state.planMembers.find(m=>m.user_id === uid) || {}).status === status) return;
     this.setState(x=>({ planMembers: x.planMembers.map(m=>m.user_id === uid ? { ...m, status } : m) }));
-    supa.from('plan_members').upsert({ plan_id:id, user_id:uid, status }, { onConflict:'plan_id,user_id' }).then(({ error })=>{
-      if (error) { console.error('[app] plan rsvp failed:', error.message); this.setState({ planMembers:before }); this.flash("We couldn't save that. Try again."); }
+    this._rsvpQ = (this._rsvpQ || Promise.resolve()).then(()=>supa.from('plan_members').upsert({ plan_id:id, user_id:uid, status }, { onConflict:'plan_id,user_id' })).then(({ error })=>{
+      if (!error) return;
+      console.error('[app] plan rsvp failed:', error.message); this.flash("We couldn't save that. Try again.");
+      if (this.state.planId === id) this.loadPlan(id);
     });
   }
   // Text only, 1–500 chars (DB check). A failed send keeps its text with Try again.
@@ -1375,10 +1386,18 @@ class Component extends DCLogic {
     this.setState({ socMenu:null, dlg:{ kind, ...target, busy:false, err:'', reason:'' } });
     queueMicrotask(()=>document.getElementById('dlg-cancel')?.focus());
   }
-  closeDialog(){
-    this.setState({ dlg:null });
+  closeDialog(force, extra){
+    if (!force && this.state.dlg && this.state.dlg.busy) return;
+    this.setState({ dlg:null, ...extra });
     const key = this._dlgOpener;
-    queueMicrotask(()=>{ const el = key && document.querySelector('[data-bind-key="' + CSS.escape(key) + '"]'); if (el) el.focus(); });
+    queueMicrotask(()=>{ const el = key && document.querySelector('[data-bind-key="' + CSS.escape(key) + '"]'); if (el) el.focus(); else this.focusMainHeading(); });
+  }
+  // First visible heading of the screen (h1, else an empty-state title); focusable without joining the tab order.
+  focusMainHeading(){
+    const h = Array.from(document.querySelectorAll('main h1, main .empty__title')).find(el=>el.offsetParent);
+    if (!h) return false;
+    h.tabIndex = -1; h.focus({ preventScroll:true });
+    return true;
   }
   confirmDialog(){
     const d = this.state.dlg, uid = this.state.userId;
@@ -1390,21 +1409,22 @@ class Component extends DCLogic {
       supa.from('user_blocks').insert({ blocker_id:uid, blocked_id:d.id }).then(({ error })=>{
         if (error && error.code !== '23505') return fail("We couldn't block " + d.name + '. Try again.')(error);
         // Client filter too: the person leaves every list at once.
-        this.setState(x=>({ dlg:null, blockedRows:[...(x.blockedRows || []).filter(b=>b.id !== d.id), { id:d.id, display_name:d.name, username:d.username || '' }],
-          friendRows: x.friendRows.filter(r=>r.requester_id !== d.id && r.recipient_id !== d.id) }));
+        this.closeDialog(true, { blockedRows:[...(this.state.blockedRows || []).filter(b=>b.id !== d.id), { id:d.id, display_name:d.name, username:d.username || '' }],
+          friendRows: this.state.friendRows.filter(r=>r.requester_id !== d.id && r.recipient_id !== d.id) });
         this.flash(d.name + ' is blocked.');
       });
     } else if (d.kind === 'report') {
       supa.from('content_reports').insert({ reporter_id:uid, content_type:'profile', content_id:d.id, reported_user_id:d.id, reason:d.reason }).then(({ error })=>{
         if (error) return fail("We couldn't send your report. Try again.")(error);
-        this.closeDialog(); this.flash('Report sent. Thank you.');
+        this.closeDialog(true); this.flash('Report sent. Thank you.');
       });
     } else if (d.kind === 'remove') {
-      this.answerFriend(d.row, false).then(ok=>{ if (ok) { this.closeDialog(); this.flash(d.name + ' removed.'); } else this.setState(x=>({ dlg: x.dlg ? { ...x.dlg, busy:false, err:"We couldn't remove " + d.name + '. Try again.' } : null })); });
+      this.answerFriend(d.row, false).then(ok=>{ if (ok) { this.closeDialog(true); this.flash(d.name + ' removed.'); } else this.setState(x=>({ dlg: x.dlg ? { ...x.dlg, busy:false, err:"We couldn't remove " + d.name + '. Try again.' } : null })); });
     } else if (d.kind === 'leave') {
       supa.rpc('leave_plan', { p_plan_id:d.id }).then(({ error })=>{
         if (error) return fail("We couldn't leave the plan. Try again.")(error);
-        this.setState(x=>({ dlg:null, myPlans:(x.myPlans || []).filter(p=>p.id !== d.id), screen:'crew', crewTab:'Plans' }));
+        this._dlgOpener = 'crewtab-Plans';
+        this.closeDialog(true, { myPlans:(this.state.myPlans || []).filter(p=>p.id !== d.id), screen:'crew', crewTab:'Plans' });
         this.flash('You left the plan.');
       });
     }
@@ -1552,6 +1572,9 @@ class Component extends DCLogic {
     if (this._live.textContent !== text) this._live.textContent = text;
   }
   afterMount(){
+    if (this._focusMain && !this.state.personBusy && !this.state.planBusy && (!document.activeElement || document.activeElement === document.body) && this.focusMainHeading()) this._focusMain = false;
+    if (this.state.screen === 'crew') { const t = document.querySelector('.s3-live')?.textContent || ''; if (t !== this._findSaid) { this._findSaid = t; if (t) this.announce(t); } }
+    if (!this._menuDoc && typeof document !== 'undefined') { this._menuDoc = true; document.addEventListener('pointerdown', (e)=>{ if (this.state.socMenu && !(e.target.closest && e.target.closest('.s3-menuwrap'))) this.setState({ socMenu:null }); }); }
     if (this.state.screen === 'recap') this.announce(this.state.rcBusy ? 'Making your card...' : (document.querySelector('.rc-count')?.textContent || ''));
     if (typeof document !== 'undefined') document.documentElement.classList.toggle('rc-on', this.state.screen === 'recap');
     const slot = document.getElementById('mp-slot'), d = this._mapData;
@@ -1569,22 +1592,22 @@ class Component extends DCLogic {
     const count = document.getElementById('mp-rail-h')?.textContent || '';
     if (this._mapLive.textContent !== count) this._mapLive.textContent = count;
   }
+  // list_my_friend_edges: both directions with the other person's card; the server drops blocked pairs both ways.
   loadFriends(uid){
     if (!supa) return;
-    this.setState({ friendsLoading:true, friendsError:false });
-    supa.from('friendships').select('id,requester_id,recipient_id,status').or('requester_id.eq.'+uid+',recipient_id.eq.'+uid).then(({ data, error })=>{
-      if (error) { console.error('[app] friendships load failed:', error.message); this.setState({ friendsLoading:false, friendsError:true }); return; }
-      if (this.state.userId !== uid) return;
-      const friendRows = (data||[]).filter(r=>r.status==='accepted' || r.status==='pending');
-      const ids = [...new Set(friendRows.map(r=>r.requester_id===uid ? r.recipient_id : r.requester_id))];
-      if (!ids.length) { this.setState({ friendRows, friendProfiles:{}, friendsLoading:false }); return; }
-      supa.from('profiles').select('id,username,display_name,profile_image,city,state').in('id', ids).then(({ data: people, error: pe })=>{
-        if (pe) console.error('[app] friend profiles load failed:', pe.message);
-        if (this.state.userId !== uid) return;
-        const friendProfiles = {}; (people||[]).forEach(p=>{ friendProfiles[p.id] = p; });
-        this.setState({ friendRows, friendProfiles, friendsLoading:false });
+    const token = this._friendsToken = {};
+    this.setState({ friendsLoading: this._friendsFor !== uid, friendsError:false });
+    supa.rpc('list_my_friend_edges').then(({ data, error })=>{
+      if (this._friendsToken !== token || this.state.userId !== uid) return;
+      if (error) { console.error('[app] friends load failed:', error.message); this.setState({ friendsLoading:false, friendsError:true }); return; }
+      const friendRows = [], friendProfiles = {};
+      (data || []).filter(e=>e.status === 'accepted' || e.status === 'pending').forEach(e=>{
+        friendRows.push({ id:e.friendship_id, requester_id:e.requester_id, recipient_id:e.recipient_id, status:e.status });
+        friendProfiles[e.other_id] = { id:e.other_id, username:e.other_username, display_name:e.other_display_name, profile_image:e.other_profile_image, city:e.other_city, state:e.other_state };
       });
-    });
+      this._friendsFor = uid;
+      this.setState({ friendRows, friendProfiles, friendsLoading:false });
+    }, (e)=>{ if (this._friendsToken === token) { console.error('[app] friends load failed:', e && e.message); this.setState({ friendsLoading:false, friendsError:true }); } });
   }
 
   primeEventIntent(intent){
@@ -3203,7 +3226,10 @@ class Component extends DCLogic {
     const nameOf = p => (p && (p.display_name || p.username)) || 'Drop user';
     const initialsOf = n => String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(w=>w[0]).join('').toUpperCase() || '?';
     const placeOf = p => [p && p.city, p && p.state].filter(Boolean).join(', ');
-    const avOf = (id, p) => ({ avStyle: avStyle(p && p.profile_image) || 'background-image:' + gradFor('av:' + id) + ';', initials: initialsOf(nameOf(p)) });
+    const avOf = (id, p) => { const img = avStyle(p && p.profile_image); return { avStyle: img || 'background-image:' + AV_GRADS[hashStr(id) % AV_GRADS.length] + ';', initials: img ? '' : initialsOf(nameOf(p)) }; };
+    // Event card badge + meta: fmtDate gives "FRI, OCT 23 · 7:00 PM".
+    const dateParts = e => { const t = ((Drop && Drop.fmtDate(e.date, e.time_tbd)) || '').split(' · '); return { badge: t[0].toUpperCase(), time: t[1] || '' }; };
+    const ICO = { remove:'M15 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM17 11h5', block:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM5.6 5.6l12.8 12.8', report:'M5 21V4M5 4h11l-2 4 2 4H5' };
     // Overflow menu: real menu button; arrows move, Escape returns to the button.
     const menuFor = (key, items) => ({
       menuKey: 'more-' + key, menuOpen: s.socMenu === key, menuExpanded: s.socMenu === key ? 'true' : 'false',
@@ -3218,10 +3244,10 @@ class Component extends DCLogic {
       } })),
     });
     const target = (id, p) => ({ id, name:nameOf(p), username:(p && p.username) || '' });
-    const personMenu = (id, p, row) => menuFor(id, [
-      ...(row && row.status === 'accepted' ? [{ label:'Remove friend', danger:false, pick:()=>this.openDialog('remove', { ...target(id, p), row }, 'more-' + id) }] : []),
-      { label:'Block', danger:true, pick:()=>this.openDialog('block', target(id, p), 'more-' + id) },
-      { label:'Report', danger:true, pick:()=>this.openDialog('report', target(id, p), 'more-' + id) },
+    const personMenu = (id, p, row, key = id) => menuFor(key, [
+      ...(row && row.status === 'accepted' ? [{ label:'Remove friend', icon:ICO.remove, danger:false, pick:()=>this.openDialog('remove', { ...target(id, p), row }, 'more-' + key) }] : []),
+      { label:'Block', icon:ICO.block, danger:true, pick:()=>this.openDialog('block', target(id, p), 'more-' + key) },
+      { label:'Report', icon:ICO.report, danger:true, pick:()=>this.openDialog('report', target(id, p), 'more-' + key) },
     ]);
     const friendsAll = edges.filter(r=>r.status === 'accepted');
     const requestsAll = edges.filter(r=>r.status === 'pending' && r.recipient_id === meId);
@@ -3229,7 +3255,7 @@ class Component extends DCLogic {
       const n = t === 'Friends' ? friendsAll.length : t === 'Requests' ? requestsAll.length : null;
       const on = s.crewTab === t;
       return { label:t, count: n == null || s.friendsLoading ? '' : String(n), aria: n == null || s.friendsLoading ? t : t + ' ' + n,
-        cls: (on ? 'is-active' : '') + (t === 'Find' ? ' s3-phone' : ''), selected: on ? 'true' : 'false', tabindex: on ? '0' : '-1', key:'crewtab-' + t,
+        cls: (on ? 'is-active' : '') + (t === 'Find' ? ' s3-phone' : ''), selected: on ? 'true' : 'false', tabindex: on ? '0' : '-1', key:'crewtab-' + t, panel: t === 'Find' ? 'find-panel' : 'crew-panel',
         pick:()=>this.setState({ crewTab:t, socMenu:null }),
         keyDown:(e)=>{
           const vis = Array.from(document.querySelectorAll('.s3-tabs [role=tab]')).filter(b=>b.offsetParent);
@@ -3240,11 +3266,11 @@ class Component extends DCLogic {
     });
     const friendsList = friendsAll.map(r=>{
       const id = otherOf(r), p = s.friendProfiles[id] || {};
-      return { id, name:nameOf(p), sub:placeOf(p), ...avOf(id, p), open:()=>this.openPerson(id), moreLabel:'More actions for ' + nameOf(p), ...personMenu(id, p, r) };
+      return { id, name:nameOf(p), sub:placeOf(p), ...avOf(id, p), open:(e)=>{ this.prevent(e); this.openPerson(id); }, moreLabel:'More actions for ' + nameOf(p), ...personMenu(id, p, r) };
     });
     const requestsList = requestsAll.map((r, i)=>{
       const id = otherOf(r), p = s.friendProfiles[id] || {}, busy = s.reqBusy[r.id];
-      return { id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(id, p), open:()=>this.openPerson(id),
+      return { id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(id, p), open:(e)=>{ this.prevent(e); this.openPerson(id); },
         // Only the first Accept on the screen is primary (A53).
         acceptCls: 'btn ' + (i === 0 ? 'btn--primary' : 'btn--secondary') + ' btn--sm', acceptLabel: busy === 'accept' ? 'Accepting…' : 'Accept',
         acceptName:'Accept request from ' + nameOf(p), declineName:'Decline request from ' + nameOf(p), busy: busy ? 'true' : null, declineOff: busy === 'accept',
@@ -3252,7 +3278,7 @@ class Component extends DCLogic {
     });
     const findRows = (s.findResults || []).filter(p=>p.id !== meId && !blockedIds.has(p.id)).map(p=>{
       const rel = relOf(p.id), busy = !!s.addBusy[p.id];
-      return { id:p.id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(p.id, p), open:()=>this.openPerson(p.id),
+      return { id:p.id, name:nameOf(p), sub:[p.username ? '@' + p.username : '', placeOf(p)].filter(Boolean).join(' · '), ...avOf(p.id, p), open:(e)=>{ this.prevent(e); this.openPerson(p.id); },
         isFriend: rel.kind === 'friends', isRequested: rel.kind === 'requested', isIncoming: rel.kind === 'incoming', canAdd: rel.kind === 'none',
         addLabel: busy ? 'Sending…' : 'Add friend', addName: 'Add friend, ' + nameOf(p), addBusy: busy ? 'true' : null, addErr: s.addErr[p.id] || '',
         add:()=>this.addFriend(p), accept:()=>rel.row && this.answerFriend(rel.row, true, nameOf(p)) };
@@ -3268,13 +3294,15 @@ class Component extends DCLogic {
       bioCls: s.personBioOpen ? 's3-bio is-open' : 's3-bio', bioToggle: s.personBioOpen ? 'Show less' : 'Read more', longBio: (pp.bio || '').length > 160,
       ...avOf(ppId, pp),
       showSeen: ppRel.kind === 'friends' && pp.seenCount != null, seen: pp.seenCount, artistsCount: pp.artists.length,
-      going: pp.going.slice(0, 4).map(e=>({ title:e.title, dateShort:((Drop && Drop.fmtDate(e.date, e.time_tbd)) || '').toUpperCase(), venue:e.venue_name || '', gradStyle:'background-image:' + gradFor(e.id), open:()=>{ this.setState({ screen:'event', activeId:e.id }); if (typeof window !== 'undefined') window.scrollTo(0, 0); } })),
+      going: pp.going.slice(0, 4).map(e=>({ title:e.title, ...dateParts(e), venue:e.venue_name || '', gradStyle:'background-image:' + gradFor(e.id), open:(ev)=>{ this.prevent(ev); this.setState({ screen:'event', activeId:e.id }); if (typeof window !== 'undefined') window.scrollTo(0, 0); } })),
       hasGoing: pp.going.length > 0, artists: pp.artists.slice(0, 6).map(n=>({ name:n })), hasArtists: pp.artists.length > 0, moreArtists: pp.artists.length > 6 ? 'See all ' + pp.artists.length : '',
       relNone: ppRel.kind === 'none', relRequested: ppRel.kind === 'requested', relIncoming: ppRel.kind === 'incoming', relFriends: ppRel.kind === 'friends',
       addLabel: ppAdd ? 'Sending…' : 'Add friend', addBusy: ppAdd ? 'true' : null, addErr: s.addErr[ppId] || '',
       acceptLabel: ppRel.row && s.reqBusy[ppRel.row.id] === 'accept' ? 'Accepting…' : 'Accept request',
       add:()=>this.addFriend({ id:ppId, ...pp }), accept:()=>ppRel.row && this.answerFriend(ppRel.row, true, ppName), decline:()=>ppRel.row && this.answerFriend(ppRel.row, false, ppName),
       moreLabel:'More actions for ' + ppName, ...personMenu(ppId, pp, ppRel.row),
+      // Friends: the relationship slot is a "Friends" menu button (same actions as the corner menu).
+      ...(({ menuKey, menuOpen, menuExpanded, toggleMenu, menuKeyDown, items })=>({ relKey:menuKey, relOpen:menuOpen, relExpanded:menuExpanded, relToggle:toggleMenu, relKeyDown:menuKeyDown, relItems:items, relMenu:'rel-' + ppId }))(personMenu(ppId, pp, ppRel.row, 'rel-' + ppId)),
     } : null;
     const blockedRow = (s.blockedRows || []).find(b=>b.id === ppId);
     const REPORT_REASONS = ['Spam or scam', 'Harassment or bullying', 'Hate speech', 'Sexual or explicit content', 'Violence or threats', 'Other']; // native ReportBlockSheet list; copy pending A53 safety review
@@ -3285,7 +3313,7 @@ class Component extends DCLogic {
     const plansList = (s.myPlans || []).map(pl=>({
       title: pl.event.title || 'Untitled show', dateShort: ((Drop && Drop.fmtDate(pl.event.date, pl.event.time_tbd)) || '').toUpperCase(), venueCity:[pl.event.venue_name, pl.event.city].filter(Boolean).join(' · '),
       gradStyle:'background-image:' + gradFor(pl.event.id || pl.id), statusLabel: statusLabel(pl.status), statusCls: chipFor(pl.status),
-      open:()=>this.openPlan(pl.id),
+      open:(e)=>{ this.prevent(e); this.openPlan(pl.id); },
     }));
     const pl = s.plan, plEv = (pl && pl.events) || {};
     const members = (s.planMembers || []).filter(m=>!blockedIds.has(m.user_id));
@@ -3300,7 +3328,7 @@ class Component extends DCLogic {
       const mine = m.user_id === meId, p = m.profiles || {};
       chat.push({ isMsg:true, cls: mine ? 's3-m s3-m--me' : 's3-m', who: mine ? '' : nameOf(p).split(' ')[0], showWho: !mine, ...avOf(m.user_id, p), showAv: !mine, body:m.body, cap: day + ' ' + timeOf(m.created_at) });
     });
-    (s.planPending || []).forEach(p=>chat.push({ isMsg:true, cls: 's3-m s3-m--me ' + (p.failed ? 's3-m--fail' : 's3-m--pend'), body:p.body, cap: p.failed ? 'Not sent' : 'Sending…', showWho:false, showAv:false, failed:p.failed, retry:()=>this.sendPlanMessage(p) }));
+    (s.planPending || []).forEach(p=>chat.push({ isMsg:true, cls: 's3-m s3-m--me ' + (p.failed ? 's3-m--fail' : 's3-m--pend'), body:p.body, cap: p.failed ? 'Not sent' : 'Sending…', showWho:false, showAv:false, failed:p.failed, key:p.temp, retry:()=>this.sendPlanMessage(p) }));
     const myRsvp = meMember && ['going', 'maybe'].includes(meMember.status) ? meMember.status : null;
     const rsvpOpts = [['going', "I'm going"], ['maybe', 'Maybe']].map(([k, label], i, all)=>{
       const on = myRsvp === k;
@@ -3309,18 +3337,16 @@ class Component extends DCLogic {
         keyDown:(e)=>{ const d = { ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1 }[e.key]; if (!d) return; e.preventDefault(); const nx = all[(i + d + all.length) % all.length][0]; this.setPlanRsvp(nx); queueMicrotask(()=>document.querySelector('[data-bind-key="rsvp-' + nx + '"]')?.focus()); } };
     });
     const pd = pl ? {
-      title: plEv.title || 'Untitled show', dateShort: ((Drop && Drop.fmtDate(plEv.date, plEv.time_tbd)) || '').toUpperCase(), venue: plEv.venue_name || '', gradStyle:'background-image:' + gradFor(plEv.id || pl.id),
+      title: plEv.title || 'Untitled show', ...dateParts(plEv), venue: plEv.venue_name || '', gradStyle:'background-image:' + gradFor(plEv.id || pl.id),
       summary: [counts.going + ' going', counts.maybe ? counts.maybe + ' maybe' : '', counts.invited ? counts.invited + ' invited' : ''].filter(Boolean).join(' · '),
       members: members.map(m=>{ const p = m.profiles || {}, me = m.user_id === meId;
         return { name: nameOf(p), sub: me ? 'You' + (pl.creator_id === meId ? ' · host' : '') : placeOf(p) || (pl.creator_id === m.user_id ? 'Host' : ''), ...avOf(m.user_id, p),
-          status: statusLabel(m.status), chipCls: chipFor(m.status), open:()=>{ if (!me) this.openPerson(m.user_id); } }; }),
-      memberCount: members.length + ' in this plan', rsvp: rsvpOpts, chat, chatEmpty: chat.length === 0,
+          status: statusLabel(m.status), chipCls: chipFor(m.status) }; }),
+      memberCount: members.length + ' in this plan', rsvp: rsvpOpts, stack: members.slice(0, 5).map(m=>avOf(m.user_id, m.profiles || {})),
+      // Phone: members collapse to an avatar stack + "See all" (desktop always lists them).
+      whoCls: 's3-card s3-whocard' + (s.planMembersOpen ? ' is-open' : ''), memOpen: s.planMembersOpen ? 'true' : 'false', memToggle: s.planMembersOpen ? 'Show less' : 'See all', chat, chatEmpty: chat.length === 0,
       sendOff: !s.planDraft.trim() ? 'true' : null, sendLabel: (s.planPending || []).some(p=>!p.failed) ? 'Sending…' : 'Send',
     } : null;
-    // ===== Crew builder interstitial — reuses the real active event (ae),
-    // not the deleted EVENTS mock. Plans live in the app (spec 02). =====
-    const cbEv = ae;
-
     // ===== Invite =====
     // ponytail: no referral backend — start from 0, not a fake "2 already
     // joined" baseline.
@@ -3655,14 +3681,14 @@ class Component extends DCLogic {
     const signupBars = this.ADMIN_SIGNUPS.map(v=>({ h:(v/maxSignup*100)+'%', value:v+' signups' }));
 
     return {
-      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='crewbuilder' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharewrapped' && s.screen!=='claim',
+      showNav: s.screen!=='login' && s.screen!=='signup' && s.screen!=='activation' && s.screen!=='rsvpmoment' && s.screen!=='recap' && s.screen!=='forgot' && s.screen!=='reset' && s.screen!=='verify' && s.screen!=='referral' && s.screen!=='link' && s.screen!=='paywall' && s.screen!=='shareplan' && s.screen!=='sharewrapped' && s.screen!=='claim',
       screenHome: s.screen==='home', screenLogin: s.screen==='login', screenSignup: s.screen==='signup',
       screenDiscover: s.screen==='discover', screenEvent: s.screen==='event',
       screenSearch: s.screen==='search', screenFestival: s.screen==='festival', screenActivation: s.screen==='activation',
       screenRsvpMoment: s.screen==='rsvpmoment',
       screenArtist: s.screen==='artist', screenVenue: s.screen==='venue', screenMyShows: s.screen==='myshows',
       screenArtists: s.screen==='artists', screenVenues: s.screen==='venues', screenClaim: s.screen==='claim',
-      screenCrew: s.screen==='crew', screenPlan: s.screen==='plan', socInert: !!s.dlg, screenCrewBuilder: s.screen==='crewbuilder',
+      screenCrew: s.screen==='crew', screenPlan: s.screen==='plan', socInert: !!s.dlg,
       screenInvite: s.screen==='invite', screenWrapped: s.screen==='wrapped',
       screenProfile: s.screen==='profile', screenEditProfile: s.screen==='editprofile',
       screenNotifications: s.screen==='notifications', screenSettings: s.screen==='settings',
@@ -3835,7 +3861,7 @@ class Component extends DCLogic {
       // crew
       crewTabs,
       crewFriends: s.crewTab==='Friends', crewRequests: s.crewTab==='Requests', crewFindTab: s.crewTab==='Find', crewPlans: s.crewTab==='Plans',
-      crewPeopleTab: s.crewTab !== 'Plans', crewFindCls: s.crewTab === 'Find' ? 's3-col s3-find is-tab' : 's3-col s3-find',
+      crewPeopleTab: s.crewTab !== 'Plans', crewTabId: 'crewtab-' + (s.crewTab === 'Find' ? 'Friends' : s.crewTab), crewFindCls: s.crewTab === 'Find' ? 's3-col s3-find is-tab' : 's3-col s3-find',
       friendsLoading: s.friendsLoading, friendsError: s.friendsError && !s.friendsLoading, friendsReady: !s.friendsLoading && !s.friendsError,
       friendsList, friendsEmpty: !s.friendsLoading && !s.friendsError && friendsList.length===0, requestsList, requestsEmpty: !s.friendsLoading && !s.friendsError && requestsList.length===0,
       friendSkel: [1, 2, 3, 4], retryFriends:()=>this.loadFriends(this.state.userId),
@@ -3861,7 +3887,7 @@ class Component extends DCLogic {
       dlgDanger: !!dlg && dlg.kind !== 'report', dlgConfirmCls: dlg && dlg.kind === 'report' ? 'btn btn--primary' : 'btn btn--danger',
       dlgBusy: dlg && dlg.busy ? 'true' : null, dlgOff: !!dlg && (dlg.busy || (dlg.kind === 'report' && !dlg.reason)) ? 'true' : null,
       dlgErr: dlg ? dlg.err : '', dlgHasErr: !!(dlg && dlg.err),
-      dlgReasons: REPORT_REASONS.map(r=>({ label:r, value:r, checked: !!dlg && dlg.reason === r, cls: dlg && dlg.reason === r ? 's3-rad is-on' : 's3-rad', pick:()=>this.setState(x=>({ dlg:{ ...x.dlg, reason:r } })) })),
+      dlgReasons: REPORT_REASONS.map((r, i)=>({ label:r, value:r, key:'reason-' + i, checked: !!dlg && dlg.reason === r, cls: dlg && dlg.reason === r ? 's3-rad is-on' : 's3-rad', pick:()=>this.setState(x=>({ dlg:{ ...x.dlg, reason:r } })) })),
       dlgCancel:()=>this.closeDialog(), dlgConfirm:()=>this.confirmDialog(),
       dlgKey:(e)=>{
         if (e.key === 'Escape') { e.preventDefault(); this.closeDialog(); return; }
@@ -3879,10 +3905,8 @@ class Component extends DCLogic {
       // Enter sends, Shift+Enter is a newline, never during IME composition.
       planDraftKey:(e)=>{ if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); this.sendPlanMessage(); } },
       planSend:()=>this.sendPlanMessage(), planLeave:()=>pl && this.openDialog('leave', { id:pl.id, name:'' }),
-      planRetry:()=>this.loadPlan(this.state.planId, true), planJump:()=>{ this.setState({ planNew:false }); queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; }); },
+      planRetry:()=>this.loadPlan(this.state.planId, true), planToggleMembers:()=>this.setState({ planMembersOpen: !this.state.planMembersOpen }), planJump:()=>{ this.setState({ planNew:false }); queueMicrotask(()=>{ const l = document.getElementById('plan-log'); if (l) l.scrollTop = l.scrollHeight; }); },
       goPlans:(e)=>{ this.prevent(e); this.setState({ screen:'crew', crewTab:'Plans' }); this.loadMyPlans(); if (typeof window !== 'undefined') window.scrollTo(0, 0); },
-      // crew builder
-      cbTitle: cbEv.title.split(' — ')[0],
       // invite
       inviteCount, inviteRemainLabel: inviteRemain===0?'5 friends joined':inviteRemain+' more to go', inviteFillStyle:'width:'+(inviteCount/5*100)+'%;', inviteMilestones, inviteList, inviteListEmpty: inviteList.length===0,
       inviteHandle: (s.profile && s.profile.username) || 'you',
@@ -4482,7 +4506,10 @@ class Component extends DCLogic {
           && instance.state.authed === renderedAuthed
           && instance.state.userId === renderedUserId;
         const kept = document.activeElement;
+        // Scroll regions rebuilt by the render (crew chat) keep their place, or stay pinned to the end.
+        const scrolls = Array.from(document.querySelectorAll('[data-keep-scroll]')).map((el) => [el.id, el.scrollTop, el.scrollHeight - el.scrollTop - el.clientHeight < 40]);
         mount(container, render, instance.renderVals(), preserveAuthInputs);
+        scrolls.forEach(([id, top, end]) => { const el = document.getElementById(id); if (el) el.scrollTop = end ? el.scrollHeight : top; });
         instance.afterMount();
         // An element that survives the render (a map pin) keeps focus.
         if (kept && kept !== document.body && kept.isConnected && document.activeElement !== kept) kept.focus({ preventScroll:true });

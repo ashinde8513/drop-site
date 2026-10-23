@@ -64,7 +64,7 @@ test('empty states: zero friends, zero requests', async ({ page, isMobile }) => 
 });
 
 test('error: inline alert with Try again, never a blank pane', async ({ page, isMobile }) => {
-  await boot(page, { errors:{ 'friendships.select':'down' } });
+  await boot(page, { errors:{ 'rpc.list_my_friend_edges':'down' } });
   await friends(page, isMobile);
   await expect(page.locator('.s3-people').getByRole('alert')).toContainText('Check your connection and try again.');
   await expect(page.locator('.s3-people').getByRole('button', { name:'Try again' })).toBeVisible();
@@ -76,7 +76,7 @@ test('find people: idle prompt, results with relationship states, no-result echo
   if (isMobile) await tab(page, /^Find$/).click();
   await expect(page.getByText('Type a name or username to find people.')).toBeVisible();
   await page.getByRole('searchbox', { name:'Search people' }).fill('sa');
-  await expect(page.getByText('2 people found')).toBeVisible(); // the viewer is excluded
+  await expect(page.locator('.s3-live')).toHaveText('2 people found'); // the viewer is excluded
   await expect(page.locator('.s3-find .s3-row', { hasText:'Maya Chen' }).getByText('Friends')).toBeVisible();
   const add = page.getByRole('button', { name:'Add friend, Sam Okafor' });
   await add.click();
@@ -92,7 +92,7 @@ test('find people: zero results echo the query', async ({ page, isMobile }) => {
   if (isMobile) await tab(page, /^Find$/).click();
   await page.getByRole('searchbox', { name:'Search people' }).fill('zzq');
   await expect(page.getByText('No one found for ‘zzq’. Check the spelling or try their username.')).toBeVisible();
-  await expect(page.getByText('0 people found')).toBeVisible();
+  await expect(page.locator('.s3-live')).toHaveText('0 people found');
 });
 
 test('actions menu + block dialog: keyboard menu, focus on Cancel, Escape returns focus, block removes the person', async ({ page, isMobile }) => {
@@ -128,11 +128,38 @@ test('report dialog: Send report waits for a reason, then writes a profile repor
   await page.getByRole('menuitem', { name:'Report' }).click();
   const dialog = page.getByRole('dialog', { name:'Report Maya Chen' });
   await expect(dialog.getByRole('button', { name:'Send report' })).toHaveAttribute('aria-disabled', 'true');
+  if (!isMobile) { // arrows walk the reasons; focus follows the choice across re-renders
+    await dialog.getByRole('radio', { name:'Spam or scam' }).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(dialog.getByRole('radio', { name:'Harassment or bullying' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(dialog.getByRole('radio', { name:'Hate speech' })).toBeFocused();
+    await expect(dialog.getByRole('radio', { name:'Hate speech' })).toBeChecked();
+  }
   await dialog.getByRole('radio', { name:'Harassment or bullying' }).check();
   await dialog.getByRole('button', { name:'Send report' }).click();
   await expect(page.getByText('Report sent. Thank you.')).toBeVisible();
   const rep = (await fakeCalls(page, 'from')).filter((c: any) => c.table === 'content_reports');
   expect(rep[0].ops).toEqual([['insert', [{ reporter_id:USER_ID, content_type:'profile', content_id:MAYA, reported_user_id:MAYA, reason:'Harassment or bullying' }]]]);
+});
+
+test('block: the dialog stays open while saving, then focus returns to the page; someone who blocked you is not listed', async ({ page, isMobile }) => {
+  await boot(page, { hold:['user_blocks'], rows:{
+    friendships:[...FRIENDSHIPS, { id:'f9', requester_id:SAM, recipient_id:USER_ID, status:'accepted' }],
+    profiles:[...PROFILES, prof(SAM, 'Sam Okafor', 'samokafor')], user_blocks:[{ blocker_id:SAM, blocked_id:USER_ID }] } });
+  await friends(page, isMobile);
+  await expect(tab(page, /^Friends 1$/)).toBeVisible();
+  await expect(page.locator('.s3-people').getByText(/Sam Okafor|Drop user/)).toHaveCount(0);
+  await page.getByRole('button', { name:'More actions for Maya Chen' }).click();
+  await page.getByRole('menuitem', { name:'Block' }).click();
+  const dialog = page.getByRole('dialog', { name:'Block Maya Chen?' });
+  await dialog.getByRole('button', { name:'Block Maya Chen' }).click();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await page.evaluate(() => (window as any).__fake.release());
+  await expect(page.getByText('Maya Chen is blocked.')).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('heading', { name:'Friends', exact:true })).toBeFocused();
 });
 
 test('profile: friends see stats and Going to; non-friends get Add friend and no Shows seen; private and blocked views', async ({ page, isMobile }) => {
@@ -149,7 +176,15 @@ test('profile: friends see stats and Going to; non-friends get Add friend and no
   await expect(page.locator('.s3-stat', { hasText:'Shows seen' })).toBeVisible(); // friends only
   await expect(page.getByRole('heading', { name:'Going to' })).toBeVisible();
   await expect(page.locator('.s3-chips').getByText('ODESZA')).toBeVisible();
-  await expect(page.locator('.s3-pcard').getByText('Friends')).toBeVisible();
+  await expect(page.getByRole('heading', { name:'Maya Chen' })).toBeFocused(); // focus lands on the new screen
+  // The relationship slot is a "Friends" menu button with the same actions; a press outside closes it.
+  await page.locator('.s3-pcard').getByRole('button', { name:'Friends', exact:true }).click();
+  await expect(page.getByRole('menuitem', { name:'Remove friend' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.s3-pcard').getByRole('button', { name:'Friends', exact:true })).toBeFocused();
+  await page.locator('.s3-pcard').getByRole('button', { name:'Friends', exact:true }).click();
+  await page.getByRole('heading', { name:'Going to' }).click();
+  await expect(page.getByRole('menu')).toHaveCount(0);
   // A private profile: only Back, never Add friend.
   await page.evaluate(() => { (window as any).__cfg.rpc.public_profile = []; });
   await page.getByRole('link', { name:'Back' }).click();
@@ -170,6 +205,12 @@ test('plan: members with status chips, RSVP radio group upserts, Enter sends, em
   await page.getByRole('button', { name:/Plan with friends/ }).click();
   await expect(page.getByRole('heading', { name:'Social Night' })).toBeVisible();
   await expect(page.getByText('1 going · 1 maybe')).toBeVisible();
+  if (isMobile) { // phone collapses members to an avatar stack + See all
+    const all = page.getByRole('button', { name:'See all' });
+    await expect(all).toHaveAttribute('aria-expanded', 'false');
+    await all.click();
+    await expect(page.getByRole('button', { name:'Show less' })).toHaveAttribute('aria-expanded', 'true');
+  }
   await expect(page.locator('.s3-mem .frow', { hasText:'Maya Chen' }).getByText('Maybe')).toBeVisible();
   await expect(page.getByText('No messages yet. Say hi to your crew.')).toBeVisible();
   const group = page.getByRole('radiogroup', { name:'Your answer' });
@@ -208,7 +249,26 @@ test('plan: a failed send keeps the text with Try again; leave plan returns to P
   await expect(page.getByText('You left the plan.')).toBeVisible();
   const rpc = (await fakeCalls(page, 'rpc')).filter((c: any) => c.name === 'leave_plan');
   expect(rpc[0].args).toEqual({ p_plan_id:PLAN });
-  void isMobile;
+});
+
+test('chat: newest 200 shown oldest first, typing keeps it pinned to the end, opening a plan focuses its title', async ({ page }) => {
+  const at = (m: number) => new Date(Date.now() - m * 60000).toISOString();
+  const msgs = Array.from({ length:30 }, (_, i) => ({ id:'m' + i, user_id:MAYA, body:'Message ' + i, created_at:at(100 - i), profiles:{ display_name:'Maya Chen' } })).reverse(); // newest first, as asked
+  await boot(page, { rpc:{ create_or_get_plan:PLAN }, rows:{ friendships:FRIENDSHIPS, profiles:PROFILES,
+    plans:[{ id:PLAN, event_id:EV.id, creator_id:USER_ID, events:EV }],
+    plan_members:[{ plan_id:PLAN, user_id:USER_ID, status:'going', profiles:prof(USER_ID, 'Jordan Reyes', 'jordan') }, { plan_id:PLAN, user_id:MAYA, status:'going', profiles:prof(MAYA, 'Maya Chen', 'mayachen') }],
+    plan_messages:msgs } });
+  await page.getByText('Social Night').first().click();
+  await page.getByRole('button', { name:/Plan with friends/ }).click();
+  await expect(page.getByRole('heading', { name:'Social Night' })).toBeFocused();
+  await expect(page.locator('.s3-b').first()).toHaveText('Message 0');
+  await expect(page.locator('.s3-b').last()).toHaveText('Message 29');
+  const q = (await fakeCalls(page, 'from')).find((c: any) => c.table === 'plan_messages' && c.ops[0][0] === 'select');
+  expect(q.ops.slice(-2)).toEqual([['order', ['created_at', { ascending:false }]], ['limit', [200]]]);
+  const atEnd = () => page.locator('#plan-log').evaluate((l: HTMLElement) => l.scrollHeight - l.scrollTop - l.clientHeight < 40);
+  await expect.poll(atEnd).toBe(true);
+  await page.getByLabel('Message your crew').pressSequentially('On my way');
+  expect(await atEnd()).toBe(true);
 });
 
 test('plan: not a member reads neutral, only Back', async ({ page }) => {
