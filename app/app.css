@@ -539,7 +539,23 @@ image-slot::before { content: attr(placeholder); }
   .ed-main { display: contents; }
   .ed-main > * { grid-column: 1; }
   .ed-main > .tk { grid-column: 2; grid-row: 1 / span 20; position: sticky; top: 88px; align-self: start; margin: 0; }
+  /* bus pickups can make the sticky card taller than the viewport: let it scroll inside */
+  .ed-main > .tk.tk--bus { max-height: calc(100vh - 112px); overflow-y: auto; }
 }
+/* Bus to the show (board Spec01-Bus-Options): an add-on group under the tickets, one secondary */
+.bs { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.bs__h { display: flex; align-items: center; gap: 8px; margin: 0; font: 700 16px/1.2 var(--font-display); letter-spacing: -0.3px; color: var(--text); }
+.bs__h .tk-ico { color: var(--accent); }
+.bs-r { align-items: start; row-gap: 4px; }
+.bs-r .tk-row__radio, .bs-r .tk-row__price { align-self: start; }
+.bs-r.is-out { cursor: default; border-style: dashed; background: var(--surface); }
+.bs-r.is-out .tk-row__radio::after { content: ""; width: 10px; height: 2px; border-radius: 1px; background: var(--text-muted); } /* a dash in the ring: not selectable, non-text 3:1 */
+.bs-st { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 5px; font: 700 12px/1.2 var(--font-body); color: var(--text-secondary); }
+.bs-none { display: flex; align-items: center; gap: 8px; }
+.bs-more .tk-ico { transition: transform var(--dur-fast) var(--ease); }
+.bs-more[aria-expanded=true] .tk-ico { transform: rotate(180deg); }
+.bs-plain { list-style: none; padding: 0; }
+.bs-buy { height: 48px; margin-top: 12px; gap: 6px; font-size: 14px; }
 
 /* ===== Discover map (design spec 04) ===== */
 .mp-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-md); flex-wrap: wrap; }

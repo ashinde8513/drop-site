@@ -941,7 +941,7 @@ class Component extends DCLogic {
     setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // notifications (unread ids)
-    alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null,
+    alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null, bus: {}, busSel: {}, busAll: {},
     // discover map (spec 04)
     dview: 'list', mapLabel: 'price', mapSel: null, mapInView: null, mapErr: false, mapGeo: 'idle', mapSheet: false, goingCounts: {}, crewIds: null,
     // pick artists / venues / crew / plans / wrapped
@@ -1833,6 +1833,15 @@ class Component extends DCLogic {
     const st = this.state, id = st.activeId;
     if (st.screen !== 'event' || (this._offersKey === id && !force)) return;
     this._offersKey = id;
+    // Bus to the show (event_add_ons, kind 'bus'): optional, so a failure only hides the group.
+    if (supa && ATTRIBUTION_UUID.test(String(id || ''))) supa.from('event_add_ons')
+      .select('id,kind,provider,title,url,starts_at,pickup_name,pickup_city,pickup_state,price_min,price_max,currency')
+      .eq('event_id', id).eq('kind', 'bus').order('starts_at', { ascending:true })
+      .then(({ data, error })=>{
+        if (this._offersKey !== id) return;
+        if (error) console.warn('[app] bus add-ons load failed:', error.message);
+        this.setState(x=>({ bus:{ ...x.bus, [id]: error ? [] : (data || []) } }));
+      }, ()=>{});
     const done = (rows)=>{
       if (this._offersKey !== id) return;
       this.setState(s=>({ offers:{ ...s.offers, [id]: rows } }));
@@ -2546,6 +2555,34 @@ class Component extends DCLogic {
       : 'Same show, ' + tkRows.length + ' sellers — ' + (tkCard.tag && tkCard.tag.text === 'Lowest listed'
         ? 'compare listed prices to find the best deal.' : 'compare available prices or open a seller for its live total.');
     const tkSheetOpen = s.tkSheet === ae.id && tkHasRows;
+    // ===== Bus to the show (board Spec01-Bus-Options): pickup radios under the tickets, one secondary =====
+    const busList = tkEnded || !Offers ? [] : Offers.busRows((s.bus || {})[ae.id], tkNow, ae.timezone);
+    const busBookable = busList.filter(b=>b.url);
+    const busSel = busBookable.find(b=>b.id === (s.busSel || {})[ae.id]) || busBookable[0] || null;
+    // The selection never hides: a default pick past the first 3 opens the list.
+    const busExpanded = !!(s.busAll || {})[ae.id] || (!!busSel && busList.indexOf(busSel) >= 3);
+    const busTz = Offers ? Offers.validZone(ae.timezone) : null;
+    const busZone = busTz ? new Intl.DateTimeFormat('en-US', { timeZone:busTz, timeZoneName:'longGeneric' }).formatToParts(new Date()).find(p=>p.type === 'timeZoneName').value : '';
+    const busPick = (b, prefix)=>{
+      const deep = busList.indexOf(b) >= 3;
+      this.setState(x=>({ busSel:{ ...x.busSel, [ae.id]: b.id }, busAll: deep ? { ...x.busAll, [ae.id]: true } : x.busAll }));
+      queueMicrotask(()=>document.getElementById(prefix + b.id)?.focus());
+    };
+    // Arrows walk bookable pickups only; rows without a link are skipped.
+    const busKey = (e, b, prefix)=>{
+      const i = busBookable.indexOf(b), n = busBookable.length;
+      const j = e.key in TK_KEYS ? (i + TK_KEYS[e.key] + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1;
+      if (j < 0) return;
+      e.preventDefault(); busPick(busBookable[j], prefix);
+    };
+    const busRowsFor = prefix => busList.map(b=>{
+      const on = !!busSel && b.id === busSel.id, ok = !!b.url;
+      return { domId: prefix + b.id, name:b.name, place:b.place, time:b.time, price:b.price, hasPrice:!!b.price, label:b.label, out:!ok,
+        cls: 'tk-row bs-r' + (ok ? '' : ' is-out'), checked: on ? 'true' : 'false', tabindex: on ? '0' : '-1', disabled: ok ? null : 'true',
+        pick: ()=>{ if (ok) busPick(b, prefix); }, key: (e)=>{ if (ok) busKey(e, b, prefix); } };
+    }).filter((r, i)=>busExpanded || i < 3);
+    const busHidden = busExpanded ? 0 : Math.max(0, busList.length - 3);
+    const busOnEtix = !!busSel && busSel.seller === 'Etix' && !!tkTarget && /etix/i.test(tkTarget.seller || '');
 
     const lo = Math.min(s.priceMin, s.priceMax), hi = Math.max(s.priceMin, s.priceMax);
     // hi at the slider cap means "$200+" (unbounded above); lo 0 = free shows in
@@ -4020,6 +4057,18 @@ class Component extends DCLogic {
       aeInterested:()=>this.toggleRsvp(ae.id,'interested'),
       aeSave:()=>this.toggleSave(ae.id),
       tkMore:()=>this.setState(x=>({ tkAll:{ ...x.tkAll, [ae.id]: !(x.tkAll||{})[ae.id] } })),
+      busShow: busList.length > 0, busPickable: busBookable.length > 0, busNonePickable: busList.length > 0 && !busBookable.length,
+      busSub: busBookable.length ? 'Pickup spots and times from the bus seller. ' + (busZone ? 'Times are ' + busZone + ', the show’s time zone.' : 'Times are in your local time.') : 'Booking links aren’t available for these pickups yet.',
+      busListLabel: 'Bus pickups, ' + busList.length + (busList.length === 1 ? ' option' : ' options'),
+      busRows: busRowsFor('bsrow-'), busSheetRows: tkSheetOpen ? busRowsFor('bssrow-') : [],
+      busCanExpand: busList.length > 3, busExpandedAttr: busExpanded ? 'true' : 'false',
+      busMoreText: busExpanded ? 'Show fewer' : 'Show ' + busHidden + ' more',
+      busMoreLabel: busExpanded ? 'Show fewer bus pickups' : 'Show ' + busHidden + ' more bus pickup' + (busHidden === 1 ? '' : 's'),
+      busMore:()=>this.setState(x=>({ busAll:{ ...x.busAll, [ae.id]: !(x.busAll || {})[ae.id] } })),
+      busHasBuy: !!busSel, busBuyUrl: busSel ? busSel.url : '', busBuyText: busSel ? (busOnEtix ? 'Buy bus on Etix' : 'Buy on ' + busSel.seller) : '',
+      busBuyName: busSel ? (busOnEtix ? 'Buy bus on Etix, from ' : 'Buy on ' + busSel.seller + ', bus from ') + [busSel.name, busSel.city].filter(Boolean).join(', ') : '',
+      tkCardCls: busList.length ? 'tk tk--bus' : 'tk',
+      tkFoot: 'Prices are what each seller shows us. Fees may be added at checkout. Drop may earn a commission on ticket' + (busList.length ? ' and bus links.' : ' links.'),
       tkRetry:()=>{ this._tkRefocus = true; this.setState(x=>({ offers:{ ...x.offers, [ae.id]: undefined } })); this.syncOffers(true); },
       // Sellers sheet (phone): modal, focus on the selected row, Esc/Close return focus to the Sellers icon.
       tkOpenSheet:()=>{ this.setState({ tkSheet: ae.id }); queueMicrotask(()=>document.getElementById('tksrow-' + (tkSel && tkSel.id))?.focus()); },
