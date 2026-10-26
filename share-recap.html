@@ -31,32 +31,43 @@
       <div class="share-story" style="background:linear-gradient(160deg,#2b1c4d,#0d3b52 55%,#143a22);">
         <div class="share-story__inner">
           <span class="share-mark" style="margin-bottom:0; font-size:13px;"><span class="droplet" aria-hidden="true"></span>DROP</span>
+          <div id="recap-photos" style="font-size:11px; color:var(--text-secondary);" hidden>Photos aren’t shared.</div>
           <div class="share-story__grid"><span></span><span></span><span></span><span></span></div>
           <div>
-            <div style="font-family:var(--font-display); font-weight:700; font-size:18px; line-height:1.1; color:var(--text);" id="recap-artist">A night out</div>
-            <div style="font-size:11px; color:var(--text-secondary);" id="recap-meta">Live music on Drop</div>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:18px; line-height:1.1; color:var(--text);" id="recap-artist" data-recap-text>A night out</div>
+            <div style="font-size:11px; color:var(--text-secondary);" id="recap-meta" data-recap-text>Live music on Drop</div>
                       </div>
         </div>
       </div>
       <div>
         <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
-        <div class="wsc__date" id="recap-eyebrow">DROP RECAP</div>
-        <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(26px,4vw,40px); letter-spacing:var(--tr-tight); line-height:1.05; margin:6px 0 var(--sp-sm); color:var(--text);" id="recap-headline">A friend shared their Drop recap</h1>
+        <div class="wsc__date" id="recap-eyebrow" data-recap-text>DROP RECAP</div>
+        <h1 style="font-family:var(--font-display); font-weight:700; font-size:clamp(26px,4vw,40px); letter-spacing:var(--tr-tight); line-height:1.05; margin:6px 0 var(--sp-sm); color:var(--text);" id="recap-headline" data-recap-text>A friend shared their Drop recap</h1>
         <p style="color:var(--text-secondary); font-size:var(--fs-md); margin:0 0 var(--sp-xl);">See the shows your friends are hitting and build recaps of your own.</p>
         <a class="btn btn--primary btn--block" id="recap-join" href="https://app.trydropapp.com/?mode=signup">Join Drop</a>
         <a class="btn btn--ghost btn--block" style="margin-top:var(--sp-sm);" href="/download.html">Get the app</a>
       </div>
     </div>
+    <!-- ?r= resolves to nothing: one copy for wrong, removed and unshared recaps (no leak of which) -->
+    <div class="empty" id="recap-missing" hidden>
+      <a class="share-mark" href="/index.html"><span class="droplet" aria-hidden="true"></span>DROP</a>
+      <h1 class="empty__title">This recap isn’t available.</h1>
+      <p class="empty__body">The link may be wrong, or the person who shared it removed it.</p>
+      <a class="btn btn--primary" href="/events">Browse shows</a>
+    </div>
+    <p class="sr-only" id="recap-status" role="status"></p>
   </main>
 
   <script src="/data.js"></script>
   <script>
     // Recap links carry no trusted text: name/artist/venue/rating params are never
-    // shown (anyone can craft them). Only a published event id is looked up in the
-    // catalog, and a referral passes only as a UUID (same rule as share-plan).
+    // shown (anyone can craft them). Only ids are looked up server-side: a saved recap
+    // (?r=, shared_recap_card: real show + the sharer's first name if they allowed it)
+    // or a published event (?event=). A referral passes only as a UUID (share-plan rule).
     (function () {
       var p = new URLSearchParams(location.search);
       var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      var recapId = uuid.test(p.get('r') || '') ? p.get('r').toLowerCase() : '';
       var eventId = uuid.test(p.get('event') || '') ? p.get('event').toLowerCase() : '';
       var ref = uuid.test(p.get('ref') || '') ? p.get('ref').toLowerCase() : '';
       var signup = new URL('https://app.trydropapp.com/?mode=signup');
@@ -65,7 +76,34 @@
         signup.searchParams.set('src', 'recap_share');
         if (eventId) { signup.searchParams.set('kind', 'event'); signup.searchParams.set('target', eventId); }
       }
-      document.getElementById('recap-join').href = signup.toString();
+      var join = document.getElementById('recap-join');
+      join.href = signup.toString();
+      var $ = function (id) { return document.getElementById(id); };
+      if (recapId && window.Drop && Drop.fetchSharedRecap) {
+        var main = document.querySelector('.share-wrap'), done = function () { main.removeAttribute('aria-busy'); main.classList.remove('is-loading'); $('recap-status').textContent = ''; };
+        main.setAttribute('aria-busy', 'true'); main.classList.add('is-loading'); $('recap-status').textContent = 'Loading recap';
+        Drop.fetchSharedRecap(recapId).then(function (c) {
+          done();
+          if (!c) {
+            document.querySelector('.share-recap-grid').style.display = 'none'; $('recap-missing').hidden = false;
+            document.title = 'This recap isn’t available — Drop';
+            return;
+          }
+          var day = '';
+          try { day = c.event_date ? new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: c.event_timezone || undefined }) : ''; }
+          catch (e) { day = new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+          var name = c.poster_first_name || '', title = c.event_title || 'a show';
+          var headline = name ? name + '’s night at ' + title : 'A night at ' + title;
+          document.title = headline + ' — a Drop recap';
+          $('recap-photos').hidden = false;
+          $('recap-artist').textContent = title;
+          $('recap-meta').textContent = [c.venue_name, day].filter(Boolean).join(', ');
+          $('recap-eyebrow').textContent = 'RECAP' + (c.venue_name ? ' · ' + c.venue_name.toUpperCase() : '');
+          $('recap-headline').textContent = headline;
+          join.textContent = name ? 'Join ' + name + ' on Drop' : 'Join Drop';
+        }, done); // offline or server error: the generic card stays, claiming nothing
+        return;
+      }
       if (!eventId || !window.Drop) return;
       Drop.fetchEvent(eventId).then(function (ev) {
         document.title = ev.title + ' — a Drop recap';
