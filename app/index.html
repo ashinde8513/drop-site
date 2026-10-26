@@ -19,7 +19,7 @@
   ['tokens.css', 'app.css'].forEach(function (file) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = appAssetBase + file + '?v=20261023-spec05';
+    style.href = appAssetBase + file + '?v=20261023-spec03';
     document.head.appendChild(style);
   });
 </script>
@@ -1702,196 +1702,216 @@
   </main>
 </sc-if>
 
-<!-- ============ CREW ============ -->
+<!-- ============ CREW / FRIENDS (design spec 03) ============ -->
 <sc-if value="{{ screenCrew }}">
-  <main class="wsh">
-    <div style="max-width:820px;margin:0 auto;padding:var(--sp-xxl) var(--sp-xl) var(--sp-xxxl);">
-      <div class="wsh__headrow" style="margin-bottom:var(--sp-lg);">
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-xxl);letter-spacing:var(--tr-snug);margin:0;">Crew</h1>
-        <button type="button" class="btn btn--secondary btn--sm" onClick="{{ goInvite }}">↗ Invite friends</button>
+  <main class="wsh" inert="{{ socInert }}">
+    <div class="s3-page">
+      <div class="s3-head">
+        <h1 class="wsh__title" tabindex="-1" data-bind-key="h-friends">Friends</h1>
+        <button type="button" class="btn btn--ghost btn--sm" onClick="{{ goInvite }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>Invite by link</button>
       </div>
-      <div class="seg" style="margin-bottom:var(--sp-xl);">
-        <sc-for list="{{ crewTabs }}" as="t" hint-placeholder-count="4">
-          <div class="seg__item {{ t.cls }}" onClick="{{ t.pick }}">{{ t.label }}</div>
-        </sc-for>
+      <div class="s3-cols">
+        <!-- Find people: always a column on desktop, a tab on phone -->
+        <section class="{{ crewFindCls }}" id="find-panel" aria-labelledby="find-h">
+          <h2 class="s3-h2" id="find-h">Find people</h2>
+          <div class="s3-field"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input class="s3-in" type="search" aria-label="Search people" placeholder="Search by name or username" maxlength="64" value="{{ findQuery }}" onInput="{{ setFind }}"></div>
+          <div class="s3-live">{{ findCount }}</div>
+          <sc-if value="{{ findIdle }}"><p class="s3-empty--sm s3-quiet">Type a name or username to find people.</p></sc-if>
+          <sc-if value="{{ findBusy }}"><div class="s3-list" aria-hidden="true"><div class="s3-row s3-row--sk"><span class="skel skel--avatar"></span><span class="s3-txt"><span class="skel skel--text" style="width:50%"></span><span class="skel skel--text" style="width:30%"></span></span></div></div></sc-if>
+          <sc-if value="{{ findNone }}"><p class="s3-empty--sm s3-quiet">{{ findNoneText }}</p></sc-if>
+          <sc-if value="{{ findErr }}"><div class="s3-inl" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Check your connection and try again.</span><button type="button" class="btn btn--ghost btn--sm" data-bind-key="find-retry" onClick="{{ retryFind }}">Try again</button></div></sc-if>
+          <sc-if value="{{ findHas }}">
+            <ul class="s3-list">
+              <sc-for list="{{ findRows }}" as="f" hint-placeholder-count="3">
+                <li class="frow s3-row">
+                  <span class="s3-av" aria-hidden="true" style="{{ f.avStyle }}">{{ f.initials }}</span>
+                  <a href="#" class="s3-txt s3-open" onClick="{{ f.open }}"><span class="s3-name">{{ f.name }}</span><span class="s3-sub">{{ f.sub }}</span></a>
+                  <div class="s3-acts">
+                    <sc-if value="{{ f.isFriend }}"><span class="statuschip s3-chip s3-chip--friends">Friends</span></sc-if>
+                    <sc-if value="{{ f.isRequested }}"><span class="statuschip s3-chip s3-chip--req">Requested</span></sc-if>
+                    <sc-if value="{{ f.isIncoming }}"><button type="button" class="btn btn--secondary btn--sm" data-bind-key="facc-{{ f.id }}" onClick="{{ f.accept }}">Accept</button></sc-if>
+                    <sc-if value="{{ f.canAdd }}"><button type="button" class="btn btn--ghost btn--sm" data-bind-key="add-{{ f.id }}" aria-label="{{ f.addName }}" aria-busy="{{ f.addBusy }}" aria-disabled="{{ f.addBusy }}" onClick="{{ f.add }}">{{ f.addLabel }}</button></sc-if>
+                  </div>
+                  <sc-if value="{{ f.addErr }}"><p class="s3-rowerr" role="alert">{{ f.addErr }}</p></sc-if>
+                </li>
+              </sc-for>
+            </ul>
+          </sc-if>
+        </section>
+        <!-- Friends / Requests / Plans: tabs head the right column -->
+        <div class="s3-col s3-people">
+          <div class="s3-tabs seg s3-seg" role="tablist" aria-label="Friends">
+            <sc-for list="{{ crewTabs }}" as="t" hint-placeholder-count="4"><button type="button" role="tab" id="{{ t.key }}" data-bind-key="{{ t.key }}" class="seg__item {{ t.cls }}" aria-selected="{{ t.selected }}" aria-controls="{{ t.panel }}" tabindex="{{ t.tabindex }}" aria-label="{{ t.aria }}" onClick="{{ t.pick }}" onKeyDown="{{ t.keyDown }}">{{ t.label }}<sc-if value="{{ t.count }}"> <span class="s3-n" aria-hidden="true">{{ t.count }}</span></sc-if></button></sc-for>
+          </div>
+          <div class="s3-col s3-panel" id="crew-panel" role="tabpanel" aria-labelledby="{{ crewTabId }}">
+          <sc-if value="{{ crewPeopleTab }}">
+          <sc-if value="{{ friendsLoading }}"><div class="s3-list" aria-busy="true"><span class="sr-only" role="status">Loading friends</span><sc-for list="{{ friendSkel }}" as="k" hint-placeholder-count="4"><div class="s3-row s3-row--sk" aria-hidden="true"><span class="skel skel--avatar"></span><span class="s3-txt"><span class="skel skel--text" style="width:45%"></span><span class="skel skel--text" style="width:30%"></span></span><span class="skel" style="width:44px;height:44px;border-radius:50%"></span></div></sc-for></div></sc-if>
+          <sc-if value="{{ friendsError }}"><div class="s3-inl" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Check your connection and try again.</span><button type="button" class="btn btn--ghost btn--sm" data-bind-key="friends-retry" onClick="{{ retryFriends }}">Try again</button></div></sc-if>
+          </sc-if>
+          <sc-if value="{{ crewFriends }}">
+            <sc-if value="{{ friendsEmpty }}"><div class="empty s3-empty"><p class="empty__body">Search for someone you know, or send them your invite link.</p><button type="button" class="btn btn--primary btn--sm s3-phone-only" onClick="{{ goFindTab }}">Find people</button></div></sc-if>
+            <sc-if value="{{ friendsReady }}">
+              <ul class="s3-list">
+                <sc-for list="{{ friendsList }}" as="f" hint-placeholder-count="4">
+                  <li class="frow s3-row">
+                    <span class="s3-av" aria-hidden="true" style="{{ f.avStyle }}">{{ f.initials }}</span>
+                    <a href="#" class="s3-txt s3-open" onClick="{{ f.open }}"><span class="s3-name">{{ f.name }}</span><span class="s3-sub">{{ f.sub }}</span></a>
+                    <div class="s3-menuwrap"><button type="button" class="s3-more" data-bind-key="{{ f.menuKey }}" aria-haspopup="menu" aria-expanded="{{ f.menuExpanded }}" aria-label="{{ f.moreLabel }}" onClick="{{ f.toggleMenu }}" onKeyDown="{{ f.menuKeyDown }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
+                  <sc-if value="{{ f.menuOpen }}"><div class="s3-menu" role="menu" data-menu="{{ f.id }}" aria-label="{{ f.moreLabel }}"><sc-for list="{{ f.items }}" as="mi" hint-placeholder-count="3"><button type="button" role="menuitem" class="s3-mi {{ mi.dangerCls }}" tabindex="-1" onClick="{{ mi.pick }}" onKeyDown="{{ mi.itemKeyDown }}"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ mi.icon }}"/></svg>{{ mi.label }}</button></sc-for></div></sc-if></div>
+                  </li>
+                </sc-for>
+              </ul>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ crewRequests }}">
+            <sc-if value="{{ requestsEmpty }}"><p class="s3-empty--sm s3-quiet">No requests right now.</p></sc-if>
+            <sc-if value="{{ friendsReady }}">
+              <ul class="s3-list">
+                <sc-for list="{{ requestsList }}" as="f" hint-placeholder-count="2">
+                  <li class="frow s3-row s3-row--req">
+                    <span class="s3-av" aria-hidden="true" style="{{ f.avStyle }}">{{ f.initials }}</span>
+                    <a href="#" class="s3-txt s3-open" onClick="{{ f.open }}"><span class="s3-name">{{ f.name }}</span><span class="s3-sub">{{ f.sub }}</span></a>
+                    <div class="s3-acts">
+                      <button type="button" class="{{ f.acceptCls }}" data-bind-key="acc-{{ f.id }}" aria-label="{{ f.acceptName }}" aria-busy="{{ f.busy }}" aria-disabled="{{ f.busy }}" onClick="{{ f.accept }}">{{ f.acceptLabel }}</button>
+                      <button type="button" class="btn btn--ghost btn--sm" data-bind-key="dec-{{ f.id }}" aria-label="{{ f.declineName }}" disabled="{{ f.declineOff }}" onClick="{{ f.decline }}">Decline</button>
+                    </div>
+                  </li>
+                </sc-for>
+              </ul>
+            </sc-if>
+          </sc-if>
+          <!-- Plans (spec 03: real plans the viewer belongs to) -->
+          <sc-if value="{{ crewPlans }}">
+            <sc-if value="{{ plansLoading }}"><div class="s3-list" aria-busy="true"><span class="sr-only" role="status">Loading plans</span><sc-for list="{{ friendSkel }}" as="k" hint-placeholder-count="3"><div class="s3-row s3-row--sk" aria-hidden="true"><span class="skel" style="width:56px;height:56px;border-radius:var(--r-md)"></span><span class="s3-txt"><span class="skel skel--text" style="width:52%"></span><span class="skel skel--text" style="width:70%"></span><span class="skel skel--text" style="width:34%"></span></span><span class="skel" style="width:92px;height:34px;border-radius:var(--r-pill)"></span></div></sc-for></div></sc-if>
+            <sc-if value="{{ plansError }}"><div class="empty empty--wide s3-empty" role="alert"><h2 class="empty__title">We couldn't load your plans</h2><p class="empty__body">Check your connection and try again.</p><button type="button" class="btn btn--ghost btn--sm" data-bind-key="plans-retry" onClick="{{ retryPlans }}">Try again</button></div></sc-if>
+            <sc-if value="{{ plansReady }}">
+              <sc-if value="{{ plansListEmpty }}"><div class="empty empty--wide s3-empty"><h2 class="empty__title">No plans yet</h2><p class="empty__body">Plans you make or get invited to show up here.</p><button type="button" class="btn btn--primary empty__cta" onClick="{{ goDiscover }}">Find a show</button></div></sc-if>
+              <sc-if value="{{ plansNoneUpcoming }}"><p class="s3-empty--sm s3-quiet">No upcoming plans.</p></sc-if>
+              <ul class="s3-list" aria-label="Upcoming plans">
+                <sc-for list="{{ plansList }}" as="p" hint-placeholder-count="3"><li class="s3-li"><a href="#" class="{{ p.rowCls }}" data-bind-key="{{ p.key }}" aria-label="{{ p.aria }}" onClick="{{ p.open }}"><span class="s3-art" aria-hidden="true" style="{{ p.artStyle }}"></span><span class="s3-txt"><span class="s3-name">{{ p.title }}</span><span class="s3-sub">{{ p.sub }}</span><span class="s3-pmeta"><span class="avstack" aria-hidden="true"><sc-for list="{{ p.stack }}" as="a" hint-placeholder-count="3"><span class="av" style="{{ a.avStyle }}"></span></sc-for></span><span class="s3-sub"><span class="sr-only">{{ p.withText }}</span>{{ p.countLabel }}</span><span class="{{ p.statusCls }} s3-phone-chip">{{ p.statusLabel }}</span></span></span><span class="s3-acts s3-desk-chip"><span class="{{ p.statusCls }}">{{ p.statusLabel }}</span></span></a></li></sc-for>
+              </ul>
+              <sc-if value="{{ plansHasPast }}"><div class="s3-col s3-pastgrp">
+                <button type="button" class="s3-grp" data-bind-key="plans-past" aria-expanded="{{ plansPastOpen }}" aria-controls="plans-past" onClick="{{ togglePastPlans }}"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><span>Past plans</span><span class="s3-n">{{ plansPastCount }}</span></button>
+                <sc-if value="{{ plansPastShown }}"><ul class="s3-list" id="plans-past" aria-label="Past plans">
+                  <sc-for list="{{ plansPast }}" as="p" hint-placeholder-count="2"><li class="s3-li"><a href="#" class="{{ p.rowCls }}" data-bind-key="{{ p.key }}" aria-label="{{ p.aria }}" onClick="{{ p.open }}"><span class="s3-art" aria-hidden="true" style="{{ p.artStyle }}"></span><span class="s3-txt"><span class="s3-name">{{ p.title }}</span><span class="s3-sub">{{ p.sub }}</span><span class="s3-pmeta"><span class="avstack" aria-hidden="true"><sc-for list="{{ p.stack }}" as="a" hint-placeholder-count="3"><span class="av" style="{{ a.avStyle }}"></span></sc-for></span><span class="s3-sub"><span class="sr-only">{{ p.withText }}</span>{{ p.countLabel }}</span><span class="{{ p.statusCls }} s3-phone-chip">{{ p.statusLabel }}</span></span></span><span class="s3-acts s3-desk-chip"><span class="{{ p.statusCls }}">{{ p.statusLabel }}</span></span></a></li></sc-for>
+                </ul></sc-if>
+              </div></sc-if>
+            </sc-if>
+          </sc-if>
+          </div>
+        </div>
       </div>
+    </div>
+  </main>
+</sc-if>
 
-      <!-- Friends -->
-      <sc-if value="{{ crewFriends }}">
-        <sc-if value="{{ friendsEmpty }}"><div class="empty"><div class="empty__ico">👥</div><div class="empty__title">No friends yet</div><div class="empty__body">Invite your crew.</div></div></sc-if>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-          <sc-for list="{{ friendsList }}" as="f" hint-placeholder-count="4">
-            <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
-              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;box-shadow:0 0 0 2px {{ f.ring }};{{ f.avStyle }}"></span>
-              <div style="flex:1;min-width:160px;">
-                <div style="font-weight:600;font-size:var(--fs-sm);">{{ f.name }}</div>
-                <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ f.handle }}</div>
-                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
-                  <sc-for list="{{ f.chips }}" as="c" hint-placeholder-count="3"><span style="font-size:10px;padding:2px 8px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text-secondary);">{{ c.label }}</span></sc-for>
-                </div>
-              </div>
-              <sc-if value="{{ f.overlapLabel }}"><span style="font-size:var(--fs-xs);font-weight:700;color:{{ f.overlapColor }};">{{ f.overlapLabel }}</span></sc-if>
-            </div>
-          </sc-for>
+<!-- ============ PUBLIC PROFILE (design spec 03) ============ -->
+<sc-if value="{{ screenPerson }}">
+  <main class="wsh" inert="{{ socInert }}">
+    <div class="s3-page">
+      <a href="#" class="s3-back" onClick="{{ goBackFromPerson }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg>Back</a>
+      <sc-if value="{{ personLoading }}">
+        <div class="s3-cols s3-cols--prof" aria-busy="true"><span class="sr-only" role="status">Loading profile</span>
+          <div class="s3-card" aria-hidden="true"><span class="skel" style="display:block;width:96px;height:96px;border-radius:50%"></span><span class="skel skel--title" style="display:block;width:60%;margin-top:16px"></span><span class="skel skel--text" style="display:block;width:90%;margin-top:12px"></span><span class="skel skel--text" style="display:block;width:70%;margin-top:8px"></span></div>
+          <div class="s3-col" aria-hidden="true"><div class="s3-stats"><span class="skel" style="height:88px"></span><span class="skel" style="height:88px"></span></div><span class="skel skel--card"></span></div>
         </div>
       </sc-if>
-
-      <!-- Requests -->
-      <sc-if value="{{ crewRequests }}">
-        <sc-if value="{{ requestsEmpty }}"><div class="empty"><div class="empty__ico">📨</div><div class="empty__title">No pending requests</div><div class="empty__body">When someone asks to join your crew, they'll show up here.</div></div></sc-if>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-          <sc-for list="{{ requestsList }}" as="r" hint-placeholder-count="2">
-            <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
-              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;{{ r.avStyle }}"></span>
-              <div style="flex:1;min-width:140px;">
-                <div style="font-weight:600;font-size:var(--fs-sm);">{{ r.name }}</div>
-                <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ r.handle }}</div>
-              </div>
-              <div style="display:flex;gap:var(--sp-sm);">
-                <button type="button" class="btn btn--primary btn--sm" onClick="{{ r.accept }}">Accept</button>
-                <button type="button" class="btn btn--ghost btn--sm" onClick="{{ r.decline }}">Decline</button>
-              </div>
+      <sc-if value="{{ personErr }}"><div class="empty empty--wide" role="alert"><svg class="empty__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><h2 class="empty__title">We couldn't load this profile</h2><p class="empty__body">Check your connection and try again.</p><button type="button" class="btn btn--ghost empty__cta" data-bind-key="p-retry" onClick="{{ retryPerson }}">Try again</button></div></sc-if>
+      <sc-if value="{{ personPrivate }}"><div class="empty empty--wide"><svg class="empty__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><h2 class="empty__title">This profile is private</h2><button type="button" class="btn btn--ghost empty__cta" onClick="{{ goBackFromPerson }}">Back</button></div></sc-if>
+      <sc-if value="{{ personBlocked }}"><div class="empty empty--wide"><h2 class="empty__title">{{ personBlockedText }}</h2><p class="empty__body">They can't find you or see your profile in the app.</p><div class="s3-ctl" style="justify-content:center"><button type="button" class="btn btn--secondary btn--sm" onClick="{{ goBackFromPerson }}">Back</button><button type="button" class="btn btn--ghost btn--sm" onClick="{{ personUnblock }}">Unblock</button></div></div></sc-if>
+      <sc-if value="{{ personReady }}">
+        <div class="s3-cols s3-cols--prof">
+          <div class="s3-card s3-pcard">
+            <div class="s3-menuwrap"><button type="button" class="s3-more" data-bind-key="{{ person.menuKey }}" aria-haspopup="menu" aria-expanded="{{ person.menuExpanded }}" aria-label="{{ person.moreLabel }}" onClick="{{ person.toggleMenu }}" onKeyDown="{{ person.menuKeyDown }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
+              <sc-if value="{{ person.menuOpen }}"><div class="s3-menu" role="menu" data-menu="{{ personMenuKey }}" aria-label="{{ person.moreLabel }}"><sc-for list="{{ person.items }}" as="mi" hint-placeholder-count="3"><button type="button" role="menuitem" class="s3-mi {{ mi.dangerCls }}" tabindex="-1" onClick="{{ mi.pick }}" onKeyDown="{{ mi.itemKeyDown }}"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ mi.icon }}"/></svg>{{ mi.label }}</button></sc-for></div></sc-if></div>
+            <span class="s3-av" aria-hidden="true" style="--av:96px;{{ person.avStyle }}">{{ person.initials }}</span>
+            <h1 class="s3-pname" tabindex="-1" data-bind-key="h-person">{{ person.name }}</h1>
+            <p class="s3-puser">{{ person.handle }}</p>
+            <sc-if value="{{ person.hasBio }}"><p class="{{ person.bioCls }}">{{ person.bio }}</p><sc-if value="{{ person.longBio }}"><button type="button" class="s3-link" data-bind-key="p-bio" onClick="{{ togglePersonBio }}">{{ person.bioToggle }}</button></sc-if></sc-if>
+            <div class="s3-rel">
+              <sc-if value="{{ person.relNone }}"><button type="button" class="btn btn--primary btn--block" data-bind-key="p-add" aria-busy="{{ person.addBusy }}" aria-disabled="{{ person.addBusy }}" onClick="{{ person.add }}">{{ person.addLabel }}</button></sc-if>
+              <sc-if value="{{ person.relRequested }}"><button type="button" class="btn btn--ghost btn--block" disabled>Requested</button></sc-if>
+              <sc-if value="{{ person.relIncoming }}"><button type="button" class="btn btn--primary btn--block" data-bind-key="p-acc" onClick="{{ person.accept }}">{{ person.acceptLabel }}</button><button type="button" class="btn btn--ghost btn--block" data-bind-key="p-dec" onClick="{{ person.decline }}">Decline</button></sc-if>
+              <sc-if value="{{ person.relFriends }}"><div class="s3-menuwrap s3-relwrap"><button type="button" class="btn btn--ghost btn--block" data-bind-key="{{ person.relKey }}" aria-haspopup="menu" aria-expanded="{{ person.relExpanded }}" onClick="{{ person.relToggle }}" onKeyDown="{{ person.relKeyDown }}"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5"/></svg>Friends<svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
+                <sc-if value="{{ person.relOpen }}"><div class="s3-menu" role="menu" data-menu="{{ person.relMenu }}" aria-label="{{ person.moreLabel }}"><sc-for list="{{ person.relItems }}" as="mi" hint-placeholder-count="3"><button type="button" role="menuitem" class="s3-mi {{ mi.dangerCls }}" tabindex="-1" onClick="{{ mi.pick }}" onKeyDown="{{ mi.itemKeyDown }}"><svg class="tk-ico tk-ico--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ mi.icon }}"/></svg>{{ mi.label }}</button></sc-for></div></sc-if></div></sc-if>
+              <sc-if value="{{ person.addErr }}"><p class="s3-rowerr" role="alert">{{ person.addErr }}</p></sc-if>
             </div>
-          </sc-for>
-        </div>
-      </sc-if>
-
-      <!-- Find -->
-      <sc-if value="{{ crewFind }}">
-        <div style="position:relative;margin-bottom:var(--sp-lg);">
-          <input type="text" placeholder="Search by name or username" style="width:100%;height:52px;padding:0 var(--sp-lg) 0 44px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
-          <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
-        </div>
-        <div style="font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:var(--tr-wide);margin-bottom:var(--sp-sm);">Suggested — based on your taste</div>
-        <sc-if value="{{ findEmpty }}"><div class="empty"><div class="empty__ico">🔎</div><div class="empty__title">No suggestions yet</div><div class="empty__body">Invite friends by link instead.</div></div></sc-if>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-          <sc-for list="{{ findList }}" as="p" hint-placeholder-count="3">
-            <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">
-              <span style="width:48px;height:48px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;"></span>
-              <div style="flex:1;min-width:160px;">
-                <div style="font-weight:600;font-size:var(--fs-sm);">{{ p.name }}</div>
-                <div style="font-size:var(--fs-xs);color:var(--text-muted);">{{ p.handle }} · {{ p.mutuals }}</div>
-                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
-                  <sc-for list="{{ p.chips }}" as="c" hint-placeholder-count="3"><span style="font-size:10px;padding:2px 8px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--glass-border);color:var(--text-secondary);">{{ c.label }}</span></sc-for>
-                </div>
-              </div>
-              <button type="button" class="{{ p.cls }}" onClick="{{ p.add }}" style="padding:8px 18px;border-radius:var(--r-pill);border:1px solid var(--glass-border);font-family:var(--font-body);font-weight:700;font-size:var(--fs-xs);cursor:pointer;">{{ p.label }}</button>
+          </div>
+          <div class="s3-col">
+            <div class="s3-stats">
+              <sc-if value="{{ person.showSeen }}"><div class="s3-stat"><b>{{ person.seen }}</b><span>Shows seen</span></div></sc-if>
+              <div class="s3-stat"><b>{{ person.artistsCount }}</b><span>Artists followed</span></div>
             </div>
-          </sc-for>
-        </div>
-      </sc-if>
-
-      <!-- Plans -->
-      <sc-if value="{{ crewPlans }}">
-        <sc-if value="{{ plansListEmpty }}"><div class="empty empty--wide"><svg class="empty__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><h2 class="empty__title">Plans live in the app</h2><p class="empty__body">Pick a show, invite friends, and chat about it in the app.</p><button type="button" class="btn btn--primary empty__cta" onClick="{{ downloadApp }}">Get the Drop app</button><a href="#" class="empty__link" onClick="{{ goDiscover }}">Browse shows</a></div></sc-if>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
-          <sc-for list="{{ plansList }}" as="p" hint-placeholder-count="2">
-            <button type="button" onClick="{{ p.open }}" style="display:flex;align-items:center;gap:var(--sp-lg);padding:var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);text-align:left;cursor:pointer;flex-wrap:wrap;">
-              <div style="width:72px;height:72px;border-radius:var(--r-md);flex:0 0 auto;{{ p.gradStyle }}"></div>
-              <div style="flex:1;min-width:160px;">
-                <div class="wsc__date">{{ p.dateShort }}</div>
-                <div style="font-family:var(--font-display);font-weight:700;font-size:var(--fs-md);">{{ p.title }}</div>
-                <div style="color:var(--text-secondary);font-size:var(--fs-sm);">{{ p.venueCity }}</div>
-              </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                <div class="avstack">
-                  <sc-for list="{{ p.avatars }}" as="a" hint-placeholder-count="3"><span class="av" style="box-shadow:0 0 0 2px {{ a.ring }};"></span></sc-for>
-                </div>
-                <span style="font-size:var(--fs-xs);color:var(--going);font-weight:700;">{{ p.goingLabel }}</span>
-              </div>
-            </button>
-          </sc-for>
+            <sc-if value="{{ person.hasGoing }}">
+              <section class="s3-sec" aria-labelledby="pg-h"><h2 class="s3-h2" id="pg-h">Going to</h2>
+                <div class="s3-evgrid"><sc-for list="{{ person.going }}" as="e" hint-placeholder-count="2"><a href="#" class="ec s3-ec s3-ec--sm" onClick="{{ e.open }}"><span class="ec__imgwrap"><span class="ec__img" aria-hidden="true" style="{{ e.gradStyle }}"></span><span class="ec__scrim"></span><span class="ec__top"><span class="ec__badge">{{ e.badge }}</span></span><span class="ec__title">{{ e.title }}</span></span><span class="ec__body"><span class="ec__meta"><span>{{ e.venue }}</span><sc-if value="{{ e.time }}"><span class="ic"></span><span>{{ e.time }}</span></sc-if></span></span></a></sc-for></div>
+              </section>
+            </sc-if>
+            <sc-if value="{{ person.hasArtists }}">
+              <section class="s3-sec" aria-labelledby="pa-h"><h2 class="s3-h2" id="pa-h">Followed artists</h2>
+                <div class="s3-chips"><sc-for list="{{ person.artists }}" as="a" hint-placeholder-count="4"><span class="chip">{{ a.name }}</span></sc-for><sc-if value="{{ person.moreArtists }}"><span class="s3-quiet">{{ person.moreArtists }}</span></sc-if></div>
+              </section>
+            </sc-if>
+          </div>
         </div>
       </sc-if>
     </div>
   </main>
 </sc-if>
 
-<!-- ============ PLAN DETAIL ============ -->
+<!-- ============ PLAN DETAIL + CHAT (design spec 03) ============ -->
 <sc-if value="{{ screenPlan }}">
-  <main class="wsh">
-    <div style="max-width:820px;margin:0 auto;padding:var(--sp-lg) var(--sp-xl) var(--sp-xxxl);">
-      <a href="#" onClick="{{ goCrew }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:var(--fs-sm);margin-bottom:var(--sp-lg);">← Back to crew</a>
-      <div style="position:relative;overflow:hidden;border-radius:var(--r-xl);border:1px solid var(--border);height:220px;{{ pd.gradStyle }}">
-        <div class="wsc__scrim"></div>
-        <div style="position:absolute;left:0;right:0;bottom:0;padding:var(--sp-xl);">
-          <div class="wsc__date">{{ pd.dateShort }}</div>
-          <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(24px,4vw,36px);letter-spacing:var(--tr-tight);margin:4px 0 2px;">{{ pd.title }}</h1>
-          <div style="color:var(--text-secondary);font-size:var(--fs-sm);">{{ pd.venueCity }}</div>
+  <main class="wsh" inert="{{ socInert }}">
+    <div class="s3-page s3-page--plan">
+      <a href="#" class="s3-back" onClick="{{ goPlans }}"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg>Back to plans</a>
+      <sc-if value="{{ planLoading }}">
+        <div class="s3-cols s3-cols--plan" aria-busy="true"><span class="sr-only" role="status">Loading plan</span>
+          <div class="s3-col" aria-hidden="true"><span class="skel skel--title" style="width:70%"></span><span class="skel skel--text" style="width:50%"></span><div class="s3-ctl"><span class="skel skel--avatar"></span><span class="skel skel--avatar"></span><span class="skel skel--avatar"></span></div></div>
+          <div class="s3-chat" aria-hidden="true"><div class="s3-log"><sc-for list="{{ planSkel }}" as="k" hint-placeholder-count="3"><span class="skel s3-skelbub"></span></sc-for></div></div>
         </div>
-      </div>
-
-      <!-- roster -->
-      <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
-        <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">Who's in</div><a href="#" class="sec__more" onClick="{{ goInvite }}">Invite more</a></div>
-        <div style="display:flex;gap:var(--sp-lg);flex-wrap:wrap;">
-          <sc-for list="{{ pd.roster }}" as="m" hint-placeholder-count="4">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;">
-              <span style="width:56px;height:56px;border-radius:50%;background:var(--grad-brand);box-shadow:0 0 0 3px {{ m.ring }};"></span>
-              <span style="font-size:var(--fs-xs);color:var(--text-secondary);text-align:center;">{{ m.name }}</span>
-              <span style="font-size:9px;font-weight:800;letter-spacing:var(--tr-wide);text-transform:uppercase;color:{{ m.ring }};">{{ m.status }}</span>
-            </div>
-          </sc-for>
-        </div>
-        <div style="display:flex;gap:var(--sp-lg);margin-top:var(--sp-lg);flex-wrap:wrap;font-size:var(--fs-xs);color:var(--text-muted);">
-          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--going);"></span>Going</span>
-          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--interested);"></span>Interested</span>
-          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--border-strong);"></span>Invited</span>
-        </div>
-      </div>
-
-      <!-- meetup spot -->
-      <div style="padding:var(--sp-xl) 0;border-bottom:1px solid var(--border);">
-        <div class="sec__title" style="margin-bottom:var(--sp-md);">Meetup spot</div>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
-          <sc-for list="{{ pd.spotOptions }}" as="sp" hint-placeholder-count="3">
-            <button type="button" onClick="{{ sp.pick }}" style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md) var(--sp-lg);background:{{ sp.bg }};border:1px solid {{ sp.border }};border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);text-align:left;cursor:pointer;">
-              <span style="width:20px;height:20px;border-radius:50%;border:2px solid {{ sp.dot }};flex:0 0 auto;display:flex;align-items:center;justify-content:center;">{{ sp.glyph }}</span>
-              <span style="flex:1;">📍 {{ sp.label }}</span>
-            </button>
-          </sc-for>
-        </div>
-      </div>
-
-      <!-- group chat -->
-      <div style="padding:var(--sp-xl) 0;">
-        <div class="sec__title" style="margin-bottom:var(--sp-lg);">Group chat</div>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-md);margin-bottom:var(--sp-lg);">
-          <sc-for list="{{ pd.chat }}" as="c" hint-placeholder-count="3">
-            <div style="display:flex;gap:var(--sp-md);{{ c.align }}">
-              <sc-if value="{{ c.showAvatar }}"><span style="width:34px;height:34px;border-radius:50%;background:var(--grad-brand);flex:0 0 auto;"></span></sc-if>
-              <div style="max-width:75%;">
-                <div style="font-size:var(--fs-xs);color:{{ c.color }};font-weight:700;margin-bottom:2px;{{ c.metaAlign }}">{{ c.who }} · {{ c.time }}</div>
-                <div style="padding:10px var(--sp-md);border-radius:var(--r-md);background:{{ c.bubbleBg }};color:var(--text);font-size:var(--fs-sm);">{{ c.text }}</div>
+      </sc-if>
+      <sc-if value="{{ planErr }}"><div class="empty empty--wide" role="alert"><svg class="empty__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><h2 class="empty__title">We couldn't load this plan</h2><p class="empty__body">Check your connection and try again.</p><button type="button" class="btn btn--ghost empty__cta" data-bind-key="plan-retry" onClick="{{ planRetry }}">Try again</button></div></sc-if>
+      <sc-if value="{{ planGone }}"><div class="empty empty--wide"><h2 class="empty__title">This plan is private or no longer exists.</h2><button type="button" class="btn btn--ghost empty__cta" onClick="{{ goPlans }}">Back</button></div></sc-if>
+      <sc-if value="{{ planReady }}">
+        <div class="s3-cols s3-cols--plan">
+          <div class="s3-col">
+            <article class="ec s3-ec s3-ec--sm s3-desk"><div class="ec__imgwrap"><div class="ec__img" aria-hidden="true" style="{{ pd.gradStyle }}"></div><div class="ec__scrim"></div><div class="ec__top"><span class="ec__badge">{{ pd.badge }}</span></div><h1 class="ec__title" tabindex="-1" data-bind-key="h-plan">{{ pd.title }}</h1></div><div class="ec__body"><div class="ec__meta"><span>{{ pd.venue }}</span><sc-if value="{{ pd.time }}"><span class="ic"></span><span>{{ pd.time }}</span></sc-if></div></div></article>
+            <div class="s3-phead s3-phone-flex"><span class="s3-phead__img" aria-hidden="true" style="{{ pd.gradStyle }}"></span><div class="s3-txt"><span class="mp-card__date">{{ pd.badge }}<sc-if value="{{ pd.time }}"> · {{ pd.time }}</sc-if></span><h1 class="s3-phead__title" tabindex="-1" data-bind-key="h-plan-ph">{{ pd.title }}</h1><span class="s3-sub">{{ pd.venue }}</span></div></div>
+            <div class="s3-ctl s3-rsvprow">
+              <div class="s3-rsvp" role="radiogroup" aria-label="Your answer">
+                <sc-for list="{{ pd.rsvp }}" as="r" hint-placeholder-count="2"><button type="button" role="radio" class="{{ r.cls }}" data-bind-key="{{ r.key }}" aria-checked="{{ r.checked }}" tabindex="{{ r.tabindex }}" onClick="{{ r.pick }}" onKeyDown="{{ r.keyDown }}">{{ r.label }}</button></sc-for>
               </div>
+              <button type="button" class="btn btn--ghost btn--sm s3-leave" data-bind-key="plan-leave" onClick="{{ planLeave }}">Leave plan</button>
             </div>
-          </sc-for>
+            <section class="{{ pd.whoCls }}" aria-labelledby="who-h">
+              <div class="s3-ptop"><h2 class="s3-h2" id="who-h">Who's in</h2><span class="avstack s3-phone-only" aria-hidden="true"><sc-for list="{{ pd.stack }}" as="a" hint-placeholder-count="5"><span class="av" style="{{ a.avStyle }}"></span></sc-for></span><span class="s3-sub s3-sum">{{ pd.summary }}</span><button type="button" class="s3-link s3-phone-only" aria-expanded="{{ pd.memOpen }}" aria-controls="plan-mem" data-bind-key="plan-mem" onClick="{{ planToggleMembers }}">{{ pd.memToggle }}</button></div>
+              <ul class="s3-list s3-mem" id="plan-mem">
+                <sc-for list="{{ pd.members }}" as="f" hint-placeholder-count="4"><li class="frow"><span class="s3-av" aria-hidden="true" style="{{ f.avStyle }}">{{ f.initials }}</span><span class="s3-txt"><span class="s3-name">{{ f.name }}</span><span class="s3-sub">{{ f.sub }}</span></span><span class="{{ f.chipCls }}">{{ f.status }}</span></li></sc-for>
+              </ul>
+            </section>
+          </div>
+          <section class="s3-chat" aria-labelledby="chat-h">
+            <div class="s3-chat__hd"><h2 class="s3-h2" id="chat-h">Crew chat</h2><span class="s3-quiet">{{ pd.memberCount }}</span></div>
+            <div class="s3-log" id="plan-log" role="log" aria-live="off" aria-label="Crew chat messages" tabindex="0" data-keep-scroll>
+              <sc-if value="{{ pd.chatEmpty }}"><p class="s3-quiet s3-day">No messages yet. Say hi to your crew.</p></sc-if>
+              <sc-for list="{{ pd.chat }}" as="m" hint-placeholder-count="4">
+                <sc-if value="{{ m.isDay }}"><span class="s3-day">{{ m.day }}</span></sc-if>
+                <sc-if value="{{ m.isMsg }}"><div class="{{ m.cls }}"><sc-if value="{{ m.showAv }}"><span class="s3-av" aria-hidden="true" style="--av:32px;{{ m.avStyle }}">{{ m.initials }}</span></sc-if><div class="s3-mb"><sc-if value="{{ m.showWho }}"><span class="s3-who">{{ m.who }}</span></sc-if><span class="s3-b">{{ m.body }}</span><span class="s3-cap">{{ m.cap }}</span><sc-if value="{{ m.failed }}"><span class="s3-inl s3-inl--sm" role="alert"><span>Not sent.</span><button type="button" class="btn btn--ghost btn--sm" data-bind-key="retry-{{ m.key }}" onClick="{{ m.retry }}">Try again</button></span></sc-if></div></div></sc-if>
+              </sc-for>
+            </div>
+            <sc-if value="{{ planNew }}"><button type="button" class="btn btn--secondary btn--sm s3-new" onClick="{{ planJump }}">New messages</button></sc-if>
+            <div class="s3-comp">
+              <label for="plan-draft" class="sr-only">Message your crew</label>
+              <textarea id="plan-draft" class="s3-ta" rows="1" maxlength="500" placeholder="Message your crew" onInput="{{ setPlanDraft }}" onKeyDown="{{ planDraftKey }}">{{ planDraft }}</textarea>
+              <button type="button" class="btn btn--primary" data-bind-key="plan-send" aria-disabled="{{ pd.sendOff }}" onClick="{{ planSend }}">{{ pd.sendLabel }}</button>
+            </div>
+            <p class="s3-hint">Enter to send. Shift+Enter for a new line.</p>
+          </section>
         </div>
-        <div style="display:flex;gap:var(--sp-md);">
-          <input type="text" placeholder="Message your crew…" style="flex:1;height:48px;padding:0 var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-sm);" />
-          <button type="button" class="btn btn--secondary btn--sm" onClick="{{ planSend }}">Send</button>
-        </div>
-      </div>
+      </sc-if>
     </div>
   </main>
 </sc-if>
-
-<!-- ============ CREW BUILDER INTERSTITIAL ============ -->
-<sc-if value="{{ screenCrewBuilder }}">
-  <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--sp-xxl) var(--sp-xl);position:relative;overflow:hidden;">
-    <div style="position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(226,77,255,0.28),transparent 62%);top:-180px;right:-80px;filter:blur(40px);pointer-events:none;"></div>
-    <div style="position:relative;width:100%;max-width:480px;">
-      <div style="text-align:center;margin-bottom:var(--sp-xl);">
-        <div class="chip" style="display:inline-flex;margin-bottom:var(--sp-md);">✓ &nbsp;You're going to {{ cbTitle }}</div>
-        <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:var(--tr-tight);line-height:1.06;margin:0 0 var(--sp-sm);">Who are you going with?</h1>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-xl);padding:var(--sp-lg);box-shadow:var(--shadow-card);">
-        <div class="empty empty--wide" style="padding:var(--sp-xl) var(--sp-md);"><svg class="empty__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><h2 class="empty__title">Plans live in the app</h2><p class="empty__body">Pick a show, invite friends, and chat about it in the app.</p><button type="button" class="btn btn--primary empty__cta" onClick="{{ downloadApp }}">Get the Drop app</button><a href="#" class="empty__link" onClick="{{ goDiscover }}">Browse shows</a></div>
-      </div>
-    </div>
-  </main>
-</sc-if>
-
 <!-- ============ INVITE FRIENDS ============ -->
 <sc-if value="{{ screenInvite }}">
   <main class="wsh">
@@ -3322,6 +3342,27 @@
   </div>
 </sc-if>
 
+<!-- ============ SOCIAL DIALOGS (spec 03): block / report / remove / leave ============ -->
+<sc-if value="{{ dlgOpen }}">
+  <div class="overlay overlay--center s3-dlg" onClick="{{ dlgCancel }}">
+    <div class="modal s3-modal" role="dialog" aria-modal="true" aria-labelledby="dlg-title" onClick="{{ stop }}" onKeyDown="{{ dlgKey }}">
+      <div class="sheet__handle" aria-hidden="true"></div>
+      <h2 class="modal__title" id="dlg-title">{{ dlgTitle }}</h2>
+      <sc-if value="{{ dlgBody }}"><p class="modal__body">{{ dlgBody }}</p></sc-if>
+      <sc-if value="{{ dlgReport }}">
+        <fieldset class="s3-rads"><legend class="s3-lbl">Reason</legend>
+          <sc-for list="{{ dlgReasons }}" as="r" hint-placeholder-count="6"><label class="{{ r.cls }}"><input type="radio" name="report-reason" data-bind-key="{{ r.key }}" value="{{ r.value }}" checked="{{ r.checked }}" onChange="{{ r.pick }}">{{ r.label }}</label></sc-for>
+        </fieldset>
+      </sc-if>
+      <sc-if value="{{ dlgHasErr }}"><p class="s3-inl" role="alert"><svg class="tk-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>{{ dlgErr }}</span></p></sc-if>
+      <div class="s3-modal__actions">
+        <button type="button" id="dlg-cancel" data-bind-key="dlg-cancel" class="btn btn--ghost" disabled="{{ dlgBusy }}" onClick="{{ dlgCancel }}">{{ dlgCancelLabel }}</button>
+        <button type="button" class="{{ dlgConfirmCls }}" data-bind-key="dlg-confirm" aria-busy="{{ dlgBusy }}" aria-disabled="{{ dlgOff }}" onClick="{{ dlgConfirm }}">{{ dlgConfirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
 <!-- ============ LOGIN GATE MODAL ============ -->
 <sc-if value="{{ gate }}">
   <div class="overlay overlay--center" onClick="{{ closeGate }}">
@@ -3353,7 +3394,7 @@
 <script src="https://trydropapp.com/consent.js" defer></script>
 <script>
   // offers.js (seller rules) must run before app.js; async=false keeps order.
-  ['offers.js?v=20261023-spec05', 'map.js?v=20261023-spec05', 'recap.js?v=20261023-spec05', 'app.js?v=20261023-spec05'].forEach(function (file) {
+  ['offers.js?v=20261023-spec03', 'map.js?v=20261023-spec03', 'recap.js?v=20261023-spec03', 'app.js?v=20261023-spec03'].forEach(function (file) {
     var s = document.createElement('script');
     s.src = appAssetBase + file;
     s.async = false;
