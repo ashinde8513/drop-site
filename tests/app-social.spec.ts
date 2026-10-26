@@ -108,7 +108,7 @@ test('actions menu + block dialog: keyboard menu, focus on Cancel, Escape return
   const dialog = page.getByRole('dialog', { name:'Block Maya Chen?' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name:'Cancel' })).toBeFocused();
-  await expect(dialog).toContainText("They won't be able to find you or see your profile in the app, and they won't be told. People who aren't signed in can still see your public profile page. You can unblock them in Settings.");
+  await expect(dialog).toContainText("They won't be able to find you or see your profile in the app, and they won't be told. You can unblock them in Settings.");
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(more).toBeFocused();
@@ -353,4 +353,14 @@ test('a11y: 44px targets and AA secondary text on Friends, Find, Requests and pl
   await page.getByRole('button', { name:/Plan with friends/ }).click();
   await expect(page.getByRole('heading', { name:'Social Night' })).toBeVisible();
   expect(await audit(page)).toEqual({ small:[], low:[] });
+});
+
+test('signed out: no route to people or profiles, and no profile reads', async ({ page, isMobile }) => {
+  await bootSignedIn(page, { signedOut:true }, [EV]);
+  await page.goto('/app/index.html');
+  await expect(page.getByText('Social Night').first()).toBeVisible();
+  if (isMobile) await page.getByRole('button', { name:'Menu' }).click();
+  await expect(page.getByRole('button', { name:/^Crew/ })).toHaveCount(0); // no way to the people screens signed out
+  expect((await fakeCalls(page, 'rpc')).filter((c: any) => c.name === 'public_profile' || c.name === 'search_public_profiles')).toEqual([]);
+  expect((await fakeCalls(page, 'from')).filter((c: any) => c.table === 'artist_follows' || c.table === 'attendance')).toEqual([]);
 });
