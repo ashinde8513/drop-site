@@ -41,7 +41,10 @@ test('fixture account: inbox, seen history, rating, recap composer, friends and 
   await expect(page.locator('.s3-people .s3-row, .s3-people .s3-empty').first()).toBeVisible();
   await expect(page.locator('.s3-people').getByText('Alex R.')).toHaveCount(0);
   await page.getByRole('tab', { name:'Plans' }).click();
-  await expect(page.locator('.s3-prow, .empty__title').first()).toBeVisible();
+  // Settled: upcoming rows, the zero-plans empty state, or "No upcoming plans." above folded past plans.
+  await expect(page.locator('.s3-prow, .empty__title, .s3-empty--sm').first()).toBeVisible();
+  const past = page.getByRole('button', { name:/Past plans/ });
+  if (await past.count()) { await past.click(); await expect(page.locator('#plans-past .s3-prow').first()).toBeVisible(); }
 
   await menu(page, 'Settings');
   await page.getByRole('button', { name:/Blocked accounts/ }).click();
