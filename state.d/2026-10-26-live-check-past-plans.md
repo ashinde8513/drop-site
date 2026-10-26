@@ -1,0 +1,3 @@
+- **Changed:** `tests-live/signed-in.spec.ts` Plans step now accepts the "No upcoming plans." state and, when past plans exist, expands them and checks a past plan row. The fixture has 3 past plans and none upcoming, so the old `.s3-prow, .empty__title` check failed on the Spec 03 deploy (run 40417266030) while the app was correct.
+- **Tested:** live signed-in workflow dispatched from this branch against production.
+- **Next:** none.
