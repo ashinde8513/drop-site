@@ -1,0 +1,4 @@
+- **Changed:** Web app profiles are sign-in only. `openPerson` opens the sign-in prompt ("Log in to see profiles") when signed out and `loadPerson` refuses to read, so no `public_profile`, `attendance` or `artist_follows` call happens without a session. The block dialog drops "People who aren't signed in can still see your public profile page." (A64 wording change, bundled into A83).
+- **Why:** Drop-App #1404 removes anon EXECUTE from `public_profile(uuid)`, so a blocked person can no longer read a full profile by signing out.
+- **Tested:** `tests/app-social.spec.ts` 36/36 locally (desktop + mobile Safari), including a new signed-out case: there's no Crew entry and no profile reads. No signed-out UI path reaches the profile screen today, so the `openPerson` guard is defense in depth for future links.
+- **Next:** stays a draft until Arya answers A83. Merge, deploy and live-check after that; the migration applies only after this merges.

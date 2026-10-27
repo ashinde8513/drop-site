@@ -1264,6 +1264,8 @@ class Component extends DCLogic {
   // Public profile: RPC (email/role only for self), then what the viewer may see.
   openPerson(id){
     if (!id) return;
+    // Profiles are sign-in only (public_profile has no anon EXECUTE): signed out, prompt instead of reading.
+    if (!this.state.authed) { this.openGate('Log in to see profiles'); return; }
     if (id === this.state.userId) { this.go('profile'); return; }
     this._focusMain = true;
     this.setState({ screen:'person', personId:id, person:null, personBusy:true, personError:false, personBioOpen:false, socMenu:null });
@@ -1271,7 +1273,7 @@ class Component extends DCLogic {
     this.loadPerson(id);
   }
   loadPerson(id){
-    if (!supa) return;
+    if (!supa || !this.state.authed) return;
     this.setState({ personBusy:true, personError:false });
     const token = this._personToken = {};
     const nowIso = new Date().toISOString();
@@ -3898,7 +3900,7 @@ class Component extends DCLogic {
       // dialogs (block / report / remove / leave)
       dlgOpen: !!dlg, dlgBlock: !!dlg && dlg.kind === 'block', dlgReport: !!dlg && dlg.kind === 'report', dlgRemove: !!dlg && dlg.kind === 'remove', dlgLeave: !!dlg && dlg.kind === 'leave',
       dlgTitle: !dlg ? '' : dlg.kind === 'block' ? 'Block ' + dlg.name + '?' : dlg.kind === 'report' ? 'Report ' + dlg.name : dlg.kind === 'remove' ? 'Remove ' + dlg.name + '?' : 'Leave this plan?',
-      dlgBody: !dlg ? '' : dlg.kind === 'block' ? "They won't be able to find you or see your profile in the app, and they won't be told. People who aren't signed in can still see your public profile page. You can unblock them in Settings."
+      dlgBody: !dlg ? '' : dlg.kind === 'block' ? "They won't be able to find you or see your profile in the app, and they won't be told. You can unblock them in Settings."
         : dlg.kind === 'remove' ? 'You can add each other again later.' : dlg.kind === 'leave' ? "You'll stop getting messages from it." : '',
       dlgConfirmLabel: !dlg ? '' : dlg.busy ? ({ block:'Blocking…', report:'Sending…', remove:'Removing…', leave:'Leaving…' })[dlg.kind]
         : ({ block:'Block ' + dlg.name, report:'Send report', remove:'Remove friend', leave:'Leave plan' })[dlg.kind],
