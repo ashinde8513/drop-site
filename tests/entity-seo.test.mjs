@@ -521,14 +521,14 @@ test('homepage LCP hint names the exact first card a Denver visitor sees', async
   for (const url of [null, '', 'http://x.test/a.jpg', 'https://u:p@x.test/a.jpg', 'https://s1.ticketm.net/dam/c/abc.jpg', 'https://s1.ticketm.net/dam/a/abc.jpg', 'https://cdn.example/a.jpg', 'not a url']) {
     assert.equal(isRealArtUrl(url), window.Drop.isRealArtUrl(url), String(url));
   }
-  // Full-size uploads swap to a ~1200px rendition, identically on both sides,
+  // Full-size uploads swap to a ~800px rendition, identically on both sides,
   // so the preload is the URL the grid then requests.
   const sized = {
     'https://s1.ticketm.net/dam/a/1eb/c274_SOURCE': 'https://s1.ticketm.net/dam/a/1eb/c274_RETINA_LANDSCAPE_16_9.jpg',
     'https://s1.ticketm.net/dam/a/464/d432_TABLET_LANDSCAPE_LARGE_16_9.jpg': 'https://s1.ticketm.net/dam/a/464/d432_RETINA_LANDSCAPE_16_9.jpg',
     'https://s1.ticketm.net/dam/a/464/d432_EVENT_DETAIL_PAGE_16_9.jpg': 'https://s1.ticketm.net/dam/a/464/d432_EVENT_DETAIL_PAGE_16_9.jpg',
-    'https://res.cloudinary.com/x/image/upload/q_auto,f_auto/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/q_auto,f_auto/v1/a.webp',
-    'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_1200/v1/a.webp',
+    'https://res.cloudinary.com/x/image/upload/q_auto,f_auto/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_800/q_auto,f_auto/v1/a.webp',
+    'https://res.cloudinary.com/x/image/upload/c_limit,w_800/v1/a.webp': 'https://res.cloudinary.com/x/image/upload/c_limit,w_800/v1/a.webp',
     'https://cdn.test/c.jpg': 'https://cdn.test/c.jpg',
   };
   for (const [from, to] of Object.entries(sized)) {
