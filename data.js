@@ -568,14 +568,14 @@
   };
 
   // Full-size provider uploads (Ticketmaster _SOURCE up to 3 MB, Cloudinary
-  // originals over 2 MB) → a ~1200px rendition. Mirrors src/home-lcp.mjs.
+  // originals over 2 MB) → a ~800px rendition. Mirrors src/home-lcp.mjs.
   Drop.sizedArtUrl = function (imageUrl) {
     if (!Drop.isRealArtUrl(imageUrl)) return imageUrl;
     var url = new URL(imageUrl);
     if (url.hostname === 's1.ticketm.net' && /^\/dam\/a\//.test(url.pathname)) {
       url.pathname = url.pathname.replace(/_(SOURCE|TABLET_LANDSCAPE_LARGE_16_9\.jpg)$/, '_RETINA_LANDSCAPE_16_9.jpg');
     } else if (url.hostname === 'res.cloudinary.com' && !/\/image\/upload\/c_limit,w_\d+\//.test(url.pathname)) {
-      url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_1200/');
+      url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_800/');
     }
     return url.toString();
   };

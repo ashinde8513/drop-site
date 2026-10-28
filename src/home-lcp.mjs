@@ -26,7 +26,7 @@ export function isRealArtUrl(value) {
 }
 
 // Some providers hand us the full-size upload (Ticketmaster _SOURCE up to
-// 3 MB, Cloudinary originals over 2 MB). Ask for a ~1200px rendition instead;
+// 3 MB, Cloudinary originals over 2 MB). Ask for a ~800px rendition instead;
 // pages fall back to the original if it fails. Mirrors data.js sizedArtUrl.
 export function sizedArtUrl(value) {
   if (!isRealArtUrl(value)) return value;
@@ -34,7 +34,7 @@ export function sizedArtUrl(value) {
   if (url.hostname === 's1.ticketm.net' && /^\/dam\/a\//.test(url.pathname)) {
     url.pathname = url.pathname.replace(/_(SOURCE|TABLET_LANDSCAPE_LARGE_16_9\.jpg)$/, '_RETINA_LANDSCAPE_16_9.jpg');
   } else if (url.hostname === 'res.cloudinary.com' && !/\/image\/upload\/c_limit,w_\d+\//.test(url.pathname)) {
-    url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_1200/');
+    url.pathname = url.pathname.replace(/\/image\/upload\//, '/image/upload/c_limit,w_800/');
   }
   return url.toString();
 }
