@@ -69,3 +69,16 @@ test('legacy routes land on pages that exist', () => {
   assert.match(redirects, /^\/onboarding\s+\/download\s+302$/m);
   assert.doesNotMatch(readRepo('data.js'), /\/venue\.html\?name=/);
 });
+
+test('app shell enforces a script CSP that allows exactly its inline scripts', async () => {
+  const { createHash } = await import('node:crypto');
+  const block = readRepo('_headers').match(/^\/app\/\*\n((?:[ \t]+[^\n]+\n)+)/m)?.[1] || '';
+  const csp = block.match(/^\s+Content-Security-Policy: (.+)$/m)?.[1] || '';
+  assert.match(csp, /script-src 'self' /);
+  assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/);
+  const inline = [...readRepo('app/index.html').matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  assert.ok(inline.length > 0);
+  const hashes = inline.map((body) => `'sha256-${createHash('sha256').update(body).digest('base64')}'`);
+  for (const hash of hashes) assert.ok(csp.includes(hash), `missing ${hash} for an app/index.html inline script`);
+  assert.equal((csp.match(/'sha256-/g) || []).length, hashes.length, 'stale hash left in the app CSP');
+});
