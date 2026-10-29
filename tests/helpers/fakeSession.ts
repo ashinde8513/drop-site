@@ -43,7 +43,14 @@ const FAKE = String.raw`
       onAuthStateChange:function (l) { listeners.push(l); return { data:{ subscription:{ unsubscribe:function () {} } } }; },
       signOut:async function (opts) { calls.push({ kind:'signOut', opts:opts }); session = null; window.__fake.emit('SIGNED_OUT'); return { error:null }; },
       signInWithOAuth:async function (i) { calls.push({ kind:'oauth', input:i }); return { data:{ url:'https://oauth.example.test' }, error:null }; },
-      signUp:async function (i) { calls.push({ kind:'signUp', input:i }); return { data:{ session:null }, error:null }; }
+      signUp:async function (i) { calls.push({ kind:'signUp', input:i }); return { data:{ session:null }, error:null }; },
+      // cfg.mfa = { factors:[...], verifyError } drives two-step sign-in.
+      mfa:{
+        listFactors:async function () { var all = ((cfg.mfa || {}).factors || []); return res({ all:all, totp:all.filter(function (f) { return f.status === 'verified'; }) }); },
+        unenroll:async function (i) { calls.push({ kind:'mfa.unenroll', input:i }); return res({ id:i.factorId }); },
+        enroll:async function (i) { calls.push({ kind:'mfa.enroll', input:i }); return res({ id:'factor-1', type:'totp', totp:{ qr_code:'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>', secret:'JBSWY3DPEHPK3PXP', uri:'otpauth://totp/Drop' } }); },
+        challengeAndVerify:async function (i) { calls.push({ kind:'mfa.verify', input:i }); var e = (cfg.mfa || {}).verifyError; return e ? res(null, { message:e }) : res({ access_token:'aal2' }); }
+      }
     },
     functions:{ invoke:async function () { return res({ ok:true }); } },
     rpc:async function (name, args) {
