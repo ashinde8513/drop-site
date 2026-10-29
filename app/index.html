@@ -1309,6 +1309,26 @@
         <button type="button" onClick="{{ goDelete }}" style="display:flex;align-items:center;padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);color:var(--danger);font-family:var(--font-body);font-size:var(--fs-md);text-align:left;cursor:pointer;"><span style="flex:1;">Delete account</span><span>›</span></button>
       </div>
 
+      <sc-if value="{{ mfaShow }}">
+        <div class="sec__title" style="margin-bottom:var(--sp-md);">Two-step sign-in</div>
+        <div style="padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:var(--sp-xxl);">
+          <sc-if value="{{ mfaOn }}"><p style="margin:0;font-size:var(--fs-sm);color:var(--text);">On. Signing in to this admin account also asks for a code from your authenticator app.</p></sc-if>
+          <sc-if value="{{ mfaOffIdle }}">
+            <p style="margin:0 0 var(--sp-md);font-size:var(--fs-sm);color:var(--text-secondary);line-height:var(--lh-base);">Admin accounts can see every member's data. Add a code from an authenticator app (1Password, Google Authenticator, Authy) to this sign-in.</p>
+            <button type="button" class="btn btn--secondary btn--block" onClick="{{ startMfa }}" disabled="{{ mfaBusy }}">Set up two-step sign-in</button>
+          </sc-if>
+          <sc-if value="{{ mfaEnrolling }}">
+            <p style="margin:0 0 var(--sp-md);font-size:var(--fs-sm);color:var(--text-secondary);line-height:var(--lh-base);">Scan this with your authenticator app, then enter the 6-digit code it shows.</p>
+            <img src="{{ mfaQr }}" alt="QR code to add Drop to your authenticator app" width="180" height="180" style="display:block;background:#fff;border-radius:var(--r-md);padding:8px;margin:0 0 var(--sp-md);" />
+            <p style="margin:0 0 var(--sp-md);font-size:var(--fs-xs);color:var(--text-muted);word-break:break-all;">Can't scan? Enter this key instead: <span style="font-family:monospace;color:var(--text);">{{ mfaSecret }}</span></p>
+            <label for="mfa-code" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">6-digit code</label>
+            <input id="mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{ mfaCode }}" onInput="{{ setMfaCode }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-md);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-size:var(--fs-md);letter-spacing:0.2em;" />
+            <button type="button" class="btn btn--primary btn--block" onClick="{{ verifyMfa }}" disabled="{{ mfaVerifyDisabled }}">{{ mfaVerifyLabel }}</button>
+          </sc-if>
+          <sc-if value="{{ mfaHasError }}"><p role="alert" style="color:var(--danger);font-size:var(--fs-sm);margin:var(--sp-md) 0 0;">{{ mfaError }}</p></sc-if>
+        </div>
+      </sc-if>
+
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Help &amp; feedback</div>
       <p style="color:var(--text-secondary);font-size:var(--fs-sm);">Found a problem or have an idea? Email the Drop team. Your email app opens a draft for you to review and send. You can also email trydropapp@gmail.com directly.</p>
       <button type="button" class="btn btn--secondary btn--block" onClick="{{ emailFeedback }}" style="margin-bottom:var(--sp-xl);">Email feedback</button>

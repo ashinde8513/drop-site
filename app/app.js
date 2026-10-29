@@ -943,6 +943,8 @@ class Component extends DCLogic {
     // settings
     setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
     recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
+    // two-step sign-in (admins only)
+    mfaAdmin:false, mfaOn:false, mfaEnroll:null, mfaCode:'', mfaBusy:false, mfaError:'',
     // notifications (unread ids)
     alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null,
     // discover map (spec 04)
@@ -1116,6 +1118,7 @@ class Component extends DCLogic {
     const withSkel = (s==='discover'||s==='event'||s==='search'||s==='myshows');
     this.setState({ screen: s, cityOpen:false, menuOpen:false, navOpen:false, loading: withSkel });
     if(typeof window!=='undefined') window.scrollTo(0,0);
+    if (s === 'settings') this.loadMfa();
     if(withSkel){ clearTimeout(this._skelT); this._skelT = setTimeout(()=>this.setState({loading:false}), 750); }
   }
   prevent(e){ if(e&&e.preventDefault) e.preventDefault(); }
@@ -2016,6 +2019,44 @@ class Component extends DCLogic {
       if (error) { console.error('[app] blocked load failed:', error.message); this.setState({ blockedError:true }); return; }
       this.setState({ blockedRows: data || [] });
     });
+  }
+  // Two-step sign-in (TOTP). Shown to admins only: their accounts can read
+  // every user's data, so a password or OAuth login alone must not be enough.
+  loadMfa(){
+    const uid = this.state.userId;
+    if (!supa || !uid || !supa.auth.mfa) return;
+    Promise.all([supa.rpc('public_profile', { uid }), supa.auth.mfa.listFactors()]).then(([prof, factors])=>{
+      if (this.state.userId !== uid) return;
+      const row = Array.isArray(prof.data) ? prof.data[0] : prof.data;
+      const totp = ((factors.data && factors.data.all) || []).filter(f=>f.factor_type === 'totp');
+      this.setState({ mfaAdmin: !!(row && row.is_admin), mfaOn: totp.some(f=>f.status === 'verified') });
+    }).catch((e)=>console.error('[app] two-step status failed:', e && e.message));
+  }
+  async startMfa(){
+    if (!supa || this.state.mfaBusy) return;
+    this.setState({ mfaBusy:true, mfaError:'' });
+    try {
+      // A half-finished setup leaves an unverified factor that blocks a fresh enroll.
+      const { data: list } = await supa.auth.mfa.listFactors();
+      for (const f of ((list && list.all) || []).filter(f=>f.factor_type === 'totp' && f.status !== 'verified')) {
+        await supa.auth.mfa.unenroll({ factorId: f.id });
+      }
+      const { data, error } = await supa.auth.mfa.enroll({ factorType:'totp', friendlyName:'Drop admin' });
+      if (error) throw error;
+      this.setState({ mfaBusy:false, mfaCode:'', mfaEnroll:{ id:data.id, qr:data.totp.qr_code, secret:data.totp.secret } });
+    } catch (e) {
+      console.error('[app] two-step setup failed:', e && e.message);
+      this.setState({ mfaBusy:false, mfaError:'Could not start setup. Try again.' });
+    }
+  }
+  async verifyMfa(){
+    const enroll = this.state.mfaEnroll, code = this.state.mfaCode.replace(/\s/g, '');
+    if (!supa || !enroll || this.state.mfaBusy || !/^\d{6}$/.test(code)) return;
+    this.setState({ mfaBusy:true, mfaError:'' });
+    const { error } = await supa.auth.mfa.challengeAndVerify({ factorId: enroll.id, code });
+    if (error) { this.setState({ mfaBusy:false, mfaError:'That code didn\u2019t match. Use the newest code, and check your phone\u2019s clock is set automatically.' }); return; }
+    this.setState({ mfaBusy:false, mfaEnroll:null, mfaCode:'', mfaOn:true });
+    this.flash('Two-step sign-in is on');
   }
   unblock(row){
     const uid = this.state.userId;
@@ -3972,6 +4013,11 @@ class Component extends DCLogic {
       tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
       blocked, blockedLoading: s.blockedRows===null && !s.blockedError, blockedFailed: s.blockedError, blockedEmpty: s.blockedRows!==null && blocked.length===0, retryBlocked:()=>this.loadBlocked(), skel3:[1,2,3],
       deleteConfirm: s.deleteConfirm, deleteDisabled: !deleteOk || s.deleteBusy,
+      mfaShow: s.mfaAdmin, mfaOn: s.mfaAdmin && s.mfaOn, mfaOffIdle: s.mfaAdmin && !s.mfaOn && !s.mfaEnroll,
+      mfaEnrolling: !!s.mfaEnroll, mfaQr: s.mfaEnroll ? s.mfaEnroll.qr : '', mfaSecret: s.mfaEnroll ? s.mfaEnroll.secret : '',
+      mfaCode: s.mfaCode, mfaBusy: s.mfaBusy, mfaVerifyDisabled: s.mfaBusy || !/^\d{6}$/.test(s.mfaCode.replace(/\s/g, '')),
+      mfaVerifyLabel: s.mfaBusy ? 'Checking\u2026' : 'Turn on two-step sign-in', mfaError: s.mfaError, mfaHasError: !!s.mfaError,
+      startMfa:()=>this.startMfa(), verifyMfa:()=>this.verifyMfa(), setMfaCode:(e)=>this.setState({ mfaCode:e.target.value }),
       deleteBusy:s.deleteBusy, deleteStatus:s.deleteStatus, deleteHasStatus:!!s.deleteStatus,
       deleteButtonLabel:s.deleteBusy?'Deleting\u2026':'Permanently delete my account',
       deleteBackLabel:s.wizPhoneRequired?'Back to phone verification':'Back to settings',
