@@ -122,3 +122,13 @@ test('bots, link previews and HEAD probes skip the Edge Function (no scan row)',
   await withFetch(stub, () => onRequest({ request: request('https://trydropapp.com/go', IOS_UA) }));
   assert.equal(called, 1, 'a real phone scan still reaches the Edge Function');
 });
+
+test('an off-site Edge Function Location falls back instead of open-redirecting', async () => {
+  for (const location of ['https://evil.example/', 'https://trydropapp.com.evil.example/', 'http://trydropapp.com/', 'javascript:alert(1)']) {
+    const response = await withFetch(
+      async () => new Response(null, { status: 302, headers: { location } }),
+      () => onRequest({ request: request('https://trydropapp.com/go', IOS_UA) }),
+    );
+    assert.equal(response.headers.get('location'), `${APP_STORE}?pt=129160185&ct=go-qr&mt=8`, location);
+  }
+});

@@ -19,6 +19,17 @@ const ANDROID_STORE_URL = 'https://play.google.com/store/apps/details?id=app.res
 const WEB_URL = 'https://trydropapp.com/';
 const FORWARDED = ['placement', 'distributor', 'batch', 'variant'];
 const TIMEOUT_MS = 1500;
+// A printed card must never become an open redirect, whatever the Edge Function returns.
+const DESTINATION_HOSTS = new Set(['trydropapp.com', 'apps.apple.com', 'play.google.com']);
+
+function isDestination(location) {
+  try {
+    const url = new URL(location);
+    return url.protocol === 'https:' && DESTINATION_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 function isIOS(userAgent) {
   if (/iPhone|iPad|iPod/i.test(userAgent)) return true;
@@ -69,7 +80,7 @@ export async function onRequest({ request }) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const location = response.headers.get('location');
-    if (location) return redirect(location);
+    if (location && isDestination(location)) return redirect(location);
   } catch {
     // fall through to the untracked redirect below
   }
