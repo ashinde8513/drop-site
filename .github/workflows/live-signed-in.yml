@@ -5,6 +5,9 @@ name: Live signed-in check
 
 on:
   workflow_dispatch: {}
+  # Daily even without a deploy: catches backend/data regressions the app never shipped (QA autonomy A107).
+  schedule:
+    - cron: '23 13 * * *'
   workflow_run:
     workflows: ["Test & Deploy"]
     types: [completed]
@@ -19,7 +22,7 @@ concurrency:
 
 jobs:
   live:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: live-fixture
     timeout-minutes: 15
