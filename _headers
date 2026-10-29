@@ -35,7 +35,7 @@
 # if either block changes without updating its hash.
 /app/*
   X-Robots-Tag: noindex, nofollow
-  Content-Security-Policy: script-src 'self' https://trydropapp.com 'sha256-HMfGeb3q2QXr5wpK+SdY9kmdvV4lNVRCBapD3okcc54=' 'sha256-rqHZHLbmxHBaKuvQOo0HkgtZYv9CwUwWSX9P9lqg9u8='; worker-src 'self' blob:; object-src 'none'; base-uri 'self'
+  Content-Security-Policy: script-src 'self' https://trydropapp.com 'sha256-HMfGeb3q2QXr5wpK+SdY9kmdvV4lNVRCBapD3okcc54=' 'sha256-rqHZHLbmxHBaKuvQOo0HkgtZYv9CwUwWSX9P9lqg9u8='; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; report-uri https://trydropapp.com/csp-report; report-to csp
 
 # Revalidate all static assets so a new deploy never serves stale CSS/JS
 # against fresh HTML (the two-browser mismatch). no-cache = browser still
