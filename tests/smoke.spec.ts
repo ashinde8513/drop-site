@@ -454,10 +454,12 @@ test.describe('website smoke', () => {
   });
 
   test('password recovery has a browser fallback to the signed-in SPA', () => {
-    const redirects = readFileSync('_redirects', 'utf8');
-    expect(redirects).toContain(
-      '/reset-password https://app.trydropapp.com/?mode=reset-password  302',
-    );
+    // A Function (not a _redirects rule, which drops the reset code from the query).
+    expect(readFileSync('_redirects', 'utf8')).not.toMatch(/^\/reset-password\s/m);
+    const fn = readFileSync('functions/reset-password.js', 'utf8');
+    expect(fn).toContain("https://app.trydropapp.com/");
+    expect(fn).toContain("searchParams.set('mode', 'reset-password')");
+    expect(JSON.parse(readFileSync('_routes.json', 'utf8')).include).toContain('/reset-password');
   });
 
   test('plan links retain UUID attribution without rendering personal query data', () => {

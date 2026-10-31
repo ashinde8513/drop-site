@@ -4,7 +4,7 @@
   "private": true,
   "description": "Playwright E2E/smoke tests for the Drop website",
   "scripts": {
-    "test": "node --test tests/entity-seo.test.mjs tests/static-seo.test.mjs tests/guides.test.mjs tests/deploy-contract.test.mjs tests/go-route.test.mjs tests/crew-links.test.mjs tests/search.test.mjs tests/newsletter.test.mjs tests/cwv-monitor.test.mjs tests/track.test.mjs tests/perf-budget.test.mjs tests/freshness.test.mjs tests/indexnow.test.mjs tests/venue-facts.test.mjs tests/og-image.test.mjs tests/og-card.test.mjs tests/conversion-counts.test.mjs tests/offers.test.mjs tests/csp-report.test.mjs tests/privacy-policy.test.mjs tests/map.test.mjs tests/recap.test.mjs && playwright test",
+    "test": "node --test tests/entity-seo.test.mjs tests/static-seo.test.mjs tests/guides.test.mjs tests/deploy-contract.test.mjs tests/go-route.test.mjs tests/crew-links.test.mjs tests/search.test.mjs tests/newsletter.test.mjs tests/cwv-monitor.test.mjs tests/track.test.mjs tests/perf-budget.test.mjs tests/freshness.test.mjs tests/indexnow.test.mjs tests/venue-facts.test.mjs tests/og-image.test.mjs tests/og-card.test.mjs tests/conversion-counts.test.mjs tests/offers.test.mjs tests/csp-report.test.mjs tests/privacy-policy.test.mjs tests/map.test.mjs tests/recap.test.mjs tests/reset-password.test.mjs && playwright test",
     "test:ui": "playwright test --ui"
   },
   "devDependencies": {
