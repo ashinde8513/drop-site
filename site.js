@@ -53,8 +53,7 @@
     var head = Drop.headliner(event);
     var title = (event.title || '').trim();
     var box = el('div', 'efb__text');
-    var chip = Drop.chipDate(event);
-    if (chip) box.appendChild(el('span', 'efb__chip', chip));
+    // No date chip: feed cards already print the date below the art (A162).
     box.appendChild(el('span', 'efb__head' + (head.length > 22 ? ' efb__head--sm' : head.length > 12 ? ' efb__head--md' : ''), head));
     if (title && title !== head) box.appendChild(el('span', 'efb__sub', title));
     art.appendChild(box);

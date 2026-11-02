@@ -23,13 +23,15 @@ test.beforeEach(async ({ page }) => {
     headers: { 'content-range': `0-${rows.length - 1}/${rows.length}` }, body: JSON.stringify(rows) }));
 });
 
-test('cards without art show the branded Prism fallback with headliner, title and date chip', async ({ page }) => {
+test('cards without art show the branded Prism fallback with headliner and title, no duplicate date chip', async ({ page }) => {
   await page.goto('/events.html?city=Denver');
   const card = (id: string) => page.locator(`.wsc-card[data-event-id="${id}"]`);
   await expect(card(MERSIV).locator('.efb')).toBeVisible();
   await expect(card(MERSIV).locator('.efb__head')).toHaveText('Mersiv');
   await expect(card(MERSIV).locator('.efb__sub')).toHaveText('Halloween Night: Mersiv + Friends');
-  await expect(card(MERSIV).locator('.efb__chip')).toHaveText(/^[A-Z]{3} NOV \d+ '30$/);
+  // feed cards already print the date below the art, so no chip on the art (A162)
+  await expect(card(MERSIV).locator('.efb__chip')).toHaveCount(0);
+  await expect(card(MERSIV).locator('.wsc__date')).toBeVisible();
   // no lineup: the title is the headliner and there is no subtitle
   await expect(card(BARE).locator('.efb__head')).toHaveText('Techno Tuesday at Fiction');
   await expect(card(BARE).locator('.efb__sub')).toHaveCount(0);

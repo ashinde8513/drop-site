@@ -637,22 +637,6 @@
     return (first || event.title || '').trim();
   };
 
-  // "SAT NOV 7" (2-digit year only when not this year); no time.
-  Drop.chipDate = function (event) {
-    var d = event && event.date ? new Date(event.date) : null;
-    if (!d || isNaN(d)) return '';
-    var opts = { weekday: 'short', month: 'short', day: 'numeric' };
-    var tz = event.timezone || undefined;
-    try {
-      var text = new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: tz }, opts)).format(d).replace(',', '');
-      var year = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' }).format(d);
-      if (year !== String(new Date().getFullYear())) text += " '" + year.slice(2);
-      return text.toUpperCase();
-    } catch (e) {
-      return '';
-    }
-  };
-
   // Approved venue photo for a no-art card. Requests inside one tick share a
   // single venue_hero_images query (RLS returns only active, unexpired rows).
   var heroReq = {}, heroPending = {}, heroTimer = null;
