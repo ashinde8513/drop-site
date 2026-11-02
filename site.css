@@ -434,6 +434,53 @@ button { font: inherit; cursor: pointer; }
   radial-gradient(120% 90% at 88% 96%, rgba(226,77,255,0.30), transparent 55%),
   radial-gradient(120% 90% at 50% 120%, rgba(182,255,106,0.18), transparent 60%), var(--surface); }
 
+/* No-art event card (spec: event-fallback-card-design-spec-2026-11-02).
+   Two radial glows on ink; alpha = 45% x (1-d)^2.4, capped at 45% so white
+   text stays AA (worst pair 4.93:1). Pair seeded by event id (Drop.fallbackPair). */
+.efb {
+  background:
+    radial-gradient(circle 258px at 95% 62%, color-mix(in srgb, var(--efb-b) 45%, transparent), color-mix(in srgb, var(--efb-b) 22%, transparent) 25%, color-mix(in srgb, var(--efb-b) 8%, transparent) 50%, color-mix(in srgb, var(--efb-b) 2%, transparent) 75%, transparent),
+    radial-gradient(circle 272px at 30% 102%, color-mix(in srgb, var(--efb-a) 45%, transparent), color-mix(in srgb, var(--efb-a) 22%, transparent) 25%, color-mix(in srgb, var(--efb-a) 8%, transparent) 50%, color-mix(in srgb, var(--efb-a) 2%, transparent) 75%, transparent),
+    var(--ink);
+}
+.efb-0 { --efb-a: var(--brand-cyan); --efb-b: var(--brand-magenta); }
+.efb-1 { --efb-a: var(--brand-magenta); --efb-b: var(--brand-lime); }
+.efb-2 { --efb-a: var(--brand-lime); --efb-b: var(--brand-cyan); }
+.efb-3 { --efb-a: var(--gold); --efb-b: var(--brand-magenta); }
+.efb-4 { --efb-a: var(--brand-magenta); --efb-b: var(--brand-cyan); }
+.efb-5 { --efb-a: var(--brand-cyan); --efb-b: var(--brand-lime); }
+.efb-6 { --efb-a: var(--gold); --efb-b: var(--brand-cyan); }
+.efb-7 { --efb-a: var(--brand-magenta); --efb-b: var(--gold); }
+/* Headliner + subtitle block sits at top 92px of the 340px card. */
+.efb__text {
+  position: absolute; z-index: 1; left: 16px; right: 16px; top: 92px; max-height: 138px; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+}
+.efb__chip {
+  font-family: var(--font-body); font-size: 12px; line-height: 16px; font-weight: 700;
+  letter-spacing: 0.1em; padding: 5px 11px; border-radius: var(--r-pill);
+  background: var(--glass-dark); color: var(--text); border: 1px solid var(--glass-border);
+}
+.efb__head, .efb__sub {
+  color: var(--text); overflow-wrap: break-word; width: 100%;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.efb__head { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 42px; letter-spacing: -1.5px; }
+.efb__head--md { font-size: 32px; line-height: 34px; letter-spacing: -1px; }
+.efb__head--sm { font-size: 26px; line-height: 28px; letter-spacing: -0.6px; }
+.efb__sub { font-family: var(--font-body); font-weight: 600; font-size: 14px; line-height: 18px; }
+/* two-line headliner + subtitle start higher so they clear the bottom block */
+.efb__text:has(.efb__head--md, .efb__head--sm) { top: 56px; }
+/* a headliner that may wrap leaves room for one subtitle line (spec: max block 138px) */
+.efb__head--md ~ .efb__sub, .efb__head--sm ~ .efb__sub { -webkit-line-clamp: 1; }
+/* Credit for an approved venue photo standing in for the Prism card. */
+.efb__credit {
+  position: absolute; right: 12px; top: 48px; z-index: 2; max-width: calc(100% - 24px);
+  font-family: var(--font-body); font-size: 11px; line-height: 14px; font-weight: 600;
+  padding: 3px 8px; border-radius: var(--r-pill); background: var(--glass-dark); color: var(--text);
+  border: 1px solid var(--glass-border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
 /* ========================================================================
    Event card (.wsc-card) — the shell show card, the workhorse
    ======================================================================== */
