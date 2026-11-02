@@ -45,13 +45,39 @@
   // data.js but not site.js, and it needs the same art chain.
 
   // ---- Prism art fallback -------------------------------------------------
+  // Branded no-art card: headliner, show name and date chip over a seeded
+  // Prism pair (.efb in site.css). Decorative; the card's aria-label carries it.
   Drop.prismArt = function (event) {
-    var art = el('div', 'art-prism ' + Drop.genreClass(event));
+    var art = el('div', 'art-prism efb efb-' + Drop.fallbackPair(event));
     art.setAttribute('aria-hidden', 'true');
-    var initial = (event.title || '•').trim().charAt(0).toUpperCase();
-    art.appendChild(el('span', 'art-mark', initial));
+    var head = Drop.headliner(event);
+    var title = (event.title || '').trim();
+    var box = el('div', 'efb__text');
+    var chip = Drop.chipDate(event);
+    if (chip) box.appendChild(el('span', 'efb__chip', chip));
+    box.appendChild(el('span', 'efb__head' + (head.length > 22 ? ' efb__head--sm' : head.length > 12 ? ' efb__head--md' : ''), head));
+    if (title && title !== head) box.appendChild(el('span', 'efb__sub', title));
+    art.appendChild(box);
     return art;
   };
+
+  // No-art card: Prism now; swap in the approved venue photo if one exists.
+  function artFallback(event, card) {
+    var prism = Drop.prismArt(event);
+    Drop.venueHero(event.venue_id).then(function (hero) {
+      if (!hero || !prism.parentNode) return;
+      var img = el('img', 'wsc__img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.onerror = function () { if (img.parentNode) img.parentNode.replaceChild(prism, img); if (credit.parentNode) credit.remove(); };
+      img.src = hero.image_url;
+      var credit = el('span', 'efb__credit', String(hero.credit || '').replace(/ · cropped for display$/, ''));
+      prism.parentNode.replaceChild(img, prism);
+      if (hero.credit) card.appendChild(credit);
+    });
+    return prism;
+  }
 
   // ---- Event card ---------------------------------------------------------
   // Drop.ecard(event) -> <a> shell show card (canonical web look: uniform
@@ -77,11 +103,11 @@
       img.onerror = function () {
         artIndex++;
         if (artCandidates[artIndex]) img.src = artCandidates[artIndex];
-        else if (img.parentNode) img.parentNode.replaceChild(Drop.prismArt(event), img);
+        else if (img.parentNode) img.parentNode.replaceChild(artFallback(event, a), img);
       };
       a.appendChild(img);
     } else {
-      a.appendChild(Drop.prismArt(event));
+      a.appendChild(artFallback(event, a));
     }
     a.appendChild(el('div', 'wsc__scrim'));
 

@@ -621,6 +621,64 @@
     return Drop.eventArtCandidates(event)[0] || null;
   };
 
+  // ---- No-art fallback (spec: event-fallback-card-design-spec-2026-11-02) ----
+  // One of 8 Prism pairs, seeded by event id with the app's hashString
+  // (placeholderImage.ts) so a show looks the same on web and in the app.
+  Drop.fallbackPair = function (event) {
+    var key = String((event && (event.id || event.title)) || 'Drop');
+    var hash = 0;
+    for (var i = 0; i < key.length; i++) { hash = (hash << 5) - hash + key.charCodeAt(i); hash |= 0; }
+    return Math.abs(hash) % 8;
+  };
+
+  // Headliner = first lineup name, else the title.
+  Drop.headliner = function (event) {
+    var first = (event.event_artists || []).map(function (ea) { return ea.artists && ea.artists.name; }).filter(Boolean)[0];
+    return (first || event.title || '').trim();
+  };
+
+  // "SAT NOV 7" (2-digit year only when not this year); no time.
+  Drop.chipDate = function (event) {
+    var d = event && event.date ? new Date(event.date) : null;
+    if (!d || isNaN(d)) return '';
+    var opts = { weekday: 'short', month: 'short', day: 'numeric' };
+    var tz = event.timezone || undefined;
+    try {
+      var text = new Intl.DateTimeFormat('en-US', Object.assign({ timeZone: tz }, opts)).format(d).replace(',', '');
+      var year = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' }).format(d);
+      if (year !== String(new Date().getFullYear())) text += " '" + year.slice(2);
+      return text.toUpperCase();
+    } catch (e) {
+      return '';
+    }
+  };
+
+  // Approved venue photo for a no-art card. Requests inside one tick share a
+  // single venue_hero_images query (RLS returns only active, unexpired rows).
+  var heroReq = {}, heroPending = {}, heroTimer = null;
+  function flushHeroes() {
+    var ids = Object.keys(heroPending), resolvers = heroPending;
+    heroPending = {};
+    get('venue_hero_images?' + q({ select: 'venue_id,image_url,credit', venue_id: 'in.(' + ids.join(',') + ')' }))
+      .then(function (rows) {
+        var byId = {};
+        rows.forEach(function (r) { if (Drop.isRealArtUrl(r.image_url)) byId[r.venue_id] = r; });
+        ids.forEach(function (id) { resolvers[id](byId[id] || null); });
+      })
+      .catch(function () { ids.forEach(function (id) { resolvers[id](null); }); }); // ponytail: decorative, fall back to the Prism card
+  }
+  Drop.venueHero = function (venueId) {
+    if (!venueId) return Promise.resolve(null);
+    if (!heroReq[venueId]) {
+      heroReq[venueId] = new Promise(function (resolve) {
+        heroPending[venueId] = resolve;
+        clearTimeout(heroTimer);
+        heroTimer = setTimeout(flushHeroes, 30);
+      });
+    }
+    return heroReq[venueId];
+  };
+
   // CSS class for prism-art tint, keyed off the display genre.
   Drop.genreClass = function (ev) {
     if (ev && ev.is_festival) return 'g-fest';
