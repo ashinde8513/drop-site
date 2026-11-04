@@ -133,14 +133,40 @@ export async function rest(table, params) {
 
 // Same request plus PostgREST's exact total (Content-Range "0-23/1234"), like
 // data.js get(path, { count: true }).
-export async function restWithCount(table, params, count = true) {
+// Responses are kept in the colo cache for 10 min, keyed on the public request
+// URL. Only the public anon key is ever sent here, so nothing cached is
+// per-user; never route a user token through this function.
+// shortcut: Cache API is per colo (no cross-colo sharing without a KV binding), add one if misses stay high.
+const REST_TTL_SECONDS = 600;
+const inflight = new Map(); // one fetch per key per isolate (stampede guard)
+export function restWithCount(table, params, count = true) {
+  const url = REST + table + '?' + query(params);
+  const key = url + (count ? '&__count=1' : '');
+  if (!inflight.has(key)) {
+    const run = cachedRest(url, key, count);
+    inflight.set(key, run);
+    run.then(() => inflight.delete(key), () => inflight.delete(key));
+  }
+  return inflight.get(key);
+}
+
+async function cachedRest(url, key, count) {
+  const cache = globalThis.caches?.default;
+  const hit = cache && await cache.match(key).catch(() => null);
+  if (hit) return hit.json();
   const headers = { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + PUBLIC_KEY };
   if (count) headers.Prefer = 'count=exact';
-  const response = await fetch(REST + table + '?' + query(params), { headers });
+  const response = await fetch(url, { headers });
   if (!response.ok) throw new Error('Supabase HTTP ' + response.status);
   const rows = await response.json();
   const total = parseInt((response.headers.get('content-range') || '').split('/')[1], 10);
-  return { rows, total: Number.isNaN(total) ? null : total };
+  const result = { rows, total: Number.isNaN(total) ? null : total };
+  if (cache) {
+    await cache.put(key, new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=' + REST_TTL_SECONDS },
+    })).catch(() => {}); // a failed put only costs the next request a miss
+  }
+  return result;
 }
 
 function upcomingFilter() {
