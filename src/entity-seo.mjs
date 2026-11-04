@@ -127,8 +127,9 @@ function query(params) {
   return search.toString();
 }
 
-export async function rest(table, params) {
-  return (await restWithCount(table, params, false)).rows;
+// `fresh` skips the cache (health monitors must see the live catalog).
+export async function rest(table, params, fresh = false) {
+  return (await restWithCount(table, params, false, fresh)).rows;
 }
 
 // Same request plus PostgREST's exact total (Content-Range "0-23/1234"), like
@@ -138,20 +139,10 @@ export async function rest(table, params) {
 // per-user; never route a user token through this function.
 // shortcut: Cache API is per colo (no cross-colo sharing without a KV binding), add one if misses stay high.
 const REST_TTL_SECONDS = 600;
-const inflight = new Map(); // one fetch per key per isolate (stampede guard)
-export function restWithCount(table, params, count = true) {
+export async function restWithCount(table, params, count = true, fresh = false) {
   const url = REST + table + '?' + query(params);
   const key = url + (count ? '&__count=1' : '');
-  if (!inflight.has(key)) {
-    const run = cachedRest(url, key, count);
-    inflight.set(key, run);
-    run.then(() => inflight.delete(key), () => inflight.delete(key));
-  }
-  return inflight.get(key);
-}
-
-async function cachedRest(url, key, count) {
-  const cache = globalThis.caches?.default;
+  const cache = fresh ? null : globalThis.caches?.default;
   const hit = cache && await cache.match(key).catch(() => null);
   if (hit) return hit.json();
   const headers = { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + PUBLIC_KEY };
@@ -161,7 +152,8 @@ async function cachedRest(url, key, count) {
   const rows = await response.json();
   const total = parseInt((response.headers.get('content-range') || '').split('/')[1], 10);
   const result = { rows, total: Number.isNaN(total) ? null : total };
-  if (cache) {
+  // Empty answers are not kept: an id that is not published yet must not 404 for 10 min.
+  if (cache && rows.length) {
     await cache.put(key, new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=' + REST_TTL_SECONDS },
     })).catch(() => {}); // a failed put only costs the next request a miss
