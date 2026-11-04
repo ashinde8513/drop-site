@@ -12,10 +12,10 @@ export async function readCatalog(now = new Date()) {
   const start = new Date(now); start.setUTCHours(0, 0, 0, 0);
   const end = new Date(start.getTime() + 7 * 864e5);
   const [newest, week] = await Promise.all([
-    rest('events', { select: 'created_at', status: 'eq.published', order: 'created_at.desc', limit: 1 }),
-    restWithCount('events', { select: 'city', status: 'eq.published', date: 'gte.' + start.toISOString(), and: '(date.lt.' + end.toISOString() + ')', limit: 1000 }),
+    rest('events', { select: 'created_at', status: 'eq.published', order: 'created_at.desc', limit: 1 }, true),
+    restWithCount('events', { select: 'city', status: 'eq.published', date: 'gte.' + start.toISOString(), and: '(date.lt.' + end.toISOString() + ')', limit: 1000 }, true, true),
   ]);
-  return { newestCreatedAt: newest[0]?.created_at || null, next7Days: week.count ?? week.rows.length, cities: week.rows.map((row) => row.city) };
+  return { newestCreatedAt: newest[0]?.created_at || null, next7Days: week.total ?? week.rows.length, cities: week.rows.map((row) => row.city) };
 }
 
 export function assess(catalog, now = new Date()) {

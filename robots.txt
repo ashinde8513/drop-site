@@ -1,5 +1,13 @@
 User-agent: *
 Allow: /
 
+# SEO-tool and aggregator crawlers: ~85% of /event page hits (24 h, 2026-11-03),
+# each one a database query, with no search or user value to Drop.
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: Amazonbot
+User-agent: PetalBot
+Disallow: /
+
 Sitemap: https://trydropapp.com/sitemap.xml
 Sitemap: https://trydropapp.com/sitemap-entities.xml

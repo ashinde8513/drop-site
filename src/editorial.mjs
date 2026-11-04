@@ -76,7 +76,8 @@ export async function upcomingFestivals(now = new Date()) {
   try {
     const [future, ongoing] = await Promise.all([
       rest('events', { ...common, date: 'gte.' + startOfToday.toISOString() }),
-      rest('events', { ...common, date: 'lt.' + startOfToday.toISOString(), end_date: 'gte.' + now.toISOString() }),
+      // 10-minute steps so the query repeats and the REST cache can serve it.
+      rest('events', { ...common, date: 'lt.' + startOfToday.toISOString(), end_date: 'gte.' + new Date(Math.floor(now.getTime() / 6e5) * 6e5).toISOString() }),
     ]);
     const byId = new Map([...future, ...ongoing].map((event) => [event.id, event]));
     return [...byId.values()].filter(isIndexableEvent)
