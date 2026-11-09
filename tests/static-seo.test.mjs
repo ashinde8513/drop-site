@@ -64,3 +64,17 @@ test('every page opts out of Cloudflare email obfuscation (its /cdn-cgi link 404
     assert.match(html, /<!--\/email_off-->\n<\/body>/, page);
   }
 });
+
+test('internal links use clean URLs (a .html href costs every crawl a 308 hop)', async () => {
+  const { readdirSync } = await import('node:fs');
+  const files = [
+    ...readdirSync(new URL('../', import.meta.url)).filter((f) => /\.(html|js)$/.test(f)),
+    ...readdirSync(new URL('../guides/', import.meta.url)).filter((f) => f.endsWith('.html')).map((f) => 'guides/' + f),
+    ...readdirSync(new URL('../src/', import.meta.url)).filter((f) => f.endsWith('.mjs')).map((f) => 'src/' + f),
+  ];
+  for (const file of files) {
+    // event/venue/artist.html?id= are the client fallbacks for the /event/{id} routes.
+    const stale = read(file).match(/["'(=]\/(?!event\.|venue\.|artist\.)[a-z-]+\.html\b/g);
+    assert.equal(stale, null, file);
+  }
+});
