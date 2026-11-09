@@ -203,7 +203,7 @@
     box.appendChild(el('p', 'state-msg', msg || 'No shows here yet.'));
     if (actionLabel) {
       var a = el('a', 'btn-ghost', actionLabel);
-      a.href = actionHref || '/events.html';
+      a.href = actionHref || '/events';
       box.appendChild(a);
     }
     host.appendChild(box);
@@ -313,7 +313,7 @@
         e.preventDefault();
         var input = this.querySelector('input[type="search"], input[name="q"]');
         var val = input ? input.value.trim() : '';
-        var url = '/events.html?city=' + encodeURIComponent(Drop.city());
+        var url = '/events?city=' + encodeURIComponent(Drop.city());
         if (val) url += '&q=' + encodeURIComponent(val);
         location.href = url;
       });
@@ -478,7 +478,7 @@
         pop.appendChild(a);
       }
       (cities || []).slice(0, 3).forEach(function (c) {
-        row('/events.html?city=' + encodeURIComponent(c), c, 'City');
+        row('/events?city=' + encodeURIComponent(c), c, 'City');
       });
       (events || []).slice(0, 5).forEach(function (ev) {
         row(Drop.eventPath(ev), ev.title,
@@ -487,7 +487,7 @@
       (artists || []).slice(0, 4).forEach(function (a) {
         row(Drop.artistPath(a), a.name, 'Artist');
       });
-      row('/events.html?city=' + encodeURIComponent(Drop.city()) + '&q=' + encodeURIComponent(q),
+      row('/events?city=' + encodeURIComponent(Drop.city()) + '&q=' + encodeURIComponent(q),
         'Search “' + q + '”', 'All events');
       row('/search?q=' + encodeURIComponent(q), 'Shows, artists and venues for “' + q + '”', 'Everywhere');
       pop.hidden = false;

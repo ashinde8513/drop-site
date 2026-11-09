@@ -9,7 +9,7 @@
 > website with a **signed-out view** (open browse at trydropapp.com) and a **signed-in view**
 > (the Prism SPA at `app.trydropapp.com` / `/app`).
 
-Last updated: 2026-10-18
+Last updated: 2026-11-09
 Full history (if archived): vault → AI Agents/Codebase Docs/drop-landing/PROJECT_HISTORY.md
 
 ## SESSION LOCK
@@ -261,7 +261,10 @@ Live cross-session claims (who is working on what right now) are in the vault: `
   - **Done 2026-10-22/23:**
     - All 17 hub indexing requests were made; /, /events, /artists and /download were already indexed.
     - Hub links are live: "SEO hub links" (#212, design A49) adds 23 city chips plus /venues and /artists to the home page, and "<Genre> in other cities" to genre pages.
-  - **Follow-up:** about 290 internal links go to `/x.html` (308 each). Rewriting them needs the Playwright server to serve extensionless paths first.
+  - **2026-11-09 re-read (Search Console, read-only):** 23 indexed (21 on 10-28, 4 on 10-21). Not indexed 3.49K: 3,482 "Discovered – currently not indexed", 6 "Page with redirect", 2 "Crawled – not indexed". Last 28 days: 0 clicks, 82 impressions, average position 60; top page /city?city=Los Angeles (33). Sitemaps read 11-04 (28 URLs) and 11-09 (3,281 URLs), both Success.
+  - **Done 2026-11-09:** about 450 internal links went to `/x.html` (a 308 hop each). They now use clean URLs. `scripts/test-server.py` serves clean URLs for Playwright the way Cloudflare Pages does. `tests/static-seo.test.mjs` fails if a `.html` href comes back. The `event/venue/artist.html?id=` fallbacks are unchanged.
+  - **Next:** Google has found the entity pages but won't crawl them yet. The on-page levers are visible ones, so they go through the design project first: (a) server-render the /events and /artists grids (the client grid follows the visitor's saved city, so server cards would visibly swap for non-Denver visitors), (b) add a "More shows at this venue / in this city" link row on event pages. Off-page, the bigger lever is links from other sites (press kit, partner venues, promoters).
+  - **Re-check about 2026-11-23:** Search Console → Pages (indexed count, "Page with redirect" count) against the 11-09 numbers.
 - **1. Mobile above-the-fold layout decides simulated LCP (design D15):** on a 412×823 viewport only 137 px of the first card shows under the hero, so any later, larger image (festival grid) can take LCP. Lab floor (local, live SSR HTML): all scripts out −1.2 s, Google Fonts out −0.6 s, same-origin image −0.08 s; self-hosting fonts alone made the festival image LCP (Lantern 56 s artifact) and yielding init to paint caused CLS 0.40, so neither shipped. Next: take D15 (compact mobile hero so the first card is fully in view) through the "Website design prompt" project, then port and re-measure with `lighthouse --throttling-method=devtools` and simulated.
 - **2. Grow venue facts:** 37 approved `venue_intel` facts are live on web and app across 15 Denver venues: 11 published 2026-10-20 (stale after 2027-01-16), 26 published 2026-10-21 (stale after 2027-01-18; APPROVALS W29). Next: re-verify those sources before their stale dates, then draft facts for the next rooms by show count (Las Vegas, San Francisco, Chicago) from official pages, staged as pending rows for admin approval.
 - **3. Remaining CLS:** font-swap CLS is fixed (metric-matched fallbacks; live /privacy 0.197 → 0.001, 2026-10-20). City pages still show an intermittent `.rail-wrap` shift (0.199 in 1 of 3 live runs, 0 in the others). Next: reproduce it with a Lighthouse `layout-shifts` audit and reserve the rail's height, or spec it if it's visual.

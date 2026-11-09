@@ -66,9 +66,9 @@ const PAGES = [
 // Hit them with no params and expect the client-side "not found" empty
 // state to render — no id means no Supabase fetch is even attempted.
 const DETAIL_PAGES = [
-  { path: '/event.html', backHref: '/events.html' },
-  { path: '/venue.html', backHref: '/venues.html' },
-  { path: '/artist.html', backHref: '/artists.html' },
+  { path: '/event.html', backHref: '/events' },
+  { path: '/venue.html', backHref: '/venues' },
+  { path: '/artist.html', backHref: '/artists' },
 ];
 
 const SOCIAL_LINKS = [
@@ -218,7 +218,7 @@ test.describe('website smoke', () => {
     ))).toBe(true);
 
     await page.getByRole('link', { name: /Browse festivals/ }).click();
-    await expect(page).toHaveURL(/events\.html\?/);
+    await expect(page).toHaveURL(/\/events\?/);
     expect(new URL(page.url()).searchParams.get('genre')).toBe('Festivals');
     expect(new URL(page.url()).searchParams.get('city')).not.toBe('Denver');
     await expect(page.locator('#grid')).toContainText('Ongoing Test Festival');
@@ -358,7 +358,7 @@ test.describe('website smoke', () => {
 
   test('legal links from homepage resolve', async ({ page }) => {
     await page.goto('/index.html');
-    for (const href of ['/privacy.html', '/terms.html']) {
+    for (const href of ['/privacy', '/terms']) {
       const link = page.locator(`a[href="${href}"]`).first();
       await expect(link, `${href} link present`).toHaveCount(1);
       const res = await page.request.get(href);
@@ -400,8 +400,8 @@ test.describe('website smoke', () => {
     await expect(page.getByText('Drop uses a one-time text to prove this number belongs to you. One phone can belong to only one Drop account.')).toBeVisible();
     await expect(page.getByText('Text me a code', { exact: true })).toBeVisible();
     await expect(page.getByText('No recurring or promotional texts', { exact: true })).toBeVisible();
-    await expect(page.locator('a[href="/terms.html"]')).toHaveCount(1);
-    await expect(page.locator('a[href="/privacy.html"]')).toHaveCount(1);
+    await expect(page.locator('a[href="/terms"]')).toHaveCount(1);
+    await expect(page.locator('a[href="/privacy"]')).toHaveCount(1);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   });
 
@@ -731,8 +731,8 @@ test.describe('website smoke', () => {
 
   test('About lives in the footer, not the nav', async ({ page }) => {
     await page.goto('/index.html');
-    await expect(page.locator('nav.wn a[href="/about.html"]')).toHaveCount(0);
-    await expect(page.locator('footer a[href="/about.html"]')).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href="/about"]')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/about"]')).toHaveCount(1);
   });
 
   test('website nav points login to the app shell on app.trydropapp.com', async ({ page }) => {
@@ -742,18 +742,18 @@ test.describe('website smoke', () => {
     for (const path of ['/index.html', '/events.html', '/about.html', '/download.html']) {
       await page.goto(path);
       await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=login"]').first()).toHaveCount(1);
-      await expect(page.locator('nav.wn a[href="/download.html"]')).toHaveCount(0);
-      await expect(page.locator('footer a[href="/download.html"]').first()).toHaveCount(1);
+      await expect(page.locator('nav.wn a[href="/download"]')).toHaveCount(0);
+      await expect(page.locator('footer a[href="/download"]').first()).toHaveCount(1);
     }
   });
 
   test('nav parity: .wn browse links + Log in/Get started corner, no For Promoters', async ({ page }) => {
     await page.goto('/index.html');
-    for (const href of ['/events.html', '/venues.html', '/artists.html']) {
+    for (const href of ['/events', '/venues', '/artists']) {
       await expect(page.locator(`nav.wn .wn__navlink[href="${href}"]`)).toHaveCount(1);
     }
-    await expect(page.locator('nav.wn a[href="/promoters.html"]')).toHaveCount(0);
-    await expect(page.locator('footer a[href="/promoters.html"]')).toHaveCount(1);
+    await expect(page.locator('nav.wn a[href="/promoters"]')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/promoters"]')).toHaveCount(1);
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=login"]').first()).toHaveCount(1);
     await expect(page.locator('nav.wn a[href="https://app.trydropapp.com/?mode=signup"]').first()).toHaveCount(1);
   });
@@ -941,7 +941,7 @@ test.describe('website smoke', () => {
     await expect(page.locator('#visitWebsite')).toHaveAttribute('href', 'https://trydropapp.com/');
     await expect(page.locator('#getApp')).toHaveAttribute('href', 'https://apps.apple.com/us/app/drop-edm-events/id6790662825?pt=129160185&ct=link-hub&mt=8');
     await expect(page.locator('#getGooglePlay')).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=app.resonanceventures.drop&referrer=utm_source%3Dtrydropapp.com%26utm_medium%3Dlink_hub%26utm_campaign%3Dweb_download');
-    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about.html');
+    await expect(page.locator('#aboutDrop')).toHaveAttribute('href', '/about');
     await expect(page.locator('.lh-links > *')).toHaveCount(7);
     await expect(page.locator('.lh-links > *').nth(0)).toHaveAttribute('id', 'visitWebsite');
     await expect(page.locator('.lh-links > *').nth(1)).toHaveAttribute('id', 'getApp');
@@ -1290,7 +1290,7 @@ test.describe('website smoke', () => {
     await expect(drawer).toBeHidden();
     await page.locator('nav.wn [data-nav-menu]').click();
     await expect(drawer).toBeVisible();
-    await expect(drawer.locator('a[href="/events.html"]')).toBeVisible();
+    await expect(drawer.locator('a[href="/events"]')).toBeVisible();
     // Close via the panel's ✕ button — the scrim also carries [data-nav-close]
     // but sits fully behind the panel at this viewport width, so target the button.
     await page.locator('.mnav__panel button[data-nav-close]').click();

@@ -3,7 +3,7 @@
    loaded by every public page AND app/index.html. The choice lives in
    localStorage under drop.cookie-consent: 'accepted' (all) | 'essential'.
    If storage is unavailable (private mode) nothing persists and the banner
-   simply shows again next load. Policy text: /privacy.html#cookies. */
+   simply shows again next load. Policy text: /privacy#cookies. */
 (function () {
   var KEY = 'drop.cookie-consent';
   var doc = document;
@@ -58,7 +58,7 @@
       'We use local storage for essentials — your city, your session, this choice. ' +
       'With your OK, we may also use analytics to understand what’s working. '));
     var a = doc.createElement('a');
-    a.href = 'https://trydropapp.com/privacy.html#cookies';
+    a.href = 'https://trydropapp.com/privacy#cookies';
     a.textContent = 'Cookie policy';
     p.appendChild(a);
     banner.appendChild(p);
