@@ -238,3 +238,43 @@
 {"when":"2026-11-09T23:18:33.987Z","url":"/privacy","mode":"applied","perf":89,"lcp_ms":1664,"cls":0.209,"fcp_ms":1664,"tbt_ms":0,"inp_ms":null}
 {"when":"2026-11-09T23:18:33.987Z","url":"https://app.trydropapp.com/","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://app.trydropapp.com/ --only-categories=performance --form-factor=mobile --chrome-flags=--headless=new --outpu"}
 {"when":"2026-11-09T23:18:33.987Z","url":"https://app.trydropapp.com/","mode":"applied","perf":null,"lcp_ms":25246,"cls":0.243,"fcp_ms":2959,"tbt_ms":null,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/","mode":"simulated","perf":66,"lcp_ms":4064,"cls":0.242,"fcp_ms":2591,"tbt_ms":40,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/","mode":"applied","perf":64,"lcp_ms":5628,"cls":0.278,"fcp_ms":1698,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events","mode":"simulated","perf":90,"lcp_ms":2671,"cls":0.103,"fcp_ms":2671,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events","mode":"applied","perf":96,"lcp_ms":2605,"cls":0.039,"fcp_ms":1640,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/venues","mode":"simulated","perf":93,"lcp_ms":2969,"cls":0,"fcp_ms":1760,"tbt_ms":33,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/venues","mode":"applied","perf":91,"lcp_ms":2533,"cls":0.036,"fcp_ms":1533,"tbt_ms":286,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/artists","mode":"simulated","perf":77,"lcp_ms":2497,"cls":0.35,"fcp_ms":2497,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/artists","mode":"applied","perf":99,"lcp_ms":1583,"cls":0.003,"fcp_ms":1583,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/download","mode":"simulated","perf":93,"lcp_ms":2658,"cls":0,"fcp_ms":2508,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/download","mode":"applied","perf":97,"lcp_ms":2500,"cls":0.034,"fcp_ms":1664,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/link","mode":"simulated","perf":94,"lcp_ms":2514,"cls":0.041,"fcp_ms":2514,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/link","mode":"applied","perf":99,"lcp_ms":1448,"cls":0.039,"fcp_ms":1448,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/about","mode":"simulated","perf":93,"lcp_ms":2652,"cls":0.001,"fcp_ms":2502,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/about","mode":"applied","perf":99,"lcp_ms":1585,"cls":0.034,"fcp_ms":1585,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://trydropapp.com/guides --only-categories=performance --form-factor=mobile --chrome-flags=--headless=new --out"}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides","mode":"applied","perf":99,"lcp_ms":1618,"cls":0.048,"fcp_ms":1618,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Denver","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://trydropapp.com/city?city=Denver --only-categories=performance --form-factor=mobile --chrome-flags=--headless"}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Denver","mode":"applied","perf":63,"lcp_ms":5361,"cls":0.329,"fcp_ms":1619,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Las%20Vegas","mode":"simulated","perf":87,"lcp_ms":3413,"cls":0.028,"fcp_ms":2663,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Las%20Vegas","mode":"applied","perf":83,"lcp_ms":4521,"cls":0.05,"fcp_ms":1596,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=San%20Francisco","mode":"simulated","perf":83,"lcp_ms":3930,"cls":0.001,"fcp_ms":2819,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=San%20Francisco","mode":"applied","perf":80,"lcp_ms":5085,"cls":0.05,"fcp_ms":1576,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Los%20Angeles","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://trydropapp.com/city?city=Los%20Angeles --only-categories=performance --form-factor=mobile --chrome-flags=--h"}
+{"when":"2026-11-16T23:15:19.531Z","url":"/city?city=Los%20Angeles","mode":"applied","perf":80,"lcp_ms":5211,"cls":0.049,"fcp_ms":1592,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/genre?genre=House","mode":"simulated","perf":77,"lcp_ms":3301,"cls":0.241,"fcp_ms":2502,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/genre?genre=House","mode":"applied","perf":66,"lcp_ms":5923,"cls":0.241,"fcp_ms":1604,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events?when=weekend&city=Denver","mode":"simulated","perf":89,"lcp_ms":3029,"cls":0.005,"fcp_ms":2804,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events?when=weekend&city=Denver","mode":"applied","perf":99,"lcp_ms":1638,"cls":0.04,"fcp_ms":1638,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events?festival=1","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://trydropapp.com/events?festival=1 --only-categories=performance --form-factor=mobile --chrome-flags=--headles"}
+{"when":"2026-11-16T23:15:19.531Z","url":"/events?festival=1","mode":"applied","perf":96,"lcp_ms":2535,"cls":0.067,"fcp_ms":1604,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/search?q=red%20rocks","mode":"simulated","perf":95,"lcp_ms":2804,"cls":0.022,"fcp_ms":1588,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/search?q=red%20rocks","mode":"applied","perf":96,"lcp_ms":2422,"cls":0.069,"fcp_ms":1590,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides/red-rocks-edm-guide","mode":"simulated","perf":93,"lcp_ms":2668,"cls":0.017,"fcp_ms":2518,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides/red-rocks-edm-guide","mode":"applied","perf":98,"lcp_ms":1615,"cls":0.065,"fcp_ms":1615,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides/first-rave-guide","mode":"simulated","perf":99,"lcp_ms":1658,"cls":0.021,"fcp_ms":1583,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/guides/first-rave-guide","mode":"applied","perf":99,"lcp_ms":1605,"cls":0.001,"fcp_ms":1605,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"/privacy","mode":"simulated","error":"Command failed: npx --yes lighthouse@13.5.0 https://trydropapp.com/privacy --only-categories=performance --form-factor=mobile --chrome-flags=--headless=new --ou"}
+{"when":"2026-11-16T23:15:19.531Z","url":"/privacy","mode":"applied","perf":89,"lcp_ms":1575,"cls":0.209,"fcp_ms":1575,"tbt_ms":0,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"https://app.trydropapp.com/","mode":"simulated","perf":40,"lcp_ms":17199,"cls":0.243,"fcp_ms":3122,"tbt_ms":669,"inp_ms":null}
+{"when":"2026-11-16T23:15:19.531Z","url":"https://app.trydropapp.com/","mode":"applied","error":"Command failed: npx --yes lighthouse@13.5.0 https://app.trydropapp.com/ --only-categories=performance --form-factor=mobile --chrome-flags=--headless=new --outpu"}
