@@ -84,3 +84,9 @@ test('sign-in gate is a labelled modal dialog that takes focus and closes on Esc
   // Focus returns to the control that opened the gate.
   await expect(page.getByRole('button', { name:/Suggest an event/ }).first()).toBeFocused();
 });
+
+test('inline legal-page links are underlined, not color-only', async ({ page }) => {
+  await page.goto('/privacy.html');
+  const link = page.locator('.doc p a').first();
+  await expect(link).toHaveCSS('text-decoration-line', 'underline');
+});
