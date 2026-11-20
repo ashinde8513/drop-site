@@ -883,6 +883,7 @@ ul.chip-row { list-style: none; padding: 0; }
 .doc .guide-list { list-style: none; padding-left: 0; }
 .doc .guide-list li { margin-bottom: 20px; }
 .doc a { color: var(--brand-cyan); }
+.doc p a:not(.btn), .doc li a:not(.btn) { text-decoration: underline; text-underline-offset: 3px; }
 .doc a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ========================================================================

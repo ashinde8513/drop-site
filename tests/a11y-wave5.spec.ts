@@ -93,3 +93,8 @@ test('nav search input shows a focus ring (no inline outline:none)', async ({ pa
   await expect(q).toHaveCSS('outline-style', 'solid');
   await expect(q).toHaveCSS('outline-width', '2px');
 });
+
+test('inline legal-page links are underlined, not color-only', async ({ page }) => {
+  await page.goto('/privacy.html');
+  await expect(page.locator('.doc p a').first()).toHaveCSS('text-decoration-line', 'underline');
+});
