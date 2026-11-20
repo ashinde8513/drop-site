@@ -84,3 +84,12 @@ test('sign-in gate is a labelled modal dialog that takes focus and closes on Esc
   // Focus returns to the control that opened the gate.
   await expect(page.getByRole('button', { name:/Suggest an event/ }).first()).toBeFocused();
 });
+
+test('nav search input shows a focus ring (no inline outline:none)', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop nav search');
+  await page.goto('/events.html');
+  const q = page.locator('#nav-q');
+  await q.focus();
+  await expect(q).toHaveCSS('outline-style', 'solid');
+  await expect(q).toHaveCSS('outline-width', '2px');
+});

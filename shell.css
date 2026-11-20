@@ -76,6 +76,7 @@
    ======================================================================== */
 .locchip { display: inline-flex; align-items: center; gap: 7px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 7px var(--sp-md); font-size: var(--fs-sm); color: var(--text-secondary); }
 .locchip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+#nav-q:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .locchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: 7px var(--sp-md); font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--text-secondary); white-space: nowrap; cursor: pointer; transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
