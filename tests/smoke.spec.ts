@@ -30,7 +30,10 @@ function trackPageErrors(page: Page): string[] {
   page.on('requestfailed', (req) => {
     // Ignore third-party (fonts, ConvertKit) flakiness; only flag same-origin assets.
     const url = req.url();
-    if (url.includes('localhost') || url.includes('127.0.0.1')) errors.push(`requestfailed: ${url}`);
+    // A reload or navigation cancels in-flight loads (ERR_ABORTED / NS_BINDING_ABORTED / WebKit
+    // "cancelled"); that is the test's own doing, not a broken asset.
+    const aborted = /abort|cancel/i.test(req.failure()?.errorText ?? '');
+    if (!aborted && (url.includes('localhost') || url.includes('127.0.0.1'))) errors.push(`requestfailed: ${url} ${req.failure()?.errorText}`);
   });
   return errors;
 }
@@ -1300,6 +1303,17 @@ test.describe('website smoke', () => {
 });
 
 test.describe('cookie consent', () => {
+  // Same isolation as the smoke suite: no live catalog, fonts or third-party art, so a slow
+  // or failing remote host can't add console errors to the banner tests (mobile-safari flake).
+  test.beforeEach(async ({ page }) => {
+    await page.route('https://fonts.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+    await page.route('https://fonts.gstatic.com/**', (route) => route.fulfill({ status: 204, body: '' }));
+    await page.route('**/rest/v1/**', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', headers: { 'content-range': '*/0' }, body: '[]',
+    }));
+  });
+
   test('banner shows on first visit and Accept all persists', async ({ page }) => {
     const errors = trackPageErrors(page);
     await page.goto('/index.html');
