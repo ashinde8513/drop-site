@@ -49,6 +49,7 @@ const FAKE = String.raw`
         listFactors:async function () { var all = ((cfg.mfa || {}).factors || []); return res({ all:all, totp:all.filter(function (f) { return f.status === 'verified'; }) }); },
         unenroll:async function (i) { calls.push({ kind:'mfa.unenroll', input:i }); return res({ id:i.factorId }); },
         enroll:async function (i) { calls.push({ kind:'mfa.enroll', input:i }); return res({ id:'factor-1', type:'totp', totp:{ qr_code:'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>', secret:'JBSWY3DPEHPK3PXP', uri:'otpauth://totp/Drop' } }); },
+        getAuthenticatorAssuranceLevel:async function () { return res((cfg.mfa || {}).aal || { currentLevel:'aal1', nextLevel:'aal1' }); },
         challengeAndVerify:async function (i) { calls.push({ kind:'mfa.verify', input:i }); var e = (cfg.mfa || {}).verifyError; return e ? res(null, { message:e }) : res({ access_token:'aal2' }); }
       }
     },

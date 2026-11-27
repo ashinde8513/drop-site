@@ -50,3 +50,35 @@ test('admin with a verified factor sees it on', async ({ page, isMobile }) => {
   await expect(page.getByText('On. Signing in to this admin account')).toBeVisible();
   await expect(page.getByRole('button', { name:'Set up two-step sign-in' })).toHaveCount(0);
 });
+
+test('an account with two-step sign-in on is asked for its code after sign-in', async ({ page }) => {
+  await bootSignedIn(page, { rpc:admin(true), mfa:{ factors:[{ id:'f', factor_type:'totp', status:'verified' }], aal:{ currentLevel:'aal1', nextLevel:'aal2' } } }, [EVENT]);
+  await page.goto('/app/index.html');
+  const dialog = page.getByRole('dialog', { name:'Enter your sign-in code' });
+  await expect(dialog).toBeVisible({ timeout:15000 });
+  const go = dialog.getByRole('button', { name:'Continue' });
+  await expect(go).toBeDisabled();
+  await dialog.getByLabel('Sign-in code').fill('123456');
+  await go.click();
+  await expect(dialog).toHaveCount(0);
+  expect(await fakeCalls(page, 'mfa.verify')).toEqual([{ kind:'mfa.verify', input:{ factorId:'f', code:'123456' } }]);
+});
+
+test('a wrong sign-in code keeps the prompt open; sign out leaves', async ({ page }) => {
+  await bootSignedIn(page, { rpc:admin(true), mfa:{ factors:[{ id:'f', factor_type:'totp', status:'verified' }], aal:{ currentLevel:'aal1', nextLevel:'aal2' }, verifyError:'Invalid TOTP code entered' } }, [EVENT]);
+  await page.goto('/app/index.html');
+  const dialog = page.getByRole('dialog', { name:'Enter your sign-in code' });
+  await expect(dialog).toBeVisible({ timeout:15000 });
+  await dialog.getByLabel('Sign-in code').fill('000000');
+  await dialog.getByRole('button', { name:'Continue' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('didn’t match');
+  await dialog.getByRole('button', { name:'Sign out' }).click();
+  await expect(dialog).toHaveCount(0);
+  expect((await fakeCalls(page, 'signOut')).length).toBe(1);
+});
+
+test('a session that already passed the code, or has no factor, is not asked', async ({ page, isMobile }) => {
+  await bootSignedIn(page, { rpc:admin(true), mfa:{ factors:[{ id:'f', factor_type:'totp', status:'verified' }], aal:{ currentLevel:'aal2', nextLevel:'aal2' } } }, [EVENT]);
+  await settings(page, isMobile);
+  await expect(page.getByRole('dialog', { name:'Enter your sign-in code' })).toHaveCount(0);
+});
