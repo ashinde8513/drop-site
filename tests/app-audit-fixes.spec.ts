@@ -160,3 +160,62 @@ test('festival set times: explicit columns and published filter in the query', a
   expect(q.get('status')).toBe('eq.published');
   expect(q.get('event_id')).toBe('eq.' + festivalId);
 });
+
+test.describe('browse artists follows are saved', () => {
+  const A1 = { id:'aaaaaaaa-0000-4000-8000-0000000000a1', name:'Alpha DJ', genres:['House'], image_url:null };
+  const A2 = { id:'aaaaaaaa-0000-4000-8000-0000000000a2', name:'Beta DJ', genres:['House'], image_url:null };
+  const ev = { ...EVENT, event_artists:[{ artists:A1 }, { artists:A2 }] };
+  const inserts = async (page: Page) => (await fakeCalls(page, 'from')).filter((c: any) => c.table === 'artist_follows' && c.ops[0][0] === 'insert').map((c: any) => c.ops[0][1][0]);
+
+  test('Follow on the browse grid writes artist_follows', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'uses the desktop nav Artists link');
+    await bootSignedIn(page, {}, [ev]);
+    await page.goto('/app/index.html');
+    await page.locator('a.wn__navlink', { hasText:'Artists' }).click();
+    await page.getByRole('button', { name:'＋ Follow', exact:true }).first().click();
+    await expect.poll(() => inserts(page)).toEqual([[{ user_id:'11111111-1111-4111-8111-111111111111', artist_id:A1.id }]]);
+  });
+
+  test('a failed browse follow flashes and reverts', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'uses the desktop nav Artists link');
+    await bootSignedIn(page, { errors:{ 'artist_follows.insert':'denied' } }, [ev]);
+    await page.goto('/app/index.html');
+    await page.locator('a.wn__navlink', { hasText:'Artists' }).click();
+    await page.getByRole('button', { name:'＋ Follow', exact:true }).first().click();
+    await expect(page.getByText('Could not update your follow — try again')).toBeVisible();
+    await expect(page.getByRole('button', { name:'✓ Following' })).toHaveCount(0);
+  });
+});
+
+test.describe('artist page', () => {
+  const MINE = { id:'aaaaaaaa-0000-4000-8000-0000000000b1', name:'Owner DJ', genres:[], image_url:null, merch_url:null, website_url:null, claimed_by:'11111111-1111-4111-8111-111111111111', verified:true };
+  const ev = { ...EVENT, event_artists:[{ artists:{ id:MINE.id, name:MINE.name, genres:[], image_url:null } }] };
+  const openOwnerLinks = async (page: Page) => {
+    await page.goto('/app/index.html');
+    await page.getByText('Audit Night').first().click();
+    await page.getByText('Owner DJ').first().click();
+    await page.getByRole('button', { name:'Edit links' }).click();
+    await page.getByPlaceholder('https://shop.…').fill('https://shop.example.com');
+    await page.getByRole('button', { name:'Save links' }).click();
+  };
+
+  test('Links updated only after a row was actually changed', async ({ page }) => {
+    await bootSignedIn(page, { rows:{ artists:[MINE] } }, [ev]);
+    await openOwnerLinks(page);
+    await expect(page.getByText('Links updated')).toBeVisible();
+  });
+
+  test('a filtered (zero-row) update never claims success', async ({ page }) => {
+    // The fake returns the owner row for the page load, then none for the update.
+    await bootSignedIn(page, { rows:{ artists:[MINE] } }, [ev]);
+    await page.goto('/app/index.html');
+    await page.getByText('Audit Night').first().click();
+    await page.getByText('Owner DJ').first().click();
+    await page.getByRole('button', { name:'Edit links' }).click();
+    await page.evaluate(() => (window as any).__fake.setRows('artists', []));
+    await page.getByPlaceholder('https://shop.…').fill('https://shop.example.com');
+    await page.getByRole('button', { name:'Save links' }).click();
+    await expect(page.getByText('Could not save — you may not have access to edit this artist')).toBeVisible();
+    await expect(page.getByText('Links updated')).toHaveCount(0);
+  });
+});

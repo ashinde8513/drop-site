@@ -582,7 +582,7 @@
   ]);
   // Settings toggle key -> notification_prefs column (labels stay in settingsToggles).
   var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
-  var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
+  var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: true, plans: true };
   // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
   var USER_DATA_RESET = { recapPrivacy:null, ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, myPlans:null, myPlansError:false, findQuery:'', findResults:null, findError:false, addBusy:{}, addErr:{}, reqBusy:{}, socMenu:null, dlg:null, person:null, personId:null, plan:null, planId:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -1123,6 +1123,30 @@ class Component extends DCLogic {
   }
   prevent(e){ if(e&&e.preventDefault) e.preventDefault(); }
 
+  // Follow/unfollow a batch of catalog artists: optimistic UI, one artist_follows write, revert on error.
+  setArtistFollows(items, on){
+    const uid = this.state.userId, before = items.map(a=>[a.name, !!this.state.following[a.name]]);
+    this.setState(x=>{ const f={...x.following}; items.forEach(a=>{ f[a.name]=on; }); return { following:f }; });
+    if (!supa || !uid) return;
+    const changed = items.filter(a=>a.id && before.find(b=>b[0]===a.name)[1] !== on).map(a=>a.id);
+    if (!changed.length) return;
+    const p = on
+      ? supa.from('artist_follows').insert(changed.map(artist_id=>({ user_id:uid, artist_id })))
+      : supa.from('artist_follows').delete().eq('user_id', uid).in('artist_id', changed);
+    p.then(r=>{ if (r && r.error) {
+      console.error('[app] artist_follows write failed:', r.error.message);
+      if (this.state.userId !== uid) return;
+      this.setState(x=>{ const f={...x.following}; before.forEach(([n,v])=>{ f[n]=v; }); return { following:f }; });
+      this.flash('Could not update your follow — try again');
+    } });
+  }
+  // Onboarding "Follow" picks are local until Finish; then they become real follows.
+  saveWizardArtists(){
+    const pool = new Map();
+    (this.CATALOG || this.state.realEvents || []).forEach(r=>(r.event_artists||[]).forEach(x=>{ const a=x&&x.artists; if (a && a.name && a.id) pool.set(a.name, { id:a.id, name:a.name }); }));
+    const picks = Object.keys(this.state.wizArtistSel).filter(n=>this.state.wizArtistSel[n] && pool.has(n)).map(n=>pool.get(n));
+    if (picks.length) this.setArtistFollows(picks, true);
+  }
   flash(msg){ this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(()=>this.setState({toast:null}), 2200); }
 
   openGate(title){
@@ -2530,6 +2554,8 @@ class Component extends DCLogic {
     const q = supa.from('artists').select('id,name,genres,image_url,merch_url,website_url,claimed_by,verified');
     (id ? q.eq('id', id) : q.eq('name', name)).maybeSingle().then(({ data, error })=>{
       if (error) { console.error('[app] artist detail load failed:', error.message); return; }
+      // A slower reply for the previous artist must not overwrite the one now on screen.
+      if (this.state.screen !== 'artist' || this.state.activeArtist !== name) return;
       this.setState({ activeArtistRow: data || null, activeArtistId: (data && data.id) || id || null });
       if (data && this.state.userId) this.loadClaimStatus(data.id);
     });
@@ -2537,7 +2563,7 @@ class Component extends DCLogic {
   loadClaimStatus(artistId){
     if (!supa || !this.state.userId) return;
     supa.from('artist_claims').select('status').eq('artist_id', artistId).eq('user_id', this.state.userId).maybeSingle()
-      .then(({ data, error })=>{ if (error) { console.error('[app] claim status load failed:', error.message); return; } this.setState({ claimStatus: data ? data.status : null }); });
+      .then(({ data, error })=>{ if (error) { console.error('[app] claim status load failed:', error.message); return; } if (this.state.activeArtistId !== artistId) return; this.setState({ claimStatus: data ? data.status : null }); });
   }
   // Opens the claim wizard for whatever artist row is currently loaded
   // (activeArtistRow/activeArtistId) — used both by the on-page "Claim this
@@ -2674,7 +2700,7 @@ class Component extends DCLogic {
         const e = seen.get(a.name);
         if (e) { e.shows++; return; }
         const genre = (a.genres && a.genres.length && Drop) ? Drop.genreOf({ event_artists:[{ artists:{ genres:a.genres } }] }) : '';
-        seen.set(a.name, { name:a.name, genre, img: (Drop && Drop.isRealArtUrl(a.image_url) && Drop.safeUrl(a.image_url)) || '', upcoming:true, shows:1 });
+        seen.set(a.name, { id:a.id, name:a.name, genre, img: (Drop && Drop.isRealArtUrl(a.image_url) && Drop.safeUrl(a.image_url)) || '', upcoming:true, shows:1 });
       }));
       return [...seen.values()].sort((a,b)=> b.shows-a.shows || a.name.localeCompare(b.name));
     })();
@@ -3242,17 +3268,17 @@ class Component extends DCLogic {
     const artGenreChips = artGenreNames.map(g=>({ label:g, cls: s.artGenre===g?'is-active':'', pick:()=>this.setState({artGenre:g, artShown:48}) }));
     const artFiltered = s.artGenre==='All' ? realArtists : realArtists.filter(a=>a.genre===s.artGenre);
     const artistGrid = artFiltered.slice(0, s.artShown).map(a=>{
-      const on = !!s.followArt[a.name];
+      const on = !!s.following[a.name];
       const aUrl = a.img && cssUrl(a.img);
       return { name:a.name, genre:a.genre, upcoming:a.upcoming,
         artStyle: aUrl ? 'background-image:'+aUrl+';background-size:cover;background-position:center;' : 'background:var(--grad-brand);',
-        open:()=>this.openArtist(a.name, null),
+        open:()=>this.openArtist(a.name, a.id || null),
         label: on?'✓ Following':'＋ Follow', cls: on?'wsc__act is-going':'wsc__act',
-        toggle:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>({ followArt:{...x.followArt, [a.name]: !x.followArt[a.name]} })); } };
+        toggle:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setArtistFollows([a], !this.state.following[a.name]); } };
     });
     const artistGridEmpty = artistGrid.length===0;
     const artBulkShow = s.artGenre!=='All';
-    const artAllFollowed = artFiltered.length>0 && artFiltered.every(a=>s.followArt[a.name]);
+    const artAllFollowed = artFiltered.length>0 && artFiltered.every(a=>s.following[a.name]);
     const artBulkLabel = (artAllFollowed?'Unfollow all ':'Follow all ')+s.artGenre;
     const artMoreShow = artFiltered.length > s.artShown;
     const artMoreLabel = 'Show more ('+(artFiltered.length - s.artShown)+' left)';
@@ -4185,7 +4211,7 @@ class Component extends DCLogic {
         });
       },
       setVenueQuery:(e)=>this.setState({venueQuery:e.target.value}),
-      artBulkFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setState(x=>{ const f={...x.followArt}; artFiltered.forEach(a=>{ f[a.name]=!artAllFollowed; }); return {followArt:f}; }); this.flash(artAllFollowed?('Unfollowed all '+s.artGenre):('Following all '+s.artGenre)); },
+      artBulkFollow:()=>{ if(!this.state.authed){ this.openGate('Log in to follow artists'); return; } this.setArtistFollows(artFiltered, !artAllFollowed); this.flash(artAllFollowed?('Unfollowed all '+s.artGenre):('Following all '+s.artGenre)); },
       // ponytail: no image-perfect html-to-image lib — native share sheet
       // (text+URL) for "post to story", canvas render (below) for the actual
       // image download. Covers both asks without a screenshot dependency.
@@ -4275,9 +4301,11 @@ class Component extends DCLogic {
       saveEditLinks:()=>{
         if (!supa || !this.state.activeArtistId) { this.setState({editLinksOpen:false}); return; }
         const id = this.state.activeArtistId, merch = this.state.editMerch.trim(), website = this.state.editWebsite.trim();
-        supa.from('artists').update({ merch_url: merch||null, website_url: website||null }).eq('id', id).then(({error})=>{
+        supa.from('artists').update({ merch_url: merch||null, website_url: website||null }).eq('id', id).select('id').then(({data, error})=>{
           if (error) { this.flash('Could not save — '+error.message); return; }
-          this.setState(x=>({ editLinksOpen:false, activeArtistRow: x.activeArtistRow ? {...x.activeArtistRow, merch_url:merch, website_url:website} : x.activeArtistRow }));
+          // An update that changed no row is not a save: only confirm a changed row.
+          if (!data || !data.length) { this.flash('Could not save — you may not have access to edit this artist'); return; }
+          this.setState(x=>({ editLinksOpen:false, activeArtistRow: x.activeArtistRow && x.activeArtistRow.id===id ? {...x.activeArtistRow, merch_url:merch||null, website_url:website||null} : x.activeArtistRow }));
           this.flash('Links updated');
         });
       },
@@ -4487,7 +4515,7 @@ class Component extends DCLogic {
       retryFestival:()=>this.openFestival(this._festivalRequestedId),
 
       // wizard
-      wizNext:()=>{ if(this.state.wizPhoneBusy || (this.state.wizStep===0 && this.state.wizPhoneRequired && !this.state.wizPhoneVerified)) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
+      wizNext:()=>{ if(this.state.wizPhoneBusy || (this.state.wizStep===0 && this.state.wizPhoneRequired && !this.state.wizPhoneVerified)) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.saveWizardArtists(); this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
       wizBack:()=>{ if(this.state.wizPhoneBusy) return; this.setState(x=>({wizStep: Math.max(0, x.wizStep-1)})); },
       wizSkip:()=>{ if(this.state.wizPhoneBusy || (this.state.wizStep===0 && this.state.wizPhoneRequired)) return; if(this.state.wizStep===0){ this.clearPhoneVerificationState({wizStep:1}); return; } if(this.state.wizStep>=5){ this.setState({screen:'rsvpmoment'}); if(typeof window!=='undefined') window.scrollTo(0,0); } else { this.setState(x=>({wizStep:x.wizStep+1})); } },
       setWizPhone:(e)=>this.setState({wizPhone:e.target.value, wizPhoneStatus:''}),
