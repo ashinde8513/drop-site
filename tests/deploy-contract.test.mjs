@@ -93,4 +93,8 @@ test('profile edit form is prefilled from stored fields only, never from display
   const app = readRepo('app/app.js');
   assert.match(app, /editName: \(profileSrc && profileSrc\.display_name\) \|\| '',/);
   assert.match(app, /editBio: \(profileSrc && profileSrc\.bio\) \|\| '',/);
+  // A failed profile load leaves the form blank: Save must refuse, not wipe the profile.
+  assert.match(app, /if \(!profileSrc \|\| profileSrc\.id !== uid\) \{\n\s+this\.loadProfile\(uid\);/);
+  assert.match(app, /if \(cityState !== prof\.cityState\) \{ patch\.city = city; patch\.state = state_; \}/);
+  assert.doesNotMatch(app, /\.update\(\{ display_name: name \|\| null, username: uname \|\| null, bio, city, state: state_ \}\)/);
 });

@@ -4510,6 +4510,13 @@ class Component extends DCLogic {
       saveProfile:()=>{
         if (supa && this.state.userId) {
           const uid = this.state.userId;
+          // The form is filled from the loaded profile. If that load failed, every field is
+          // blank, and saving would wipe the name, username, bio and city.
+          if (!profileSrc || profileSrc.id !== uid) {
+            this.loadProfile(uid);
+            this.flash('Your profile is still loading. Try again in a moment.');
+            return;
+          }
           const name = fieldVal('edit-name').trim();
           const uname = cleanUsername(fieldVal('edit-username'));
           const bioEl = document.getElementById('edit-bio');
@@ -4517,7 +4524,11 @@ class Component extends DCLogic {
           const cityState = fieldVal('edit-city').trim();
           const parts = cityState.split(',');
           const city = (parts[0]||'').trim(), state_ = (parts[1]||'').trim();
-          supa.from('profiles').update({ display_name: name || null, username: uname || null, bio, city, state: state_ }).eq('id', uid).then(({error})=>{
+          const patch = { display_name: name || null, username: uname || null, bio };
+          // City and state share one field that shows nothing when only the state is stored;
+          // write them only when the user changed that field.
+          if (cityState !== prof.cityState) { patch.city = city; patch.state = state_; }
+          supa.from('profiles').update(patch).eq('id', uid).then(({error})=>{
             if (error) { this.flash('Could not save — ' + error.message); return; }
             this.loadProfile(uid);
             this.go('profile'); this.flash('Profile saved');
