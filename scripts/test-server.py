@@ -8,6 +8,12 @@ import os
 import sys
 
 
+class Server(http.server.ThreadingHTTPServer):
+    # The default listen backlog is 5: a page's parallel asset burst overflows it and the
+    # browser sees ERR_CONNECTION_RESET (the flaky cookie-banner and smoke failures).
+    request_queue_size = 256
+
+
 class CleanUrlHandler(http.server.SimpleHTTPRequestHandler):
     def translate_path(self, path):
         local = super().translate_path(path)
@@ -17,5 +23,5 @@ class CleanUrlHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    server = http.server.ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), CleanUrlHandler)
+    server = Server(('127.0.0.1', int(sys.argv[1])), CleanUrlHandler)
     server.serve_forever()
