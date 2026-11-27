@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { CITIES, cityPaths, cleanCity, genreCitiesBlock, genreCityPaths, genreOtherCities, knownCity, MIN_GENRE_SHOWS, renderCityPage, renderGenrePage } from '../src/acquisition-seo.mjs';
 import { GENERIC_KEYS, GENRE_MAP, genreOf, matchesGenre } from '../src/genres.mjs';
 import vm from 'node:vm';
@@ -761,12 +761,11 @@ test('event meta description without a listing text carries date and place', () 
   assert.ok(view.description.length <= 155);
 });
 
-test('city slugs redirect to the canonical city page; unknown slugs do not', async () => {
-  const { citySlugTarget } = await import('../src/acquisition-seo.mjs');
-  assert.equal(citySlugTarget('denver'), '/city?city=Denver');
-  assert.equal(citySlugTarget('Los-Angeles'), '/city?city=Los%20Angeles');
-  assert.equal(citySlugTarget('nowhere-xyz'), null);
-  assert.equal(citySlugTarget('../x'), null);
-  assert.equal(citySlugTarget(''), null);
-  assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/city/*'));
+test('every market has a /city/<slug> redirect, and no Function catch-all shadows /city', () => {
+  const redirects = readFileSync(new URL('../_redirects', import.meta.url), 'utf8');
+  for (const city of CITIES) {
+    const line = `/city/${city.toLowerCase().replace(/ /g, '-')} /city?city=${encodeURIComponent(city)} 301`;
+    assert.ok(redirects.includes(line), line);
+  }
+  assert.equal(existsSync(new URL('../functions/city', import.meta.url)), false, 'functions/city/ would shadow functions/city.js');
 });

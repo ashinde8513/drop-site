@@ -27,3 +27,28 @@
 /login.html   https://app.trydropapp.com/?mode=login  302
 /account.html https://app.trydropapp.com/  302
 # /reset-password is a Function (functions/reset-password.js): it keeps the reset code in the query.
+
+# Pretty city URLs. A Functions catch-all under /city/ would shadow functions/city.js, so these are static.
+/city/denver /city?city=Denver 301
+/city/los-angeles /city?city=Los%20Angeles 301
+/city/seattle /city?city=Seattle 301
+/city/portland /city?city=Portland 301
+/city/san-diego /city?city=San%20Diego 301
+/city/brooklyn /city?city=Brooklyn 301
+/city/new-york /city?city=New%20York 301
+/city/chicago /city?city=Chicago 301
+/city/dallas /city?city=Dallas 301
+/city/austin /city?city=Austin 301
+/city/boston /city?city=Boston 301
+/city/las-vegas /city?city=Las%20Vegas 301
+/city/san-francisco /city?city=San%20Francisco 301
+/city/houston /city?city=Houston 301
+/city/phoenix /city?city=Phoenix 301
+/city/atlanta /city?city=Atlanta 301
+/city/cambridge /city?city=Cambridge 301
+/city/washington /city?city=Washington 301
+/city/miami /city?city=Miami 301
+/city/detroit /city?city=Detroit 301
+/city/philadelphia /city?city=Philadelphia 301
+/city/columbus /city?city=Columbus 301
+/city/charlotte /city?city=Charlotte 301

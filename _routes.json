@@ -6,7 +6,6 @@
     "/venue/*",
     "/artist/*",
     "/city",
-    "/city/*",
     "/events",
     "/venues",
     "/genre",

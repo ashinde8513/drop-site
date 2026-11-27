@@ -16,12 +16,6 @@ export function knownCity(value) {
   return city ? CITIES.find((known) => known.toLowerCase() === city.toLowerCase()) || null : null;
 }
 
-// /city/los-angeles → "/city?city=Los%20Angeles"; null when the slug names no known market.
-export function citySlugTarget(slug) {
-  const city = /^[a-z0-9-]+$/i.test(String(slug || '')) ? knownCity(String(slug).replace(/-/g, ' ')) : null;
-  return city ? '/city?city=' + encodeURIComponent(city) : null;
-}
-
 function render(template, { title, description, canonical, heading, subheading, prefix, indexable = true }) {
   const text = (html, id, value) => html.replace(
     new RegExp('(<(?:title|h1|p)\\b[^>]*id="' + id + '"[^>]*>)[^<]*'),
