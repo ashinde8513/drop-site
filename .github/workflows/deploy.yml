@@ -72,3 +72,18 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=drop-site --branch=main
+      - name: Live route check (a route shadowed by a new Function ships as a 404 otherwise)
+        run: |
+          check() { # path expected-status
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "https://trydropapp.com$1")
+              [ "$code" = "$2" ] && { echo "ok $1 $code"; return 0; }
+              sleep 10
+            done
+            echo "::error::live $1 returned $code, expected $2"; return 1
+          }
+          status=0
+          for p in / /events /venues /artists '/city?city=Denver' /download; do check "$p" 200 || status=1; done
+          check /city/denver 301 || status=1
+          check /city/not-a-market 404 || status=1
+          exit $status

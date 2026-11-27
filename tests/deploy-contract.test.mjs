@@ -98,3 +98,13 @@ test('profile edit form is prefilled from stored fields only, never from display
   assert.match(app, /if \(cityState !== prof\.cityState\) \{ patch\.city = city; patch\.state = state_; \}/);
   assert.doesNotMatch(app, /\.update\(\{ display_name: name \|\| null, username: uname \|\| null, bio, city, state: state_ \}\)/);
 });
+
+test('no Function directory shadows a sibling Function file (functions/x/[[path]].js also matches /x)', async () => {
+  const { readdirSync, existsSync: exists } = await import('node:fs');
+  const dir = new URL('../functions/', import.meta.url);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const catchAll = readdirSync(new URL(entry.name + '/', dir)).some((file) => file.startsWith('[['));
+    assert.ok(!(catchAll && exists(new URL(entry.name + '.js', dir))), `functions/${entry.name}/ has a catch-all and functions/${entry.name}.js exists: the catch-all shadows it`);
+  }
+});
