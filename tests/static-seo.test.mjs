@@ -90,3 +90,10 @@ test('Google Fonts CSS never blocks first paint: async link, site.js flips it, n
   }
   assert.match(readFileSync(new URL('../site.js', import.meta.url), 'utf8'), /link\[data-async-css\]/);
 });
+
+test('admin Reports tab makes no false claims: no fake removal toast, honest empty state', () => {
+  const js = read('app/app.js');
+  assert.ok(!js.includes("flash('Content removed')"), 'reports must not flash a removal that never happened');
+  assert.ok(!js.includes("flash('Marked reviewed')") && !js.includes("flash('Report dismissed')"));
+  assert.match(read('app/index.html'), /Reports are handled in the Drop app for now/);
+});

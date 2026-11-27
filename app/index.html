@@ -3227,7 +3227,7 @@
       <!-- REPORTS -->
       <sc-if value="{{ adminTabReports }}">
         <div class="sec" style="padding:0 0 var(--sp-md);"><div class="sec__title">Content reports</div></div>
-        <sc-if value="{{ reportsEmpty }}"><div class="empty"><div class="empty__ico">✅</div><div class="empty__title">No reports</div><div class="empty__body">Nothing flagged right now.</div></div></sc-if>
+        <sc-if value="{{ reportsEmpty }}"><div class="empty"><div class="empty__ico">📱</div><div class="empty__title">Reports are handled in the Drop app for now</div><div class="empty__body">Open the Drop app to review and act on reported content.</div></div></sc-if>
         <div style="display:flex;flex-direction:column;gap:var(--sp-sm);">
           <sc-for list="{{ reports }}" as="r" hint-placeholder-count="3">
             <div style="display:flex;align-items:flex-start;gap:var(--sp-lg);padding:var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);flex-wrap:wrap;">

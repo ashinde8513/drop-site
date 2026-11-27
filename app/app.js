@@ -3818,8 +3818,8 @@ class Component extends DCLogic {
     // ===== Admin =====
     const adminTabs = ['queue','reports','analytics'].map(t=>({ label:{queue:'Review queue',reports:'Reports',analytics:'Analytics'}[t], cls: s.adminTab===t?'is-active':'', pick:()=>this.setState({adminTab:t}) }));
     const reviewQueue = this.REVIEW_QUEUE.filter(r=>!s.reviewActioned[r.id]).map(r=>({ ...r, approve:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'approved'}})); this.flash('Approved — event is now live'); }, reject:()=>{ this.setState(x=>({reviewActioned:{...x.reviewActioned,[r.id]:'rejected'}})); this.flash('Rejected'); } }));
-    const REPORT_ST = { open:{label:'Open', color:'var(--gold)', bg:'rgba(255,203,61,0.12)'}, dismissed:{label:'Dismissed', color:'var(--text-muted)', bg:'var(--surface-hi)'}, reviewed:{label:'Reviewed', color:'var(--accent)', bg:'rgba(77,226,255,0.12)'}, actioned:{label:'Actioned', color:'var(--danger)', bg:'rgba(255,77,109,0.12)'} };
-    const reports = this.REPORTS.map(r=>{ const key=s.reportState[r.id]||'open'; const st=REPORT_ST[key]; return { ...r, stLabel:st.label, stColor:st.color, stBg:st.bg, dismiss:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'dismissed'}})); this.flash('Report dismissed'); }, reviewed:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'reviewed'}})); this.flash('Marked reviewed'); }, action:()=>{ this.setState(x=>({reportState:{...x.reportState,[r.id]:'actioned'}})); this.flash('Content removed'); } }; });
+    // Reports are not loaded from content_reports on the web yet; no fake dismiss/review/remove actions.
+    const reports = [];
 
     const eventIntent = pendingEventIntent();
     const eventIntentRow = eventIntent && s.eventIntentEvent && s.eventIntentEvent.id===eventIntent.eventId ? s.eventIntentEvent : null;
