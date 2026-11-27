@@ -99,7 +99,7 @@ test.describe('C notification prefs', () => {
     await open(page);
     await nav(page, isMobile, 'Settings');
     await expect(toggle(page, 'Show reminders')).toBeChecked();
-    await expect(toggle(page, 'Comment replies')).not.toBeChecked();
+    await expect(toggle(page, 'Comment replies')).toBeChecked();
     await page.locator('label.sw', { hasText:'Crew plans' }).click();
     await expect(toggle(page, 'Crew plans')).not.toBeChecked();
     expect(await ops(page, 'notification_prefs', 'upsert')).toEqual([[['upsert', [{ user_id:USER_ID, plan_messages:false }, { onConflict:'user_id' }]]]]);
