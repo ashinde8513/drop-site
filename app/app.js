@@ -950,6 +950,8 @@ class Component extends DCLogic {
     recapPrivacy: null, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // two-step sign-in (admins only)
     mfaAdmin:false, mfaOn:false, mfaEnroll:null, mfaCode:'', mfaBusy:false, mfaError:'',
+    // code asked once per session from an account that has two-step sign-in on
+    aalNeeded:false, aalFactorId:null, aalCode:'', aalBusy:false, aalError:'',
     // notifications (unread ids)
     alertRows: [], offers: {}, tkSel: {}, tkAll: {}, tkSheet: null,
     // discover map (spec 04)
@@ -2081,6 +2083,32 @@ class Component extends DCLogic {
       this.setState({ mfaAdmin: !!(row && row.is_admin), mfaOn: totp.some(f=>f.status === 'verified') });
     }).catch((e)=>console.error('[app] two-step status failed:', e && e.message));
   }
+  // An account with two-step sign-in on enters its code once per session
+  // before the app goes on. Everyone else never sees this.
+  async checkAal(){
+    if (this.state.aalNeeded) this.setState({ aalNeeded:false, aalFactorId:null });
+    const mfa = supa && supa.auth.mfa;
+    if (!mfa || !mfa.getAuthenticatorAssuranceLevel) return;
+    try {
+      const { data } = await mfa.getAuthenticatorAssuranceLevel();
+      if (!data || data.nextLevel !== 'aal2' || data.currentLevel === 'aal2') return;
+      const { data: list } = await mfa.listFactors();
+      const factor = ((list && list.totp) || []).find(f=>f.status === 'verified');
+      if (factor) this.setState({ aalNeeded:true, aalFactorId:factor.id, aalCode:'', aalBusy:false, aalError:'' });
+    } catch (_) {}
+  }
+  async verifyAal(e){
+    this.prevent(e);
+    const code = this.state.aalCode.replace(/\s/g, '');
+    if (!supa || this.state.aalBusy || !this.state.aalFactorId || !/^\d{6}$/.test(code)) return;
+    this.setState({ aalBusy:true, aalError:'' });
+    let error = null;
+    try { error = (await supa.auth.mfa.challengeAndVerify({ factorId:this.state.aalFactorId, code })).error; }
+    catch (err) { error = err || true; }
+    if (error) { this.setState({ aalBusy:false, aalError:'That code didn\u2019t match. Use the newest code from your authenticator app.' }); return; }
+    this.setState({ aalNeeded:false, aalFactorId:null, aalCode:'', aalBusy:false });
+    if (this.state.userId) { this.loadProfile(this.state.userId); this.loadUserData(this.state.userId); }
+  }
   async startMfa(){
     if (!supa || this.state.mfaBusy) return;
     this.setState({ mfaBusy:true, mfaError:'' });
@@ -2508,6 +2536,7 @@ class Component extends DCLogic {
         }
       }
       this.setState({ authed:true, userId: session.user.id, userEmail: session.user.email || '' });
+      this.checkAal();
       // Authed users never sit on the marketing hero or an auth form —
       // Discover is the logged-in home (design: doLogin/doVerify → discover).
       const scr = this.state.screen;
@@ -4110,6 +4139,11 @@ class Component extends DCLogic {
       mfaCode: s.mfaCode, mfaBusy: s.mfaBusy, mfaVerifyDisabled: s.mfaBusy || !/^\d{6}$/.test(s.mfaCode.replace(/\s/g, '')),
       mfaVerifyLabel: s.mfaBusy ? 'Checking\u2026' : 'Turn on two-step sign-in', mfaError: s.mfaError, mfaHasError: !!s.mfaError,
       startMfa:()=>this.startMfa(), verifyMfa:()=>this.verifyMfa(), setMfaCode:(e)=>this.setState({ mfaCode:e.target.value }),
+      aalShow: s.authed && s.aalNeeded, aalCode: s.aalCode, aalError: s.aalError, aalHasError: !!s.aalError,
+      aalVerifyDisabled: s.aalBusy || !/^\d{6}$/.test(s.aalCode.replace(/\s/g, '')),
+      aalVerifyLabel: s.aalBusy ? 'Checking\u2026' : 'Continue',
+      verifyAal:(e)=>this.verifyAal(e), setAalCode:(e)=>this.setState({ aalCode:e.target.value }),
+      aalSignOut:()=>{ this.setState({ aalNeeded:false, aalFactorId:null, aalCode:'', aalError:'' }); this.logout(); this.go('home'); },
       deleteBusy:s.deleteBusy, deleteStatus:s.deleteStatus, deleteHasStatus:!!s.deleteStatus,
       deleteButtonLabel:s.deleteBusy?'Deleting\u2026':'Permanently delete my account',
       deleteBackLabel:s.wizPhoneRequired?'Back to phone verification':'Back to settings',
