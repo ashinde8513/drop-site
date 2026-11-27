@@ -2318,6 +2318,9 @@ class Component extends DCLogic {
       return true;
     }
     this._confirmingSignupEmail = true;
+    // verifyOtp replaces whatever session this browser holds, so keep it to hand back.
+    let previous = null;
+    try { previous = (await supa.auth.getSession()).data.session; } catch (_) {}
     let result;
     try { result = await supa.auth.verifyOtp({ token_hash:tokenHash, type:'email' }); }
     catch (_) { result = null; }
@@ -2336,10 +2339,27 @@ class Component extends DCLogic {
     const user = result.data.session.user;
     const confirmed = String((user && user.email) || '').trim().toLowerCase();
     if (!confirmed || confirmed !== started) {
-      try { await supa.auth.signOut({ scope:'local' }); } catch (_) {}
-      this._confirmingSignupEmail = false;
+      let out;
+      try { out = await supa.auth.signOut({ scope:'local' }); } catch (_) { out = { error:true }; }
       clearPendingReferral(); // captured after the account existed, so it could never earn credit
       scrubSignupCompletionUrl();
+      if (out && out.error) {
+        // signOut keeps the session when its request fails. Drop the stored copy and
+        // start clean, or the next load would continue inside the linked account.
+        try { localStorage.removeItem('sb-ebccwnkmsnhbljxxxdej-auth-token'); } catch (_) {}
+        location.replace(location.pathname);
+        return true;
+      }
+      if (previous) {
+        // The opener was signed in as themselves: give that session back and carry on.
+        try { await supa.auth.setSession({ access_token:previous.access_token, refresh_token:previous.refresh_token }); } catch (_) {}
+        this.setState({ authBusy:false });
+        this.flash('That confirmation link was for a different account.');
+        try { await this.afterLogin(); }
+        finally { this._confirmingSignupEmail = false; }
+        return true;
+      }
+      this._confirmingSignupEmail = false;
       this.setState({ authBusy:false, screen:'login', authError:'Email confirmed. Log in to finish setting up your account.' });
       return true;
     }
