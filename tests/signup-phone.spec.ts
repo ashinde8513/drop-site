@@ -348,6 +348,8 @@ test.describe('phone signup behavior', () => {
 
   test('token-hash confirmation creates a session without a PKCE verifier', async ({ page }) => {
     await installFakeSupabase(page, { session:false });
+    // This browser started the signup (the fake account's email), so the link keeps it signed in.
+    await page.addInitScript(() => { localStorage.setItem('drop.pendingSignupEmail', 'founder@example.com'); });
     await page.goto('/app/index.html?mode=signup-complete&token_hash=email-token-hash&type=email&safe=1');
 
     await expect(page.getByRole('heading', { name: 'Verify your phone' })).toBeVisible();
@@ -362,6 +364,20 @@ test.describe('phone signup behavior', () => {
     expect(url.searchParams.has('type')).toBe(false);
     const complianceCalls = await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.name === 'signup_compliance_status'));
     expect(complianceCalls).toHaveLength(1);
+  });
+
+  test('a confirmation link opened in a browser that did not start the signup confirms the email but stays signed out', async ({ page }) => {
+    // Someone can send out the link for an account they control; the opener must not end up inside it.
+    await installFakeSupabase(page, { session:false });
+    await page.addInitScript(() => { localStorage.setItem('drop.pendingSignupEmail', 'someone-else@example.com'); });
+    await page.goto('/app/index.html?mode=signup-complete&token_hash=planted-token&type=email');
+
+    await expect(page.getByText('Email confirmed. Log in to finish setting up your account.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Verify your phone' })).toHaveCount(0);
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.some((call: any) => call.kind === 'verifyOtp'))).toBe(true);
+    expect(await page.evaluate(() => (window as any).__dropFake.calls.filter((call: any) => call.name === 'signup_compliance_status'))).toHaveLength(0);
+    expect(page.url()).not.toContain('token_hash');
+    expect(await page.evaluate(() => localStorage.getItem('drop.pendingSignupEmail'))).toBe('someone-else@example.com');
   });
 
   test('invalid token-hash confirmation fails closed and scrubs the URL', async ({ page }) => {

@@ -574,6 +574,8 @@
     try { localStorage.removeItem(CREATOR_CODE_KEY); } catch (_) {}
   }
   var PENDING_REFERRAL_KEY = 'drop.pendingReferral';
+  // Email of the signup this browser started; see confirmSignupEmail.
+  var PENDING_SIGNUP_EMAIL_KEY = 'drop.pendingSignupEmail';
   var SIGNUP_REFERRAL_RPC_ENABLED = window.__DROP_SIGNUP_REFERRAL_RPC_ENABLED__ === true;
   var ATTRIBUTION_SOURCES = new Set([
     'creator','crew_invite','event_invite','event_share','friend_invite',
@@ -2360,6 +2362,9 @@ class Component extends DCLogic {
       return true;
     }
     this._confirmingSignupEmail = true;
+    // verifyOtp replaces whatever session this browser holds, so keep it to hand back.
+    let previous = null;
+    try { previous = (await supa.auth.getSession()).data.session; } catch (_) {}
     let result;
     try { result = await supa.auth.verifyOtp({ token_hash:tokenHash, type:'email' }); }
     catch (_) { result = null; }
@@ -2369,6 +2374,40 @@ class Component extends DCLogic {
       this.setState({ authBusy:false, authError:'That confirmation link is invalid or expired. Request a new email and try again.' });
       return true;
     }
+    // The link signs in whoever opens it, so someone could send out the link for an
+    // account they control and have another person set it up for them. Only the
+    // browser that started this signup stays signed in; any other browser has
+    // confirmed the email and now logs in itself.
+    let started = '';
+    try { started = localStorage.getItem(PENDING_SIGNUP_EMAIL_KEY) || ''; } catch (_) {}
+    const user = result.data.session.user;
+    const confirmed = String((user && user.email) || '').trim().toLowerCase();
+    if (!confirmed || confirmed !== started) {
+      let out;
+      try { out = await supa.auth.signOut({ scope:'local' }); } catch (_) { out = { error:true }; }
+      clearPendingReferral(); // captured after the account existed, so it could never earn credit
+      scrubSignupCompletionUrl();
+      if (out && out.error) {
+        // signOut keeps the session when its request fails. Drop the stored copy and
+        // start clean, or the next load would continue inside the linked account.
+        try { localStorage.removeItem('sb-ebccwnkmsnhbljxxxdej-auth-token'); } catch (_) {}
+        location.replace(location.pathname);
+        return true;
+      }
+      if (previous) {
+        // The opener was signed in as themselves: give that session back and carry on.
+        try { await supa.auth.setSession({ access_token:previous.access_token, refresh_token:previous.refresh_token }); } catch (_) {}
+        this.setState({ authBusy:false });
+        this.flash('That confirmation link was for a different account.');
+        try { await this.afterLogin(); }
+        finally { this._confirmingSignupEmail = false; }
+        return true;
+      }
+      this._confirmingSignupEmail = false;
+      this.setState({ authBusy:false, screen:'login', authError:'Email confirmed. Log in to finish setting up your account.' });
+      return true;
+    }
+    try { localStorage.removeItem(PENDING_SIGNUP_EMAIL_KEY); } catch (_) {}
     this.setState({ authBusy:false });
     try { await this.afterLogin(); }
     finally { this._confirmingSignupEmail = false; }
@@ -4453,6 +4492,7 @@ class Component extends DCLogic {
         const redirectTo = signupCompletionUrl();
         (async ()=>{
           try {
+            try { localStorage.setItem(PENDING_SIGNUP_EMAIL_KEY, email.toLowerCase()); } catch (_) {}
             const out = await supa.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data } });
             if (out.error) throw out.error;
             this.setState({authBusy:false});

@@ -1,0 +1,7 @@
+# 2026-11-27 security audit round 4: email confirmation link only keeps the starting browser signed in (HELD, not merged)
+
+- Finding SF-1 (Medium): `app/app.js` `confirmSignupEmail` exchanged the `token_hash` from the confirmation link for a session in whatever browser opened it. Someone could sign up with their own email, not open the link, and send it to another person. That person landed signed in to the sender's account, finished setup (including verifying their own phone) and kept using an account the sender can log in to.
+- Change: the signup form stores the email it submitted in `localStorage` (`drop.pendingSignupEmail`). After the link is exchanged, the session is kept only if its email matches that value. Any other browser is signed out locally and sees "Email confirmed. Log in to finish setting up your account."
+- User-visible effect: opening the confirmation email on a different device or browser than the one used to sign up now needs one login. Same-browser confirmation is unchanged. This changes the sign-up flow, so the PR waits for a founder decision through the Main coordinator.
+- Tested: `node --check app/app.js`. `tests/signup-phone.spec.ts` gained one test and one existing test now sets the marker; Playwright was not run locally (CI runs it).
+- Next: on approval, merge on green and confirm on the live site with a real signup on one browser and the link opened in a private window.
