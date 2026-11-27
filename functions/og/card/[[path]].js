@@ -7,7 +7,7 @@ import gradient from '../../../src/og-assets/gradient-1200x630.jpg.bin';
 import spaceGrotesk from '../../../src/og-assets/space-grotesk-700.ttf.bin';
 import sora from '../../../src/og-assets/sora-600.ttf.bin';
 import { cardSvg } from '../../../src/og-card.mjs';
-import { BRAND_IMAGE } from '../../../src/og-image.mjs';
+import { BRAND_IMAGE, headAsGet } from '../../../src/og-image.mjs';
 import { edgeCached, getEvent, routeId } from '../../../src/entity-seo.mjs';
 
 let ready = null;
@@ -15,7 +15,7 @@ const FONTS = [new Uint8Array(spaceGrotesk), new Uint8Array(sora)];
 const BACKGROUND = btoa(String.fromCharCode(...new Uint8Array(gradient)));
 
 export function onRequest(context) {
-  return edgeCached(context, () => render(context));
+  return headAsGet(context, (ctx) => edgeCached(ctx, () => render(ctx)));
 }
 
 async function render({ params, request }) {

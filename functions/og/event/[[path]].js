@@ -1,8 +1,8 @@
-import { BRAND_IMAGE, artCandidates, fetchArt } from '../../../src/og-image.mjs';
+import { BRAND_IMAGE, artCandidates, fetchArt, headAsGet } from '../../../src/og-image.mjs';
 import { edgeCached, getEvent, routeId } from '../../../src/entity-seo.mjs';
 
 export function onRequest(context) {
-  return edgeCached(context, () => render(context));
+  return headAsGet(context, (ctx) => edgeCached(ctx, () => render(ctx)));
 }
 
 async function render({ params, request }) {

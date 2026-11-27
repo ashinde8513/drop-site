@@ -373,7 +373,8 @@ export function renderTemplate(template, { title, description, canonical, image,
 function safeHttpUrl(value) {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+    // No user@host: the part before "@" can name a trusted seller while the link opens another site.
+    return (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password ? url.href : null;
   } catch { return null; }
 }
 

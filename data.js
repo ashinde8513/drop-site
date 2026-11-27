@@ -477,8 +477,14 @@
 
   // Only trust http(s) URLs from the API before using them as an href — guards
   // against javascript:/data: values injected into ticket_url. Returns null if unsafe.
+  // Also refuses user@host links: "https://ticketmaster.com:x@evil.example/" shows a
+  // trusted seller name and opens another site.
   Drop.safeUrl = function (u) {
-    return /^https?:\/\//i.test(u || '') ? u : null;
+    if (!/^https?:\/\//i.test(u || '')) return null;
+    try {
+      var parsed = new URL(u);
+      return parsed.username || parsed.password ? null : u;
+    } catch (e) { return null; }
   };
 
   Drop.schemaEventStatus = function (status) {
