@@ -408,7 +408,8 @@ export function eventView(event, { nearby = [], cityPath = null } = {}) {
   const canonical = 'https://trydropapp.com' + eventPath(event);
   const location = [event.venue_name, event.city, event.state].filter(Boolean).join(', ');
   const about = plainText(event.description);
-  const description = clipText(about || (event.title + ' at ' + location + '. See event details and tickets on Drop.'), 155);
+  const when = shortEventDate(event.date, event.time_tbd ? 'UTC' : event.timezone);
+  const description = clipText(about || (clipText(event.title, 60) + (when ? ' on ' + when : '') + (location ? ' at ' + location : '') + '. See lineup and tickets on Drop.'), 155);
   const performers = (event.event_artists || []).map((entry) => entry.artists).filter(Boolean);
   const art = safeHttpUrl(event.image_url) || safeHttpUrl(performers.find((artist) => artist.image_url)?.image_url);
   // Share cards use our own image endpoint (byte-checked, correct type, brand fallback).

@@ -742,3 +742,9 @@ test('share images: event art through /og/event, art-less events get the branded
   assert.equal(eventView(catalogEvent({ image_url: 'https://img.test/a.jpg' })).image, `https://trydropapp.com/og/event/${id}`);
   assert.equal(eventView(catalogEvent({ image_url: null, event_artists: [] })).image, `https://trydropapp.com/og/card/${id}`);
 });
+
+test('event meta description without a listing text carries date and place', () => {
+  const view = eventView(catalogEvent({ description: '' }));
+  assert.match(view.description, / on [A-Z][a-z]{2} \d{1,2} at .+\. See lineup and tickets on Drop\.$/);
+  assert.ok(view.description.length <= 155);
+});
