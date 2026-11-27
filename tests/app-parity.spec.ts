@@ -106,9 +106,13 @@ test.describe('C notification prefs', () => {
   });
 
   test('recap privacy switch shows the stored value, saves it, rolls back on error', async ({ page, isMobile }) => {
-    await bootSignedIn(page, { rows:{ profiles:[{ id:USER_ID, username:'ana', display_name:'Ana', recap_includable:false }] }, errors:{ 'profiles.update':'denied' } }, [EVENT]);
+    await bootSignedIn(page, { rows:{ profiles:[{ id:USER_ID, username:'ana', display_name:'Ana' }] }, rpc:{ get_my_profile_settings:[{ id:USER_ID, recap_includable:false }] }, errors:{ 'profiles.update':'denied' } }, [EVENT]);
     await open(page);
     await nav(page, isMobile, 'Settings');
+    // Clients cannot select profiles.recap_includable (column grant); the read must not name it.
+    const profileReads = (await ops(page, 'profiles', 'select')).map((o: any) => String(o[0][1][0]));
+    expect(profileReads.length).toBeGreaterThan(0);
+    for (const cols of profileReads) expect(cols).not.toContain('recap_includable');
     const sw = toggle(page, "Include me in friends' recaps");
     await expect(sw).toBeEnabled();
     await expect(sw).not.toBeChecked();
