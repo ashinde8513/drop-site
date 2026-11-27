@@ -760,3 +760,13 @@ test('event meta description without a listing text carries date and place', () 
   assert.match(view.description, / on [A-Z][a-z]{2} \d{1,2} at .+\. See lineup and tickets on Drop\.$/);
   assert.ok(view.description.length <= 155);
 });
+
+test('city slugs redirect to the canonical city page; unknown slugs do not', async () => {
+  const { citySlugTarget } = await import('../src/acquisition-seo.mjs');
+  assert.equal(citySlugTarget('denver'), '/city?city=Denver');
+  assert.equal(citySlugTarget('Los-Angeles'), '/city?city=Los%20Angeles');
+  assert.equal(citySlugTarget('nowhere-xyz'), null);
+  assert.equal(citySlugTarget('../x'), null);
+  assert.equal(citySlugTarget(''), null);
+  assert.ok(JSON.parse(readFileSync(new URL('../_routes.json', import.meta.url), 'utf8')).include.includes('/city/*'));
+});
