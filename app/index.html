@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Drop</title>
+<meta name="description" content="Drop: discover live shows near you, see who is going, and plan with your crew." />
+<meta property="og:site_name" content="Drop" />
+<meta property="og:title" content="Drop: Never miss a drop" />
+<meta property="og:description" content="Discover live shows near you, see who is going, and plan with your crew." />
+<meta property="og:image" content="https://trydropapp.com/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<script src="https://trydropapp.com/app/public-redirect.js"></script>
 <script>
   // The app host maps root assets into /app/; the apex serves them at /app/.
   // Pick explicitly because callback-relative URLs resolve under /tiktok/.
@@ -1236,11 +1243,11 @@
         <button type="button" class="btn btn--secondary btn--sm" onClick="{{ toastPhoto }}">Change photo</button>
       </div>
       <label for="edit-name" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Display name</label>
-      <input id="edit-name" type="text" value="{{ prof.name }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
+      <input id="edit-name" type="text" value="{{ prof.editName }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label for="edit-username" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Username</label>
       <input id="edit-username" type="text" value="{{ prof.username }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <label for="edit-bio" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">Bio <span style="color:var(--text-muted);">· 200 max</span></label>
-      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:none;">{{ prof.bio }}</textarea>
+      <textarea id="edit-bio" style="width:100%;height:96px;padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);resize:none;">{{ prof.editBio }}</textarea>
       <label for="edit-city" style="display:block;font-size:var(--fs-sm);color:var(--text-secondary);margin-bottom:6px;">City, State</label>
       <input id="edit-city" type="text" value="{{ prof.cityState }}" style="width:100%;height:52px;padding:0 var(--sp-lg);margin-bottom:var(--sp-xl);border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:var(--fs-md);" />
       <p style="margin:0 0 var(--sp-xxl);font-size:var(--fs-sm);color:var(--text-secondary);">Phone discovery settings are not available on the website.</p>
@@ -1295,7 +1302,7 @@
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Privacy</div>
       <label class="sw" style="justify-content:space-between;width:100%;padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:var(--sp-xxl);">
         <span style="font-size:var(--fs-sm);color:var(--text);">Include me in friends' recaps</span>
-        <input class="sw__input" type="checkbox" role="switch" checked="{{ recapPrivacy }}" onChange="{{ toggleRecap }}" /><span class="sw__track"><span class="sw__thumb"></span></span>
+        <input class="sw__input" type="checkbox" role="switch" checked="{{ recapPrivacy }}" disabled="{{ recapLocked }}" onChange="{{ toggleRecap }}" /><span class="sw__track"><span class="sw__thumb"></span></span>
       </label>
 
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Account</div>

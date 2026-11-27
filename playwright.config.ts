@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Reusable template: copy this file + tests/ into any static site repo,
  * change `PORT` if it clashes, and you're done.
  */
-const PORT = 4321;
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 4321);
 
 export default defineConfig({
   testDir: './tests',

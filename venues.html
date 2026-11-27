@@ -241,8 +241,9 @@
         D.fetchAllEvents().then(function (evs) {
           var map = {};
           evs.forEach(function (ev) {
-            if (!ev.venue_name) return;
-            var key = ev.venue_id || (ev.venue_name + '||' + (ev.city || ''));
+            if (!ev.venue_name || /^(tba|tbd|to be announced|venue tba)$/i.test(ev.venue_name.trim())) return;
+            // One row per room: the same venue reaches us under several ids (name + city is the identity).
+            var key = ev.venue_name.trim().toLowerCase() + '||' + (ev.city || '').trim().toLowerCase();
             if (!map[key]) map[key] = { id: ev.venue_id, name: ev.venue_name, city: ev.city, state: ev.state || 'Other', count: 0, cls: D.genreClass(ev), events: [] };
             map[key].count++;
             map[key].events.push(ev);

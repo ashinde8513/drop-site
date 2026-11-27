@@ -241,7 +241,9 @@
       var art = aboveFold && i < 4 && card.querySelector('img.wsc__img');
       if (art) {
         art.loading = 'eager';
-        if (i === 0) art.fetchPriority = 'high';
+        // Cards 2-4 stay eager (no lazy delay) but yield bandwidth to the LCP card: four
+        // 200 KB originals from third-party hosts otherwise race it on a slow link.
+        art.fetchPriority = i === 0 ? 'high' : 'low';
       }
       host.appendChild(card);
       ids.push(events[i].id);

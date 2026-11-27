@@ -18,7 +18,7 @@ test('above-the-fold card images load eagerly; the first is high priority', asyn
   await expect(imgs.first()).toBeAttached();
   await expect(imgs.first()).toHaveAttribute('loading', 'eager');
   await expect(imgs.first()).toHaveAttribute('fetchpriority', 'high');
-  await expect(imgs.nth(1)).not.toHaveAttribute('fetchpriority', 'high');
+  await expect(imgs.nth(1)).toHaveAttribute('fetchpriority', 'low');
   expect(await imgs.evaluateAll((list) => list.slice(4).every((img) => (img as HTMLImageElement).loading === 'lazy'))).toBe(true);
 });
 

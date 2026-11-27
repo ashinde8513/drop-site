@@ -83,3 +83,18 @@ test('app shell enforces a script CSP that allows exactly its inline scripts', a
   for (const hash of hashes) assert.ok(csp.includes(hash), `missing ${hash} for an app/index.html inline script`);
   assert.equal((csp.match(/'sha256-/g) || []).length, hashes.length, 'stale hash left in the app CSP');
 });
+
+test('profile edit form is prefilled from stored fields only, never from display fallbacks', () => {
+  // prof.name falls back to the account email and prof.bio to placeholder copy. Bound into the
+  // edit form, Save wrote the email as the public display name.
+  const html = readRepo('app/index.html');
+  assert.match(html, /<input id="edit-name" type="text" value="\{\{ prof\.editName \}\}"/);
+  assert.match(html, /<textarea id="edit-bio"[^>]*>\{\{ prof\.editBio \}\}<\/textarea>/);
+  const app = readRepo('app/app.js');
+  assert.match(app, /editName: \(profileSrc && profileSrc\.display_name\) \|\| '',/);
+  assert.match(app, /editBio: \(profileSrc && profileSrc\.bio\) \|\| '',/);
+  // A failed profile load leaves the form blank: Save must refuse, not wipe the profile.
+  assert.match(app, /if \(!profileSrc \|\| profileSrc\.id !== uid\) \{\n\s+this\.loadProfile\(uid\);/);
+  assert.match(app, /if \(cityState !== prof\.cityState\) \{ patch\.city = city; patch\.state = state_; \}/);
+  assert.doesNotMatch(app, /\.update\(\{ display_name: name \|\| null, username: uname \|\| null, bio, city, state: state_ \}\)/);
+});

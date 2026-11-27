@@ -99,10 +99,27 @@ test.describe('C notification prefs', () => {
     await open(page);
     await nav(page, isMobile, 'Settings');
     await expect(toggle(page, 'Show reminders')).toBeChecked();
-    await expect(toggle(page, 'Comment replies')).not.toBeChecked();
+    await expect(toggle(page, 'Comment replies')).toBeChecked();
     await page.locator('label.sw', { hasText:'Crew plans' }).click();
     await expect(toggle(page, 'Crew plans')).not.toBeChecked();
     expect(await ops(page, 'notification_prefs', 'upsert')).toEqual([[['upsert', [{ user_id:USER_ID, plan_messages:false }, { onConflict:'user_id' }]]]]);
+  });
+
+  test('recap privacy switch shows the stored value, saves it, rolls back on error', async ({ page, isMobile }) => {
+    await bootSignedIn(page, { rows:{ profiles:[{ id:USER_ID, username:'ana', display_name:'Ana' }] }, rpc:{ get_my_profile_settings:[{ id:USER_ID, recap_includable:false }] }, errors:{ 'profiles.update':'denied' } }, [EVENT]);
+    await open(page);
+    await nav(page, isMobile, 'Settings');
+    // Clients cannot select profiles.recap_includable (column grant); the read must not name it.
+    const profileReads = (await ops(page, 'profiles', 'select')).map((o: any) => String(o[0][1][0]));
+    expect(profileReads.length).toBeGreaterThan(0);
+    for (const cols of profileReads) expect(cols).not.toContain('recap_includable');
+    const sw = toggle(page, "Include me in friends' recaps");
+    await expect(sw).toBeEnabled();
+    await expect(sw).not.toBeChecked();
+    await page.locator('label.sw', { hasText:"Include me in friends' recaps" }).click();
+    await expect(page.getByText('Could not save that setting — try again')).toBeVisible();
+    await expect(sw).not.toBeChecked();
+    expect(await ops(page, 'profiles', 'update')).toEqual([[['update', [{ recap_includable:true }]], ['eq', ['id', USER_ID]], ['select', ['id']]]]);
   });
 });
 
