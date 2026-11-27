@@ -3094,6 +3094,10 @@ class Component extends DCLogic {
         profileSrc && profileSrc.city ? profileSrc.city + (profileSrc.state ? ', '+profileSrc.state : '') : null,
       ].filter(Boolean).join(' · ') || s.userEmail || '',
       bio: (profileSrc && profileSrc.bio) || 'Add a bio so your crew knows your vibe.',
+      // The edit form shows only what is stored. The fallbacks above (email, placeholder bio) are for
+      // display; prefilled into the form they were saved back as the public name and bio.
+      editName: (profileSrc && profileSrc.display_name) || '',
+      editBio: (profileSrc && profileSrc.bio) || '',
       username: (profileSrc && profileSrc.username) || '',
       cityState: profileSrc && profileSrc.city ? profileSrc.city + (profileSrc.state ? ', '+profileSrc.state : '') : '',
       isCreator: !!(profileSrc && profileSrc.creator_status === 'active'),
