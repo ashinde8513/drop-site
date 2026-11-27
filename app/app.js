@@ -641,6 +641,35 @@
     catch (_) { return null; }
     return intent;
   }
+  // Public-site "Follow on Drop" links arrive as ?next=/artist/<uuid>/<slug> (or /venue/..., /artists).
+  // Only those exact same-origin shapes are kept; anything else is dropped.
+  var NEXT_KEY = 'drop.nextTarget';
+  function parseNextTarget(value) {
+    if (typeof value !== 'string' || value.length > 200) return null;
+    if (value === '/artists') return { kind:'artists' };
+    var m = value.match(/^\/(artist|venue)\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(\/[a-z0-9-]{0,120})?$/i);
+    return m ? { kind:m[1], id:m[2].toLowerCase() } : null;
+  }
+  function pendingNextTarget() {
+    var raw = null;
+    try { raw = sessionStorage.getItem(NEXT_KEY); } catch (_) { return null; }
+    var value = parseNextTarget(raw);
+    if (!value && raw) clearPendingNextTarget();
+    return value;
+  }
+  function clearPendingNextTarget() {
+    try { sessionStorage.removeItem(NEXT_KEY); } catch (_) {}
+  }
+  function captureNextTargetFromUrl() {
+    if (typeof location === 'undefined') return;
+    var url = new URL(location.href);
+    var values = url.searchParams.getAll('next');
+    if (!values.length) return;
+    url.searchParams.delete('next');
+    history.replaceState({}, '', url.pathname + url.search + url.hash);
+    var target = values.length === 1 ? parseNextTarget(values[0]) : null;
+    try { if (target) sessionStorage.setItem(NEXT_KEY, values[0]); else clearPendingNextTarget(); } catch (_) {}
+  }
   function authCallbackUrl(mode) {
     var url = new URL(location.origin + location.pathname);
     if (mode) url.searchParams.set('mode', mode);
@@ -1713,9 +1742,44 @@ class Component extends DCLogic {
     if (typeof window!=='undefined') window.scrollTo(0,0);
     return true;
   }
+  // After sign-in, finish what a public "Follow on Drop" link started: follow, then show the page.
+  async maybeResumeNextTarget(){
+    const target = pendingNextTarget();
+    if (!target || !supa) return;
+    if (!this.state.authed || !this.state.userId || this.state.wizPhoneRequired) return;
+    if (['activation','rsvpmoment','reset','verify'].includes(this.state.screen) || pendingEventIntent()) return;
+    clearPendingNextTarget();
+    const uid = this.state.userId;
+    if (target.kind === 'artists') { this.go('artists'); return; }
+    try {
+      if (target.kind === 'artist') {
+        const { data } = await supa.from('artists').select('id,name').eq('id', target.id).maybeSingle();
+        if (!data) { this.flash('Could not find that artist'); return; }
+        const r = await supa.from('artist_follows').insert({ user_id:uid, artist_id:data.id });
+        if (this.state.userId !== uid) return;
+        const ok = !r.error || r.error.code === '23505';
+        this.openArtist(data.name, data.id);
+        if (ok) this.setState(x=>({ following:{...x.following, [data.name]:true} }));
+        this.flash(ok ? 'Following ' + data.name : 'Could not update your follow — try again');
+      } else {
+        const { venue } = await Drop.fetchVenueById(target.id);
+        const r = await supa.from('venue_follows').insert({ user_id:uid, venue_name:venue.name, city:venue.city || '' });
+        if (this.state.userId !== uid) return;
+        const ok = !r.error || r.error.code === '23505';
+        this.setState({ screen:'venue', activeVenue:venue.name, venueCity:venue.city || '' });
+        if (typeof window!=='undefined') window.scrollTo(0,0);
+        if (ok) this.setState(x=>({ followingVenue:{...x.followingVenue, [venue.name]:true} }));
+        this.flash(ok ? 'Following ' + venue.name : 'Could not update your follow — try again');
+      }
+    } catch (e) {
+      console.error('[app] next target failed:', e && e.message);
+      this.flash('Could not open that page');
+    }
+  }
   finishActivation(){
     this.setState({ screen:'discover' });
     this.maybeResumeEventIntent();
+    this.maybeResumeNextTarget();
     if (typeof window!=='undefined') window.scrollTo(0,0);
   }
   cancelEventIntent(){
@@ -2551,6 +2615,7 @@ class Component extends DCLogic {
       }
       this.maybeResumeClaimDeepLink();
       this.maybeResumeEventIntent();
+      this.maybeResumeNextTarget();
   }
   async connectTikTok(){
     if (!supa || !this.state.authed) { this.openGate('Log in to connect TikTok'); return; }
@@ -4738,6 +4803,7 @@ class Component extends DCLogic {
     // route straight to the "choose a new password" screen instead of Home.
     instance.loadEvents();
     if (typeof location !== 'undefined') {
+      captureNextTargetFromUrl();
       const incomingEventIntent = captureEventIntentFromUrl();
       if (incomingEventIntent) instance.primeEventIntent(incomingEventIntent);
       savePendingReferralFromUrl();
