@@ -3,6 +3,10 @@
   var Drop = (window.Drop = window.Drop || {});
   var doc = document;
 
+  // Google Fonts CSS is requested with media=print so it never blocks first paint; apply it once markup is parsed.
+  var asyncCss = doc.querySelectorAll('link[data-async-css]');
+  for (var a = 0; a < asyncCss.length; a++) asyncCss[a].media = 'all';
+
   // Programmatic smooth scrolling respects prefers-reduced-motion.
   function scrollBehavior() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';

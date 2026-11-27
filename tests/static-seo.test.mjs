@@ -78,3 +78,15 @@ test('internal links use clean URLs (a .html href costs every crawl a 308 hop)',
     assert.equal(stale, null, file);
   }
 });
+
+test('Google Fonts CSS never blocks first paint: async link, site.js flips it, noscript fallback', () => {
+  const pages = ['index', 'events', 'city', 'event', 'venue', 'venues', 'artist', 'artists', 'genre', 'guides'];
+  for (const page of pages) {
+    const html = readFileSync(new URL(`../${page}.html`, import.meta.url), 'utf8');
+    const link = html.match(/<link href="https:\/\/fonts\.googleapis\.com\/css2[^"]+" rel="stylesheet" media="print" data-async-css \/>/);
+    assert.ok(link, `${page}: fonts link must load with media=print`);
+    assert.match(html, /<noscript><link href="https:\/\/fonts\.googleapis\.com\/css2[^"]+" rel="stylesheet" \/><\/noscript>/, `${page}: noscript fallback`);
+    assert.match(html, /src="\/site\.js"/, `${page}: site.js applies the stylesheet`);
+  }
+  assert.match(readFileSync(new URL('../site.js', import.meta.url), 'utf8'), /link\[data-async-css\]/);
+});
