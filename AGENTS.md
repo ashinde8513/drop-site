@@ -29,6 +29,14 @@ Before meaningful work, every agent must read:
 3. Never commit secrets or API keys.
 4. Run Playwright tests before declaring work done.
 5. Update `PROJECT_STATE.md` after meaningful work.
+6. This repository is public. Keep vulnerability detail out of it. That means
+   no attack steps, exploit descriptions or audit findings in commits, PR
+   titles and bodies, branch names, code comments, test names, `state.d/`
+   notes or docs. Describe a security fix by what changes for users. The
+   detail goes in the private `Drop-App` repository (`docs/security/`) and the
+   PR links to nothing more specific than "see the private audit report".
+   If detail was pushed by mistake, tell the Main coordinator the same day;
+   editing the text later does not remove it from history.
 
 ## Validation
 
