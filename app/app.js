@@ -1750,26 +1750,28 @@ class Component extends DCLogic {
     if (['activation','rsvpmoment','reset','verify'].includes(this.state.screen) || pendingEventIntent()) return;
     clearPendingNextTarget();
     const uid = this.state.userId;
+    const follow = !(await this._hadSessionAtLoad);
+    if (this.state.userId !== uid) return;
     if (target.kind === 'artists') { this.go('artists'); return; }
     try {
       if (target.kind === 'artist') {
         const { data } = await supa.from('artists').select('id,name').eq('id', target.id).maybeSingle();
         if (!data) { this.flash('Could not find that artist'); return; }
-        const r = await supa.from('artist_follows').insert({ user_id:uid, artist_id:data.id });
+        const r = follow ? await supa.from('artist_follows').insert({ user_id:uid, artist_id:data.id }) : null;
         if (this.state.userId !== uid) return;
-        const ok = !r.error || r.error.code === '23505';
+        const ok = !!r && (!r.error || r.error.code === '23505');
         this.openArtist(data.name, data.id);
         if (ok) this.setState(x=>({ following:{...x.following, [data.name]:true} }));
-        this.flash(ok ? 'Following ' + data.name : 'Could not update your follow — try again');
+        if (follow) this.flash(ok ? 'Following ' + data.name : 'Could not update your follow — try again');
       } else {
         const { venue } = await Drop.fetchVenueById(target.id);
-        const r = await supa.from('venue_follows').insert({ user_id:uid, venue_name:venue.name, city:venue.city || '' });
+        const r = follow ? await supa.from('venue_follows').insert({ user_id:uid, venue_name:venue.name, city:venue.city || '' }) : null;
         if (this.state.userId !== uid) return;
-        const ok = !r.error || r.error.code === '23505';
+        const ok = !!r && (!r.error || r.error.code === '23505');
         this.setState({ screen:'venue', activeVenue:venue.name, venueCity:venue.city || '' });
         if (typeof window!=='undefined') window.scrollTo(0,0);
         if (ok) this.setState(x=>({ followingVenue:{...x.followingVenue, [venue.name]:true} }));
-        this.flash(ok ? 'Following ' + venue.name : 'Could not update your follow — try again');
+        if (follow) this.flash(ok ? 'Following ' + venue.name : 'Could not update your follow — try again');
       }
     } catch (e) {
       console.error('[app] next target failed:', e && e.message);
@@ -4804,6 +4806,8 @@ class Component extends DCLogic {
     instance.loadEvents();
     if (typeof location !== 'undefined') {
       captureNextTargetFromUrl();
+      // A follow is written only after a sign-in made on this page; a link opened while already signed in just shows the page.
+      if (supa && pendingNextTarget()) instance._hadSessionAtLoad = supa.auth.getSession().then(r=>!!(r && r.data && r.data.session), ()=>true);
       const incomingEventIntent = captureEventIntentFromUrl();
       if (incomingEventIntent) instance.primeEventIntent(incomingEventIntent);
       savePendingReferralFromUrl();

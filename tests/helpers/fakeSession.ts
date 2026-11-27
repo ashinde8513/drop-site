@@ -41,6 +41,7 @@ const FAKE = String.raw`
     auth:{
       getSession:async function () { return { data:{ session:session }, error:null }; },
       onAuthStateChange:function (l) { listeners.push(l); return { data:{ subscription:{ unsubscribe:function () {} } } }; },
+      signInWithPassword:async function () { session = { user:{ id:'${USER_ID}', email:'a@example.com', created_at:'2020-01-01T00:00:00Z' } }; return { data:{ session:session }, error:null }; },
       signOut:async function (opts) { calls.push({ kind:'signOut', opts:opts }); session = null; window.__fake.emit('SIGNED_OUT'); return { error:null }; },
       signInWithOAuth:async function (i) { calls.push({ kind:'oauth', input:i }); return { data:{ url:'https://oauth.example.test' }, error:null }; },
       signUp:async function (i) { calls.push({ kind:'signUp', input:i }); return { data:{ session:null }, error:null }; },
