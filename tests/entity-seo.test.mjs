@@ -158,6 +158,18 @@ test('event view emits useful Event data without trusting catalog HTML', () => {
   assert.doesNotMatch(view.body, /javascript:/);
 });
 
+test('ticket links that hide the real site behind user@host are dropped, server and client', () => {
+  const hidden = 'https://ticketmaster.com:x@evil.example/buy';
+  const view = eventView(catalogEvent({ ticket_url: hidden, ticket_status: 'available' }));
+  assert.doesNotMatch(view.body, /evil\.example/);
+  assert.equal(view.jsonLd.offers, undefined);
+  const window = {};
+  vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
+  const safe = window.Drop.safeUrl;
+  for (const bad of [hidden, 'https://seller@evil.example/', 'javascript:alert(1)', ' https://a.test/', '//a.test/x', 'https:a.test', 'https://', null]) assert.equal(safe(bad), null, String(bad));
+  for (const ok of ['https://www.ticketmaster.com/event/1?a=b@c', 'http://venue.test/tickets', 'https://tix.test/e/@handle']) assert.equal(safe(ok), ok);
+});
+
 test('event view keeps canceled/unknown ticket markup and visible status aligned', () => {
   const view = eventView(catalogEvent({
     lifecycle_status: 'cancelled', ticket_status: 'unknown', ticket_url: 'https://tickets.example/show',

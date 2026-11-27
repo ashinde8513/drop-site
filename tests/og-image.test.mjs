@@ -25,6 +25,41 @@ test('share images are byte-checked, size-capped and fall back in order', async 
   assert.ok(cancelled, 'oversized stream cancelled');
 });
 
+test('every redirect hop must stay https with no user@host', async () => {
+  const hops = { 'https://a.test/ok': [302, 'https://cdn.test/a.png'], 'https://cdn.test/a.png': [200], 'https://a.test/down': [302, 'http://cdn.test/a.png'], 'https://a.test/creds': [301, 'https://u:p@cdn.test/a.png'], 'https://a.test/loop': [302, '/loop'] };
+  const seen = [];
+  const fetcher = async (url, init) => { seen.push(String(url)); assert.equal(init.redirect, 'manual'); const [status, location] = hops[url]; return new Response(status === 200 ? PNG : null, { status, headers: location ? { location } : {} }); };
+  assert.equal((await fetchArt(['https://a.test/ok'], fetcher)).type, 'image/png', 'https redirect followed');
+  assert.equal(await fetchArt(['https://a.test/down', 'https://a.test/creds', 'https://a.test/loop'], fetcher), null);
+  assert.ok(!seen.includes('http://cdn.test/a.png') && !seen.some((url) => url.includes('u:p@')), 'unsafe hops never fetched');
+  assert.equal(seen.filter((url) => url === 'https://a.test/loop').length, 3, 'redirect loops stop after three fetches');
+  assert.deepEqual(artCandidates({ image_url: 'https://u:p@img.test/a.png' }), []);
+});
+
+test('HEAD is answered from the GET cache entry instead of refetching the art', async () => {
+  const real = globalThis.fetch;
+  const store = new Map();
+  const pending = [];
+  globalThis.caches = { default: { match: async (k) => store.get(k)?.clone(), put: async (k, r) => { store.set(k, r); } } };
+  let artFetches = 0;
+  const call = (method) => onRequest({ params: { path: [id] }, request: new Request('https://trydropapp.com/og/event/' + id, { method }), env: {}, waitUntil: (p) => pending.push(p) });
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/rest/v1/events')) return new Response(JSON.stringify([{ id, title: 'x', image_url: 'https://img.test/a.png' }]), { headers: { 'Content-Range': '0-0/1' } });
+      artFetches++;
+      return new Response(PNG);
+    };
+    const first = await call('HEAD');
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get('content-type'), 'image/png');
+    assert.equal((await first.arrayBuffer()).byteLength, 0, 'HEAD has no body');
+    await Promise.all(pending);
+    await call('HEAD');
+    assert.equal((await (await call('GET')).arrayBuffer()).byteLength, PNG.byteLength, 'GET reuses the entry with its body');
+    assert.equal(artFetches, 1, 'one upstream fetch for HEAD, HEAD, GET');
+  } finally { globalThis.fetch = real; delete globalThis.caches; }
+});
+
 test('endpoint re-serves real art with the right type, else redirects to the brand card', async () => {
   const real = globalThis.fetch;
   const call = (path) => onRequest({ params: { path: [path] }, request: new Request('https://trydropapp.com/og/event/' + path), env: {}, waitUntil() {} });

@@ -17,8 +17,31 @@ export function imageType(bytes) {
 export function artCandidates(event) {
   const performers = (event?.event_artists || []).map((entry) => entry.artists).filter(Boolean);
   return [event?.image_url, ...performers.map((artist) => artist.image_url)].filter((url) => {
-    try { return new URL(url).protocol === 'https:'; } catch { return false; }
+    try { return httpsOnly(new URL(url)); } catch { return false; }
   }).slice(0, 3);
+}
+
+const httpsOnly = (url) => url.protocol === 'https:' && !url.username && !url.password;
+
+// Redirects are followed by hand so every hop is checked like the first URL:
+// a 302 to http:// or to a user@host address is a miss, not a fetch.
+async function fetchHttps(url, fetcher) {
+  for (let hop = 0; hop < 3; hop++) {
+    const response = await fetcher(url, { headers: { Accept: 'image/*' }, redirect: 'manual', signal: AbortSignal.timeout(4000) });
+    if (response.status < 300 || response.status > 399) return response;
+    const next = new URL(response.headers.get('location') || '', url);
+    if (!httpsOnly(next)) return null;
+    url = next.href;
+  }
+  return null;
+}
+
+// HEAD shares the GET cache entry. Uncached, every HEAD repeated the upstream
+// fetches (or the card render), so a cheap probe cost more than a real view.
+export async function headAsGet(context, serve) {
+  if (context.request.method !== 'HEAD') return serve(context);
+  const response = await serve({ ...context, request: new Request(context.request.url), waitUntil: (work) => context.waitUntil(work) });
+  return new Response(null, response);
 }
 
 // Reads at most MAX_BYTES, cancelling the stream past the cap, so a missing or
@@ -45,8 +68,8 @@ export async function readCapped(response) {
 export async function fetchArt(candidates, fetcher = fetch) {
   for (const url of candidates) {
     try {
-      const response = await fetcher(url, { headers: { Accept: 'image/*' }, redirect: 'follow', signal: AbortSignal.timeout(4000) });
-      if (!response.ok) continue;
+      const response = await fetchHttps(url, fetcher);
+      if (!response?.ok) continue;
       const declared = Number(response.headers.get('content-length') || 0);
       if (declared > MAX_BYTES) continue;
       const bytes = await readCapped(response);
