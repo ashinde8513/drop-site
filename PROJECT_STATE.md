@@ -305,6 +305,12 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 5. **Founder: import the verified Google Search Console property into Bing Webmaster Tools** (OAuth grant remains founder action).
 6. **If recap celebration remains desired, inspect current Drop-App `main`, wire the already-merged `<RecapCelebration>` component into the recap screen on a fresh branch, then run device/reduced-motion QA through the app's current merge gate.**
 
+## 2026-11-27 — Claude (web round 2)
+
+- Merged: pretty city URLs (`/city/<slug>` 301s, static `_redirects`, all 23 markets); non-blocking Google Fonts CSS on 16 pages (`media=print` + `site.js` flip + noscript); deploy job now curls key live routes after deploy; unit test fails if a `functions/x/` catch-all shadows `functions/x.js`.
+- Incident: a first version of the city redirect used `functions/city/[[path]].js`, which also matched `/city` and returned 404 for every city page for about 30 minutes (19:55Z to 20:25Z). Fixed by the static redirects; guarded by the two checks above.
+- Lesson: a Functions catch-all under `x/` shadows `functions/x.js`. Use `_redirects` for fixed slug maps.
+
 ## 2026-10-20 — Claude (website lane) — Wave 11: conversion readout + five SEO/CRO fixes
 - **Shipped and live:** the Wave 11 conversion readout + five SEO/CRO fixes PR (#195), merged f2a60a7, deploy run 39379922525 green.
   - The readout script gained `--md`.
