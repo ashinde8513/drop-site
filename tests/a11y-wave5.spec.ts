@@ -98,3 +98,14 @@ test('inline legal-page links are underlined, not color-only', async ({ page }) 
   await page.goto('/privacy.html');
   await expect(page.locator('.doc p a').first()).toHaveCSS('text-decoration-line', 'underline');
 });
+
+test('venues list: one row per room, no placeholder venues', async ({ page }) => {
+  const row = (id: string, venue_id: string, venue_name: string) => ({ ...ROW, id, venue_id, venue_name });
+  await page.route('**/rest/v1/events?**', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify([
+    row('e1', 'v1', 'Avalon Hollywood'), row('e2', 'v2', 'Avalon Hollywood'), row('e3', 'v3', 'TBA'), row('e4', 'v4', 'Ogden Theatre'),
+  ]) }));
+  await page.goto('/venues.html');
+  await expect(page.getByText('Avalon Hollywood')).toHaveCount(1);
+  await expect(page.getByText('TBA', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Ogden Theatre')).toHaveCount(1);
+});
