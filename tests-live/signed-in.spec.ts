@@ -14,6 +14,8 @@ const menu = async (page, item: string) => {
 test('fixture account: inbox, seen history, rating, recap composer, friends and plans, blocked accounts', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
+  // A refused profile read only logs to the console and leaves the profile blank (2026-11-27 regression).
+  page.on('console', m => { if (m.type() === 'error' && m.text().includes('profile load failed')) errors.push(m.text()); });
   await page.goto('/?mode=login');
   await page.locator('#login-email').fill(email!);
   await page.locator('#login-password').fill(password!);
