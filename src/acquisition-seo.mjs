@@ -181,7 +181,18 @@ export function renderCityPage(template, city, events = [], elsewhere = []) {
   const towns = (elsewhere || []).map((event) => '<li><a href="' + escapeHtml(eventPath(event)) + '">' + escapeHtml(event.title) + '</a> — ' + escapeHtml([event.venue_name, event.city].filter(Boolean).join(', ')) + ', ' + escapeHtml(shortDate(event)) + '</li>');
   const block = linkBlock('Upcoming shows in ' + city, eventItems(shows)) + linkBlock('Genres in ' + city, genres) + linkBlock('More in ' + city, guides) +
     linkBlock('More shows nearby, outside the big cities', towns) + linkBlock('Other cities', others);
-  return inject(withCityFaq(html, city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
+  return inject(withCityFaq(cityLabels(html, city), city), 'rail-city-weekend', block, itemListLd('Upcoming shows in ' + city, shows));
+}
+
+// The template is written for Denver; name the real city in the section headings and the nav chip
+// before JS runs, so crawlers and slow connections never see another city's labels.
+function cityLabels(html, city) {
+  const name = escapeHtml(city);
+  return html
+    .replace('This weekend in Denver', 'This weekend in ' + name)
+    .replace('Popular venues in Denver', 'Popular venues in ' + name)
+    .replace('Top genres in Denver', 'Top genres in ' + name)
+    .replace('<span class="loc-city">Denver</span>', '<span class="loc-city">' + name + '</span>');
 }
 
 // City pages for the entity sitemap: only markets with enough real upcoming shows.

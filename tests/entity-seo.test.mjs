@@ -769,3 +769,17 @@ test('every market has a /city/<slug> redirect, and no Function catch-all shadow
   }
   assert.equal(existsSync(new URL('../functions/city', import.meta.url)), false, 'functions/city/ would shadow functions/city.js');
 });
+
+test('server-rendered city page names its own city in section headings and the nav chip', () => {
+  const template = readFileSync(new URL('../city.html', import.meta.url), 'utf8');
+  const html = renderCityPage(template, 'Los Angeles', []);
+  for (const label of ['This weekend in Los Angeles', 'Popular venues in Los Angeles', 'Top genres in Los Angeles', '<span class="loc-city">Los Angeles</span>']) assert.ok(html.includes(label), label);
+  assert.ok(!/(This weekend|Popular venues|Top genres) in Denver/.test(html), 'no Denver headings left on a Los Angeles page');
+});
+
+test('city page hero offers sign-up and app download before the show list', () => {
+  const html = renderCityPage(readFileSync(new URL('../city.html', import.meta.url), 'utf8'), 'Seattle', []);
+  const hero = html.slice(html.indexOf('<h1'), html.indexOf('rail-city-weekend'));
+  assert.match(hero, /class="btn btn--primary" href="https:\/\/app\.trydropapp\.com\/\?mode=signup"/);
+  assert.match(hero, /data-app-download="city" href="\/download"/);
+});
