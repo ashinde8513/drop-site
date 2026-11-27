@@ -24,13 +24,16 @@ export function artCandidates(event) {
 const httpsOnly = (url) => url.protocol === 'https:' && !url.username && !url.password;
 
 // Redirects are followed by hand so every hop is checked like the first URL:
-// a 302 to http:// or to a user@host address is a miss, not a fetch.
+// a 302 to http:// or to a user@host address is a miss, not a fetch. One 4 s
+// budget covers the whole chain, as it did when the platform followed redirects.
 async function fetchHttps(url, fetcher) {
+  const signal = AbortSignal.timeout(4000);
   for (let hop = 0; hop < 3; hop++) {
-    const response = await fetcher(url, { headers: { Accept: 'image/*' }, redirect: 'manual', signal: AbortSignal.timeout(4000) });
+    const response = await fetcher(url, { headers: { Accept: 'image/*' }, redirect: 'manual', signal });
     if (response.status < 300 || response.status > 399) return response;
-    const next = new URL(response.headers.get('location') || '', url);
-    if (!httpsOnly(next)) return null;
+    const location = response.headers.get('location');
+    const next = location ? new URL(location, url) : null;
+    if (!next || !httpsOnly(next)) return null;
     url = next.href;
   }
   return null;

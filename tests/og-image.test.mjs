@@ -26,13 +26,17 @@ test('share images are byte-checked, size-capped and fall back in order', async 
 });
 
 test('every redirect hop must stay https with no user@host', async () => {
-  const hops = { 'https://a.test/ok': [302, 'https://cdn.test/a.png'], 'https://cdn.test/a.png': [200], 'https://a.test/down': [302, 'http://cdn.test/a.png'], 'https://a.test/creds': [301, 'https://u:p@cdn.test/a.png'], 'https://a.test/loop': [302, '/loop'] };
+  const hops = { 'https://a.test/ok': [302, 'https://cdn.test/a.png'], 'https://cdn.test/a.png': [200], 'https://a.test/down': [302, 'http://cdn.test/a.png'], 'https://a.test/creds': [301, 'https://u:p@cdn.test/a.png'], 'https://a.test/loop': [302, '/loop'], 'https://a.test/bare': [302] };
   const seen = [];
-  const fetcher = async (url, init) => { seen.push(String(url)); assert.equal(init.redirect, 'manual'); const [status, location] = hops[url]; return new Response(status === 200 ? PNG : null, { status, headers: location ? { location } : {} }); };
+  const signals = [];
+  const fetcher = async (url, init) => { seen.push(String(url)); signals.push(init.signal); assert.equal(init.redirect, 'manual'); const [status, location] = hops[url]; return new Response(status === 200 ? PNG : null, { status, headers: location ? { location } : {} }); };
   assert.equal((await fetchArt(['https://a.test/ok'], fetcher)).type, 'image/png', 'https redirect followed');
   assert.equal(await fetchArt(['https://a.test/down', 'https://a.test/creds', 'https://a.test/loop'], fetcher), null);
   assert.ok(!seen.includes('http://cdn.test/a.png') && !seen.some((url) => url.includes('u:p@')), 'unsafe hops never fetched');
   assert.equal(seen.filter((url) => url === 'https://a.test/loop').length, 3, 'redirect loops stop after three fetches');
+  assert.equal(await fetchArt(['https://a.test/bare'], fetcher), null);
+  assert.equal(seen.filter((url) => url === 'https://a.test/bare').length, 1, 'a redirect with no Location is a miss, not a refetch');
+  assert.equal(new Set(signals).size, 5, 'one timeout budget per image, shared by its hops');
   assert.deepEqual(artCandidates({ image_url: 'https://u:p@img.test/a.png' }), []);
 });
 

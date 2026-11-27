@@ -167,7 +167,7 @@ test('ticket links that hide the real site behind user@host are dropped, server 
   vm.runInNewContext(readFileSync(new URL('../data.js', import.meta.url), 'utf8'), { window, document: { addEventListener() {} }, navigator: { userAgent: '' }, location: { search: '', hostname: 'localhost' }, localStorage: { getItem() { return null; }, setItem() {} }, console, URL, URLSearchParams, fetch: () => Promise.reject(new Error('offline')) });
   const safe = window.Drop.safeUrl;
   for (const bad of [hidden, 'https://seller@evil.example/', 'javascript:alert(1)', ' https://a.test/', '//a.test/x', 'https:a.test', 'https://', null]) assert.equal(safe(bad), null, String(bad));
-  for (const ok of ['https://www.ticketmaster.com/event/1?a=b@c', 'http://venue.test/tickets', 'https://tix.test/e/@handle']) assert.equal(safe(ok), ok);
+  for (const ok of ['https://www.ticketmaster.com/event/1?a=b@c', 'http://venue.test/tickets', 'https://tix.test/e/@handle', 'HTTPS://tix.test:8443/e', 'https://evil.example\\@ticketmaster.com']) assert.equal(safe(ok), ok);
 });
 
 test('event view keeps canceled/unknown ticket markup and visible status aligned', () => {
