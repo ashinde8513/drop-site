@@ -766,6 +766,7 @@ test('every market has a /city/<slug> redirect, and no Function catch-all shadow
   for (const city of CITIES) {
     const line = `/city/${city.toLowerCase().replace(/ /g, '-')} /city?city=${encodeURIComponent(city)} 301`;
     assert.ok(redirects.includes(line), line);
+    for (const variant of [`/city/${city.replace(/ /g, '-')}`, `/city/${city.toLowerCase().replace(/ /g, '-')}/`, `/city/${city.replace(/ /g, '-')}/`]) assert.ok(redirects.includes(`${variant} /city?city=${encodeURIComponent(city)} 301`), variant);
   }
   assert.equal(existsSync(new URL('../functions/city', import.meta.url)), false, 'functions/city/ would shadow functions/city.js');
 });
