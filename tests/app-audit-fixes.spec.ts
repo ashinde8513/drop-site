@@ -167,7 +167,8 @@ test.describe('browse artists follows are saved', () => {
   const ev = { ...EVENT, event_artists:[{ artists:A1 }, { artists:A2 }] };
   const inserts = async (page: Page) => (await fakeCalls(page, 'from')).filter((c: any) => c.table === 'artist_follows' && c.ops[0][0] === 'insert').map((c: any) => c.ops[0][1][0]);
 
-  test('Follow on the browse grid writes artist_follows; failure reverts', async ({ page }) => {
+  test('Follow on the browse grid writes artist_follows', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'uses the desktop nav Artists link');
     await bootSignedIn(page, {}, [ev]);
     await page.goto('/app/index.html');
     await page.locator('a.wn__navlink', { hasText:'Artists' }).click();
@@ -175,7 +176,8 @@ test.describe('browse artists follows are saved', () => {
     await expect.poll(() => inserts(page)).toEqual([[{ user_id:'11111111-1111-4111-8111-111111111111', artist_id:A1.id }]]);
   });
 
-  test('a failed browse follow flashes and reverts', async ({ page }) => {
+  test('a failed browse follow flashes and reverts', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'uses the desktop nav Artists link');
     await bootSignedIn(page, { errors:{ 'artist_follows.insert':'denied' } }, [ev]);
     await page.goto('/app/index.html');
     await page.locator('a.wn__navlink', { hasText:'Artists' }).click();
