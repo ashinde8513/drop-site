@@ -309,6 +309,7 @@ Live cross-session claims (who is working on what right now) are in the vault: `
 
 - Merged: pretty city URLs (`/city/<slug>` 301s, static `_redirects`, all 23 markets); non-blocking Google Fonts CSS on 16 pages (`media=print` + `site.js` flip + noscript); deploy job now curls key live routes after deploy; unit test fails if a `functions/x/` catch-all shadows `functions/x.js`.
 - Incident: a first version of the city redirect used `functions/city/[[path]].js`, which also matched `/city` and returned 404 for every city page for about 30 minutes (19:55Z to 20:25Z). Fixed by the static redirects; guarded by the two checks above.
+- Later same day: admin Reports tab no longer fakes success (honest empty state, #268); server-rendered city pages name their own city in headings and nav chip, and the city hero has sign-up and download CTAs (#269). Admin Reports loader plan (on `moderate_content_report`) is in the coordinator notes, not built.
 - Lesson: a Functions catch-all under `x/` shadows `functions/x.js`. Use `_redirects` for fixed slug maps.
 
 ## 2026-10-20 — Claude (website lane) — Wave 11: conversion readout + five SEO/CRO fixes
