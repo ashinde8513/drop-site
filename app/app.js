@@ -584,7 +584,7 @@
   var PREF_COLS = { reminders:'show_reminders', sales:'sale_alerts', comments:'comment_alerts', plans:'plan_messages' };
   var DEFAULT_TOGGLES = { reminders: true, sales: true, comments: false, plans: true };
   // Per-user server data cleared on sign-out / account switch (spread into those setState calls).
-  var USER_DATA_RESET = { ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, myPlans:null, myPlansError:false, findQuery:'', findResults:null, findError:false, addBusy:{}, addErr:{}, reqBusy:{}, socMenu:null, dlg:null, person:null, personId:null, plan:null, planId:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
+  var USER_DATA_RESET = { recapPrivacy:null, ratingRows:{}, blockedRows:null, blockedError:false, alertRows:[], notifCleared:false, saved:{}, savedRows:[], setToggles:DEFAULT_TOGGLES, friendRows:[], friendProfiles:{}, eventSocial:{}, myPlans:null, myPlansError:false, findQuery:'', findResults:null, findError:false, addBusy:{}, addErr:{}, reqBusy:{}, socMenu:null, dlg:null, person:null, personId:null, plan:null, planId:null, planMembers:[], planMsgs:[], planPending:[], planDraft:'', sugArtist:'', sugVenue:'', sugLink:'', sugDate:'', sugError:'', sugDone:'' };
   var ATTRIBUTION_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var EVENT_INTENT_KEY = 'drop.eventIntent';
   var EVENT_INTENT_ACTIONS = new Set(['going','interested','save','follow','plan','invite']);
@@ -942,7 +942,7 @@ class Component extends DCLogic {
     wizPhoneVerified: false, wizPhoneStatus: '', wizPhoneResendBlocked: false,
     // settings
     setToggles: DEFAULT_TOGGLES, savedRows: [], friendRows: [], friendProfiles: {}, eventSocial: {},
-    recapPrivacy: true, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
+    recapPrivacy: null, deleteConfirm: '', deleteBusy:false, deleteStatus:'', tiktokConnecting: false,
     // two-step sign-in (admins only)
     mfaAdmin:false, mfaOn:false, mfaEnroll:null, mfaCode:'', mfaBusy:false, mfaError:'',
     // notifications (unread ids)
@@ -1206,6 +1206,18 @@ class Component extends DCLogic {
       console.error('[app] saved_events write failed:', error.message);
       this.setState(s=>({ saved:{...s.saved, [id]: was} }));
       this.flash('Could not update saved — try again');
+    });
+  }
+  // profiles.recap_includable: whether friends' recap cards may name this user. The row must confirm the write.
+  toggleRecap(){
+    const uid = this.state.userId, was = this.state.recapPrivacy;
+    if (!supa || !uid || was === null) return;
+    this.setState({ recapPrivacy: !was });
+    supa.from('profiles').update({ recap_includable: !was }).eq('id', uid).select('id').then(({ data, error })=>{
+      if ((!error && data && data.length === 1) || this.state.userId !== uid) return;
+      console.error('[app] recap_includable write failed:', error && error.message);
+      this.setState({ recapPrivacy: was });
+      this.flash('Could not save that setting — try again');
     });
   }
   // notification_prefs: one row per user; each toggle upserts just its own column.
@@ -1846,8 +1858,8 @@ class Component extends DCLogic {
   }
   loadProfile(uid){
     if (!supa) return;
-    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image,creator_status,creator_code').eq('id', uid).maybeSingle()
-      .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null }); });
+    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image,creator_status,creator_code,recap_includable').eq('id', uid).maybeSingle()
+      .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null, recapPrivacy: data ? data.recap_includable === true : null }); });
   }
   maybeRecordCreatorReferral(uid){
     var code = pendingCreatorCode();
@@ -4012,7 +4024,7 @@ class Component extends DCLogic {
       // profile / settings
       prof, profileStats, profileMenu, notifications, notifEmpty: notifications.length===0,
       notifBadge: String(notifications.filter(n=>n.unread).length), hasNotifBadge: notifications.some(n=>n.unread),
-      settingsToggles, recapPrivacy: s.recapPrivacy,
+      settingsToggles, recapPrivacy: s.recapPrivacy === true, recapLocked: s.recapPrivacy === null,
       tiktokConnecting: s.tiktokConnecting,
       tiktokButtonLabel: s.tiktokConnecting ? 'Connecting TikTok…' : 'Connect TikTok',
       blocked, blockedLoading: s.blockedRows===null && !s.blockedError, blockedFailed: s.blockedError, blockedEmpty: s.blockedRows!==null && blocked.length===0, retryBlocked:()=>this.loadBlocked(), skel3:[1,2,3],
@@ -4540,7 +4552,7 @@ class Component extends DCLogic {
       toastWrapped:(e)=>{ this.prevent&&this.prevent(e); this.go('wrapped'); },
       markAllRead:()=>{ this.markAlertsRead(this.state.alertRows.filter(a=>!a.read).map(a=>a.id)); this.flash('All caught up'); },
       clearNotifs:()=>{ this.setState({notifCleared:true}); this.flash('Notifications hidden'); },
-      toggleRecap:()=>this.setState(x=>({recapPrivacy:!x.recapPrivacy})),
+      toggleRecap:()=>this.toggleRecap(),
       doLogout:()=>{ this.logout(); this.go('home'); },
       setDeleteConfirm:(e)=>this.setState({deleteConfirm:e.target.value}),
       confirmDelete:async()=>{

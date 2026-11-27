@@ -1295,7 +1295,7 @@
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Privacy</div>
       <label class="sw" style="justify-content:space-between;width:100%;padding:var(--sp-md) var(--sp-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:var(--sp-xxl);">
         <span style="font-size:var(--fs-sm);color:var(--text);">Include me in friends' recaps</span>
-        <input class="sw__input" type="checkbox" role="switch" checked="{{ recapPrivacy }}" onChange="{{ toggleRecap }}" /><span class="sw__track"><span class="sw__thumb"></span></span>
+        <input class="sw__input" type="checkbox" role="switch" checked="{{ recapPrivacy }}" disabled="{{ recapLocked }}" onChange="{{ toggleRecap }}" /><span class="sw__track"><span class="sw__thumb"></span></span>
       </label>
 
       <div class="sec__title" style="margin-bottom:var(--sp-md);">Account</div>
