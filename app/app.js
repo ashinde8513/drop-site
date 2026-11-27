@@ -1235,9 +1235,11 @@ class Component extends DCLogic {
   // profiles.recap_includable: whether friends' recap cards may name this user. The row must confirm the write.
   toggleRecap(){
     const uid = this.state.userId, was = this.state.recapPrivacy;
-    if (!supa || !uid || was === null) return;
+    if (!supa || !uid || was === null || this.recapWriting) return; // one write at a time: a second tap could roll back to the wrong value
+    this.recapWriting = true;
     this.setState({ recapPrivacy: !was });
     supa.from('profiles').update({ recap_includable: !was }).eq('id', uid).select('id').then(({ data, error })=>{
+      this.recapWriting = false;
       if ((!error && data && data.length === 1) || this.state.userId !== uid) return;
       console.error('[app] recap_includable write failed:', error && error.message);
       this.setState({ recapPrivacy: was });
@@ -1882,8 +1884,14 @@ class Component extends DCLogic {
   }
   loadProfile(uid){
     if (!supa) return;
-    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image,creator_status,creator_code,recap_includable').eq('id', uid).maybeSingle()
-      .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null, recapPrivacy: data ? data.recap_includable === true : null }); });
+    supa.from('profiles').select('id,username,display_name,city,state,bio,profile_image,creator_status,creator_code').eq('id', uid).maybeSingle()
+      .then(({ data, error })=>{ if (error) console.error('[app] profile load failed:', error.message); else this.setState({ profile: data || null }); });
+    // recap_includable is not column-readable by clients: it comes from the owner-only settings function.
+    supa.rpc('get_my_profile_settings').then(({ data, error })=>{
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row || row.id !== uid || this.state.userId !== uid || this.recapWriting) return;
+      this.setState({ recapPrivacy: row.recap_includable === true });
+    });
   }
   maybeRecordCreatorReferral(uid){
     var code = pendingCreatorCode();
