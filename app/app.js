@@ -455,7 +455,10 @@
       return 'That phone number can\u2019t be used for this account.';
     }
     if (text.includes('rate_limited') || text.includes('rate limit') || text.includes('too many')) {
-      return 'Too many codes requested. Wait a few minutes and try again.';
+      // A refused code check can lock for up to a day (verify-phone v47, PV-1); sending recovers in minutes.
+      return stage === 'check'
+        ? 'Too many tries. Request a new code or try again tomorrow.'
+        : 'Too many codes requested. Wait a few minutes and try again.';
     }
     if (text.includes('invalid_code') || text.includes('invalid otp') || text.includes('expired')) {
       return 'That code is invalid or expired.';

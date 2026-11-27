@@ -68,6 +68,7 @@ const FAKE_SUPABASE = String.raw`
           ? result({ error:'phone_unavailable' })
           : result({ ok:true });
         if (config.failPhoneUnavailable) return result({ error:'phone_unavailable' });
+        if (config.failCheckRateLimited) return result({ error:'rate_limited' });
         if (!config.failCheck) {
           config.phoneVerified = true;
           config.complianceComplete = true;
@@ -591,6 +592,22 @@ test.describe('phone signup behavior', () => {
     await expect(page.getByRole('status')).not.toContainText('founder@example.com');
     await page.getByRole('button', { name:'Sign in to that account' }).click();
     await expect(page.getByRole('heading', { name:'Welcome back' })).toBeVisible();
+  });
+
+  // PV-1: a refused code check can lock for up to a day; sends recover in minutes.
+  test('rate-limited code check says to request a new code or try tomorrow', async ({ page }) => {
+    await installFakeSupabase(page, {
+      session:true, complianceComplete:true, profileComplete:true,
+      phoneVerified:false, failCheckRateLimited:true,
+    });
+    await page.goto('/app/index.html');
+    await page.locator('#wiz-phone').fill('3035550100');
+    await page.getByRole('button', { name:'Text me a code' }).click();
+    await page.locator('#wiz-phone-code').fill('123456');
+    await page.getByRole('button', { name:'Verify phone' }).click();
+
+    await expect(page.getByRole('status')).toContainText('Too many tries. Request a new code or try again tomorrow.');
+    await expect(page.getByRole('status')).not.toContainText('rate_limited');
   });
 
   test('pre-OTP phone_unavailable remains generic', async ({ page }) => {
